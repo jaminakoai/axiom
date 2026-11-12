@@ -1794,6 +1794,14 @@ AXIOM_RUNTIME_FN void axiom_print_newline(void) {
     putchar('\n');
 }
 
+/* Hata mesajini stderr'e yazar. `main -> Result` koprusu (C ve LLVM arka ucu)
+ * ayni bicimi uretsin diye ortak: "[AXIOM HATA] <mesaj>\n". */
+AXIOM_RUNTIME_FN void axiom_eprint_error(const char* msg) {
+    if (msg) {
+        fprintf(stderr, "[AXIOM HATA] %s\n", msg);
+    }
+}
+
 #define axiom_print_auto(x) _Generic((x), \
     int: axiom_print_int, \
     long: axiom_print_int, \

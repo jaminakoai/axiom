@@ -15,8 +15,10 @@ Kapsam:
   - NFKC/NFKD açık reddi
   - C + LLVM paritesi
 """
+import json
 import os
 import subprocess
+import sys
 import tempfile
 import unicodedata as ucd
 from pathlib import Path
@@ -26,37 +28,16 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 AXIOM = ROOT / "bin" / "axiom"
 
-# Konformans korpusu: (aciklama, metin)
-CORPUS = [
-    ("ascii", "hello"),
-    ("bos", ""),
-    ("nfc-e-acute", "\u00e9"),                      # é
-    ("nfd-e-acute", "e\u0301"),                     # e + combining acute
-    ("nfc-A-ring", "\u00c5"),                       # Å
-    ("nfd-A-ring", "A\u030a"),
-    ("turkish-I-dot", "\u0130"),                    # İ
-    ("turkish-i-dotless", "\u0131"),                # ı
-    ("turkish-word", "\u0130stanbul \u011f\u00fc\u015fi\u00f6\u00e7"),
-    ("greek-tonos", "\u03ac"),                      # ά
-    ("greek-decomp", "\u03b1\u0301"),
-    ("cyrillic", "\u0439"),                         # й
-    ("cyrillic-decomp", "\u0438\u0306"),
-    ("order-dot-below-circumflex", "a\u0323\u0302"),
-    ("order-circumflex-dot-below", "a\u0302\u0323"),
-    ("q-dot-above-dot-below", "q\u0307\u0323"),
-    ("triple-stack", "o\u0308\u0304\u0323"),
-    ("hangul-LV", "\uac00"),                        # 가
-    ("hangul-LVT", "\ud55c"),                       # 한
-    ("hangul-jamo", "\u1100\u1161"),                # L + V
-    ("hangul-jamo-T", "\u1100\u1161\u11a8"),
-    ("hangul-mixed", "\ud55c\uad6d\uc5b4"),
-    ("emoji", "\U0001f600\U0001f44d"),
-    ("math-astral", "\U0001d518"),
-    ("combining-only", "\u0301\u0302"),
-    ("latin-ext", "\u01ea\u0323"),                  # Ǫ + dot below
-    ("vietnamese", "\u1ec7"),                       # ệ
-    ("multi-word", "Cafe\u0301 na\u00efve \u00c5ngstr\u00f6m"),
-]
+# Tablolar hangi UCD surumunden uretildigini **kendisi** bildirir; bu surum
+# yorumlayicinin `unicodedata` surumunden bagimsiz olabilir (ornegin tablo
+# 15.1.0 iken CI Python 3.10'un unicodedata'si 14.0.0'dir). Tek dogruluk
+# kaynagi uretecin sabitidir: `tools/gen_unicode_tables.py`.
+sys.path.insert(0, str(ROOT / "tools"))
+import gen_unicode_tables as ucd_gen  # noqa: E402
+
+PINNED_UCD_VERSION = ucd_gen.PINNED_UCD_VERSION
+
+from unicode_corpus import CORPUS  # noqa: E402
 
 
 def _ax_literal(text: str) -> str:
@@ -113,28 +94,46 @@ def _run(backend: str, tmp_path: Path):
     return parsed
 
 
+GOLDEN = ROOT / "tests" / "data" / "unicode_conformance.json"
+
+
 @pytest.mark.parametrize("backend", ["c", "llvm"])
-def test_conformance_against_python_ucd(backend, tmp_path):
+def test_conformance_against_golden(backend, tmp_path):
+    """Normalizasyon sonuçları sürümden bağımsız altın dosyaya karşı doğrulanır.
+
+    Daha önce bu test çalışan yorumlayıcının `unicodedata`'sına karşı
+    karşılaştırıyordu; tablo 15.1.0 iken Python 3.10 (Unicode 14.0.0) ile
+    koşunca karşılaştırma anlamsız hale geliyordu. Beklenen değerler artık
+    `tests/data/unicode_conformance.json` içinde sabittir.
+    """
+    golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    assert golden["ucd_version"] == PINNED_UCD_VERSION, (
+        "altın dosya sürümü tablo sürümüyle uyuşmuyor; "
+        "python3 tools/gen_unicode_conformance.py ile yeniden üretin")
+
     got = _run(backend, tmp_path)
 
     problems = []
-    for i, (desc, text) in enumerate(CORPUS):
-        exp_nfd = ucd.normalize("NFD", text).encode("utf-8").hex()
-        exp_nfc = ucd.normalize("NFC", text).encode("utf-8").hex()
-
-        if got[f"nfd{i}"] != exp_nfd:
-            problems.append(f"{desc}: NFD {got[f'nfd{i}']} != {exp_nfd}")
-        if got[f"nfc{i}"] != exp_nfc:
-            problems.append(f"{desc}: NFC {got[f'nfc{i}']} != {exp_nfc}")
-
-        exp_is_nfc = (text == ucd.normalize("NFC", text))
-        exp_is_nfd = (text == ucd.normalize("NFD", text))
-        if got[f"isnfc{i}"] != ("true" if exp_is_nfc else "false"):
+    for i, case in enumerate(golden["cases"]):
+        desc = case["desc"]
+        if got[f"nfd{i}"] != case["nfd"]:
+            problems.append(f"{desc}: NFD {got[f'nfd{i}']} != {case['nfd']}")
+        if got[f"nfc{i}"] != case["nfc"]:
+            problems.append(f"{desc}: NFC {got[f'nfc{i}']} != {case['nfc']}")
+        exp_is_nfc = "true" if case["is_nfc"] else "false"
+        exp_is_nfd = "true" if case["is_nfd"] else "false"
+        if got[f"isnfc{i}"] != exp_is_nfc:
             problems.append(f"{desc}: is_nfc {got[f'isnfc{i}']}")
-        if got[f"isnfd{i}"] != ("true" if exp_is_nfd else "false"):
+        if got[f"isnfd{i}"] != exp_is_nfd:
             problems.append(f"{desc}: is_nfd {got[f'isnfd{i}']}")
 
     assert not problems, "UCD uyumsuzlukları:\n  " + "\n  ".join(problems)
+
+
+def test_golden_corpus_matches_test_corpus():
+    """Altın dosya ile test korpüsü aynı metinleri kapsamalı (kayma koruması)."""
+    golden = json.loads(GOLDEN.read_text(encoding="utf-8"))
+    assert [(c["desc"], c["text"]) for c in golden["cases"]] == list(CORPUS)
 
 
 def test_ucd_version_is_reported():
@@ -155,7 +154,11 @@ fn main() -> int {
                              capture_output=True, text=True, timeout=300, env=env)
         assert res.returncode == 0, res.stderr
         run = subprocess.run([str(out)], capture_output=True, text=True, timeout=60)
-    assert run.stdout.strip() == ucd.unidata_version
+    # Tablo surumu sabitlenmis UCD surumudur (yorumlayicidan bagimsiz).
+    assert run.stdout.strip() == PINNED_UCD_VERSION
+    # Tablo basligi da ayni surumu beyan etmeli.
+    header = (ROOT / "axiom" / "unicode_tables.h").read_text(encoding="utf-8")
+    assert f'#define AXIOM_UCD_VERSION "{PINNED_UCD_VERSION}"' in header
 
 
 @pytest.mark.parametrize("backend", ["c", "llvm"])
@@ -283,7 +286,7 @@ def test_tables_are_generated_not_handwritten():
     header = (ROOT / "axiom" / "unicode_tables.h").read_text(encoding="utf-8")
     assert "OTOMATİK ÜRETİLDİ" in header
     assert "tools/gen_unicode_tables.py" in header
-    assert f'AXIOM_UCD_VERSION "{ucd.unidata_version}"' in header
+    assert f'AXIOM_UCD_VERSION "{PINNED_UCD_VERSION}"' in header
     assert "AXIOM_UCD_DECOMP_COUNT" in header
     assert "AXIOM_UCD_COMP_COUNT" in header
 

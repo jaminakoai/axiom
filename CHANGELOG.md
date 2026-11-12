@@ -24,6 +24,30 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - **Wine prefix sızıntısı:** oturum başına tek prefix + `conftest.pytest_sessionfinish`
   ile silme (hook test modülündeydi, pytest yok sayıyordu) + bayat prefix temizliği.
 
+### Düzeltilen (12 Kasım — CI kök nedenleri)
+- **LLVM `main() -> Result` köprüsü (gerçek ürün hatası):** köprü
+  `call void @ax_main()` üretiyordu; `@ax_main` struct döndürüyor. clang 14
+  derleme hatası veriyor, clang 21 kabul edip **Err'i sessizce düşürüyordu**
+  (hata durumunda `exit 0`). Köprü artık `Result`'ı değer olarak çağırır,
+  `is_ok` alanını okur, Err'de `error` alanını stderr'e yazar ve 1 döndürür.
+  C arka ucuyla birebir aynı davranış.
+  Regresyon: `tests/test_llvm_main_bridge.py` (6 test); düzeltme geri alınınca
+  3 test kırmızı oluyor (kanıtlandı).
+- **`axiom/runtime.h`:** `axiom_eprint_error()` eklendi (stderr + `[AXIOM HATA]`).
+- **CI sırası:** `make bootstrap` artık `test` ve `sanitizers` işlerinde
+  pytest'ten **önce** çalışıyor. `bin/axiomc` depoda tutulmadığı için 13 test
+  dosyayı bulamıyordu.
+- **Unicode testleri sürümden bağımsızlaştırıldı:** tablo sürümü
+  `tools/gen_unicode_tables.py` içinde **sabitlendi** (`PINNED_UCD_VERSION =
+  "15.1.0"`); yorumlayıcı uyuşmazsa üretici durur (sessiz farklı UCD yasak).
+  Beklenen NFC/NFD değerleri `tests/data/unicode_conformance.json` altın
+  dosyasına taşındı; korpüs `tools/unicode_corpus.py`'de tek kaynak.
+  Python 3.10/3.11 (Unicode 14.0.0) artık testi düşürmüyor.
+- **DWARF testleri:** `readelf` çıkış koduna değil aranan içeriğe bakıyor;
+  yalnızca bilinen araç-zinciri uyarıları (yeni clang + eski binutils)
+  tolere edilir, başka hata hâlâ testi düşürür.
+- **CI `fmt` işi:** `pip install -e ".[dev]"` eklendi (`import z3` eksikti).
+
 ### Düzeltilen (12 Kasım — yayın öncesi inceleme: rozet/iddia/numaralandırma)
 - **Rozetler:** sahte "CI — GitHub Actions success" ve "1022 Passed" rozetleri
   kaldırıldı. CI rozeti **gerçek workflow'a** bağlandı

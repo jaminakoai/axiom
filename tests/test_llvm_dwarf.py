@@ -19,6 +19,36 @@ def _run_cli(args, timeout=60):
         timeout=timeout,
     )
 
+# readelf, bizim DWARF'imizden değil, **kendi sürümünden** kaynaklanan uyarılar
+# verebilir: yeni clang (DWARF5 formları) + eski binutils (örn. Ubuntu 22.04
+# binutils 2.38) kombinasyonunda readelf "Unrecognized form: 0x22" der ve
+# çıkış kodu 1 olur; buna rağmen bölümü büyük ölçüde ayrıştırır.
+#
+# Test bu yüzden çıkış koduna değil, **aranan içeriğin bulunmasına** bakar.
+# Yalnızca bilinen araç-zinciri uyarıları tolere edilir; başka bir hata
+# (bozuk bölüm, ayrıştırılamayan veri) hâlâ testi düşürür.
+_TOOLCHAIN_WARNING_MARKERS = (
+    "Unrecognized form",
+    "Offset into section .debug_addr too big",
+    "DW_FORM_GNU_str_index offset too big",
+    "refers to abbreviation number",
+    "Unrecognized DWARF version",
+)
+
+
+def _readelf_dump(section: str, binary: str):
+    """readelf çıktısını döndürür; yalnızca bilinen araç uyarılarını tolere eder."""
+    res = subprocess.run(["readelf", f"--debug-dump={section}", binary],
+                         capture_output=True, text=True, timeout=120)
+    if res.returncode != 0:
+        unknown = [ln for ln in res.stderr.splitlines()
+                   if ln.strip()
+                   and not any(m in ln for m in _TOOLCHAIN_WARNING_MARKERS)]
+        assert not unknown, (
+            f"readelf --debug-dump={section} beklenmeyen hatayla düştü "
+            f"(kod {res.returncode}):\n" + "\n".join(unknown))
+    return res.stdout
+
 
 def _write(src: str, ext: str = ".ax") -> str:
     f = tempfile.NamedTemporaryFile("w", suffix=ext, delete=False)
@@ -90,17 +120,13 @@ def test_llvm_binary_contains_dwarf_line_info():
         assert "Sonuc: 92" in run_res.stdout
 
         # readelf ile .debug_line tablosunu kontrol et
-        readelf_res = subprocess.run(["readelf", "--debug-dump=line", out_bin], capture_output=True, text=True)
-        assert readelf_res.returncode == 0, readelf_res.stderr
+        dump_output = _readelf_dump("line", out_bin)
 
-        dump_output = readelf_res.stdout
         assert base_name in dump_output, f"readelf .debug_line çıktısında '{base_name}' kaynak dosyası bulunamadı!\n{dump_output}"
         assert "The File Name Table" in dump_output or "Line Number Statements" in dump_output
 
         # readelf ile .debug_info tablosunda fonksiyon sembollerini de kontrol et
-        info_res = subprocess.run(["readelf", "--debug-dump=info", out_bin], capture_output=True, text=True)
-        assert info_res.returncode == 0, info_res.stderr
-        info_output = info_res.stdout
+        info_output = _readelf_dump("info", out_bin)
         assert "calculate" in info_output or "ax_calculate" in info_output, f"readelf .debug_info çıktısında fonksiyon sembolü bulunamadı!\n{info_output}"
     finally:
         if os.path.exists(path):
@@ -135,10 +161,9 @@ def test_llvm_dwarf_emits_local_variables():
         build = _run_cli([str(AXIOM_BIN), "build", "-g", "--backend=llvm", path, "-o", out_bin])
         assert build.returncode == 0, build.stdout + build.stderr
         try:
-            info = subprocess.run(["readelf", "--debug-dump=info", out_bin], capture_output=True, text=True)
-            assert info.returncode == 0
-            assert "DW_TAG_variable" in info.stdout
-            assert "product" in info.stdout or "result" in info.stdout
+            info_output = _readelf_dump("info", out_bin)
+            assert "DW_TAG_variable" in info_output
+            assert "product" in info_output or "result" in info_output
         finally:
             if os.path.exists(out_bin):
                 os.remove(out_bin)

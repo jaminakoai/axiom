@@ -481,6 +481,7 @@ class LLVMCodeGenerator:
             'declare i1 @axiom_csv_save_file(i64, i8*)',
             'declare void @axiom_csv_free(i64)',
             'declare void @axiom_cli_init_args(i32, i8**)',
+            'declare void @axiom_eprint_error(i8*)',
             'declare void @axiom_cli_set_args_ptr(%struct.ax_array*)',
             'declare i64 @axiom_cli_args_count()',
             'declare i8* @axiom_cli_args_get(i64)',
@@ -756,6 +757,54 @@ class LLVMCodeGenerator:
         self.code = saved_code
         return fn_code
 
+    def _struct_main_bridge_is_result(self, ret_t: str):
+        """Struct donduren `main` bir Result mi? (is_ok/error alanlari var mi?)"""
+        base = ret_t.replace('%struct.', '')
+        if base.startswith('ax_'):
+            base = base[3:]
+        decl = self.struct_defs.get(base)
+        if decl is None:
+            return None
+        names = [f.name for f in decl.fields]
+        if 'is_ok' in names and 'error' in names:
+            return (names.index('is_ok'), names.index('error'))
+        return None
+
+    def _emit_struct_main_bridge(self, ret_t: str):
+        """`main() -> Result<..>` icin giris koprusu.
+
+        Sozlesme (C arka ucuyla birebir):
+          Ok  -> exit 0
+          Err -> hata mesaji stderr'e, exit 1
+        """
+        idx = self._struct_main_bridge_is_result(ret_t)
+        if idx is None:
+            # Result olmayan struct main: degeri yok say, basari say.
+            tmp = self.new_reg("mainrc")
+            self.emit_instr(f"{tmp} = call {ret_t} @ax_main()")
+            self.emit_instr("ret i32 0")
+            return
+
+        ok_i, err_i = idx
+        rc = self.new_reg("mainrc")
+        self.emit_instr(f"{rc} = call {ret_t} @ax_main()")
+        ok_v = self.new_reg("mainok")
+        self.emit_instr(f"{ok_v} = extractvalue {ret_t} {rc}, {ok_i}")
+        ok_lbl = self.new_label("main_ok")
+        err_lbl = self.new_label("main_err")
+        self.emit_instr(f"br i1 {ok_v}, label %{ok_lbl}, label %{err_lbl}")
+
+        self.emit(f"{err_lbl}:")
+        self.block_terminated = False
+        err_v = self.new_reg("mainerr")
+        self.emit_instr(f"{err_v} = extractvalue {ret_t} {rc}, {err_i}")
+        self.emit_instr(f"call void @axiom_eprint_error(i8* {err_v})")
+        self.emit_instr("ret i32 1")
+
+        self.emit(f"{ok_lbl}:")
+        self.block_terminated = False
+        self.emit_instr("ret i32 0")
+
     def generate_main_entry(self, has_user_main: bool, top_stmts: List[Stmt]) -> str:
         saved_code = self.code
         self.code = []
@@ -785,6 +834,12 @@ class LLVMCodeGenerator:
                 trunc_val = self.new_reg("trunc")
                 self.emit_instr(f"{trunc_val} = trunc i64 {ret_val} to i32")
                 self.emit_instr(f"ret i32 {trunc_val}")
+            elif user_main_ret.startswith('%struct.'):
+                # `main() -> Result<int, str>`: C arka ucuyla ayni sozlesme.
+                # Onceki kod `call void @ax_main()` uretiyordu; tip uyusmazligi
+                # clang 14'te derleme hatasi, clang 21'te SESSIZ yanlis sonuc
+                # (Err dusurulur, exit 0) veriyordu. Bkz. P1-03c raporu §9.
+                self._emit_struct_main_bridge(user_main_ret)
             else:
                 self.emit_instr("call void @ax_main()")
                 self.emit_instr("ret i32 0")

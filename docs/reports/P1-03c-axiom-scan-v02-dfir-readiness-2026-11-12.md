@@ -246,3 +246,87 @@ $ python3 -m pytest -q --no-header -p no:cacheprovider
 
 CI (gerçek, son iki koşu): `20 failed / 919 passed / 83 skipped`
 (run 43212627639, 43219236120).
+
+---
+
+## 10. CI kök nedenlerinin giderilmesi (aynı gün, devam)
+
+4 kök nedenin hepsi düzeltildi; her biri için test kanıtı var.
+
+### 10.1 LLVM `main() -> Result` köprüsü — **gerçek ürün hatası**
+
+**Belirti (CI):** `'@ax_main' defined with type '%struct.ax_Result_int_str ()*'
+but expected 'void ()*'`.
+
+**Gerçek etki (yerelde ölçüldü):** clang 21 bu IR'yi kabul ediyor ve **Err
+bilgisini sessizce düşürüyor**:
+
+```
+$ ./mt.bin            # main -> Result, fail(7)? ile hata
+calisiyor
+exit=0                # <-- hata yutuldu (yanlış)
+```
+
+C arka ucu aynı programda `[AXIOM HATA] patladi: 7` + `exit 1` veriyor.
+
+**Düzeltme:** `axiom/codegen_llvm.py`:
+- `_struct_main_bridge_is_result()` — struct tipinde `is_ok`/`error` alanı var mı?
+- `_emit_struct_main_bridge()` — `call %struct... @ax_main()`, `extractvalue`
+  ile `is_ok`, Err'de `extractvalue` ile `error` → `axiom_eprint_error` → `ret 1`.
+- `axiom/runtime.h` — yeni `axiom_eprint_error()` (stderr + `[AXIOM HATA]`
+  öneki), C köprüsüyle aynı biçim.
+
+**Doğrulama (gerçek çıktı):**
+
+```
+$ ./mt.bin ; echo exit=$?        # LLVM
+[AXIOM HATA] patladi: 7
+calisiyor
+exit=1
+$ ./mt.c.bin ; echo exit=$?      # C
+[AXIOM HATA] patladi: 7
+calisiyor
+exit=1
+```
+
+**Regresyon testi:** `tests/test_llvm_main_bridge.py` (6 test). Düzeltme geçici
+kaldırıldığında **3 test kırmızı** oluyor ve LLVM `exit 0` veriyor (kanıtlandı).
+
+### 10.2 `bin/axiomc` sırası (13 test)
+
+CI, `pytest`'i `make bootstrap`'tan önce koşuyordu; ikili depoda tutulmadığı
+için `test_self_hosted.py` + `test_negative_security.py` dosyayı bulamıyordu.
+
+**Düzeltme:** `.github/workflows/ci.yml` — `test` ve `sanitizers` işlerinde
+bootstrap artık testlerden **önce**.
+
+### 10.3 Unicode sürüm testi (2 test)
+
+Test, tablo sürümünü **çalışan yorumlayıcının** `unicodedata` sürümüyle
+karşılaştırıyordu. Tablo 15.1.0, CI Python 3.10/3.11 ise Unicode 14.0.0.
+
+**Düzeltme (skip değil, sürümden bağımsızlaştırma):**
+- `tools/gen_unicode_tables.py`: `PINNED_UCD_VERSION = "15.1.0"`. Yorumlayıcı
+  sürümü uyuşmazsa üretici **durur** (`ALLOW_UCD_MISMATCH=1` bilinçli kaçış).
+  Böylece tablo farklı UCD'den sessizce üretilemez.
+- `tools/unicode_corpus.py`: korpüs tek kaynak (test + üretici paylaşır).
+- `tools/gen_unicode_conformance.py` + `tests/data/unicode_conformance.json`:
+  beklenen NFC/NFD değerleri **altın dosyada** sabit.
+- Testler artık altın dosyaya ve sabitlenmiş sürüme bakar; yorumlayıcı
+  sürümünden bağımsız. Ayrıca `test_golden_corpus_matches_test_corpus` kayma
+  koruması ekler.
+
+### 10.4 `readelf` uyarıları (2 test)
+
+Yeni clang (DWARF5 formları) + eski binutils (Ubuntu 22.04, 2.38) readelf'i
+uyarıyor ve `exit 1` dönüyordu.
+
+**Düzeltme:** test artık çıkış koduna değil **aranan içeriğe** bakıyor
+(`_readelf_dump`). Yalnızca bilinen araç-zinciri uyarıları tolere edilir
+(`Unrecognized form`, `.debug_addr too big`, `abbreviation number`, ...);
+başka bir hata hâlâ testi düşürür. Yani gevşetme değil, doğru sözleşme.
+
+### 10.5 Biçimlendirme işi
+
+`fmt` işi `z3` kurmuyordu; `bin/axiom` → `cli.py` → `import z3` düşüyordu.
+`pip install -e ".[dev]"` eklendi.

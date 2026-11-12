@@ -42,14 +42,16 @@ jobs:
           python -c "import z3; print('z3', z3.get_version_string())"
           ./bin/axiom --version
 
+      # `bin/axiomc` depoda tutulmaz; self-hosted/negatif-guvenlik testleri onu
+      # bekledigi icin bootstrap testlerden ONCE calismali. (P1-03c §9, kok neden 1)
+      - name: Bootstrap (self-hosted derleyici)
+        run: make bootstrap
+
       - name: Test paketi
         run: python -m pytest -q --no-header
 
       - name: Dokümantasyon kod blokları
         run: python -m pytest -q tests/test_tutorial_examples.py tests/test_specification.py tests/test_docs_en.py tests/test_docgen.py
-
-      - name: Bootstrap (self-hosted derleyici)
-        run: make bootstrap
 
   sanitizers:
     name: ASan/UBSan + bellek sızıntısı
@@ -65,6 +67,9 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq clang libssl-dev zlib1g-dev
           python -m pip install -e ".[dev]"
+      - name: Bootstrap (self-hosted derleyici)
+        run: make bootstrap
+
       - name: Bellek güvenliği testleri
         run: |
           python -m pytest -q tests/test_memory_leak_deep.py \
@@ -108,5 +113,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+      # `bin/axiom` -> axiom/cli.py -> z3 import eder; z3 kurulmadan fmt-check duser.
+      - name: Python bağımlılıkları
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
       - name: fmt --check
         run: make fmt-check

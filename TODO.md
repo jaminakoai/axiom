@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-12 |
 | Aşama | **Faz 1 — Güvenlik araçları odaklı olgunlaşma** |
 | Test (yerel) | 1022 geçiyor / 1022 (12 Kasım 2026, `pytest -q`) |
-| CI (GitHub Actions) | **kırmızı** — 20 başarısız / 919 geçti / 83 atlandı (kök nedenler: `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` §9) |
+| CI (GitHub Actions) | 4 kök neden giderildi; **doğrulama koşusu bekleniyor** (ayrıntı: `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` §9–§10) |
 
 ---
 
@@ -273,6 +273,21 @@ tek statik binary, sıfır runtime bağımlılığı, ölçülebilir hız.
   **her zaman 0'a** eşliyordu (bilinçli, testli davranış). Dil semantiği
   değiştirilmedi; araç `main -> int` + `_dispatch() -> Result` desenine geçti.
 - **Rapor:** `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md`
+
+#### P1-03d — CI kök nedenleri ve LLVM `main()` köprüsü `[x]`
+- **Bulunan gerçek hata:** LLVM'de `main() -> Result<int,str>` köprüsü
+  `call void @ax_main()` üretiyordu. clang 14 sert hata, clang 21 **sessiz
+  yanlış sonuç** (Err düşürülür, exit 0). C arka ucunda doğruydu → parite ihlali.
+- **Kabul:** ✅ tümü doğrulandı
+  - [x] LLVM köprüsü `Result`'ı değer olarak çağırır; `is_ok`/`error` okunur
+  - [x] Err → `[AXIOM HATA] <mesaj>` stderr + exit 1 (C ile birebir)
+  - [x] `tests/test_llvm_main_bridge.py` — 6 test; düzeltme geri alınınca
+        3 test kırmızı (kanıtlandı, LLVM `exit 0` veriyor)
+  - [x] CI: `make bootstrap` testlerden önce (13 test)
+  - [x] Unicode: sürüm sabitlendi + altın dosya (2 test, sürümden bağımsız)
+  - [x] DWARF: `readelf` içerik sözleşmesi (2 test)
+  - [x] CI `fmt` işine `z3` bağımlılığı eklendi
+- **Rapor:** aynı dosya, §10
 
 #### P1-03b — LLVM'de `axiom-scan` yanlış sonucu `[x]`
 - **Belirti:** LLVM ile derlenen tarayıcı kural adlarını `strings:` gibi üretiyordu.

@@ -11,9 +11,21 @@ Hangul (U+AC00..U+D7A3) tabloya yazılmaz; algoritmik olarak işlenir
 
 Kullanım:
     python3 tools/gen_unicode_tables.py > axiom/unicode_tables.h
+
+SÜRÜM SABİTLEMESİ
+------------------
+Tablo sürümü Python yorumlayıcısının `unicodedata` sürümüne bağlıdır. Farklı
+Python sürümleri farklı UCD sürümü getirdiği için (3.10/3.11 = 14.0.0,
+3.12/3.13 = 15.1.0) "hangi makinede üretildi" tabloyu sessizce değiştirirdi.
+Bu yüzden sürüm burada **sabitlenmiştir**; uyuşmazlıkta üretici durur.
+Bilinçli olarak farklı sürüm üretmek için: `ALLOW_UCD_MISMATCH=1`.
 """
+import os
 import sys
 import unicodedata as u
+
+# Tek doğruluk kaynağı: tablo sürümü. Testler de bunu okur.
+PINNED_UCD_VERSION = "15.1.0"
 
 S_BASE, L_BASE, V_BASE, T_BASE = 0xAC00, 0x1100, 0x1161, 0x11A7
 L_COUNT, V_COUNT, T_COUNT = 19, 21, 28
@@ -25,7 +37,26 @@ def is_hangul_syllable(cp: int) -> bool:
     return S_BASE <= cp < S_BASE + S_COUNT
 
 
+def check_ucd_version() -> None:
+    """Yorumlayıcının UCD sürümü sabitlenen sürümle aynı mı?"""
+    actual = u.unidata_version
+    if actual == PINNED_UCD_VERSION:
+        return
+    msg = (
+        "HATA: unicodedata sürümü uyuşmuyor.\n"
+        f"  sabitlenen : {PINNED_UCD_VERSION}\n"
+        f"  yorumlayıcı: {actual} (Python {sys.version.split()[0]})\n"
+        "Tablo sessizce farklı UCD sürümünden üretilmesin diye durduruldu.\n"
+        "Bilinçli farklı sürüm için ALLOW_UCD_MISMATCH=1 verin."
+    )
+    if os.environ.get("ALLOW_UCD_MISMATCH") == "1":
+        print("UYARI: " + msg.replace("\n", " | "), file=sys.stderr)
+        return
+    raise SystemExit(msg)
+
+
 def main() -> None:
+    check_ucd_version()
     decomp = []   # (cp, a, b) — b == 0 ise tek parça
     ccc = []      # (cp, class)
     comp = []     # (a, b, cp)

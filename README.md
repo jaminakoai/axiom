@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1022-blue.svg)](#son-doğrulanmış-koşu)
+[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1029-blue.svg)](#son-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -556,44 +556,33 @@ Test altyapısı notları:
 |---|---|
 | Tarih | 12 Kasım 2026 |
 | Komut | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Sonuç | **1022 geçti, 0 başarısız, 0 atlandı** (921,59 s) |
+| Sonuç | **1029 geçti, 0 başarısız, 0 atlandı** (947,48 s) |
 | Ortam | Linux x86_64, clang 21.1.8, wine kurulu, `bin/axiomc` yerelde derlenmiş |
 
-Buradaki **1022**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
+Buradaki **1029**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
 mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
 atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
 (aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
 
 ### CI durumu (dürüst)
 
-**GitHub Actions şu anda kırmızı.** Rozet gerçek workflow'a bağlıdır, bu yüzden
-"success" göstermez. Son iki koşu (`43212627639`, `43219236120`) sonucu:
+**GitHub Actions, son gözlenen koşuda kırmızıydı** (`43212627639`,
+`43219236120`): 20 başarısız / 919 geçti / 83 atlandı. Rozet gerçek workflow'a
+bağlıdır ve durumu olduğu gibi gösterir.
 
-| | |
-|---|---|
-| Test işi (Python 3.11) | **20 başarısız, 919 geçti, 83 atlandı** |
-| Biçimlendirme işi | `ModuleNotFoundError: No module named 'z3'` |
-| ASan/UBSan işi | başarısız (ayrıntı: run logu) |
-| LLVM + DWARF işi | başarısız (ayrıntı: run logu) |
+Dört kök neden 12 Kasım'da giderildi (ayrıntı: rapor §10):
 
-Kök nedenler (CI loglarından):
+| # | Kök neden | Düzeltme |
+|---|---|---|
+| 1 | `bin/axiomc` testlerden **sonra** derleniyordu (13 test) | CI'da `make bootstrap` artık pytest'ten önce |
+| 2 | **LLVM `main() -> Result` köprüsü** `call void @ax_main()` üretiyordu (2 test) | Köprü `Result`'ı değer olarak çağırır; Err → stderr + exit 1. **Gerçek ürün hatasıydı:** clang 21 Err'i sessizce düşürüp `exit 0` veriyordu |
+| 3 | Unicode testi yorumlayıcı sürümüne bağlıydı (2 test) | Tablo sürümü `PINNED_UCD_VERSION` ile sabit; beklenen değerler altın dosyada |
+| 4 | `readelf` uyarıları `exit 1` döndürüyordu (2 test) | Test içeriğe bakar; yalnızca bilinen araç-zinciri uyarıları tolere edilir |
 
-1. **`bin/axiomc` yok (13 test):** CI, `pytest`'i `make bootstrap`'tan **önce**
-   çalıştırıyor; ikili depoda tutulmadığı için `test_self_hosted.py` ve
-   `negative_security` testleri dosyayı bulamıyor.
-2. **LLVM `main()` köprüsü (gerçek ürün hatası, 2 test):** `main() -> Result`
-   için `call void @ax_main()` üretiliyor ama `@ax_main` struct döndürüyor.
-   clang 21 bunu kabul ediyor (sessizce Err'ü düşürüyor), clang 14 reddediyor.
-   Yerelde de aynı IR üretiliyor — yani hata ortamda değil, kod üretiminde.
-3. **Unicode testi (2 test):** test, tablo sürümünü ortamdaki
-   `unicodedata.unidata_version` ile karşılaştırıyor; Python 3.10–3.12
-   (Unicode 14.0.0) ile üretilen tablo (15.1.0) uyuşmuyor.
-4. **`readelf` uyarıları (2 test):** yeni binutils, uyarıda `exit 1` döndürüyor;
-   test `returncode == 0` bekliyor.
-
-Bunlar düzeltilene kadar CI rozeti kırmızı kalır. Yerel koşu yeşildir ama bu,
-CI'nın yeşil olduğu anlamına gelmez. Sandbox ortamındaki ayrı koşu
-(`951 geçti, 57 başarısız, 2 hata`) ve sınıflandırması:
+Ek olarak `fmt` işine eksik `z3` bağımlılığı eklendi. **Yeni CI koşusu
+bekleniyor**; rozet yeşile dönene kadar "CI yeşil" denmez. Yerel koşu
+(1029/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
+(`951 geçti, 57 başarısız, 2 hata`):
 [docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 
 ---
@@ -622,9 +611,9 @@ CI'nın yeşil olduğu anlamına gelmez. Sandbox ortamındaki ayrı koşu
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **GitHub Actions kırmızı:** son koşuda 20 test başarısız (4 kök neden:
-  `bin/axiomc` sırası, LLVM `main()` köprüsü, Unicode sürüm testi, `readelf`
-  uyarıları). Yerel koşu yeşil; ayrıntı "CI durumu" bölümünde.
+- **CI doğrulaması bekleniyor:** son gözlenen CI koşusu kırmızıydı (20 test);
+  4 kök neden giderildi (LLVM `main()` köprüsü gerçek ürün hatasıydı). Yerel
+  koşu yeşil, yeni CI koşusunun sonucu bekleniyor; ayrıntı "CI durumu" bölümünde.
 - **Windows:** çapraz derleme + `wine` ile çalıştırma doğrulandı; gerçek Windows
   makinede CI koşusu yok.
 - **macOS:** runner/doğrulama yok.

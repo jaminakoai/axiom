@@ -1,0 +1,230 @@
+{
+ "ucd_version": "15.1.0",
+ "generator": "tools/gen_unicode_conformance.py",
+ "cases": [
+  {
+   "desc": "ascii",
+   "text": "hello",
+   "nfd": "68656c6c6f",
+   "nfc": "68656c6c6f",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "bos",
+   "text": "",
+   "nfd": "",
+   "nfc": "",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "nfc-e-acute",
+   "text": "é",
+   "nfd": "65cc81",
+   "nfc": "c3a9",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "nfd-e-acute",
+   "text": "é",
+   "nfd": "65cc81",
+   "nfc": "c3a9",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "nfc-A-ring",
+   "text": "Å",
+   "nfd": "41cc8a",
+   "nfc": "c385",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "nfd-A-ring",
+   "text": "Å",
+   "nfd": "41cc8a",
+   "nfc": "c385",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "turkish-I-dot",
+   "text": "İ",
+   "nfd": "49cc87",
+   "nfc": "c4b0",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "turkish-i-dotless",
+   "text": "ı",
+   "nfd": "c4b1",
+   "nfc": "c4b1",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "turkish-word",
+   "text": "İstanbul ğüşiöç",
+   "nfd": "49cc877374616e62756c2067cc8675cc8873cca7696fcc8863cca7",
+   "nfc": "c4b07374616e62756c20c49fc3bcc59f69c3b6c3a7",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "greek-tonos",
+   "text": "ά",
+   "nfd": "ceb1cc81",
+   "nfc": "ceac",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "greek-decomp",
+   "text": "ά",
+   "nfd": "ceb1cc81",
+   "nfc": "ceac",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "cyrillic",
+   "text": "й",
+   "nfd": "d0b8cc86",
+   "nfc": "d0b9",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "cyrillic-decomp",
+   "text": "й",
+   "nfd": "d0b8cc86",
+   "nfc": "d0b9",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "order-dot-below-circumflex",
+   "text": "ậ",
+   "nfd": "61cca3cc82",
+   "nfc": "e1baad",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "order-circumflex-dot-below",
+   "text": "ậ",
+   "nfd": "61cca3cc82",
+   "nfc": "e1baad",
+   "is_nfc": false,
+   "is_nfd": false
+  },
+  {
+   "desc": "q-dot-above-dot-below",
+   "text": "q̣̇",
+   "nfd": "71cca3cc87",
+   "nfc": "71cca3cc87",
+   "is_nfc": false,
+   "is_nfd": false
+  },
+  {
+   "desc": "triple-stack",
+   "text": "ọ̈̄",
+   "nfd": "6fcca3cc88cc84",
+   "nfc": "e1bb8dcc88cc84",
+   "is_nfc": false,
+   "is_nfd": false
+  },
+  {
+   "desc": "hangul-LV",
+   "text": "가",
+   "nfd": "e18480e185a1",
+   "nfc": "eab080",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "hangul-LVT",
+   "text": "한",
+   "nfd": "e18492e185a1e186ab",
+   "nfc": "ed959c",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "hangul-jamo",
+   "text": "가",
+   "nfd": "e18480e185a1",
+   "nfc": "eab080",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "hangul-jamo-T",
+   "text": "각",
+   "nfd": "e18480e185a1e186a8",
+   "nfc": "eab081",
+   "is_nfc": false,
+   "is_nfd": true
+  },
+  {
+   "desc": "hangul-mixed",
+   "text": "한국어",
+   "nfd": "e18492e185a1e186abe18480e185aee186a8e1848be185a5",
+   "nfc": "ed959ceab5adec96b4",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "emoji",
+   "text": "😀👍",
+   "nfd": "f09f9880f09f918d",
+   "nfc": "f09f9880f09f918d",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "math-astral",
+   "text": "𝔘",
+   "nfd": "f09d9498",
+   "nfc": "f09d9498",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "combining-only",
+   "text": "́̂",
+   "nfd": "cc81cc82",
+   "nfc": "cc81cc82",
+   "is_nfc": true,
+   "is_nfd": true
+  },
+  {
+   "desc": "latin-ext",
+   "text": "Ǫ̣",
+   "nfd": "4fcca8cca3",
+   "nfc": "c7aacca3",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "vietnamese",
+   "text": "ệ",
+   "nfd": "65cca3cc82",
+   "nfc": "e1bb87",
+   "is_nfc": true,
+   "is_nfd": false
+  },
+  {
+   "desc": "multi-word",
+   "text": "Café naïve Ångström",
+   "nfd": "43616665cc81206e6169cc8876652041cc8a6e677374726fcc886d",
+   "nfc": "436166c3a9206e61c3af766520c3856e67737472c3b66d",
+   "is_nfc": false,
+   "is_nfd": false
+  }
+ ]
+}

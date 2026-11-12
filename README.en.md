@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1022-blue.svg)](#last-verified-run)
+[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1029-blue.svg)](#last-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -562,44 +562,33 @@ Test-infrastructure notes:
 |---|---|
 | Date | 12 November 2026 |
 | Command | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Result | **1022 passed, 0 failed, 0 skipped** (921.59 s) |
+| Result | **1029 passed, 0 failed, 0 skipped** (947.48 s) |
 | Environment | Linux x86_64, clang 21.1.8, wine installed, `bin/axiomc` built locally |
 
-**1022** is the total number of collected tests. Because wine, clang and z3 are
+**1029** is the total number of collected tests. Because wine, clang and z3 are
 present locally, the wine/Windows tests really run and nothing is skipped. The
 same suite in an environment missing those components starts **skipping**
 (see below) — same count, different outcome.
 
 ### CI status (honest)
 
-**GitHub Actions is currently red.** The badge is wired to the real workflow, so
-it does not show "success". Last two runs (`43212627639`, `43219236120`):
+**GitHub Actions was red in the last observed runs** (`43212627639`,
+`43219236120`): 20 failed / 919 passed / 83 skipped. The badge is wired to the
+real workflow and reports exactly that.
 
-| | |
-|---|---|
-| Test job (Python 3.11) | **20 failed, 919 passed, 83 skipped** |
-| Formatting job | `ModuleNotFoundError: No module named 'z3'` |
-| ASan/UBSan job | failed (details in the run log) |
-| LLVM + DWARF job | failed (details in the run log) |
+Four root causes were fixed on 12 November (details: report §10):
 
-Root causes (from CI logs):
+| # | Root cause | Fix |
+|---|---|---|
+| 1 | `bin/axiomc` was built **after** the tests (13 tests) | CI now runs `make bootstrap` before pytest |
+| 2 | **LLVM `main() -> Result` bridge** emitted `call void @ax_main()` (2 tests) | Bridge calls `Result` by value; Err → stderr + exit 1. **Real product bug:** clang 21 silently dropped the Err and returned `exit 0` |
+| 3 | Unicode test depended on the interpreter version (2 tests) | Table version pinned via `PINNED_UCD_VERSION`; expected values in a golden file |
+| 4 | `readelf` warnings returned `exit 1` (2 tests) | Test asserts on content; only known toolchain warnings are tolerated |
 
-1. **`bin/axiomc` missing (13 tests):** CI runs `pytest` **before**
-   `make bootstrap`; the binary is not committed, so `test_self_hosted.py` and
-   `negative_security` cannot find it.
-2. **LLVM `main()` bridge (real product bug, 2 tests):** for `main() -> Result`
-   the codegen emits `call void @ax_main()` while `@ax_main` returns a struct.
-   clang 21 accepts it (silently dropping the Err), clang 14 rejects it. The same
-   IR is produced locally — the fault is in codegen, not the environment.
-3. **Unicode test (2 tests):** the test compares the table version with the
-   environment's `unicodedata.unidata_version`; Python 3.10–3.12 (Unicode
-   14.0.0) does not match the generated table (15.1.0).
-4. **`readelf` warnings (2 tests):** newer binutils exits 1 on warnings; the
-   test expects `returncode == 0`.
-
-Until these are fixed the CI badge stays red. The local run is green, but that
-does not mean CI is green. A separate run in the sandbox
-(`951 passed, 57 failed, 2 errors`) and its triage:
+The `fmt` job also gained its missing `z3` dependency. **A new CI run is
+pending**; CI is not called green until the badge turns green. The local run
+(1029/0/0) does not substitute for it. A separate sandbox run
+(`951 passed, 57 failed, 2 errors`):
 [docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 
 ---
@@ -629,9 +618,9 @@ does not mean CI is green. A separate run in the sandbox
 
 ### 🟡 In progress / partial
 
-- **GitHub Actions red:** the last run had 20 failing tests (4 root causes:
-  `bin/axiomc` ordering, LLVM `main()` bridge, Unicode version test, `readelf`
-  warnings). Local run is green; details in "CI status" above.
+- **CI verification pending:** the last observed CI run was red (20 tests);
+  4 root causes were fixed (the LLVM `main()` bridge was a real product bug).
+  Local run is green; the new CI run is pending. Details in "CI status" above.
 - **Windows:** cross-compilation + execution under `wine` verified; no CI run on
   a real Windows machine.
 - **macOS:** no runner/verification.
