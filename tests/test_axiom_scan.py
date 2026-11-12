@@ -72,7 +72,6 @@ def test_rules_command_counts(scanner, tmp_path):
 
 
 @pytest.mark.parametrize("condition", [
-    "$a and not $b",
     "$a at 0",
     "#a == 2",
     "filesize < 10",
@@ -89,6 +88,72 @@ def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanne
     data = json.loads(res.stdout)
     assert data["ok"] is False
     assert "condition" in data["error"]
+
+
+@pytest.mark.parametrize(("condition", "target", "expected"), [
+    ("$a and not $b", b"alpha", True),
+    ("$a and not $b", b"alpha beta", False),
+    ("$a or $b and $c", b"alpha", True),
+    ("($a or $b) and $c", b"alpha", False),
+    ("not ($a or $b)", b"gamma", True),
+    ("not ($a or $b)", b"alpha", False),
+])
+def test_boolean_condition_subset(scanner, tmp_path, condition, target, expected):
+    rules = tmp_path / "boolean.yar"
+    rules.write_text(
+        'rule BooleanRule {\n strings:\n  $a = "alpha"\n  $b = "beta"\n'
+        '  $c = "gamma"\n condition:\n  ' + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == int(expected)
+
+
+@pytest.mark.parametrize("condition", ["$missing", "$a and", "($a or $b", "$a $b"])
+def test_invalid_boolean_conditions_are_rejected(scanner, tmp_path, condition):
+    rules = tmp_path / "invalid-condition.yar"
+    rules.write_text(
+        'rule Invalid {\n strings:\n  $a = "alpha"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    data = json.loads(res.stdout)
+    assert data["ok"] is False
+    assert "condition" in data["error"]
+
+
+def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path):
+    rules = tmp_path / "boolean-parity.yar"
+    rules.write_text(
+        'rule BooleanRule {\n strings:\n  $a = "alpha"\n  $b = "beta"\n'
+        ' condition:\n  ($a or $b) and not $b\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "boolean-target.bin"
+    sample.write_bytes(b"alpha")
+    c_result = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    llvm_result = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert c_result.returncode == llvm_result.returncode == 0
+    assert json.loads(c_result.stdout) == json.loads(llvm_result.stdout)
+
+
+@pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
+def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, condition, expected):
+    rules = tmp_path / "constant-condition.yar"
+    rules.write_text(
+        'rule Constant {\n condition:\n  ' + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "empty.bin"
+    sample.write_bytes(b"sample")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
 
 
 def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):

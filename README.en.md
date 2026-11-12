@@ -44,7 +44,7 @@ service or network required):
 
 | Tool | Input | Analysis | Output |
 |---|---|---|---|
-| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | A YARA-subset rule file + a file **or** a PCAP | text, hex-wildcard and simple regex patterns; `any of them` / `all of them` conditions | Schema-versioned JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, matches |
+| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | A YARA-subset rule file + a file **or** a PCAP | text, hex-wildcard and simple regex patterns; group and Boolean conditions | Schema-versioned JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, matches |
 | **DFIR triage** (`examples/22_dfir_triage.ax`) | The running system (`/proc`) and an optional log file (`AXIOM_DFIR_LOG`) | process list, listening TCP ports, SHA-256 integrity of critical files, Sigma log scanning | A single JSON report: `processes`, `network`, `integrity`, `log`, `detections`, `risk` |
 
 **What concrete job does it make easier?**
@@ -66,8 +66,10 @@ in their own language.
 
 **Honest limits (v0.2):**
 
-- `axiom-scan` is **not all of YARA**: subset patterns and simple conditions;
-  it accepts `any of them`, `all of them`, `none of them`, and `N of them` conditions.
+- `axiom-scan` is **not all of YARA**: subset patterns and conditions. It
+  accepts `any/all/none of them`, `N of them`, `$a` pattern references,
+  `true`/`false`, parentheses, and `not`/`and`/`or` (`not` > `and` > `or`
+  precedence).
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,

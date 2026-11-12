@@ -44,7 +44,7 @@ güvenlik triyajı için kullanılabilir:
 
 | Araç | Girdi | Yaptığı analiz | Çıktı |
 |---|---|---|---|
-| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | YARA alt kümesi kural dosyası + bir dosya **veya** PCAP | metin, hex-wildcard ve basit regex desenleri; `any of them` / `all of them` koşulları | Şema sürümlü JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, eşleşmeler |
+| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | YARA alt kümesi kural dosyası + bir dosya **veya** PCAP | metin, hex-wildcard ve basit regex desenleri; grup ve Boole koşulları | Şema sürümlü JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, eşleşmeler |
 | **DFIR triyajı** (`examples/22_dfir_triage.ax`) | Çalışan sistem (`/proc`) ve isteğe bağlı log dosyası (`AXIOM_DFIR_LOG`) | süreç listesi, dinlenen TCP portları, kritik dosya SHA-256 bütünlüğü, Sigma kuralıyla log taraması | Tek JSON rapor: `processes`, `network`, `integrity`, `log`, `detections`, `risk` |
 
 **Hangi somut işi kolaylaştırır?**
@@ -64,9 +64,10 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 
 **Dürüst sınırlar (v0.2):**
 
-- `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve basit koşullar
-  desteklenir. Koşul olarak `any of them`, `all of them`, `none of them` ve `N of them`
-  kabul edilir; metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
+- `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve koşullar
+  desteklenir. Koşul olarak `any/all/none of them`, `N of them`, `$a` desen
+  başvuruları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
+  (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
   diğer desteklenmeyen modifier'lar ve hex jump/alternation yapıları da

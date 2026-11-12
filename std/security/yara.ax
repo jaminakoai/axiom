@@ -10,6 +10,7 @@
 
 import "std:text:regex"
 import "std:encoding:hex"
+import "std/security/yara_condition"
 
 // -----------------------------------------------------------------------------
 // Veri Yapıları (YARA Core Data Structures)
@@ -314,11 +315,8 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 /// Kuralin tum desenlerini tarar ve kosulunu uygular.
 fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
     let total_patterns = len(rule.patterns);
-    if (total_patterns == 0) {
-        return YaraMatch { rule_name: rule.name, pattern_id: "", offset: -1, matched_len: 0, matched: false };
-    }
-
     let mut matched_count = 0;
+    let mut pattern_values: bool[] = [];
     let mut first_matched_pid = "";
     let mut first_offset = -1;
     let mut first_len = 0;
@@ -328,6 +326,7 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
         let pid = rule.pattern_names[i];
         let pstr = rule.patterns[i];
         let m = yara_scan_single_pattern(target, pid, pstr, rule.min_offset, rule.max_offset);
+        pattern_values = array_push(pattern_values, m.matched);
         if (m.matched) {
             matched_count = matched_count + 1;
             if (first_offset < 0) {
@@ -355,7 +354,7 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
         let threshold = str_to_int(parts[0]);
         is_rule_matched = (matched_count >= threshold);
     } else {
-        is_rule_matched = (matched_count > 0);
+        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values);
     }
 
     if (is_rule_matched) {

@@ -24,6 +24,7 @@ import "std/text/unicode"
 import "std/security/yara"
 import "std/text/regex"
 import "std/encoding/hex"
+import "std/security/yara_condition"
 
 // --- Yardimcilar ---
 
@@ -430,9 +431,12 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                     yara_ruleset_new())
             }
             if not _supported_condition(condition) {
-                return result_err_with<YaraRuleSet>(
-                    "satir " + int_to_str(condition_line) + ": eksik veya desteklenmeyen condition: " + condition,
-                    yara_ruleset_new())
+                let condition_error = yara_condition_validate(condition, rule.pattern_names)
+                if len(condition_error) > 0 {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(condition_line) + ": " + condition_error,
+                        yara_ruleset_new())
+                }
             }
             // Toplanan pattern'lari KORU, yalnizca kosulu guncelle.
             let final_rule = YaraRule {

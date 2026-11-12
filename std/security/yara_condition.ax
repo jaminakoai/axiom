@@ -1,0 +1,141 @@
+// YARA condition-expression subset: $pattern, true/false, not/and/or, ()
+// A precedence parser keeps operator semantics explicit and rejects unknown
+// identifiers instead of coercing them to an any-pattern condition.
+
+struct YaraConditionParse {
+    value: bool,
+    position: int,
+    valid: bool
+}
+
+fn _yc_is_word_char(ch: str) -> bool {
+    return str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", ch)
+}
+
+fn _yc_skip_space(source: str, position: int) -> int {
+    let mut i = position
+    while i < str_byte_len(source) {
+        let ch = str_char_at(source, i)
+        if ch == " " or ch == "\t" or ch == "\r" or ch == "\n" {
+            i = i + 1
+        } else {
+            return i
+        }
+    }
+    return i
+}
+
+fn _yc_keyword_at(source: str, position: int, keyword: str) -> bool {
+    let n = str_byte_len(source)
+    let size = str_byte_len(keyword)
+    if position < 0 or position + size > n { return false }
+    if str_sub(source, position, size) != keyword { return false }
+    let after = position + size
+    if after < n and _yc_is_word_char(str_char_at(source, after)) { return false }
+    return true
+}
+
+fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+    let i = _yc_skip_space(source, position)
+    let n = str_byte_len(source)
+    if i >= n {
+        return YaraConditionParse { value: false, position: i, valid: false }
+    }
+
+    let ch = str_char_at(source, i)
+    if ch == "(" {
+        let inner = _yc_parse_or(source, i + 1, pattern_names, pattern_values)
+        if not inner.valid { return inner }
+        let close = _yc_skip_space(source, inner.position)
+        if close >= n or str_char_at(source, close) != ")" {
+            return YaraConditionParse { value: false, position: close, valid: false }
+        }
+        return YaraConditionParse { value: inner.value, position: close + 1, valid: true }
+    }
+
+    if ch == "$" {
+        let mut end = i + 1
+        while end < n and _yc_is_word_char(str_char_at(source, end)) {
+            end = end + 1
+        }
+        if end == i + 1 {
+            return YaraConditionParse { value: false, position: i, valid: false }
+        }
+        let name = str_sub(source, i, end - i)
+        let mut found = -1
+        let mut p = 0
+        while p < len(pattern_names) {
+            if pattern_names[p] == name { found = p }
+            p = p + 1
+        }
+        if found < 0 {
+            return YaraConditionParse { value: false, position: i, valid: false }
+        }
+        let mut matched = false
+        if found < len(pattern_values) { matched = pattern_values[found] }
+        return YaraConditionParse { value: matched, position: end, valid: true }
+    }
+
+    if _yc_keyword_at(source, i, "true") {
+        return YaraConditionParse { value: true, position: i + 4, valid: true }
+    }
+    if _yc_keyword_at(source, i, "false") {
+        return YaraConditionParse { value: false, position: i + 5, valid: true }
+    }
+    return YaraConditionParse { value: false, position: i, valid: false }
+}
+
+fn _yc_parse_unary(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+    let i = _yc_skip_space(source, position)
+    if _yc_keyword_at(source, i, "not") {
+        let inner = _yc_parse_unary(source, i + 3, pattern_names, pattern_values)
+        if not inner.valid { return inner }
+        return YaraConditionParse { value: not inner.value, position: inner.position, valid: true }
+    }
+    return _yc_parse_primary(source, i, pattern_names, pattern_values)
+}
+
+fn _yc_parse_and(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+    let mut left = _yc_parse_unary(source, position, pattern_names, pattern_values)
+    if not left.valid { return left }
+    let mut next = _yc_skip_space(source, left.position)
+    while _yc_keyword_at(source, next, "and") {
+        let right = _yc_parse_unary(source, next + 3, pattern_names, pattern_values)
+        if not right.valid { return right }
+        left = YaraConditionParse { value: left.value and right.value, position: right.position, valid: true }
+        next = _yc_skip_space(source, left.position)
+    }
+    return left
+}
+
+fn _yc_parse_or(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+    let mut left = _yc_parse_and(source, position, pattern_names, pattern_values)
+    if not left.valid { return left }
+    let mut next = _yc_skip_space(source, left.position)
+    while _yc_keyword_at(source, next, "or") {
+        let right = _yc_parse_and(source, next + 2, pattern_names, pattern_values)
+        if not right.valid { return right }
+        left = YaraConditionParse { value: left.value or right.value, position: right.position, valid: true }
+        next = _yc_skip_space(source, left.position)
+    }
+    return left
+}
+
+fn yara_condition_validate(condition: str, pattern_names: str[]) -> str {
+    let empty_values: bool[] = []
+    let parsed = _yc_parse_or(condition, 0, pattern_names, empty_values)
+    if not parsed.valid {
+        return "gecersiz veya desteklenmeyen condition ifadesi (byte " + int_to_str(parsed.position) + ")"
+    }
+    let end = _yc_skip_space(condition, parsed.position)
+    if end != str_byte_len(condition) {
+        return "condition ifadesinde beklenmeyen token (byte " + int_to_str(end) + ")"
+    }
+    return ""
+}
+
+fn yara_condition_matches(condition: str, pattern_names: str[], pattern_values: bool[]) -> bool {
+    let parsed = _yc_parse_or(condition, 0, pattern_names, pattern_values)
+    if not parsed.valid { return false }
+    return _yc_skip_space(condition, parsed.position) == str_byte_len(condition) and parsed.value
+}
