@@ -1,0 +1,83 @@
+// Axiom (λx) - Ornek 16: Blue Team & DFIR Defansif Guvenlik Suiti (Faz 3)
+// examples/16_blueteam_defensive_suite.ax
+
+import "std:security:yara"
+import "std:net:pcap"
+import "std:security:sigma"
+import "std:os:forensics"
+import "std:security:integrity"
+
+fn main() -> int {
+    print("================================================================")
+    print("   AXIOM (λx) BLUE TEAM & DEFANSIF GUVENLIK SUITI (FAZ 3)       ")
+    print("================================================================")
+
+    // 1. YARA Tarzı Desen ve Kural Taraması (std:security:yara)
+    print("\n[ADIM 1] YARA Desen ve Imza Taramasi")
+    let sample_payload = "HTTP/1.1 200 OK\r\nServer: EvilC2\r\nPayload: MALWARE_SIGNATURE_XYZ_99"
+    let is_malware = yara_scan_buffer(sample_payload, "MALWARE_SIGNATURE_XYZ_99")
+    print("  -> Taranan Tampon Uzunlugu    :", len(sample_payload))
+    print("  -> Zararli Imza Tespiti       :", is_malware)
+    verify is_malware == true, "YARA imzasi tespit edilmeliydi!"
+    print("  [✓] std:security:yara dogrulandi.")
+
+    // 2. PCAP Ag Paketi Yakalama ve Ayrıştırma (std:net:pcap)
+    print("\n[ADIM 2] PCAP Ag Analizi ve Paket Kaydi")
+    let test_pcap_path = "/tmp/axiom_test_capture.pcap"
+    let writer = pcap_open_writer(test_pcap_path)
+    verify writer > 0, "PCAP yazici acilabilmeliydi!"
+
+    // 2 adet ornek Ethernet/IP paketi yaz
+    let dummy_packet_1 = "00112233445566778899aabb0800450000281337400040065b8cc0a801640a000001ad9c0050000003e8000000005002721000000000"
+    let dummy_packet_2 = "00112233445566778899aabb0800450000201338400040115b8dc0a801640a00000100350035000c0000444e53"
+    pcap_record_packet(writer, dummy_packet_1)
+    pcap_record_packet(writer, dummy_packet_2)
+    pcap_file_close(writer)
+
+    let reader = pcap_open_reader(test_pcap_path)
+    verify reader > 0, "PCAP okuyucu acilabilmeliydi!"
+    let pkt1 = pcap_read_next(reader)
+    let pkt2 = pcap_read_next(reader)
+    print("  -> PCAP'ten Okunan 1. Paket  :", pkt1)
+    print("  -> PCAP'ten Okunan 2. Paket  :", pkt2)
+    verify len(pkt1) == len(dummy_packet_1), "1. paket uzunlugu eslesmeli!"
+    pcap_file_close(reader)
+    print("  [✓] std:net:pcap dogrulandi.")
+
+    // 3. Sigma SIEM ve Tehdit Algılama Motoru (std:security:sigma)
+    print("\n[ADIM 3] Sigma SIEM Tehdit ve Log Analiz Motoru")
+    let auth_log = "Nov  4 19:30:00 server sshd[1234]: Failed password for invalid user admin from 192.168.1.50 port 45678"
+    let web_log = "GET /index.php?id=1%20UNION%20SELECT%20username,password%20FROM%20users HTTP/1.1"
+
+    let threat1 = sigma_detect_attack(auth_log)
+    let threat2 = sigma_detect_attack(web_log)
+    print("  -> SSH Log Tespiti            :", threat1)
+    print("  -> Web Log Tespiti            :", threat2)
+    verify threat1 == "SSH_BRUTE_FORCE", "SSH Brute-Force tespiti dogru olmali!"
+    verify threat2 == "SQL_INJECTION", "SQL Injection tespiti dogru olmali!"
+    print("  [✓] std:security:sigma dogrulandi.")
+
+    // 4. Linux Adli Bilişim (Host Forensics) (std:os:forensics)
+    print("\n[ADIM 4] Linux Adli Bilisim (Acik Portlar ve Moduller)")
+    let open_ports = forensics_list_listening_ports()
+    print("  -> Dinlenen TCP Portlari      :\n", open_ports)
+    let is_bridge = forensics_is_module_loaded("bridge")
+    print("  -> 'bridge' Cekirdek Modulu   :", is_bridge)
+    print("  [✓] std:os:forensics dogrulandi.")
+
+    // 5. Dosya Bütünlük Denetimi (FIM) (std:security:integrity)
+    print("\n[ADIM 5] Dosya Butunluk Denetimi (FIM SHA-256)")
+    let test_file = "/tmp/axiom_fim_test.txt"
+    file_write(test_file, "AXIOM_CRITICAL_SYSTEM_BINARY_V1")
+    let baseline_hash = fim_calculate_hash(test_file)
+    print("  -> Orijinal SHA-256 Hash      :", baseline_hash)
+    let is_valid = fim_verify_baseline(test_file, baseline_hash)
+    print("  -> Hash Dogrulama Sonucu      :", is_valid)
+    verify is_valid == true, "FIM hash dogrulamasi basarili olmali!"
+    print("  [✓] std:security:integrity dogrulandi.")
+
+    print("\n================================================================")
+    print("  TUM FAZ 3 BLUE TEAM DEFANSIF MODULLERI BASARIYLA DOGRULANDI!   ")
+    print("================================================================")
+    return 0
+}

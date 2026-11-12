@@ -1,0 +1,65 @@
+// examples/20_stdlib_result.ax
+//
+// Stdlib'in Result tabanli katmani: `?` ile uçtan uca hata akisi.
+//
+// Gosterilenler:
+//   - std/io/file      : read_file / write_file / append_file / read_lines
+//   - std/encoding/json: json_get_*_result
+//   - std/net/http     : http_get_result / http_status / http_body
+//
+// Calistirmak icin: axiom run examples/20_stdlib_result.ax
+
+import "std/core/error"
+import "std/io/file"
+import "std/encoding/json"
+
+struct Config {
+    name: str,
+    port: int
+}
+
+// Yapilandirmayi dosyadan okur; her adim `?` ile akar.
+fn load_config(path: str) -> Result<Config, str> {
+    let raw = read_file(path)?
+    let name = json_get_str_result(raw, "name")?
+    let port = json_get_int_result(raw, "port")?
+    return result_ok<Config>(Config { name: name, port: port })
+}
+
+// Var olmayan dosya: hata `?` ile buraya kadar tasinir.
+fn load_missing() -> Result<Config, str> {
+    let cfg = load_config("/tmp/axiom_olmayan_yapilandirma.json")?
+    return result_ok<Config>(cfg)
+}
+
+fn main() -> int {
+    let cfg_path = "/tmp/axiom_example_config.json"
+    let payload = "{\"name\":\"axiom-demo\",\"port\":8080}"
+
+    let wrote = write_file(cfg_path, payload)
+    if wrote.is_ok {
+        print("[1] yapilandirma yazildi")
+    }
+
+    let loaded = load_config(cfg_path)
+    if loaded.is_ok {
+        print("[2] yuklendi:", loaded.value.name, loaded.value.port)
+    }
+
+    let missing = load_missing()
+    print("[3] beklenen hata:", missing.error)
+
+    let lines = read_lines(cfg_path)
+    if lines.is_ok {
+        print("[4] satir sayisi:", len(lines.value))
+    }
+
+    let no_key = json_get_str_result(payload, "yok")
+    print("[5] eksik anahtar:", no_key.error)
+
+    // Elle temizlik
+    if file_exists(cfg_path) {
+        file_write(cfg_path, "")
+    }
+    return 0
+}

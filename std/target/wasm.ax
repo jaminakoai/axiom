@@ -1,0 +1,49 @@
+// Axiom Standard Library: std:target:wasm
+// WebAssembly (WASM) Ikili Modul Olusturucu ve Dogrulayici
+
+struct WasmExport {
+    name: str,
+    kind: int,
+    index: int
+}
+
+struct WasmModule {
+    version: int,
+    exports: WasmExport[],
+    byte_count: int
+}
+
+fn wasm_module_new() -> WasmModule {
+    let exps: WasmExport[] = [];
+    return WasmModule {
+        version: 1,
+        exports: exps,
+        byte_count: 8
+    };
+}
+
+fn wasm_add_export(m: WasmModule, name: str, kind: int, index: int) -> WasmModule {
+    let exp: WasmExport = WasmExport {
+        name: name,
+        kind: kind,
+        index: index
+    };
+    let updated: WasmExport[] = array_push(m.exports, exp);
+    let new_count: int = m.byte_count + str_len(name) + 4;
+    return WasmModule {
+        version: m.version,
+        exports: updated,
+        byte_count: new_count
+    };
+}
+
+fn wasm_get_magic_hex() -> str {
+    return "0061736d01000000";
+}
+
+fn wasm_validate_magic_hex(hex_str: str) -> bool {
+    if (str_len(hex_str) < 16) {
+        return false;
+    }
+    return str_starts_with(hex_str, "0061736d01000000");
+}

@@ -1,0 +1,1614 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/parser.ax - Sözdizim Ayrıştırıcı (Parser)
+
+import "tokens.ax"
+import "ast.ax"
+
+fn to_c_type(t: str) -> str {
+    if t == "int" { return "ax_int" }
+    if t == "float" { return "ax_float" }
+    if t == "bool" { return "ax_bool" }
+    if t == "str" { return "ax_str" }
+    if t == "void" { return "void" }
+    if str_ends_with(t, "[]") {
+        let elem = str_sub(t, 0, str_byte_len(t) - 2)
+        return "ax_array_" + elem
+    }
+    let mut clean_t = str_replace(t, "<", "_")
+    clean_t = str_replace(clean_t, ">", "")
+    clean_t = str_replace(clean_t, ",", "_")
+    clean_t = str_replace(clean_t, " ", "")
+    // `Result<str[], str>` -> "Result_str[]_str": "[]" C tanimlayicisinda
+    // gecersizdir; "_array" ile degistirilir (struct adiyla ayni kural).
+    clean_t = str_replace(clean_t, "[]", "_array")
+    if clean_t == "T" or clean_t == "U" or clean_t == "V" or clean_t == "K" or clean_t == "E" or clean_t == "A" or clean_t == "B" {
+        return "ax_int"
+    }
+    return "ax_" + clean_t
+}
+
+fn is_builtin_func(name: str) -> bool {
+    if name == "len" or name == "array_push" { return true }
+    if str_starts_with(name, "simd_") { return true }
+    if str_starts_with(name, "thread_") or str_starts_with(name, "mutex_") or str_starts_with(name, "atomic_") { return true }
+    if str_starts_with(name, "axiom_") { return true }
+    if str_starts_with(name, "file_") { return true }
+    if str_starts_with(name, "os_") { return true }
+    if str_starts_with(name, "tcp_") { return true }
+    if str_starts_with(name, "socket_") { return true }
+    if str_starts_with(name, "time_") { return true }
+    if str_starts_with(name, "math_") { return true }
+    if str_starts_with(name, "str_") { return true }
+    if str_starts_with(name, "char_") { return true }
+    if str_starts_with(name, "int_") { return true }
+    if str_starts_with(name, "sleep_") { return true }
+    if str_starts_with(name, "rt_") { return true }
+    if str_starts_with(name, "cli_") { return true }
+    if name == "tensor_create_2d" or name == "tensor_set" or name == "tensor_get" or name == "tensor_rows" or name == "tensor_cols" or name == "tensor_matmul" or name == "tensor_add" or name == "tensor_transpose" or name == "tensor_to_str" or name == "tensor_free" { return true }
+    if name == "nn_relu" or name == "nn_sigmoid" or name == "nn_argmax" { return true }
+    if name == "dot_product" or name == "rt_dot_product" { return true }
+    return false
+}
+
+fn map_builtin_func(name: str) -> str {
+    if name == "tensor_create_2d" or name == "tensor_set" or name == "tensor_get" or name == "tensor_rows" or name == "tensor_cols" or name == "tensor_matmul" or name == "tensor_add" or name == "tensor_transpose" or name == "tensor_to_str" or name == "tensor_free" { return "axiom_" + name }
+    if name == "nn_relu" or name == "nn_sigmoid" or name == "nn_argmax" { return "axiom_" + name }
+    if name == "dot_product" or name == "rt_dot_product" { return "axiom_dot_product" }
+    if name == "file_read" { return "axiom_file_read" }
+    if name == "file_write" { return "axiom_file_write" }
+    if name == "file_exists" { return "axiom_file_exists" }
+    if name == "os_exec" { return "axiom_os_exec" }
+    if name == "os_exec_argv" { return "axiom_os_exec_argv" }
+    if name == "compile_c" { return "axiom_compile_c" }
+    if name == "str_free" or name == "rt_str_free" { return "axiom_str_free" }
+    if name == "os_getenv" { return "axiom_os_getenv" }
+    if name == "time_now_ms" { return "axiom_time_now_ms" }
+    if name == "rt_process_get_pid" or name == "getpid" { return "axiom_process_get_pid" }
+    if name == "sleep_ms" { return "axiom_sleep_ms" }
+    if name == "tcp_connect" { return "axiom_tcp_connect" }
+    if name == "tcp_send" { return "axiom_tcp_send" }
+    if name == "tcp_recv" { return "axiom_tcp_recv" }
+    if name == "socket_close" { return "axiom_socket_close" }
+    if name == "str_contains" { return "axiom_str_contains" }
+    if name == "str_starts_with" { return "axiom_str_starts_with" }
+    if name == "str_ends_with" { return "axiom_str_ends_with" }
+    if name == "str_trim" { return "axiom_str_trim" }
+    if name == "str_len" { return "axiom_str_len" }
+    if name == "str_byte_len" { return "axiom_str_byte_len" }
+    if name == "str_char_at" { return "axiom_str_char_at" }
+    if name == "str_sub" { return "axiom_str_sub" }
+    if name == "str_char_code" { return "axiom_str_char_code" }
+    if name == "char_to_str" { return "axiom_char_to_str" }
+    if name == "str_index_of" { return "axiom_str_index_of" }
+    if name == "str_replace" { return "axiom_str_replace" }
+    if name == "str_split" { return "axiom_str_split" }
+    if name == "str_join" { return "axiom_str_join" }
+    if name == "str_to_int" { return "axiom_str_to_int" }
+    if name == "int_to_str" { return "axiom_int_to_str" }
+    if name == "cli_args_count" or name == "rt_cli_args_count" { return "axiom_cli_args_count" }
+    if name == "cli_args_get" or name == "rt_cli_args_get" { return "axiom_cli_args_get" }
+    if name == "cli_has_flag" or name == "rt_cli_has_flag" { return "axiom_cli_has_flag" }
+    if name == "cli_get_option" or name == "rt_cli_get_option" { return "axiom_cli_get_option" }
+    if name == "simd_add_i64" or name == "simd_mul_i64" or name == "simd_sub_i64" or name == "simd_sum_i64" or name == "simd_scan_match" { return "axiom_" + name }
+    if name == "math_abs" or name == "math_min" or name == "math_max" or name == "math_pow" { return "axiom_" + name }
+    if name == "thread_create" or name == "thread_join" { return "axiom_" + name }
+    if name == "mutex_init" or name == "mutex_lock" or name == "mutex_unlock" { return "axiom_" + name }
+    if name == "atomic_init" or name == "atomic_add" or name == "atomic_get" { return "axiom_" + name }
+    if name == "array_push" { return "axiom_array_push" }
+    if name == "len" { return "axiom_slen_auto" }
+    if name == "rt_crypto_random_hex" { return "axiom_crypto_random_hex" }
+    if name == "rt_hmac_sha256" { return "axiom_hmac_sha256" }
+    if name == "rt_crypto_memcmp" { return "axiom_crypto_memcmp" }
+    if name == "crypto_memcmp" { return "axiom_crypto_memcmp" }
+    // Genel `rt_<ad>` -> `axiom_<ad>` eslemesi. Runtime'daki yerlesiklerin
+    // buyuk cogunlugu bu desendedir (rt_base64_encode -> axiom_base64_encode).
+    if str_starts_with(name, "rt_") {
+        return "axiom_" + str_sub(name, 3, str_byte_len(name) - 3)
+    }
+    // C surucusunde farkli C adina giden yerlesikler
+    if name == "json_parse" { return "axiom_json_parse_wrap" }
+    // Geri kalan her sey: `ax_` onekiyle birak; codegen bilinmeyen cagrilari
+    // `axiom_` onekine cevirir (kullanici fonksiyonu degilse).
+    return "ax_" + name
+}
+
+struct ParseResult {
+    code: str,
+    next_pos: int
+}
+
+fn res_new(code: str, pos: int) -> ParseResult {
+    return ParseResult {
+        code: code,
+        next_pos: pos
+    }
+}
+
+fn cur_tok(toks: Token[], pos: int) -> Token {
+    if pos < len(toks) {
+        return toks[pos]
+    }
+    return token_new("EOF", "", 0, 0)
+}
+
+fn match_k(toks: Token[], pos: int, kind: str) -> bool {
+    let t = cur_tok(toks, pos)
+    return t.kind == kind
+}
+
+fn match_v(toks: Token[], pos: int, val: str) -> bool {
+    let t = cur_tok(toks, pos)
+    return t.value == val
+}
+
+fn parse_type_str(toks: Token[], pos: int) -> ParseResult {
+    let mut t_name = cur_tok(toks, pos).value
+    let mut cur = pos + 1
+    if match_k(toks, cur, "<") {
+        cur = cur + 1
+        let mut g_args = ""
+        while cur < len(toks) and not match_k(toks, cur, ">") {
+            let g_tok = cur_tok(toks, cur).value
+            if g_tok == "," {
+                g_args = g_args + "_"
+            } else {
+                g_args = g_args + g_tok
+            }
+            cur = cur + 1
+        }
+        if match_k(toks, cur, ">") {
+            cur = cur + 1
+        }
+        t_name = t_name + "_" + g_args
+    }
+    if match_k(toks, cur, "[") and match_k(toks, cur + 1, "]") {
+        t_name = t_name + "[]"
+        cur = cur + 2
+    }
+    return res_new(t_name, cur)
+}
+
+// Cagri baglamindan `str[]` bekleyen yerlesikler. Self-hosted derleyici tip
+// ortami tutmadigi icin, bu fonksiyonlara verilen dizi literalleri metin
+// dizisi olarak uretilmelidir (aksi halde `(ax_int[]){"a","b"}` gecersiz C).
+fn expects_str_array(name: str) -> bool {
+    if name == "csv_add_row" or name == "rt_csv_add_row" { return true }
+    if name == "cli_set_args" or name == "rt_cli_set_args" { return true }
+    if name == "os_exec_argv" or name == "rt_os_exec_argv" { return true }
+    if name == "json_build_object" { return true }
+    if name == "yara_ruleset_add_rule" { return false }
+    return false
+}
+
+// Cagri argumanlarini UST DUZEY virgulde ikiye ayirir.
+// Naif `str_index_of(args, ", ")` ic ice cagrilardaki virgulu yakalar:
+//   axiom_str_concat("sayi degil: ", path), 0.0
+// Bu yuzden parantez derinligi sayilir. -1 = ust duzey virgul yok.
+fn split_top_level_args(args: str) -> int {
+    let mut depth = 0
+    let mut in_str = false
+    let mut esc = false
+    let n = str_byte_len(args)
+    let mut i = 0
+    while i < n {
+        let c = str_sub(args, i, 1)
+        if in_str {
+            if esc { esc = false }
+            else if c == "\\" { esc = true }
+            else if c == "\"" { in_str = false }
+            i = i + 1
+            continue
+        }
+        if c == "\"" {
+            in_str = true
+        } else if c == "(" or c == "{" or c == "[" {
+            depth = depth + 1
+        } else if c == ")" or c == "}" or c == "]" {
+            depth = depth - 1
+        } else if c == "," and depth == 0 {
+            return i
+        }
+        i = i + 1
+    }
+    return -1
+}
+
+fn parse_primary(toks: Token[], pos: int) -> ParseResult {
+    let t = cur_tok(toks, pos)
+
+    if t.kind == "INT" or t.kind == "FLOAT" {
+        return res_new(t.value, pos + 1)
+    }
+
+    if t.kind == "STRING" {
+        let escaped = "\"" + t.value + "\""
+        return res_new(escaped, pos + 1)
+    }
+
+    if t.kind == "true" or t.kind == "false" {
+        return res_new(t.value, pos + 1)
+    }
+
+    // 'ensures' sozlesmesinde 'return', donen degeri temsil eder.
+    // codegen_wrap_ensures bunu __ax_ret degiskenine baglar.
+    if t.kind == "return" {
+        return res_new("__ax_ret", pos + 1)
+    }
+
+    if t.kind == "(" {
+        let inner = parse_expr(toks, pos + 1)
+        let mut npos = inner.next_pos
+        if match_k(toks, npos, ")") {
+            npos = npos + 1
+        }
+        return res_new("(" + inner.code + ")", npos)
+    }
+
+    // Dizi literali: [a, b, c]
+    if t.kind == "[" {
+        let mut cur = pos + 1
+        let mut elems_code = ""
+        let mut count = 0
+        let mut all_str = true
+        while cur < len(toks) and not match_k(toks, cur, "]") {
+            let elem_res = parse_expr(toks, cur)
+            if not is_str_expr(elem_res.code) {
+                all_str = false
+            }
+            if count > 0 {
+                elems_code = elems_code + ", "
+            }
+            elems_code = elems_code + elem_res.code
+            count = count + 1
+            cur = elem_res.next_pos
+            if match_k(toks, cur, ",") {
+                cur = cur + 1
+            }
+        }
+        if match_k(toks, cur, "]") {
+            cur = cur + 1
+        }
+        // Tum elemanlar metinse `str[]` uret; aksi halde `int[]`.
+        // (Eski hal her diziyi int[] yapiyordu; `(ax_int[]){"a","b"}` gecersiz.)
+        let mut arr_base = "ax_array_int"
+        let mut arr_t = "ax_int[]"
+        if all_str and count > 0 {
+            arr_base = "ax_array_str"
+            arr_t = "ax_str[]"
+        }
+        let arr_code = "((" + arr_base + "){ .length = " + int_to_str(count) + ", .data = (" + int_to_str(count) + " > 0 ? (" + arr_t + "){ " + elems_code + " } : NULL) })"
+        return res_new(arr_code, cur)
+    }
+
+    // IDENT: Fonksiyon çağrısı, Struct ilklendirme veya Değişken
+    if t.kind == "IDENT" {
+        let id_name = t.value
+        let next_t = cur_tok(toks, pos + 1)
+        let first_c = str_char_code(id_name, 0)
+
+        // Generic durum kontrolü: ID<...> { veya ID<...>(
+        //
+        // DIKKAT: `<` karsilastirma operatoru de olabilir (`if size < 0 {`).
+        // Eski kod `>` ararken SONRAKI ifadedeki `result_ok<int>`in `>`ini
+        // yakaliyor ve `size`i generic fonksiyon saniyordu. Bu yuzden tarama
+        // bir ifade sinirina (`;`, `{`, `}`, `(`, `)`) carparsa VAZGECILIR.
+        if next_t.kind == "<" {
+            let mut scan = pos + 2
+            let mut g_args = ""
+            let mut is_generic_like = true
+            while scan < len(toks) and not match_k(toks, scan, ">") {
+                let g_k = cur_tok(toks, scan).kind
+                let g_val = cur_tok(toks, scan).value
+                if g_k == ";" or g_k == "{" or g_k == "}" or g_k == "(" or g_k == ")"
+                or g_k == "EOF" or g_k == "ARROW" or g_k == "=" or g_k == "+"
+                or g_k == "-" or g_k == "*" or g_k == "/" or g_k == "==" or g_k == "!=" {
+                    is_generic_like = false
+                    break
+                }
+                if g_val == "," {
+                    g_args = g_args + "_"
+                } else {
+                    g_args = g_args + g_val
+                }
+                scan = scan + 1
+            }
+            if is_generic_like and match_k(toks, scan, ">") {
+                let after_gt = scan + 1
+                let after_t = cur_tok(toks, after_gt)
+
+                // 1. Generic Struct İlklendirme: Box<int> { val: 42 }
+                if after_t.kind == "{" and (first_c >= 65 and first_c <= 90) {
+                    let mut cur = after_gt + 1
+                    let mut fields_init = ""
+                    let mut f_count = 0
+                    while cur < len(toks) and not match_k(toks, cur, "}") {
+                        let f_name = cur_tok(toks, cur).value
+                        cur = cur + 1
+                        if match_k(toks, cur, ":") {
+                            cur = cur + 1
+                        }
+                        let val_res = parse_expr(toks, cur)
+                        if f_count > 0 {
+                            fields_init = fields_init + ", "
+                        }
+                        fields_init = fields_init + "." + f_name + " = " + val_res.code
+                        f_count = f_count + 1
+                        cur = val_res.next_pos
+                        if match_k(toks, cur, ",") {
+                            cur = cur + 1
+                        }
+                    }
+                    if match_k(toks, cur, "}") {
+                        cur = cur + 1
+                    }
+                    let init_g_name = str_replace(id_name + "_" + g_args, "[]", "_array")
+                    let s_init_code = "((ax_" + init_g_name + "){ " + fields_init + " })"
+                    return res_new(s_init_code, cur)
+                }
+
+                // 2. Generic Fonksiyon Çağrısı: wrap<int>(42)
+                if after_t.kind == "(" {
+                    let mut cur = after_gt + 1
+                    let mut args_code = ""
+                    let mut arg_count = 0
+                    while cur < len(toks) and not match_k(toks, cur, ")") {
+                        let arg_res = parse_expr(toks, cur)
+                        if arg_count > 0 {
+                            args_code = args_code + ", "
+                        }
+                        args_code = args_code + arg_res.code
+                        arg_count = arg_count + 1
+                        cur = arg_res.next_pos
+                        if match_k(toks, cur, ",") {
+                            cur = cur + 1
+                        }
+                    }
+                    if match_k(toks, cur, ")") {
+                        cur = cur + 1
+                    }
+                    // `result_ok<T>(v)` / `result_err_with<T>(m, e)` icin
+                    // T'ye ozel C makrosu secilir; generic fonksiyon
+                    // monomorfizasyonu olmadan da dogru struct uretilir.
+                    let g_clean = str_replace(g_args, "[]", "_array")
+                    if id_name == "result_ok" {
+                        // T int/str/bool ise hazir makro; aksi halde (kullanici
+                        // tipi) dogrudan struct literali uret. Bu genel cozum
+                        // her T icin calisir (Config, YaraRuleSet, ...).
+                        if g_clean == "str" {
+                            return res_new("axiom_result_ok_str(" + args_code + ")", cur)
+                        }
+                        if g_clean == "bool" {
+                            return res_new("axiom_result_ok_bool(" + args_code + ")", cur)
+                        }
+                        if g_clean == "int" {
+                            return res_new("axiom_result_ok_int(" + args_code + ")", cur)
+                        }
+                        let lit = "((ax_Result_" + g_clean + "_str){ .is_ok = true, .value = ("
+                        + args_code + "), .error = \"\" })"
+                        return res_new(lit, cur)
+                    }
+                    if id_name == "result_err_with" and g_clean != "str"
+                    and g_clean != "int" and g_clean != "bool" {
+                        // Bilinmeyen T: msg, empty sirasini koru
+                        let parts_idx = split_top_level_args(args_code)
+                        if parts_idx > 0 {
+                            let msg = str_trim(str_sub(args_code, 0, parts_idx))
+                            let mut rest_at = parts_idx + 1
+                            if rest_at < str_byte_len(args_code) {
+                                if str_sub(args_code, rest_at, 1) == " " {
+                                    rest_at = rest_at + 1
+                                }
+                            }
+                            let empty = str_sub(args_code, rest_at,
+                            str_byte_len(args_code) - rest_at)
+                            let lit = "((ax_Result_" + g_clean + "_str){ .is_ok = false, .value = ("
+                            + empty + "), .error = (" + msg + ") })"
+                            return res_new(lit, cur)
+                        }
+                    }
+                    if id_name == "result_err_with" and g_clean == "str" {
+                        return res_new("axiom_result_err_with_str(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_err_with" and g_clean == "int" {
+                        return res_new("axiom_result_err_with_int(" + args_code + ")", cur)
+                    }
+                    // Alan-erisimli generic yardimcilar: tip argumani onemsiz.
+                    if id_name == "result_is_ok" {
+                        return res_new("axiom_result_is_ok(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_is_err" {
+                        return res_new("axiom_result_is_err(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_error" {
+                        return res_new("axiom_result_error(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_unwrap" {
+                        return res_new("axiom_result_unwrap(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_unwrap_or" {
+                        return res_new("axiom_result_unwrap_or(" + args_code + ")", cur)
+                    }
+                    if id_name == "result_expect" {
+                        return res_new("axiom_result_expect(" + args_code + ")", cur)
+                    }
+
+                    let mut fn_c_name = "ax_" + id_name
+                    if is_builtin_func(id_name) {
+                        fn_c_name = map_builtin_func(id_name)
+                    }
+                    return res_new(fn_c_name + "(" + args_code + ")", cur)
+                }
+            }
+        }
+
+        // Fonksiyon Çağrısı: name(args...)
+        if next_t.kind == "(" {
+            let mut cur = pos + 2
+            let mut args_code = ""
+            let mut arg_count = 0
+            while cur < len(toks) and not match_k(toks, cur, ")") {
+                let arg_res = parse_expr(toks, cur)
+                if arg_count > 0 {
+                    args_code = args_code + ", "
+                }
+                args_code = args_code + arg_res.code
+                arg_count = arg_count + 1
+                cur = arg_res.next_pos
+                if match_k(toks, cur, ",") {
+                    cur = cur + 1
+                }
+            }
+            if match_k(toks, cur, ")") {
+                cur = cur + 1
+            }
+
+            // Cagri baglami str[] bekliyorsa dizi literallerini metin
+            // dizisine cevir (tip ortami olmadigi icin burada duzeltilir).
+            if expects_str_array(id_name) {
+                args_code = str_replace(args_code, "ax_array_int", "ax_array_str")
+                args_code = str_replace(args_code, "(ax_int[])",
+                "(ax_str[])")
+            }
+
+            // thread_create(fn, arg): fonksiyon adi C fonksiyon gostergesine
+            // cevrilmeli ve 3. arguman (is_void) eklenmelidir.
+            if id_name == "thread_create" {
+                return res_new("axiom_thread_create((void*)ax_" + args_code + ", false)", cur)
+            }
+
+            if id_name == "result_ok" {
+                // Tip argumani verilmemis: argumanin metin olup olmadigina
+                // gore sec (derleyicinin geri kalanindaki ayni sezgisel).
+                if is_str_expr(args_code) {
+                    return res_new("axiom_result_ok_str(" + args_code + ")", cur)
+                }
+                return res_new("axiom_result_ok_int(" + args_code + ")", cur)
+            }
+            if id_name == "result_err_with" {
+                return res_new("axiom_result_err_with_int(" + args_code + ")", cur)
+            }
+            // Alan-erisimli generic yardimcilar (T onemli degil)
+            if id_name == "result_is_ok" {
+                return res_new("axiom_result_is_ok(" + args_code + ")", cur)
+            }
+            if id_name == "result_is_err" {
+                return res_new("axiom_result_is_err(" + args_code + ")", cur)
+            }
+            if id_name == "result_error" {
+                return res_new("axiom_result_error(" + args_code + ")", cur)
+            }
+            if id_name == "result_unwrap" {
+                return res_new("axiom_result_unwrap(" + args_code + ")", cur)
+            }
+            if id_name == "result_unwrap_or" {
+                return res_new("axiom_result_unwrap_or(" + args_code + ")", cur)
+            }
+            if id_name == "result_expect" {
+                return res_new("axiom_result_expect(" + args_code + ")", cur)
+            }
+
+            let mut fn_c_name = "ax_" + id_name
+            if is_builtin_func(id_name) {
+                fn_c_name = map_builtin_func(id_name)
+            }
+            return res_new(fn_c_name + "(" + args_code + ")", cur)
+        }
+
+        // Struct İlklendirme: Foo { a: 1, b: 2 } (Sadece büyük harfle başlayan isimler)
+        if next_t.kind == "{" and (first_c >= 65 and first_c <= 90) {
+            let mut cur = pos + 2
+            let mut fields_init = ""
+            let mut f_count = 0
+            while cur < len(toks) and not match_k(toks, cur, "}") {
+                let f_name = cur_tok(toks, cur).value
+                cur = cur + 1
+                if match_k(toks, cur, ":") {
+                    cur = cur + 1
+                }
+                let val_res = parse_expr(toks, cur)
+                if f_count > 0 {
+                    fields_init = fields_init + ", "
+                }
+                fields_init = fields_init + "." + f_name + " = " + val_res.code
+                f_count = f_count + 1
+                cur = val_res.next_pos
+                if match_k(toks, cur, ",") {
+                    cur = cur + 1
+                }
+            }
+            if match_k(toks, cur, "}") {
+                cur = cur + 1
+            }
+            let init_struct_name = str_replace(id_name, "[]", "_array")
+            let s_init_code = "((ax_" + init_struct_name + "){ " + fields_init + " })"
+            return res_new(s_init_code, cur)
+        }
+
+        // Düz Değişken İsmi
+        return res_new(id_name, pos + 1)
+    }
+
+    return res_new("", pos + 1)
+}
+
+fn parse_postfix(toks: Token[], pos: int) -> ParseResult {
+    let mut primary = parse_primary(toks, pos)
+    let mut cur = primary.next_pos
+
+    while cur < len(toks) {
+        let t = cur_tok(toks, cur)
+
+        // Üye erişimi: obj.member
+        if t.kind == "." {
+            let member_tok = cur_tok(toks, cur + 1)
+            primary.code = "(" + primary.code + ")." + member_tok.value
+            cur = cur + 2
+            continue
+        }
+
+        // İndeks erişimi: arr[idx]
+        if t.kind == "[" {
+            let idx_res = parse_expr(toks, cur + 1)
+            let mut end_idx = idx_res.next_pos
+            if match_k(toks, end_idx, "]") {
+                end_idx = end_idx + 1
+            }
+            primary.code = "((" + primary.code + ").data[axiom_bounds_check(" + idx_res.code + ", (" + primary.code + ").length, __FILE__, __LINE__)])"
+            cur = end_idx
+            continue
+        }
+
+        break
+    }
+
+    primary.next_pos = cur
+    return primary
+}
+
+fn parse_cast(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_postfix(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) and match_k(toks, cur, "as") {
+        let type_res = parse_type_str(toks, cur + 1)
+        let c_target = to_c_type(type_res.code)
+        left.code = "((" + c_target + ")(" + left.code + "))"
+        cur = type_res.next_pos
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn parse_unary(toks: Token[], pos: int) -> ParseResult {
+    let t = cur_tok(toks, pos)
+    if t.kind == "not" {
+        let operand = parse_unary(toks, pos + 1)
+        return res_new("!(" + operand.code + ")", operand.next_pos)
+    }
+    if t.kind == "-" {
+        let operand = parse_unary(toks, pos + 1)
+        return res_new("-(" + operand.code + ")", operand.next_pos)
+    }
+    return parse_cast(toks, pos)
+}
+
+fn parse_mul(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_unary(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) {
+        let op = cur_tok(toks, cur).kind
+        if op == "*" or op == "/" or op == "%" {
+            let right = parse_unary(toks, cur + 1)
+            let op_line = int_to_str(cur_tok(toks, cur).line)
+            if op == "/" {
+                left.code = "axiom_safe_div(" + left.code + ", " + right.code + ", " + op_line + ")"
+            } else if op == "%" {
+                left.code = "axiom_safe_mod(" + left.code + ", " + right.code + ", " + op_line + ")"
+            } else {
+                left.code = "(" + left.code + " " + op + " " + right.code + ")"
+            }
+            cur = right.next_pos
+        } else {
+            break
+        }
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn is_str_expr(code: str) -> bool {
+    if str_starts_with(code, "\"") { return true }
+    // Bilinen str-donduren runtime fonksiyonlari (axiom_str_ oneki tasimazlar)
+    if str_starts_with(code, "axiom_tcp_recv(") { return true }
+    if str_starts_with(code, "axiom_fd_read(") { return true }
+    if str_starts_with(code, "axiom_file_read(") { return true }
+    if str_starts_with(code, "axiom_os_getenv(") { return true }
+    if str_starts_with(code, "axiom_int_to_str(") { return true }
+    if str_starts_with(code, "axiom_date_now_iso(") { return true }
+    if str_starts_with(code, "axiom_date_format_epoch(") { return true }
+    if str_starts_with(code, "axiom_base64_encode(") { return true }
+    if str_starts_with(code, "axiom_base64_decode(") { return true }
+    if str_starts_with(code, "axiom_hex_encode(") { return true }
+    if str_starts_with(code, "axiom_hex_decode(") { return true }
+    if str_starts_with(code, "axiom_hash_md5(") { return true }
+    if str_starts_with(code, "axiom_hash_sha1(") { return true }
+    if str_starts_with(code, "axiom_hash_sha256(") { return true }
+    if str_starts_with(code, "axiom_hmac_sha256(") { return true }
+    if str_starts_with(code, "axiom_crypto_random_hex(") { return true }
+    if str_starts_with(code, "axiom_pcap_next_packet(") { return true }
+    if str_starts_with(code, "axiom_tensor_to_str(") { return true }
+    if str_starts_with(code, "axiom_fim_hash_file(") { return true }
+    if str_starts_with(code, "axiom_forensics_get_ports(") { return true }
+    if str_starts_with(code, "axiom_forensics_get_modules(") { return true }
+    if str_starts_with(code, "axiom_forensics_get_processes(") { return true }
+    if str_starts_with(code, "axiom_list_dir(") { return true }
+    if str_starts_with(code, "axiom_dns_resolve_ipv4(") { return true }
+    if str_starts_with(code, "axiom_json_get_str(") { return true }
+    if str_starts_with(code, "axiom_cli_args_get(") { return true }
+    if str_starts_with(code, "axiom_cli_get_option(") { return true }
+    if str_starts_with(code, "axiom_str_") {
+        if str_starts_with(code, "axiom_str_len") { return false }
+        if str_starts_with(code, "axiom_str_byte_len") { return false }
+        if str_starts_with(code, "axiom_str_index_of") { return false }
+        if str_starts_with(code, "axiom_str_to_int") { return false }
+        if str_starts_with(code, "axiom_str_char_code") { return false }
+        if str_starts_with(code, "axiom_str_contains") { return false }
+        if str_starts_with(code, "axiom_str_starts_with") { return false }
+        if str_starts_with(code, "axiom_str_ends_with") { return false }
+        if str_starts_with(code, "axiom_str_eq") { return false }
+        // Dizi donduren str_* fonksiyonlari
+        if str_starts_with(code, "axiom_str_split(") { return false }
+        if str_starts_with(code, "axiom_str_neq") { return false }
+        return true
+    }
+    return false
+}
+
+fn parse_add(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_mul(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) {
+        let op = cur_tok(toks, cur).kind
+        if op == "+" {
+            let right = parse_mul(toks, cur + 1)
+            if is_str_expr(left.code) or is_str_expr(right.code) {
+                left.code = "axiom_str_concat(" + left.code + ", " + right.code + ")"
+            } else if str_starts_with(left.code, "axiom_str_concat(")
+            or str_starts_with(left.code, "axiom_str_replace(")
+            or str_starts_with(left.code, "axiom_str_trim(")
+            or str_starts_with(left.code, "axiom_str_sub(")
+            or str_starts_with(left.code, "axiom_int_to_str(") {
+                left.code = "axiom_str_concat(" + left.code + ", " + right.code + ")"
+            } else {
+                // Tip bilinmiyor: karari C derleyicisi verir. Degisken bir
+                // `str` ise birlestirme, tamsayi ise toplama yapilir.
+                left.code = "axiom_add_auto(" + left.code + ", " + right.code + ")"
+            }
+            cur = right.next_pos
+        } else if op == "-" {
+            let right = parse_mul(toks, cur + 1)
+            left.code = "(" + left.code + " - " + right.code + ")"
+            cur = right.next_pos
+        } else {
+            break
+        }
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn parse_comp(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_add(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) {
+        let op = cur_tok(toks, cur).value
+        if op == "==" {
+            let right = parse_add(toks, cur + 1)
+            if is_str_expr(left.code) or is_str_expr(right.code) {
+                left.code = "axiom_str_eq(" + left.code + ", " + right.code + ")"
+            } else if not (str_starts_with(left.code, "axiom_eq_auto(")
+            or str_starts_with(left.code, "axiom_neq_auto(")) {
+                // Tip bilinmiyor: metinlerde icerik, sayilarda deger
+                // karsilastirmasi (pointer karsilastirmasi sessiz hataydi).
+                left.code = "axiom_eq_auto(" + left.code + ", " + right.code + ")"
+            } else {
+                left.code = "(" + left.code + " == " + right.code + ")"
+            }
+            cur = right.next_pos
+        } else if op == "!=" {
+            let right = parse_add(toks, cur + 1)
+            if is_str_expr(left.code) or is_str_expr(right.code) {
+                left.code = "axiom_str_neq(" + left.code + ", " + right.code + ")"
+            } else {
+                left.code = "(" + left.code + " != " + right.code + ")"
+            }
+            cur = right.next_pos
+        } else if op == "<" or op == ">" or op == "<=" or op == ">=" {
+            let right = parse_add(toks, cur + 1)
+            left.code = "(" + left.code + " " + op + " " + right.code + ")"
+            cur = right.next_pos
+        } else {
+            break
+        }
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn parse_and(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_comp(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) {
+        if match_k(toks, cur, "and") {
+            let right = parse_comp(toks, cur + 1)
+            left.code = "(" + left.code + " && " + right.code + ")"
+            cur = right.next_pos
+        } else {
+            break
+        }
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn parse_or(toks: Token[], pos: int) -> ParseResult {
+    let mut left = parse_and(toks, pos)
+    let mut cur = left.next_pos
+
+    while cur < len(toks) {
+        if match_k(toks, cur, "or") {
+            let right = parse_and(toks, cur + 1)
+            left.code = "(" + left.code + " || " + right.code + ")"
+            cur = right.next_pos
+        } else {
+            break
+        }
+    }
+    left.next_pos = cur
+    return left
+}
+
+fn parse_expr(toks: Token[], pos: int) -> ParseResult {
+    return parse_or(toks, pos)
+}
+
+fn parse_block_scoped(toks: Token[], pos: int, scope_defers: str[]) -> ParseResult {
+    let mut cur = pos
+    if match_k(toks, cur, "{") {
+        cur = cur + 1
+    }
+    let mut current_defers: str[] = []
+    let initial_count = len(scope_defers)
+    for i in 0..initial_count {
+        current_defers = array_push(current_defers, scope_defers[i])
+    }
+    let mut block_code = "{\n"
+    let mut last_was_return = false
+
+    while cur < len(toks) and not match_k(toks, cur, "}") {
+        last_was_return = false
+        let t = cur_tok(toks, cur)
+
+        // defer deyimi: gövdeyi ayrıştırıp mevcut kapsamın defer listesine ekle
+        if t.kind == "defer" {
+            cur = cur + 1
+            if match_k(toks, cur, "{") {
+                let blk_res = parse_block_scoped(toks, cur, current_defers)
+                current_defers = array_push(current_defers, blk_res.code)
+                cur = blk_res.next_pos
+                if match_k(toks, cur, ";") { cur = cur + 1 }
+            } else {
+                let st_res = parse_statement_scoped(toks, cur, current_defers)
+                current_defers = array_push(current_defers, st_res.code)
+                cur = st_res.next_pos
+            }
+            continue
+        }
+
+        if t.kind == "return" {
+            last_was_return = true
+        }
+
+        let stmt_res = parse_statement_scoped(toks, cur, current_defers)
+        block_code = block_code + "    " + stmt_res.code
+        cur = stmt_res.next_pos
+    }
+
+    if match_k(toks, cur, "}") {
+        cur = cur + 1
+    }
+
+    // Blok bitiminde (kapsam sonu), bu blokta tanimlanan defer'leri LIFO sırasıyla calistir
+    if not last_was_return {
+        let final_count = len(current_defers)
+        if final_count > initial_count {
+            let diff = final_count - initial_count
+            for di in 0..diff {
+                let rev_i = final_count - 1 - di
+                block_code = block_code + "    " + current_defers[rev_i]
+            }
+        }
+    }
+
+    block_code = block_code + "}\n"
+    return res_new(block_code, cur)
+}
+
+fn parse_block(toks: Token[], pos: int) -> ParseResult {
+    let empty_d: str[] = []
+    return parse_block_scoped(toks, pos, empty_d)
+}
+
+fn parse_statement_scoped(toks: Token[], pos: int, current_defers: str[]) -> ParseResult {
+    let t = cur_tok(toks, pos)
+
+    // 0. Blok deyimi { ... }
+    if t.kind == "{" {
+        return parse_block_scoped(toks, pos, current_defers)
+    }
+
+    // 1. let [mut] name [: type] [= expr]
+    if t.kind == "let" {
+        let mut cur = pos + 1
+        if match_k(toks, cur, "mut") {
+            cur = cur + 1
+        }
+        let var_name = cur_tok(toks, cur).value
+        cur = cur + 1
+
+        let mut type_name = "int"
+        let mut has_explicit_type = false
+        if match_k(toks, cur, ":") {
+            has_explicit_type = true
+            cur = cur + 1
+            let type_res = parse_type_str(toks, cur)
+            type_name = type_res.code
+            cur = type_res.next_pos
+        }
+
+        let mut init_code = "0"
+        if match_k(toks, cur, "=") {
+            cur = cur + 1
+            let init_res = parse_expr(toks, cur)
+            init_code = init_res.code
+            cur = init_res.next_pos
+
+            if not has_explicit_type {
+                if is_str_expr(init_code) {
+                    type_name = "str"
+                } else if init_code == "true" or init_code == "false" {
+                    type_name = "bool"
+                } else if str_starts_with(init_code, "axiom_simd_mul_i64(") or str_starts_with(init_code, "axiom_simd_add_i64(") or str_starts_with(init_code, "axiom_simd_sub_i64(") {
+                    type_name = "int[]"
+                } else if str_starts_with(init_code, "((ax_array_") {
+                    type_name = "int[]"
+                } else if str_starts_with(init_code, "((ax_") {
+                    let brace_idx = str_index_of(init_code, "){")
+                    if brace_idx > 5 {
+                        type_name = str_sub(init_code, 5, brace_idx - 5)
+                    }
+                } else if str_starts_with(init_code, "ax_some_int") or str_starts_with(init_code, "ax_none_int") {
+                    type_name = "OptionInt"
+                } else if str_starts_with(init_code, "ax_some_str") or str_starts_with(init_code, "ax_none_str") {
+                    type_name = "OptionStr"
+                } else if str_starts_with(init_code, "ax_some_bool") or str_starts_with(init_code, "ax_none_bool") {
+                    type_name = "OptionBool"
+                } else if str_starts_with(init_code, "ax_ok_int") or str_starts_with(init_code, "ax_err_int") {
+                    type_name = "ResultInt"
+                } else if str_starts_with(init_code, "ax_ok_str") or str_starts_with(init_code, "ax_err_str") {
+                    type_name = "ResultStr"
+                } else if str_starts_with(init_code, "((ax_float)") or (str_contains(init_code, ".") and not str_contains(init_code, "\"") and not str_contains(init_code, "(") and not str_contains(init_code, " ")) {
+                    type_name = "float"
+                }
+            }
+        }
+
+        let mut try_suffix = ""
+        if match_k(toks, cur, "?") {
+            try_suffix = "_ax_try_" + int_to_str(cur)
+            cur = cur + 1
+        }
+
+        if match_k(toks, cur, ";") {
+            cur = cur + 1
+        }
+
+        // `let x = f(y)?` : Result'u ac; Err ise (defer'ler calisip) ust
+        // fonksiyona ilet. Tek gecisli parser tip ortami tutmadigi icin
+        // __auto_type kullanilir.
+        if len(try_suffix) > 0 {
+            let num_d = len(current_defers)
+            let mut defers_code = ""
+            for di in 0..num_d {
+                let rev_i = num_d - 1 - di
+                defers_code = defers_code + "        " + current_defers[rev_i]
+            }
+            let try_code = "__auto_type " + var_name + try_suffix + " = " + init_code + ";\n"
+            + "if (!((" + var_name + try_suffix + ").is_ok)) {\n"
+            + defers_code
+            + "    __AXIOM_RET_TYPE__ __ax_err;\n"
+            + "    memset(&__ax_err, 0, sizeof(__ax_err));\n"
+            + "    __ax_err.is_ok = false;\n"
+            + "    __ax_err.error = (" + var_name + try_suffix + ").error;\n"
+            + "    return __ax_err;\n}\n"
+            + "__auto_type " + var_name + " = (" + var_name + try_suffix + ").value;\n"
+            return res_new(try_code, cur)
+        }
+
+        // Kullanici fonksiyonu cagrisinda donus tipi bilinmiyorsa (tek gecisli
+        // parser'da tip ortami yok) C'nin __auto_type'ini kullan.
+        if not has_explicit_type and type_name == "int"
+        and (str_starts_with(init_code, "ax_")
+        or str_starts_with(init_code, "axiom_"))
+        and str_contains(init_code, "(")
+        and not str_starts_with(init_code, "ax_int")
+        and not str_starts_with(init_code, "ax_str")
+        and not str_starts_with(init_code, "ax_bool")
+        and not str_starts_with(init_code, "ax_float") {
+            let auto_decl = "__auto_type " + var_name + " = " + init_code + ";\n"
+            return res_new(auto_decl, cur)
+        }
+
+        let c_type = to_c_type(type_name)
+        if str_ends_with(type_name, "[]") and str_starts_with(init_code, "((ax_array_int)") {
+            let elem_c_type = to_c_type(str_sub(type_name, 0, str_byte_len(type_name) - 2))
+            init_code = str_replace(init_code, "ax_array_int", c_type)
+            init_code = str_replace(init_code, "(ax_int[])", "(" + elem_c_type + "[])")
+        }
+        let decl_code = c_type + " " + var_name + " = " + init_code + ";\n"
+        return res_new(decl_code, cur)
+    }
+
+    // 2. if cond { ... } else { ... }
+    if t.kind == "if" {
+        let cond_res = parse_expr(toks, pos + 1)
+        let then_res = parse_block_scoped(toks, cond_res.next_pos, current_defers)
+        let mut cur = then_res.next_pos
+        let mut else_code = ""
+
+        if match_k(toks, cur, "else") {
+            cur = cur + 1
+            if match_k(toks, cur, "if") {
+                let else_if_res = parse_statement_scoped(toks, cur, current_defers)
+                else_code = " else " + else_if_res.code
+                cur = else_if_res.next_pos
+            } else {
+                let else_block = parse_block_scoped(toks, cur, current_defers)
+                else_code = " else " + else_block.code
+                cur = else_block.next_pos
+            }
+        }
+
+        let if_code = "if (" + cond_res.code + ") " + then_res.code + else_code + "\n"
+        return res_new(if_code, cur)
+    }
+
+    // 3. while cond { ... }
+    if t.kind == "while" {
+        let cond_res = parse_expr(toks, pos + 1)
+        let mut cur = cond_res.next_pos
+        while cur < len(toks) and match_k(toks, cur, "invariant") {
+            let inv_res = parse_expr(toks, cur + 1)
+            cur = inv_res.next_pos
+            if match_k(toks, cur, ";") { cur = cur + 1 }
+        }
+        let body_res = parse_block_scoped(toks, cur, current_defers)
+        let while_code = "while (" + cond_res.code + ") " + body_res.code + "\n"
+        return res_new(while_code, body_res.next_pos)
+    }
+
+    // 4. for i in start..end { ... }
+    if t.kind == "for" {
+        let var_name = cur_tok(toks, pos + 1).value
+        let mut cur = pos + 2
+        if match_k(toks, cur, "in") {
+            cur = cur + 1
+        }
+        let start_res = parse_expr(toks, cur)
+        cur = start_res.next_pos
+        if match_k(toks, cur, "DOTDOT") {
+            cur = cur + 1
+        }
+        let end_res = parse_expr(toks, cur)
+        cur = end_res.next_pos
+        while cur < len(toks) and match_k(toks, cur, "invariant") {
+            let inv_res = parse_expr(toks, cur + 1)
+            cur = inv_res.next_pos
+            if match_k(toks, cur, ";") { cur = cur + 1 }
+        }
+        let body_res = parse_block_scoped(toks, cur, current_defers)
+
+        let for_code = "for (ax_int " + var_name + " = " + start_res.code + "; " + var_name + " < " + end_res.code + "; " + var_name + "++) " + body_res.code + "\n"
+        return res_new(for_code, body_res.next_pos)
+    }
+
+    // 5. return [expr] - tum aktif defer ifadelerini LIFO ters sirayla calistir
+    if t.kind == "return" {
+        let mut cur = pos + 1
+        let mut ret_val_code = ""
+        if not (match_k(toks, cur, ";") or match_k(toks, cur, "}")) {
+            let ret_res = parse_expr(toks, cur)
+            ret_val_code = ret_res.code
+            cur = ret_res.next_pos
+        }
+        if match_k(toks, cur, ";") {
+            cur = cur + 1
+        }
+
+        let num_d = len(current_defers)
+        if num_d > 0 {
+            let mut defers_code = ""
+            for di in 0..num_d {
+                let rev_i = num_d - 1 - di
+                defers_code = defers_code + "        " + current_defers[rev_i]
+            }
+            if len(ret_val_code) > 0 {
+                // `__auto_type`: ifade bir makro/genel cagri olabilir; turu
+                // adiyla yazmak (ax_typeof her zaman calismaz) yerine C'nin
+                // kendi cikarimini kullan.
+                return res_new("{\n        __auto_type ret_val = " + ret_val_code + ";\n" + defers_code + "        return ret_val;\n    }\n", cur)
+            } else {
+                return res_new("{\n" + defers_code + "        return;\n    }\n", cur)
+            }
+        } else {
+            if len(ret_val_code) > 0 {
+                return res_new("return " + ret_val_code + ";\n", cur)
+            } else {
+                return res_new("return;\n", cur)
+            }
+        }
+    }
+
+    // 6. print(...)
+    if t.kind == "print" {
+        let mut cur = pos + 1
+        if match_k(toks, cur, "(") {
+            cur = cur + 1
+        }
+        let mut print_code = ""
+        let mut arg_idx = 0
+        while cur < len(toks) and not match_k(toks, cur, ")") {
+            let arg_res = parse_expr(toks, cur)
+            if arg_idx > 0 {
+                print_code = print_code + "axiom_print_str(\" \");\n"
+            }
+            print_code = print_code + "axiom_print_auto(" + arg_res.code + ");\n"
+            arg_idx = arg_idx + 1
+            cur = arg_res.next_pos
+            if match_k(toks, cur, ",") {
+                cur = cur + 1
+            }
+        }
+        if match_k(toks, cur, ")") {
+            cur = cur + 1
+        }
+        if match_k(toks, cur, ";") {
+            cur = cur + 1
+        }
+        print_code = print_code + "axiom_print_newline();\n"
+        return res_new(print_code, cur)
+    }
+
+    // 7. verify cond [, msg]
+    if t.kind == "verify" {
+        let cond_res = parse_expr(toks, pos + 1)
+        let mut cur = cond_res.next_pos
+        let mut msg_code = "\"Verification condition failed\""
+        if match_k(toks, cur, ",") {
+            let msg_res = parse_expr(toks, cur + 1)
+            msg_code = msg_res.code
+            cur = msg_res.next_pos
+        }
+        if match_k(toks, cur, ";") {
+            cur = cur + 1
+        }
+        let verify_code = "if (!(" + cond_res.code + ")) { axiom_contract_fail(\"VERIFY\", " + msg_code + ", \"fn\", 1, NULL); }\n"
+        return res_new(verify_code, cur)
+    }
+
+    // 8. match expr { pat => stmt, ..., else / _ => stmt }
+    if t.kind == "match" {
+        let expr_res = parse_expr(toks, pos + 1)
+        let mut cur = expr_res.next_pos
+        if match_k(toks, cur, "{") {
+            cur = cur + 1
+        }
+        let mut match_code = "{\n        ax_typeof(" + expr_res.code + ") __match_val = (" + expr_res.code + ");\n"
+        let mut first_branch = true
+        while cur < len(toks) and not match_k(toks, cur, "}") {
+            let case_tok = cur_tok(toks, cur)
+            if case_tok.kind == "else" or case_tok.value == "_" {
+                cur = cur + 1
+                if match_k(toks, cur, "FAT_ARROW") or match_k(toks, cur, "ARROW") or match_v(toks, cur, "=>") {
+                    cur = cur + 1
+                }
+                let else_res = parse_statement_scoped(toks, cur, current_defers)
+                if first_branch {
+                    match_code = match_code + "        {\n            " + else_res.code + "        }\n"
+                } else {
+                    match_code = match_code + "        else {\n            " + else_res.code + "        }\n"
+                }
+                cur = else_res.next_pos
+                if match_k(toks, cur, ",") or match_k(toks, cur, ";") {
+                    cur = cur + 1
+                }
+                continue
+            }
+
+            let pat_res = parse_expr(toks, cur)
+            cur = pat_res.next_pos
+            if match_k(toks, cur, "FAT_ARROW") or match_k(toks, cur, "ARROW") or match_v(toks, cur, "=>") {
+                cur = cur + 1
+            }
+            let branch_res = parse_statement_scoped(toks, cur, current_defers)
+            let cond = "(__match_val == (" + pat_res.code + "))"
+            if first_branch {
+                match_code = match_code + "        if " + cond + " {\n            " + branch_res.code + "        }\n"
+                first_branch = false
+            } else {
+                match_code = match_code + "        else if " + cond + " {\n            " + branch_res.code + "        }\n"
+            }
+            cur = branch_res.next_pos
+            if match_k(toks, cur, ",") or match_k(toks, cur, ";") {
+                cur = cur + 1
+            }
+        }
+        if match_k(toks, cur, "}") {
+            cur = cur + 1
+        }
+        match_code = match_code + "    }\n"
+        return res_new(match_code, cur)
+    }
+
+    // 8. break & continue
+    if t.kind == "break" {
+        let mut cur = pos + 1
+        if match_k(toks, cur, ";") { cur = cur + 1 }
+        return res_new("break;\n", cur)
+    }
+    if t.kind == "continue" {
+        let mut cur = pos + 1
+        if match_k(toks, cur, ";") { cur = cur + 1 }
+        return res_new("continue;\n", cur)
+    }
+
+    // 9. defer (tek deyim veya blok)
+    if t.kind == "defer" {
+        let mut cur = pos + 1
+        if match_k(toks, cur, "{") {
+            let blk_res = parse_block_scoped(toks, cur, current_defers)
+            cur = blk_res.next_pos
+            if match_k(toks, cur, ";") { cur = cur + 1 }
+            return blk_res
+        } else {
+            return parse_statement_scoped(toks, cur, current_defers)
+        }
+    }
+
+    // 10. Atama veya İfade Deyimi
+    let expr_res = parse_expr(toks, pos)
+    let mut cur = expr_res.next_pos
+
+    if match_k(toks, cur, "=") {
+        cur = cur + 1
+        let val_res = parse_expr(toks, cur)
+        cur = val_res.next_pos
+        if match_k(toks, cur, ";") {
+            cur = cur + 1
+        }
+        let assign_code = expr_res.code + " = " + val_res.code + ";\n"
+        return res_new(assign_code, cur)
+    }
+
+    if match_k(toks, cur, ";") {
+        cur = cur + 1
+    }
+    return res_new(expr_res.code + ";\n", cur)
+}
+
+fn parse_statement(toks: Token[], pos: int) -> ParseResult {
+    let empty_d: str[] = []
+    return parse_statement_scoped(toks, pos, empty_d)
+}
+
+fn parse_struct(toks: Token[], pos: int) -> ASTStruct {
+    let s_name = cur_tok(toks, pos + 1).value
+    let mut cur = pos + 2
+    let mut type_params: str[] = []
+    if match_k(toks, cur, "<") {
+        cur = cur + 1
+        while cur < len(toks) and not match_k(toks, cur, ">") {
+            let p_val = cur_tok(toks, cur).value
+            if p_val != "," {
+                type_params = array_push(type_params, p_val)
+            }
+            cur = cur + 1
+        }
+        if match_k(toks, cur, ">") {
+            cur = cur + 1
+        }
+    }
+
+    if match_k(toks, cur, "{") {
+        cur = cur + 1
+    }
+
+    let mut fields: ASTField[] = []
+    while cur < len(toks) and not match_k(toks, cur, "}") {
+        let f_name = cur_tok(toks, cur).value
+        cur = cur + 1
+        if match_k(toks, cur, ":") {
+            cur = cur + 1
+        }
+        let type_res = parse_type_str(toks, cur)
+        let f_type = type_res.code
+        cur = type_res.next_pos
+
+        fields = array_push(fields, ast_field_new(f_name, f_type))
+        if match_k(toks, cur, ",") {
+            cur = cur + 1
+        }
+    }
+    return ast_struct_new(s_name, fields)
+}
+
+fn parse_function(toks: Token[], pos: int) -> ASTFunction {
+    let fn_name = cur_tok(toks, pos + 1).value
+    let mut cur = pos + 2
+    let mut fn_type_params: str[] = []
+    if match_k(toks, cur, "<") {
+        cur = cur + 1
+        while cur < len(toks) and not match_k(toks, cur, ">") {
+            let p_val = cur_tok(toks, cur).value
+            if p_val != "," {
+                fn_type_params = array_push(fn_type_params, p_val)
+            }
+            cur = cur + 1
+        }
+        if match_k(toks, cur, ">") {
+            cur = cur + 1
+        }
+    }
+
+    if match_k(toks, cur, "(") {
+        cur = cur + 1
+    }
+
+    let mut params: ASTParam[] = []
+    while cur < len(toks) and not match_k(toks, cur, ")") {
+        let p_name = cur_tok(toks, cur).value
+        cur = cur + 1
+        if match_k(toks, cur, ":") {
+            cur = cur + 1
+        }
+        let type_res = parse_type_str(toks, cur)
+        let mut p_type = type_res.code
+        cur = type_res.next_pos
+
+        let n_ftp = len(fn_type_params)
+        for ftp_idx in 0..n_ftp {
+            if fn_type_params[ftp_idx] == p_type {
+                p_type = "int"
+            }
+        }
+
+        params = array_push(params, ast_param_new(p_name, p_type))
+        if match_k(toks, cur, ",") {
+            cur = cur + 1
+        }
+    }
+    if match_k(toks, cur, ")") {
+        cur = cur + 1
+    }
+
+    let mut ret_type = "void"
+    if match_k(toks, cur, "ARROW") {
+        cur = cur + 1
+        let type_res = parse_type_str(toks, cur)
+        ret_type = type_res.code
+        cur = type_res.next_pos
+
+        let n_ftp = len(fn_type_params)
+        for ftp_idx in 0..n_ftp {
+            if fn_type_params[ftp_idx] == ret_type {
+                ret_type = "int"
+            }
+        }
+    }
+
+    // COKLU `requires` / `ensures` cumleleri desteklenir.
+    // Tek cumle varsayimi, ikinci `requires`tan sonraki her seyi onceki
+    // fonksiyonun govdesine yutuyordu (sessiz bozulma).
+    let mut requires_expr = ""
+    while match_k(toks, cur, "requires") {
+        cur = cur + 1
+        let req_res = parse_expr(toks, cur)
+        if len(requires_expr) == 0 {
+            requires_expr = req_res.code
+        } else {
+            requires_expr = "(" + requires_expr + ") && (" + req_res.code + ")"
+        }
+        cur = req_res.next_pos
+    }
+
+    let mut ensures_expr = ""
+    while match_k(toks, cur, "ensures") {
+        cur = cur + 1
+        let ens_res = parse_expr(toks, cur)
+        if len(ensures_expr) == 0 {
+            ensures_expr = ens_res.code
+        } else {
+            ensures_expr = "(" + ensures_expr + ") && (" + ens_res.code + ")"
+        }
+        cur = ens_res.next_pos
+    }
+
+    let body_res = parse_block(toks, cur)
+    let mut body_code = body_res.code
+
+    // Self-hosted generic fonksiyonlar: tip parametreleri int olarak
+    // somutlastirilir. Yalnizca `ret_type` degil, PARAMETRE tipleri de
+    // donusturulmelidir; aksi halde `Result<T, str>` gibi bir parametre
+    // `ax_Result_T_str` olarak C'ye sizar (tanimsiz tip).
+    if len(fn_type_params) > 0 {
+        // parse_type_str tipleri ZATEN alt cizgiyle kodlar: `Result<T, str>`
+        // -> "Result_T_str". Bu yuzden "_T_" / sonundaki "_T" desenleri
+        // somut tip ile degistirilmelidir.
+        let n_params_g = len(params)
+        for gi in 0..n_params_g {
+            let mut pt = params[gi].type_name
+            let n_tp = len(fn_type_params)
+            for ti in 0..n_tp {
+                let tp = fn_type_params[ti]
+                pt = str_replace(pt, "_" + tp + "_", "_int_")
+                if str_ends_with(pt, "_" + tp) {
+                    pt = str_sub(pt, 0, str_byte_len(pt) - len(tp) - 1) + "_int"
+                }
+                if pt == tp {
+                    pt = "int"
+                }
+            }
+            params[gi] = ast_param_new(params[gi].name, pt)
+        }
+        let n_tp2 = len(fn_type_params)
+        for ti in 0..n_tp2 {
+            let tp = fn_type_params[ti]
+            ret_type = str_replace(ret_type, "_" + tp + "_", "_int_")
+            if str_ends_with(ret_type, "_" + tp) {
+                ret_type = str_sub(ret_type, 0, str_byte_len(ret_type) - len(tp) - 1) + "_int"
+            }
+            if ret_type == tp {
+                ret_type = "int"
+            }
+        }
+        ret_type = str_replace(ret_type, "_T", "_int")
+        ret_type = str_replace(ret_type, "_U", "_int")
+        ret_type = str_replace(ret_type, "_V", "_int")
+        body_code = str_replace(body_code, "_T", "_int")
+        body_code = str_replace(body_code, "_U", "_int")
+        body_code = str_replace(body_code, "_V", "_int")
+    }
+    // `?` icin birakilan yer tutucuyu gercek donus tipiyle doldur.
+    body_code = str_replace(body_code, "__AXIOM_RET_TYPE__", to_c_type(ret_type))
+
+    if len(fn_type_params) > 0 {
+        return ast_function_new_generic(fn_name, params, ret_type, requires_expr, ensures_expr, body_code)
+    }
+    return ast_function_new(fn_name, params, ret_type, requires_expr, ensures_expr, body_code)
+}
+
+fn struct_exists(structs: ASTStruct[], name: str) -> bool {
+    let n = len(structs)
+    for i in 0..n {
+        if structs[i].name == name {
+            return true
+        }
+    }
+    return false
+}
+
+fn find_struct(structs: ASTStruct[], name: str) -> ASTStruct {
+    let n = len(structs)
+    for i in 0..n {
+        if structs[i].name == name {
+            return structs[i]
+        }
+    }
+    let empty_f: ASTField[] = []
+    return ast_struct_new("", empty_f)
+}
+
+fn is_generic_template(s: ASTStruct) -> bool {
+    let n = len(s.fields)
+    for i in 0..n {
+        let t = s.fields[i].type_name
+        if t == "T" or t == "U" or t == "V" or t == "K" or t == "E" or t == "A" or t == "B" {
+            return true
+        }
+    }
+    return false
+}
+
+fn monomorphize_structs_in_program(structs: ASTStruct[], toks: Token[]) -> ASTStruct[] {
+    let mut res_structs = structs
+    let num_tokens = len(toks)
+    for k in 0..num_tokens {
+        let t = toks[k]
+        if t.kind == "IDENT" and struct_exists(res_structs, t.value) {
+            let template_name = t.value
+            let template_s = find_struct(res_structs, template_name)
+            if not is_generic_template(template_s) or k + 1 >= num_tokens {
+                continue
+            }
+            if cur_tok(toks, k + 1).kind != "<" {
+                continue
+            }
+
+            // Tip argumanlarini token'lardan topla. `str[]` gibi diziler
+            // "str[]" olarak birlestirilir (parantezler ayri token).
+            let mut scan = k + 2
+            let mut type_args: str[] = []
+            let mut current_arg = ""
+            let mut is_valid_generic = true
+            while scan < num_tokens and not match_k(toks, scan, ">") {
+                let g_k = cur_tok(toks, scan).kind
+                let g_tok = cur_tok(toks, scan).value
+                if g_k == ";" or g_k == "{" or g_k == "}" or g_k == "(" or g_k == ")" or g_k == "EOF" or g_k == "ARROW" {
+                    is_valid_generic = false
+                    break
+                }
+                if g_k == "," {
+                    if len(current_arg) > 0 {
+                        type_args = array_push(type_args, current_arg)
+                        current_arg = ""
+                    }
+                } else if g_k == "[" {
+                    current_arg = current_arg + "["
+                } else if g_k == "]" {
+                    current_arg = current_arg + "]"
+                } else if g_k == "IDENT" or g_k == "int" or g_k == "float" or g_k == "bool" or g_k == "str" {
+                    current_arg = current_arg + g_tok
+                } else {
+                    is_valid_generic = false
+                    break
+                }
+                scan = scan + 1
+            }
+            if len(current_arg) > 0 {
+                type_args = array_push(type_args, current_arg)
+            }
+            if not is_valid_generic or not match_k(toks, scan, ">") or len(type_args) == 0 {
+                continue
+            }
+
+            let mut mangled_suffix = ""
+            let n_args = len(type_args)
+            for ai in 0..n_args {
+                let clean_arg = str_replace(type_args[ai], "[]", "_array")
+                if len(mangled_suffix) > 0 {
+                    mangled_suffix = mangled_suffix + "_" + clean_arg
+                } else {
+                    mangled_suffix = clean_arg
+                }
+            }
+
+            let spec_name = template_name + "_" + mangled_suffix
+            if struct_exists(res_structs, spec_name) {
+                continue
+            }
+
+            let mut spec_fields: ASTField[] = []
+            let n_fields = len(template_s.fields)
+            for fi in 0..n_fields {
+                let orig_f = template_s.fields[fi]
+                let mut actual_type = orig_f.type_name
+                if actual_type == "T" and n_args >= 1 {
+                    actual_type = type_args[0]
+                } else if actual_type == "U" and n_args >= 2 {
+                    actual_type = type_args[1]
+                } else if actual_type == "V" and n_args >= 3 {
+                    actual_type = type_args[2]
+                } else if actual_type == "K" and n_args >= 1 {
+                    actual_type = type_args[0]
+                } else if actual_type == "E" and n_args >= 2 {
+                    actual_type = type_args[1]
+                } else if actual_type == "A" and n_args >= 1 {
+                    actual_type = type_args[0]
+                } else if actual_type == "B" and n_args >= 2 {
+                    actual_type = type_args[1]
+                }
+                spec_fields = array_push(spec_fields, ast_field_new(orig_f.name, actual_type))
+            }
+            res_structs = array_push(res_structs, ast_struct_new(spec_name, spec_fields))
+        }
+    }
+    return res_structs
+}
+
+fn parse_program(toks: Token[]) -> ASTProgram {
+    let mut prog = ast_program_new()
+    let mut cur = 0
+
+    while cur < len(toks) {
+        let t = cur_tok(toks, cur)
+
+        if t.kind == "EOF" {
+            break
+        }
+
+        // import "..." atla
+        if t.kind == "import" {
+            cur = cur + 2
+            if match_k(toks, cur, ";") { cur = cur + 1 }
+            continue
+        }
+
+        // struct Name { ... }
+        if t.kind == "struct" {
+            let s = parse_struct(toks, cur)
+            prog.structs = array_push(prog.structs, s)
+            while cur < len(toks) and not match_k(toks, cur, "}") {
+                cur = cur + 1
+            }
+            if match_k(toks, cur, "}") {
+                cur = cur + 1
+            }
+            continue
+        }
+
+        // fn name(...) -> ret { ... }
+        if t.kind == "fn" {
+            let f = parse_function(toks, cur)
+            prog.functions = array_push(prog.functions, f)
+            while cur < len(toks) and not match_k(toks, cur, "{") {
+                cur = cur + 1
+            }
+            let mut brace_depth = 0
+            while cur < len(toks) {
+                if match_k(toks, cur, "{") {
+                    brace_depth = brace_depth + 1
+                } else if match_k(toks, cur, "}") {
+                    brace_depth = brace_depth - 1
+                    if brace_depth == 0 {
+                        cur = cur + 1
+                        break
+                    }
+                }
+                cur = cur + 1
+            }
+            continue
+        }
+
+        // Top-level deyim
+        let stmt_res = parse_statement(toks, cur)
+        prog.top_level_code = prog.top_level_code + stmt_res.code
+        cur = stmt_res.next_pos
+    }
+
+    prog.structs = monomorphize_structs_in_program(prog.structs, toks)
+    return prog
+}

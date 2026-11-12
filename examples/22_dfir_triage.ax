@@ -1,0 +1,282 @@
+// Axiom (λx) - Ornek 22: DFIR Triyaj Akisi (Faz 1 kapanis araci)
+// examples/22_dfir_triage.ax
+//
+// Tek komutla calisan, tek JSON rapor ureten savunma/DFIR triyaj araci:
+//   1. Calisan surecler (/proc)
+//   2. Dinlenen TCP portlari (/proc/net/tcp)
+//   3. Kritik dosya butunluk hash'leri (SHA-256)
+//   4. Sigma kural motoru ile log taramasi
+//   5. Tek JSON rapor (stdout)
+//
+// Kullanim:
+//   axiom run examples/22_dfir_triage.ax
+//   AXIOM_DFIR_LOG=/var/log/auth.log axiom run examples/22_dfir_triage.ax
+//
+// Cikis kodu: 0 = rapor uretildi. Risk skoru cikis kodunu degistirmez
+// (triage araci bir tespit aracidir, politika motoru degildir).
+
+import "std/os/forensics"
+import "std/security/integrity"
+import "std/security/sigma"
+import "std/encoding/json"
+
+// -----------------------------------------------------------------------------
+// Yardimcilar
+// -----------------------------------------------------------------------------
+
+fn _non_empty_lines(text: str) -> str[] {
+    let raw = str_split(text, "\n")
+    let mut out: str[] = []
+    let n = len(raw)
+    let mut i = 0
+    while (i < n) {
+        let t = str_trim(raw[i])
+        if len(t) > 0 {
+            out = array_push(out, t)
+        }
+        i = i + 1
+    }
+    return out
+}
+
+fn _json_str_array(items: str[]) -> str {
+    let mut parts: str[] = []
+    let n = len(items)
+    let mut i = 0
+    while (i < n) {
+        parts = array_push(parts, "\"" + json_escape(items[i]) + "\"")
+        i = i + 1
+    }
+    return "[" + str_join(parts, ",") + "]"
+}
+
+fn _json_raw_array(items: str[]) -> str {
+    return "[" + str_join(items, ",") + "]"
+}
+
+fn _risk_verdict(score: int) -> str {
+    if score >= 90 { return "critical" }
+    if score >= 75 { return "high" }
+    if score >= 50 { return "medium" }
+    if score >= 25 { return "low" }
+    return "info"
+}
+
+// -----------------------------------------------------------------------------
+// 1. Surec envanteri
+// -----------------------------------------------------------------------------
+
+fn _collect_processes(limit: int) -> str[] {
+    let lines = _non_empty_lines(forensics_list_processes())
+    let mut out: str[] = []
+    let n = len(lines)
+    let mut i = 0
+    while (i < n and i < limit) {
+        let idx = str_index_of(lines[i], ":")
+        if idx > 0 {
+            let pid = str_sub(lines[i], 0, idx)
+            let name = str_sub(lines[i], idx + 1, len(lines[i]) - idx - 1)
+            out = array_push(out, json_build_object(
+            ["pid", "name"],
+            [pid, name]
+            ))
+        }
+        i = i + 1
+    }
+    return out
+}
+
+// -----------------------------------------------------------------------------
+// 2. Dinlenen portlar
+// -----------------------------------------------------------------------------
+
+fn _collect_ports(limit: int) -> str[] {
+    let lines = _non_empty_lines(forensics_list_listening_ports())
+    let mut out: str[] = []
+    let n = len(lines)
+    let mut i = 0
+    while (i < n and i < limit) {
+        let idx = str_index_of(lines[i], ":")
+        if idx > 0 {
+            let ip = str_sub(lines[i], 0, idx)
+            let port = str_sub(lines[i], idx + 1, len(lines[i]) - idx - 1)
+            out = array_push(out, json_build_object(
+            ["ip", "port"],
+            [ip, port]
+            ))
+        }
+        i = i + 1
+    }
+    return out
+}
+
+// -----------------------------------------------------------------------------
+// 3. Butunluk kontrolu
+// -----------------------------------------------------------------------------
+
+fn _collect_integrity(paths: str[]) -> str[] {
+    let mut out: str[] = []
+    let n = len(paths)
+    let mut i = 0
+    while (i < n) {
+        let p = paths[i]
+        let mut status = "missing"
+        let mut digest = ""
+        if file_exists(p) {
+            let h = fim_calculate_hash(p)
+            if len(h) == 64 {
+                digest = h
+                status = "hashed"
+            } else {
+                status = "unreadable"
+            }
+        }
+        out = array_push(out, json_build_object(
+        ["path", "sha256", "status"],
+        [p, digest, status]
+        ))
+        i = i + 1
+    }
+    return out
+}
+
+// -----------------------------------------------------------------------------
+// 4. Sigma taramasi
+// -----------------------------------------------------------------------------
+
+fn _log_type_for(line: str) -> str {
+    if str_contains(line, "GET ") or str_contains(line, "POST ") or str_contains(line, "HTTP/") {
+        return "web"
+    }
+    if str_contains(line, "sshd") or str_contains(line, "Failed password") or str_contains(line, "Accepted password") {
+        return "auth"
+    }
+    return "syslog"
+}
+
+fn _collect_detections(lines: str[]) -> SigmaAlert[] {
+    let engine = sigma_get_default_ruleset()
+    let mut alerts: SigmaAlert[] = []
+    let n = len(lines)
+    let mut i = 0
+    while (i < n) {
+        let found = sigma_engine_eval_raw(engine, lines[i], _log_type_for(lines[i]))
+        let m = len(found)
+        let mut j = 0
+        while (j < m) {
+            alerts = array_push(alerts, found[j])
+            j = j + 1
+        }
+        i = i + 1
+    }
+    return alerts
+}
+
+fn _unique_detections(alerts: SigmaAlert[]) -> str[] {
+    let mut out: str[] = []
+    let mut seen = ""
+    let n = len(alerts)
+    let mut i = 0
+    while (i < n) {
+        let a = alerts[i]
+        if not str_contains(seen, "|" + a.rule_id + "|") {
+            seen = seen + "|" + a.rule_id + "|"
+            out = array_push(out, json_build_object(
+            ["rule_id", "title", "log_type", "level", "risk"],
+            [a.rule_id, a.rule_title, a.log_type, a.level, int_to_str(a.risk_score)]
+            ))
+        }
+        i = i + 1
+    }
+    return out
+}
+
+fn _max_risk(alerts: SigmaAlert[]) -> int {
+    let mut top = 0
+    let n = len(alerts)
+    let mut i = 0
+    while (i < n) {
+        if alerts[i].risk_score > top {
+            top = alerts[i].risk_score
+        }
+        i = i + 1
+    }
+    return top
+}
+
+// -----------------------------------------------------------------------------
+// Ana akis
+// -----------------------------------------------------------------------------
+
+fn main() -> int {
+    let mut host = str_trim(file_read("/proc/sys/kernel/hostname"))
+    if len(host) == 0 {
+        host = "unknown"
+    }
+
+    // Surecler
+    let processes = _collect_processes(50)
+    let proc_count = len(_non_empty_lines(forensics_list_processes()))
+
+    // Portlar
+    let ports = _collect_ports(50)
+    let port_count = len(_non_empty_lines(forensics_list_listening_ports()))
+
+    // Butunluk
+    let integrity = _collect_integrity([
+    "/etc/passwd",
+    "/etc/shadow",
+    "/etc/hostname",
+    "/etc/ssh/sshd_config"
+    ])
+
+    // Sigma: ortam degiskeni verilmisse onu, yoksa yaygin log yollarini dene
+    let mut log_path = os_getenv("AXIOM_DFIR_LOG")
+    let mut log_source = "none"
+    let mut log_text = ""
+    if len(log_path) > 0 and file_exists(log_path) {
+        let content = file_read(log_path)
+        if len(content) > 0 {
+            log_text = content
+            log_source = log_path
+        }
+    } else {
+        let candidates = ["/var/log/auth.log", "/var/log/secure", "/var/log/apache2/access.log"]
+        let cn = len(candidates)
+        let mut i = 0
+        while (i < cn) {
+            if file_exists(candidates[i]) {
+                let content = file_read(candidates[i])
+                if len(content) > 0 {
+                    log_text = content
+                    log_source = candidates[i]
+                    break
+                }
+            }
+            i = i + 1
+        }
+    }
+
+    let log_lines = _non_empty_lines(log_text)
+    let alerts = _collect_detections(log_lines)
+    let detections = _unique_detections(alerts)
+    let top_risk = _max_risk(alerts)
+    let verdict = _risk_verdict(top_risk)
+
+    // Tek JSON rapor
+    let report = "{"
+    + "\"tool\":\"axiom-dfir-triage\","
+    + "\"version\":\"0.1.0\","
+    + "\"host\":\"" + json_escape(host) + "\","
+    + "\"timestamp_ms\":\"" + int_to_str(time_now_ms()) + "\","
+    + "\"processes\":{\"count\":\"" + int_to_str(proc_count) + "\",\"top\":" + _json_raw_array(processes) + "},"
+    + "\"network\":{\"listening_count\":\"" + int_to_str(port_count) + "\",\"listening\":" + _json_raw_array(ports) + "},"
+    + "\"integrity\":" + _json_raw_array(integrity) + ","
+    + "\"log\":{\"source\":\"" + json_escape(log_source) + "\",\"lines\":\"" + int_to_str(len(log_lines)) + "\"},"
+    + "\"detections\":{\"total\":\"" + int_to_str(len(alerts)) + "\",\"unique\":\"" + int_to_str(len(detections)) + "\",\"items\":" + _json_raw_array(detections) + "},"
+    + "\"risk\":{\"score\":\"" + int_to_str(top_risk) + "\",\"verdict\":\"" + verdict + "\"}"
+    + "}"
+
+    print(report)
+    return 0
+}

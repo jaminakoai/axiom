@@ -1,0 +1,91 @@
+// Axiom Standard Library: std/text/unicode
+// UTF-8 kod noktası, grapheme cluster, Türkçe harf motoru ve UAX #15
+// normalleştirme (NFC / NFD).
+//
+// Normalleştirme tabloları Unicode Character Database'den üretilir
+// (`tools/gen_unicode_tables.py` -> `axiom/unicode_tables.h`); Hangul
+// algoritmiktir. Tablo sürümü `unicode_ucd_version()` ile sorgulanır.
+//
+// KAPSAM: NFC ve NFD tamdır. NFKC/NFKD **desteklenmez** (compatibility
+// ayrıştırma tablosu gömülü değil). Sessizce yanlış sonuç vermemek için
+// `unicode_normalize(s, "NFKC")` boş metin döner; `unicode_normalize_result`
+// ise açık hata verir.
+
+import "std/core/error"
+
+fn utf8_codepoint_count(s: str) -> int {
+    return rt_utf8_codepoint_count(s);
+}
+
+fn grapheme_len(s: str) -> int {
+    return rt_str_grapheme_len(s);
+}
+
+fn grapheme_at(s: str, idx: int) -> str {
+    return rt_str_grapheme_at(s, idx);
+}
+
+fn to_upper_tr(s: str) -> str {
+    return rt_str_to_upper_tr(s);
+}
+
+fn to_lower_tr(s: str) -> str {
+    return rt_str_to_lower_tr(s);
+}
+
+fn is_avx2_supported() -> bool {
+    return rt_simd_avx2_supported();
+}
+
+// -----------------------------------------------------------------------------
+// Normalleştirme (UAX #15)
+// -----------------------------------------------------------------------------
+
+/// Kanonik ayrıştırma: é -> e + U+0301, Hangul heceleri jamo'ya ayrılır.
+fn unicode_nfd(s: str) -> str {
+    return rt_unicode_nfd(s);
+}
+
+/// Kanonik birleştirme: e + U+0301 -> é.
+fn unicode_nfc(s: str) -> str {
+    return rt_unicode_nfc(s);
+}
+
+/// Metin zaten NFD biçiminde mi?
+fn unicode_is_nfd(s: str) -> bool {
+    return rt_unicode_is_nfd(s);
+}
+
+/// Metin zaten NFC biçiminde mi?
+fn unicode_is_nfc(s: str) -> bool {
+    return rt_unicode_is_nfc(s);
+}
+
+/// "NFC" veya "NFD" seçer. Bilinmeyen biçim için boş metin.
+fn unicode_normalize(s: str, form: str) -> str {
+    return rt_unicode_normalize(s, form);
+}
+
+/// Gömülü Unicode Character Database sürümü (örn. "15.1.0").
+fn unicode_ucd_version() -> str {
+    return rt_unicode_ucd_version();
+}
+
+/// Normalleştirme; desteklenmeyen biçimde Err döner.
+fn unicode_normalize_result(s: str, form: str) -> Result < str, str > {
+    if form == "NFC" {
+        return result_ok < str > (rt_unicode_nfc(s))
+    }
+    if form == "NFD" {
+        return result_ok < str > (rt_unicode_nfd(s))
+    }
+    return result_err_str(
+    "desteklenmeyen normalleştirme biçimi: '" + form +
+    "' (yalnızca NFC ve NFD; NFKC/NFKD gömülü tablo gerektirir)"
+    )
+}
+
+/// Metni NFC'ye getirip karşılaştırır (görsel eşdeğerlik için).
+fn unicode_canonical_eq(a: str, b: str) -> bool {
+    return rt_unicode_nfc(a) == rt_unicode_nfc(b)
+}

@@ -1,0 +1,29 @@
+// Axiom Standard Library: std:ai:inference
+// Model Inferences ve Siniflandirma Karar Motoru
+
+import "std/ai/tensor.ax"
+import "std/ai/linalg.ax"
+import "std/ai/nn.ax"
+
+struct ModelWeights {
+    w1: Tensor,
+    b1: Tensor,
+    w2: Tensor,
+    b2: Tensor
+}
+
+fn model_predict(model: ModelWeights, input: Tensor) -> Tensor {
+    // Katman 1: Linear + ReLU
+    let z1: Tensor = linear_forward(input, model.w1, model.b1);
+    let a1: Tensor = tensor_apply_relu(z1);
+
+    // Katman 2: Linear + Sigmoid
+    let z2: Tensor = linear_forward(a1, model.w2, model.b2);
+    let a2: Tensor = tensor_apply_sigmoid(z2);
+
+    return a2;
+}
+
+fn model_classify(output_probs: Tensor) -> int {
+    return nn_argmax(output_probs.handle);
+}

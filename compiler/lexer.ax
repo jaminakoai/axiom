@@ -1,0 +1,230 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/lexer.ax - Sözcüksel Analizci (Lexer)
+
+import "tokens.ax"
+
+fn is_digit(c: str) -> bool {
+    let code = str_char_code(c, 0)
+    return code >= 48 and code <= 57
+}
+
+fn is_alpha(c: str) -> bool {
+    let code = str_char_code(c, 0)
+    if code >= 65 and code <= 90 {
+        return true
+    }
+    if code >= 97 and code <= 122 {
+        return true
+    }
+    return code == 95
+}
+
+fn is_alphanumeric(c: str) -> bool {
+    return is_alpha(c) or is_digit(c)
+}
+
+fn is_whitespace(c: str) -> bool {
+    let code = str_char_code(c, 0)
+    return code == 32 or code == 9 or code == 10 or code == 13
+}
+
+fn lexer_tokenize(src: str) -> Token[] {
+    let mut tokens: Token[] = []
+    // str indeksleme BAYT tabanlidir; len() kod noktasi sayar.
+    // Karistirmak cok baytli (UTF-8) kaynaklarda dosyayi erken keser.
+    let total_len = str_byte_len(src)
+    let mut pos = 0
+    let mut line = 1
+    let mut col = 1
+
+    while pos < total_len {
+        let ch = src[pos]
+
+        // 1. Boşlukları atla
+        if is_whitespace(ch) {
+            if ch == "\n" {
+                line = line + 1
+                col = 1
+            } else {
+                col = col + 1
+            }
+            pos = pos + 1
+            continue
+        }
+
+        // 2. Yorum satırlarını atla (# ... veya // ...)
+        let mut is_comment = false
+        if ch == "#" {
+            is_comment = true
+        }
+        if ch == "/" and pos + 1 < total_len {
+            if src[pos + 1] == "/" {
+                is_comment = true
+            }
+        }
+        if is_comment {
+            while pos < total_len and src[pos] != "\n" {
+                pos = pos + 1
+            }
+            continue
+        }
+
+        let start_line = line
+        let start_col = col
+
+        // 3. İki karakterli semboller
+        if pos + 1 < total_len {
+            let next_ch = src[pos + 1]
+            let pair = ch + next_ch
+
+            if pair == "->" {
+                tokens = array_push(tokens, token_new("ARROW", "->", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == "=>" {
+                tokens = array_push(tokens, token_new("FAT_ARROW", "=>", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == ".." {
+                tokens = array_push(tokens, token_new("DOTDOT", "..", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == "==" {
+                tokens = array_push(tokens, token_new("EQEQ", "==", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == "!=" {
+                tokens = array_push(tokens, token_new("NOTEQ", "!=", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == "<=" {
+                tokens = array_push(tokens, token_new("LTEQ", "<=", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+            if pair == ">=" {
+                tokens = array_push(tokens, token_new("GTEQ", ">=", start_line, start_col))
+                pos = pos + 2
+                col = col + 2
+                continue
+            }
+        }
+
+        // 4. Tek karakterli operatörler ve noktalama
+        if ch == "+" or ch == "-" or ch == "*" or ch == "/" or ch == "%" {
+            tokens = array_push(tokens, token_new(ch, ch, start_line, start_col))
+            pos = pos + 1
+            col = col + 1
+            continue
+        }
+        if ch == "(" or ch == ")" or ch == "{" or ch == "}" or ch == "[" or ch == "]" {
+            tokens = array_push(tokens, token_new(ch, ch, start_line, start_col))
+            pos = pos + 1
+            col = col + 1
+            continue
+        }
+        if ch == "?" { // `?` operatoru (Result propagasyonu)
+            tokens = array_push(tokens, token_new("?", "?", start_line, start_col))
+            pos = pos + 1
+            col = col + 1
+            continue
+        }
+        if ch == ":" or ch == ";" or ch == "," or ch == "." or ch == "=" or ch == "<" or ch == ">" {
+            tokens = array_push(tokens, token_new(ch, ch, start_line, start_col))
+            pos = pos + 1
+            col = col + 1
+            continue
+        }
+
+        // 5. Metin Literalleri ("...")
+        if ch == "\"" {
+            pos = pos + 1
+            col = col + 1
+            let mut str_val = ""
+            while pos < total_len and src[pos] != "\"" {
+                let cur = src[pos]
+                if cur == "\\" and pos + 1 < total_len {
+                    let esc = src[pos + 1]
+                    if esc == "n" { str_val = str_val + "\\n" }
+                    if esc == "t" { str_val = str_val + "\\t" }
+                    if esc == "r" { str_val = str_val + "\\r" }
+                    if esc == "\"" { str_val = str_val + "\\\"" }
+                    if esc == "\\" { str_val = str_val + "\\\\" }
+                    pos = pos + 2
+                    col = col + 2
+                } else {
+                    str_val = str_val + cur
+                    pos = pos + 1
+                    col = col + 1
+                }
+            }
+            if pos < total_len and src[pos] == "\"" {
+                pos = pos + 1
+                col = col + 1
+            }
+            tokens = array_push(tokens, token_new("STRING", str_val, start_line, start_col))
+            continue
+        }
+
+        // 6. Sayı Literalleri (INT veya FLOAT)
+        if is_digit(ch) {
+            let mut num_str = ""
+            let mut has_dot = false
+            while pos < total_len {
+                let cur = src[pos]
+                if is_digit(cur) {
+                    num_str = num_str + cur
+                    pos = pos + 1
+                    col = col + 1
+                } else if cur == "." and pos + 1 < total_len and is_digit(src[pos + 1]) and not has_dot {
+                    has_dot = true
+                    num_str = num_str + cur
+                    pos = pos + 1
+                    col = col + 1
+                } else {
+                    break
+                }
+            }
+            let mut num_kind = "INT"
+            if has_dot {
+                num_kind = "FLOAT"
+            }
+            tokens = array_push(tokens, token_new(num_kind, num_str, start_line, start_col))
+            continue
+        }
+
+        // 7. Tanımlayıcılar ve Anahtar Kelimeler
+        if is_alpha(ch) {
+            let mut ident_str = ""
+            while pos < total_len and is_alphanumeric(src[pos]) {
+                ident_str = ident_str + src[pos]
+                pos = pos + 1
+                col = col + 1
+            }
+            let mut tok_kind = "IDENT"
+            if is_keyword(ident_str) {
+                tok_kind = ident_str
+            }
+            tokens = array_push(tokens, token_new(tok_kind, ident_str, start_line, start_col))
+            continue
+        }
+
+        // Bilinmeyen karakter
+        pos = pos + 1
+        col = col + 1
+    }
+
+    tokens = array_push(tokens, token_new("EOF", "", line, col))
+    return tokens
+}

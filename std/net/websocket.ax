@@ -1,0 +1,18 @@
+// Axiom Standard Library (std) - RFC 6455 WebSocket Client
+// std:net:websocket
+
+fn ws_connect(host: str, port: int, path: str) -> int {
+    return rt_ws_connect(host, port, path)
+}
+
+fn ws_send(fd: int, message: str) -> int {
+    return rt_ws_send(fd, message)
+}
+
+fn ws_recv(fd: int) -> str {
+    return rt_ws_recv(fd)
+}
+
+fn ws_close(fd: int) -> void {
+    rt_ws_close(fd)
+}

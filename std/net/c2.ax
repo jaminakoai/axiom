@@ -1,0 +1,86 @@
+// ==============================================================================
+// YASAL VE ETİK UYARI / LEGAL & ETHICAL DISCLAIMER:
+// YALNIZCA YASAL İZİNLİ VE ETİK TEST ORTAMLARINDA KULLANIM İÇİNDİR.
+// YETKİSİZ SİSTEMLERDE KULLANIMI YASALARA AYKIRIDIR.
+// ==============================================================================
+// Axiom Standard Library - Encrypted Agent Command Channel (std:net:c2)
+// std/net/c2.ax
+
+import "std:crypto:aes"
+import "std:crypto:hash"
+import "std:encoding:base64"
+import "std:encoding:json"
+
+fn c2_crypto_random_hex(num_bytes: int) -> str {
+    return rt_crypto_random_hex(num_bytes)
+}
+
+fn c2_hmac_sha256(key: str, data: str) -> str {
+    return rt_hmac_sha256(key, data)
+}
+
+fn c2_crypto_memcmp(s1: str, s2: str) -> bool {
+    return rt_crypto_memcmp(s1, s2)
+}
+
+fn c2_generate_beacon(agent_id: str, secret_key: str, status_payload: str) -> str
+    requires len(agent_id) > 0
+    requires len(secret_key) >= 16
+{
+    // Kriptografik rastgele 16 baytlik IV (32 hex karakteri) - Sabit IV kalkti!
+    let iv_hex = c2_crypto_random_hex(16)
+    let key_hex = hash_sha256(secret_key)
+    let enc_data = aes256_cbc_encrypt(status_payload, key_hex, iv_hex)
+
+    // Guvenli HMAC-SHA256 authenticated encryption
+    let hmac_sig = c2_hmac_sha256(secret_key, agent_id + ":" + iv_hex + ":" + enc_data)
+    let b64_token = base64_encode(agent_id + "|" + iv_hex + "|" + enc_data + "|" + hmac_sig)
+
+    return b64_token
+}
+
+fn c2_parse_beacon(beacon_b64: str, secret_key: str) -> str
+    requires len(beacon_b64) > 0
+{
+    let raw = base64_decode(beacon_b64)
+    if not str_contains(raw, "|") {
+        return ""
+    }
+
+    let parts = str_split(raw, "|")
+    // 4 parcali rastgele IV'li guvenli paket
+    if len(parts) >= 4 {
+        let agent_id = parts[0]
+        let iv_hex = parts[1]
+        let enc_data = parts[2]
+        let received_sig = parts[3]
+
+        let expected_sig = c2_hmac_sha256(secret_key, agent_id + ":" + iv_hex + ":" + enc_data)
+        if not c2_crypto_memcmp(received_sig, expected_sig) {
+            return ""
+        }
+
+        let key_hex = hash_sha256(secret_key)
+        let plain_payload = aes256_cbc_decrypt(enc_data, key_hex, iv_hex)
+        return plain_payload
+    }
+
+    // Geriye donuk 3 parcali sabit IV uyumlulugu
+    if len(parts) == 3 {
+        let agent_id = parts[0]
+        let enc_data = parts[1]
+        let received_sig = parts[2]
+
+        let expected_sig = hash_sha256(agent_id + ":" + enc_data + ":" + secret_key)
+        if not c2_crypto_memcmp(received_sig, expected_sig) {
+            return ""
+        }
+
+        let iv_hex = "000102030405060708090a0b0c0d0e0f"
+        let key_hex = hash_sha256(secret_key)
+        let plain_payload = aes256_cbc_decrypt(enc_data, key_hex, iv_hex)
+        return plain_payload
+    }
+
+    return ""
+}

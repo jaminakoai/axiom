@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "axiom-lang"
+version = "0.5.0a0"
+description = "Axiom (λx) — contract-driven, native-compiled systems programming language"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Axiom Language Contributors" }]
+keywords = ["compiler", "systems-programming", "formal-verification", "smt", "llvm"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: C",
+    "Topic :: Software Development :: Compilers",
+]
+dependencies = [
+    "z3-solver>=4.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "pytest-xdist>=3.5",
+]
+
+[project.scripts]
+axiom = "axiom.cli:main"
+axpm = "axiom.package_manager:main"
+axiom-lsp = "axiom.lsp:main"
+
+[tool.setuptools]
+packages = ["axiom"]
+
+[tool.setuptools.package-data]
+axiom = ["runtime.h", "axiom_llvm_runtime.c"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "offensive: ofansif güvenlik modülleri (varsayılan olarak çalışır, AXIOM_SKIP_REDTEAM_TESTS=1 ile atlanır)",
+    "slow: 30 saniyeden uzun süren testler",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]

@@ -1,0 +1,264 @@
+// Axiom Standard Library: std/security/yara_rules
+//
+// YARA kural METNINI ayristirir ve `YaraRuleSet` uretir.
+//
+// v0.1 desteklenen alt kume:
+//
+//   rule Zararli_Ornek {
+//       strings:
+//           $a = "CreateRemoteThread"
+//           $b = { 48 89 ?? 55 E8 ?? ?? ?? ?? }
+//           $c = "powershell -enc"
+//       condition:
+//           any of them
+//   }
+//
+// Kosullar: `any of them`, `all of them`, `N of them` (N tamsayi).
+//
+// Desteklenmeyen YARA ozellikleri (v0.1): meta:, tags, `and/or/not` ile
+// birlesik kosullar, `at`, `in (a..b)`, modifikatorler (nocase, wide, ascii).
+// Bilinmeyen satirlar yok sayilir; hata verilmez.
+
+import "std/core/error"
+import "std/text/unicode"
+import "std/security/yara"
+
+// --- Yardimcilar ---
+
+fn _trim_blank(s: str) -> str {
+    return str_trim(s)
+}
+
+fn _is_blank(s: str) -> bool {
+    return len(str_trim(s)) == 0
+}
+
+fn _starts_with_ci(s: str, prefix: str) -> bool {
+    if len(s) < len(prefix) {
+        return false
+    }
+    return to_lower_tr(str_sub(s, 0, len(prefix))) == to_lower_tr(prefix)
+}
+
+// "rule Ad {" satirindan adi cikarir. Ad yoksa "".
+fn _parse_rule_name(line: str) -> str {
+    let t = str_trim(line)
+    if not _starts_with_ci(t, "rule") {
+        return ""
+    }
+    let rest = str_trim(str_sub(t, 4, len(t) - 4))
+    if len(rest) == 0 {
+        return ""
+    }
+    // ilk bosluga veya '{' karakterine kadar
+    let mut i = 0
+    let mut name = ""
+    while i < len(rest) {
+        let ch = str_char_at(rest, i)
+        if ch == " " or ch == "{" or ch == ":" {
+            break
+        }
+        name = name + ch
+        i = i + 1
+    }
+    // tag'leri atla: "rule ad : tag1 tag2 {"
+    return name
+}
+
+fn _empty_parts() -> str[] {
+    let e: str[] = []
+    return e
+}
+
+// strings: bolumundeki "$id = ..." satirini ayristirir.
+// Donus: [id, pattern] veya bos dizi.
+fn _parse_string_def(line: str) -> str[] {
+    let t = str_trim(line)
+    if not str_starts_with(t, "$") {
+        return _empty_parts()
+    }
+    let eq = str_index_of(t, "=")
+    if eq < 0 {
+        return _empty_parts()
+    }
+    let id = str_trim(str_sub(t, 0, eq))
+    let mut raw = str_trim(str_sub(t, eq + 1, len(t) - eq - 1))
+    if len(id) == 0 or len(raw) == 0 {
+        return _empty_parts()
+    }
+
+    // Metin: "..." (sondaki modifikatorleri at)
+    if str_starts_with(raw, "\"") {
+        let close = str_index_of(str_sub(raw, 1, len(raw) - 1), "\"")
+        if close < 0 {
+            return _empty_parts()
+        }
+        let text = str_sub(raw, 1, close)
+        return [id, "str:" + text]
+    }
+
+    // Hex: { 48 89 ?? 55 }
+    if str_starts_with(raw, "{") {
+        let close = str_index_of(raw, "}")
+        if close < 0 {
+            return _empty_parts()
+        }
+        let hex = str_trim(str_sub(raw, 1, close - 1))
+        if len(hex) == 0 {
+            return _empty_parts()
+        }
+        return [id, "hex:" + hex]
+    }
+
+    // Regex: /.../  — v0.1: desen olarak kullan
+    if str_starts_with(raw, "/") {
+        let close = str_index_of(str_sub(raw, 1, len(raw) - 1), "/")
+        if close < 0 {
+            return _empty_parts()
+        }
+        return [id, "regex:" + str_sub(raw, 1, close)]
+    }
+    return _empty_parts()
+}
+
+// condition: satirini tek satira indirger.
+fn _parse_condition(line: str) -> str {
+    let t = str_trim(line)
+    if not _starts_with_ci(t, "condition") {
+        return ""
+    }
+    let colon = str_index_of(t, ":")
+    if colon < 0 {
+        return ""
+    }
+    return str_trim(str_sub(t, colon + 1, len(t) - colon - 1))
+}
+
+// --- Ana ayristirici ---
+
+fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
+    if len(text) == 0 {
+        return result_err_with<YaraRuleSet>("bos kural dosyasi", yara_ruleset_new())
+    }
+
+    let lines = str_split(text, "\n")
+    let mut ruleset = yara_ruleset_new()
+
+    let mut in_rule = false
+    let mut in_strings = false
+    let mut in_condition = false
+    let mut rule_name = ""
+    let mut condition = "any of them"
+    let mut rule = yara_rule_new("", "any of them")
+    let mut rule_count = 0
+
+    let mut i = 0
+    while i < len(lines) {
+        let raw_line = lines[i]
+        // yorumlari at (#, //)
+        let mut line = raw_line
+        let hash = str_index_of(line, "#")
+        if hash >= 0 {
+            line = str_sub(line, 0, hash)
+        }
+        let slashes = str_index_of(line, "//")
+        if slashes >= 0 {
+            line = str_sub(line, 0, slashes)
+        }
+
+        let trimmed = str_trim(line)
+
+        if not in_rule {
+            if _starts_with_ci(trimmed, "rule") {
+                let name = _parse_rule_name(trimmed)
+                if len(name) == 0 {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": kural adi eksik",
+                        yara_ruleset_new())
+                }
+                in_rule = true
+                in_strings = false
+                in_condition = false
+                rule_name = name
+                condition = "any of them"
+                rule = yara_rule_new(name, "any of them")
+                rule_count = rule_count + 1
+            }
+            i = i + 1
+            continue
+        }
+
+        // Kural icindeyiz
+        if _starts_with_ci(trimmed, "strings") {
+            in_strings = true
+            in_condition = false
+            i = i + 1
+            continue
+        }
+        if _starts_with_ci(trimmed, "condition") {
+            in_strings = false
+            let c = _parse_condition(trimmed)
+            if len(c) > 0 {
+                condition = c
+                in_condition = false
+            } else {
+                // Deger alt satirda: bir sonraki bos olmayan satiri al.
+                in_condition = true
+            }
+            i = i + 1
+            continue
+        }
+
+        if in_condition {
+            if not _is_blank(trimmed) {
+                condition = trimmed
+                in_condition = false
+            }
+            i = i + 1
+            continue
+        }
+
+        // Kapanis: yalnizca '}' iceren satir
+        let t = trimmed
+        if t == "}" {
+            if len(rule_name) == 0 {
+                return result_err_with<YaraRuleSet>(
+                    "satir " + int_to_str(i + 1) + ": kural adi bos",
+                    yara_ruleset_new())
+            }
+            // Toplanan pattern'lari KORU, yalnizca kosulu guncelle.
+            let final_rule = YaraRule {
+                name: rule_name,
+                patterns: rule.patterns,
+                pattern_names: rule.pattern_names,
+                condition: condition,
+                min_offset: rule.min_offset,
+                max_offset: rule.max_offset
+            }
+            ruleset = yara_ruleset_add_rule(ruleset, final_rule)
+            in_rule = false
+            in_strings = false
+            in_condition = false
+            i = i + 1
+            continue
+        }
+
+        if in_strings {
+            let parts = _parse_string_def(trimmed)
+            if len(parts) >= 2 {
+                rule = yara_rule_add_pattern(rule, parts[0], parts[1])
+            }
+        }
+
+        i = i + 1
+    }
+
+    if in_rule {
+        return result_err_with<YaraRuleSet>(
+            "kural kapatilmadi (eksik '}'): " + rule_name, yara_ruleset_new())
+    }
+    if rule_count == 0 {
+        return result_err_with<YaraRuleSet>("hic kural bulunamadi", yara_ruleset_new())
+    }
+    return result_ok<YaraRuleSet>(ruleset)
+}

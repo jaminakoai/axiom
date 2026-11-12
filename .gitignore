@@ -1,0 +1,48 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+/build/
+/dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# --- Axiom üretim çıktıları ---
+/bin/axiomc
+/bin/*.bin
+
+*.o
+*.ll
+*.smt2
+a.out
+/target/
+.axiom/
+axiom.lock.tmp
+
+# --- Derleme artıkları (kök dizin) ---
+/tmp*
+/*.bin
+
+# --- Ornek derleme ciktilari (kaynak .ax dosyalari depoda kalir) ---
+/examples/*
+!/examples/*.ax
+!/examples/06_modules/
+!/examples/06_modules/**
+
+# --- Editör / işletim sistemi ---
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# --- Yerel ayarlar ---
+.env
+.env.local

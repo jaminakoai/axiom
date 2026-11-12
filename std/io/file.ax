@@ -1,0 +1,187 @@
+// Axiom Standard Library: std/io/file
+//
+// Hata-duyarli dosya G/Ç katmani. Her fonksiyon `Result<T, str>` dondurur;
+// boylece `?` operatoru ile akis yonetilebilir:
+//
+//   import "std/io/file"
+//   import "std/core/error"
+//
+//   fn yukle(yol: str) -> Result<str, str> {
+//       let icerik = read_file(yol)?
+//       return result_ok<str>(icerik)
+//   }
+//
+// TASARIM KURALI: Bu moduldaki fonksiyonlar `requires` ile programi
+// DURDURMAZ. Bos yol, olmayan dosya, yazma hatasi gibi tum veri hatalari
+// Err(mesaj) olarak doner. Sozlesmeler (requires/ensures/verify) yalnizca
+// "programlama hatasi" icindir; burada veri hatasi beklenir.
+//
+// Not: Alttaki `file_read`/`file_write` yerlesikleri hata durumunda
+// `""` / `false` doner ve nedeni ayirt edemez; bu modul once durumu
+// denetleyip anlamli mesaj uretir.
+
+import "std/core/error"
+
+// Dosyayi okur. Dosya yoksa Err doner.
+//
+// Bilinen sinir: bos bir dosya ile okuma hatasi ayirt edilemez (yerlesik
+// `file_read` ikisinde de "" doner). Bos dosya mesru bir sonuctur.
+fn read_file(path: str) -> Result < str, str > {
+    if len(path) == 0 {
+        return result_err_str("bos dosya yolu")
+    }
+    if not file_exists(path) {
+        return result_err_str("dosya bulunamadi: " + path)
+    }
+    let content = file_read(path)
+    return result_ok < str > (content)
+}
+
+// Dosyaya yazar (uzerine yazar). Basarisizlikta Err doner.
+fn write_file(path: str, content: str) -> Result < bool, str > {
+    if len(path) == 0 {
+        return result_err_bool("bos dosya yolu")
+    }
+    let ok = file_write(path, content)
+    if not ok {
+        return result_err_bool("dosya yazilamadi: " + path)
+    }
+    return result_ok < bool > (true)
+}
+
+// Dosyanin var olup olmadigini dondurur (hata uretmez).
+fn file_present(path: str) -> bool {
+    if len(path) == 0 {
+        return false
+    }
+    return file_exists(path)
+}
+
+// Metni dosyaya ekler (uzerine yazmaz).
+fn append_file(path: str, content: str) -> Result < bool, str > {
+    if len(path) == 0 {
+        return result_err_bool("bos dosya yolu")
+    }
+    let mut base = ""
+    if file_exists(path) {
+        base = file_read(path)
+    }
+    return write_file(path, base + content)
+}
+
+// Dosya icerigini satirlara bolerek dondurur.
+fn read_lines(path: str) -> Result < str[], str > {
+    let content = read_file(path)?
+    let lines = str_split(content, "\n")
+    return result_ok < str[] > (lines)
+}
+
+// -----------------------------------------------------------------------------
+// Meta veri ve dizin islemleri
+// -----------------------------------------------------------------------------
+
+/// Dosyanin bayt boyutu. Dosya yoksa veya normal dosya degilse Err.
+fn file_size_result(path: str) -> Result < int, str > {
+    if len(path) == 0 {
+        return result_err_int("bos dosya yolu")
+    }
+    let size = file_size(path)
+    if size < 0 {
+        return result_err_int("dosya bulunamadi veya normal dosya degil: " + path)
+    }
+    return result_ok < int > (size)
+}
+
+/// Yol bir dizin mi? (hata uretmez; yoksa false)
+fn dir_present(path: str) -> bool {
+    if len(path) == 0 {
+        return false
+    }
+    return is_directory(path)
+}
+
+/// Dizin girdilerini sirali olarak dondurur.
+///
+/// Girdiler `list_dir` yerlesiginden gelir (satir sonu `\n`), `.`/`..` haric
+/// ve sozluk sirasindadir. Bos dizi mesru bir sonuctur.
+fn list_dir_result(path: str) -> Result < str[], str > {
+    if len(path) == 0 {
+        return result_err_strs("bos dizin yolu")
+    }
+    if not is_directory(path) {
+        return result_err_strs("dizin bulunamadi: " + path)
+    }
+    let raw = list_dir(path)
+    if len(raw) == 0 {
+        let empty: str[] = []
+        return result_ok < str[] > (empty)
+    }
+    let mut items: str[] = []
+    let parts = str_split(raw, "\n")
+    let mut i = 0
+    while (i < len(parts)) {
+        let t = str_trim(parts[i])
+        if len(t) > 0 {
+            items = array_push(items, t)
+        }
+        i = i + 1
+    }
+    return result_ok < str[] > (items)
+}
+
+/// Dosyayi (veya bos dizini) siler.
+fn remove_file_result(path: str) -> Result < bool, str > {
+    if len(path) == 0 {
+        return result_err_bool("bos dosya yolu")
+    }
+    if not file_exists(path) {
+        return result_err_bool("dosya bulunamadi: " + path)
+    }
+    if not remove_file(path) {
+        return result_err_bool("silinemedi (dolu dizin veya izin yok): " + path)
+    }
+    return result_ok < bool > (true)
+}
+
+/// Dosyayi/dizini yeniden adlandirir veya tasir.
+fn rename_file_result(from: str, to: str) -> Result < bool, str > {
+    if len(from) == 0 or len(to) == 0 {
+        return result_err_bool("bos dosya yolu")
+    }
+    if not file_exists(from) {
+        return result_err_bool("kaynak bulunamadi: " + from)
+    }
+    if not rename_file(from, to) {
+        return result_err_bool("yeniden adlandirilamadi: " + from + " -> " + to)
+    }
+    return result_ok < bool > (true)
+}
+
+/// Dizini (ara dizinlerle birlikte) olusturur. Zaten varsa Ok(true).
+fn create_dir_result(path: str) -> Result < bool, str > {
+    if len(path) == 0 {
+        return result_err_bool("bos dizin yolu")
+    }
+    if not create_dir(path) {
+        return result_err_bool("dizin olusturulamadi: " + path)
+    }
+    return result_ok < bool > (true)
+}
+
+/// Bir metin dosyasini kopyalar (hedef varsa uzerine yazar).
+///
+/// KISIT: `file_read`/`file_write` metin (NUL sonlandirmali) tabanlidir;
+/// icinde NUL bayti bulunan ikili dosyalar icin kullanmayin.
+fn copy_file_result(from: str, to: str) -> Result < bool, str > {
+    if len(from) == 0 or len(to) == 0 {
+        return result_err_bool("bos dosya yolu")
+    }
+    if not file_exists(from) {
+        return result_err_bool("kaynak bulunamadi: " + from)
+    }
+    let content = file_read(from)
+    if not file_write(to, content) {
+        return result_err_bool("hedefe yazilamadi: " + to)
+    }
+    return result_ok < bool > (true)
+}

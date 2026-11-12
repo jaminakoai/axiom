@@ -1,0 +1,94 @@
+// Axiom Standard Library - Regular Expressions (POSIX ERE + guvenlik kapisi)
+// std:text:regex
+//
+// Motor: glibc POSIX `regexec` (NFA, geri izleme yapmaz). Yine de desen
+// derleme/DFA buyumesi ve asiri tekrar sayilari icin sinirlar uygulanir:
+//   - desen uzunlugu  : 4096 bayt
+//   - parantez derinligi: 32
+//   - {n,m} tekrar    : 1024
+//   - ic ice niceleyici `(a+)+`, `(a*)*` gibi kaliplar reddedilir
+//
+// Guvenlik kurali: Desen GECERSIZSE eski API sessizce `false`/`""` doner.
+// Bir tespit kuralinda bu "eslesmedi" anlamina gelir; sessiz kacirmayi
+// onlemek icin `*_result` API'si kullanilmalidir (Err dondurur).
+
+import "std/core/error"
+
+fn regex_is_match(pattern: str, text: str) -> bool {
+    return rt_regex_is_match(pattern, text)
+}
+
+fn regex_find(pattern: str, text: str) -> str {
+    return rt_regex_find(pattern, text)
+}
+
+fn regex_replace(pattern: str, text: str, repl: str) -> str {
+    return rt_regex_replace(pattern, text, repl)
+}
+
+/// Desen gecerli ve guvenli mi? Gecerliyse bos metin, aksi halde neden.
+fn regex_validate(pattern: str) -> str {
+    return rt_regex_validate(pattern)
+}
+
+/// Desenin maliyet sinifi: 0 = guvenli, 1 = pahali, 2 = reddedilir.
+fn regex_risk_level(pattern: str) -> int {
+    return rt_regex_risk_level(pattern)
+}
+
+fn _regex_require_valid(pattern: str) -> str {
+    return rt_regex_validate(pattern)
+}
+
+/// Gecerli desen icin Ok(bool); gecersiz/guvensiz desen icin Err(neden).
+fn regex_is_match_result(pattern: str, text: str) -> Result < bool, str > {
+    let err = _regex_require_valid(pattern)
+    if len(err) > 0 {
+        return result_err_bool("gecersiz desen: " + err)
+    }
+    return result_ok < bool > (rt_regex_is_match(pattern, text))
+}
+
+/// Bulunan ilk eslesme; eslesme yoksa Ok("") (bu bir hata degildir).
+fn regex_find_result(pattern: str, text: str) -> Result < str, str > {
+    let err = _regex_require_valid(pattern)
+    if len(err) > 0 {
+        return result_err_str("gecersiz desen: " + err)
+    }
+    return result_ok < str > (rt_regex_find(pattern, text))
+}
+
+/// Tum eslesmeleri degistirir; gecersiz desen Err doner.
+fn regex_replace_result(pattern: str, text: str, repl: str) -> Result < str, str > {
+    let err = _regex_require_valid(pattern)
+    if len(err) > 0 {
+        return result_err_str("gecersiz desen: " + err)
+    }
+    return result_ok < str > (rt_regex_replace(pattern, text, repl))
+}
+
+/// Metni regex meta-karakterlerinden kacirir (literal arama icin).
+fn regex_escape(text: str) -> str {
+    let mut out = ""
+    let n = len(text)
+    let mut i = 0
+    while (i < n) {
+        let c = str_sub(text, i, 1)
+        if str_contains("\\.^$|()[]{}*+?", c) {
+            out = out + "\\" + c
+        } else {
+            out = out + c
+        }
+        i = i + 1
+    }
+    return out
+}
+
+/// Desen gecerliyse Ok(true), degilse Err(neden). Kurulum dogrulamasi icin.
+fn regex_compile_result(pattern: str) -> Result < bool, str > {
+    let err = _regex_require_valid(pattern)
+    if len(err) > 0 {
+        return result_err_bool("gecersiz desen: " + err)
+    }
+    return result_ok < bool > (true)
+}

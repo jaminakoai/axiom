@@ -1,0 +1,18 @@
+// Axiom Standard Library (std) - AES Symmetric Cryptography (CBC Mode, PKCS#7)
+// std:crypto:aes
+
+fn aes256_cbc_encrypt(plaintext: str, key_hex: str, iv_hex: str) -> str {
+    return rt_aes256_cbc_encrypt(plaintext, key_hex, iv_hex)
+}
+
+fn aes256_cbc_decrypt(ciphertext_hex: str, key_hex: str, iv_hex: str) -> str {
+    return rt_aes256_cbc_decrypt(ciphertext_hex, key_hex, iv_hex)
+}
+
+fn aes128_cbc_encrypt(plaintext: str, key_hex: str, iv_hex: str) -> str {
+    return rt_aes128_cbc_encrypt(plaintext, key_hex, iv_hex)
+}
+
+fn aes128_cbc_decrypt(ciphertext_hex: str, key_hex: str, iv_hex: str) -> str {
+    return rt_aes128_cbc_decrypt(ciphertext_hex, key_hex, iv_hex)
+}

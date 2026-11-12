@@ -1,0 +1,116 @@
+// Axiom (λx) - Ornek 11: Ileri Ag ve Iletisim Protokolleri Suiti (Paket 2)
+// Kutuphaneler:
+//   - std:net:dns         (Yerel DNS cozucu, IPv4, IPv6, PTR ters sorgu)
+//   - std:net:udp         (UDP soketleri: udp_bind, udp_sendto, udp_recvfrom, udp_close)
+//   - std:net:http_server (Hafif yerel HTTP sunucusu, OOB/SSRF callback dinleyici)
+//   - std:crypto:tls      (OpenSSL guvenli TLS istemcisi ve https_get sarmalayicisi)
+//   - std:net:websocket   (RFC 6455 WebSocket istemcisi: handshake, maskeleme, frame)
+
+import "std:net:dns"
+import "std:net:udp"
+import "std:net:http_server"
+import "std:crypto:tls"
+import "std:net:websocket"
+
+// OOB / SSRF Callback HTTP Sunucu Gorevlisi (Thread)
+fn http_callback_server(port: int) -> int {
+    let sfd = http_server_create(port);
+    if sfd < 0 {
+        print("  [HATA] HTTP Callback Sunucusu acilamadi!");
+        return 1;
+    }
+
+    // 1 istemci istegini kabul et ve SSRF payload dogrula
+    let cfd = http_server_accept(sfd);
+    if cfd >= 0 {
+        let json_body = "{\"status\": \"received\", \"code\": 200, \"engine\": \"Axiom-λx\"}";
+        http_server_send_response(cfd, 200, "application/json", json_body);
+        print("  [HTTP SUNUCU] SSRF/OOB Callback istegi karsilandi, 200 OK gonderildi.");
+    }
+    http_server_close(sfd);
+    return 0;
+}
+
+// UDP Dinleyici Gorevlisi (Thread)
+fn udp_listener_worker(port: int) -> int {
+    let ufd = udp_bind(port);
+    if ufd < 0 {
+        print("  [HATA] UDP Dinleyici acilamadi!");
+        return 1;
+    }
+    let packet = udp_recvfrom(ufd, 1024);
+    print("  [UDP SUNUCU] Gelen Datagram Paketi:", packet);
+    udp_close(ufd);
+    return 0;
+}
+
+fn main() -> int {
+    print("================================================================");
+    print("   AXIOM (λx) ILERI AG VE ILETISIM PROTOKOLLERI SUITI (PAKET 2) ");
+    print("================================================================");
+
+    // 1. DNS Cozumleme ve Kesif (std:net:dns)
+    print("\n[ADIM 1] DNS Cozumleme ve Ag Kesfi (std:net:dns)");
+    let target_host = "localhost";
+    let ipv4_addr = dns_resolve_ipv4(target_host);
+    let ipv6_addr = dns_resolve_ipv6(target_host);
+    let rev_name = dns_reverse_lookup("127.0.0.1");
+
+    print("  -> Hedef Host    :", target_host);
+    print("  -> IPv4 Adresi   :", ipv4_addr);
+    print("  -> IPv6 Adresi   :", ipv6_addr);
+    print("  -> PTR Ters Kayit:", rev_name);
+
+    verify ipv4_addr == "127.0.0.1", "localhost 127.0.0.1 olarak cozulmelidir!";
+
+    // 2. Hafif HTTP Callback Sunucusu & Istemci Istegi (std:net:http_server)
+    print("\n[ADIM 2] Yerel HTTP Callback / Webhook Sunucusu (std:net:http_server)");
+    let http_port = 18880;
+    let srv_thread = thread_create(http_callback_server, http_port);
+    sleep_ms(40);
+
+    let client_fd = tcp_connect("127.0.0.1", http_port);
+    if client_fd >= 0 {
+        tcp_send(client_fd, "GET /webhook?source=security_scanner HTTP/1.1\r\nHost: localhost\r\n\r\n");
+        let http_resp = tcp_recv(client_fd, 2048);
+        print("  -> Istemci tarafindan alinan HTTP Yaniti:\n", http_resp);
+        socket_close(client_fd);
+    }
+    thread_join(srv_thread);
+
+    // 3. UDP Soket Iletisimi (std:net:udp)
+    print("\n[ADIM 3] Yuksek Hizli UDP Datagram Transferi (std:net:udp)");
+    let udp_port = 18881;
+    let udp_thread = thread_create(udp_listener_worker, udp_port);
+    sleep_ms(40);
+
+    let sender_fd = udp_socket();
+    if sender_fd >= 0 {
+        let payload = "AXIOM_DISCOVERY_PROBE_V2:PING_1337";
+        let sent_bytes = udp_sendto(sender_fd, "127.0.0.1", udp_port, payload);
+        udp_close(sender_fd);
+        // Yazdirma thread_join'den SONRA: alici thread'in ciktisiyla
+        // yarisip sirayi bozmasin (deterministik cikti).
+        thread_join(udp_thread);
+        print("  -> Gonderilen UDP Bayt Sayisi:", sent_bytes);
+    } else {
+        thread_join(udp_thread);
+    }
+
+    // 4. Guvenli TLS Soket Denetimi (std:crypto:tls)
+    print("\n[ADIM 4] OpenSSL / TLS Oturumu Altyapisi (std:crypto:tls)");
+    let bad_tls = tls_connect("127.0.0.1", 1);
+    print("  -> Kapali Port TLS Testi (Beklenen -1):", bad_tls);
+    verify bad_tls == -1, "Kapali porta baglanti basarisiz olmali";
+
+    // 5. WebSocket RFC 6455 Protokol Denetimi (std:net:websocket)
+    print("\n[ADIM 5] RFC 6455 WebSocket Istemcisi (std:net:websocket)");
+    let bad_ws = ws_connect("127.0.0.1", 1, "/stream");
+    print("  -> Kapali Port WS Testi (Beklenen -1) :", bad_ws);
+    verify bad_ws == -1, "Kapali porta websocket baglantisi basarisiz olmali";
+
+    print("\n================================================================");
+    print("    [BASARILI] PAKET 2 PROTOKOL SUITI %100 DOGRULANDI!          ");
+    print("================================================================");
+    return 0;
+}

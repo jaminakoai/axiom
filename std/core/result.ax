@@ -1,0 +1,69 @@
+// Axiom Standard Library - Safe Error Handling & Result<T, E> Architecture
+// std:core:result
+
+struct ResultInt {
+    is_ok: bool,
+    value: int,
+    error: str
+}
+
+struct ResultStr {
+    is_ok: bool,
+    value: str,
+    error: str
+}
+
+// Constructors
+fn ok_int(val: int) -> ResultInt {
+    return ResultInt { is_ok: true, value: val, error: "" };
+}
+
+fn err_int(err: str) -> ResultInt {
+    return ResultInt { is_ok: false, value: 0, error: err };
+}
+
+fn ok_str(val: str) -> ResultStr {
+    return ResultStr { is_ok: true, value: val, error: "" };
+}
+
+fn err_str(err: str) -> ResultStr {
+    return ResultStr { is_ok: false, value: "", error: err };
+}
+
+// Query Methods
+fn is_ok(res: ResultInt) -> bool {
+    return res.is_ok;
+}
+
+fn is_ok(res: ResultStr) -> bool {
+    return res.is_ok;
+}
+
+fn is_err(res: ResultInt) -> bool {
+    return not res.is_ok;
+}
+
+fn is_err(res: ResultStr) -> bool {
+    return not res.is_ok;
+}
+
+// Unwrap Functions
+fn unwrap(res: ResultInt) -> int {
+    verify res.is_ok, "Called unwrap on Err ResultInt";
+    return res.value;
+}
+
+fn unwrap(res: ResultStr) -> str {
+    verify res.is_ok, "Called unwrap on Err ResultStr";
+    return res.value;
+}
+
+fn unwrap_err(res: ResultInt) -> str {
+    verify not res.is_ok, "Called unwrap_err on Ok ResultInt";
+    return res.error;
+}
+
+fn unwrap_err(res: ResultStr) -> str {
+    verify not res.is_ok, "Called unwrap_err on Ok ResultStr";
+    return res.error;
+}

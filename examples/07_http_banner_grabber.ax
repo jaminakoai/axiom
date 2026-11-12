@@ -1,0 +1,83 @@
+// Axiom (λx) - Ornek 07: HTTP Banner Grabber & Servis Teshis Araci
+// Standart Kutuphane (std:net/http.ax), Guvenlik Sozlesmeleri ve Metin Yardimcilari
+
+import "std:net/http.ax"
+
+struct BannerReport {
+    target: str,
+    port: int,
+    is_http: bool,
+    server_nginx: bool,
+    server_apache: bool,
+    response_size: int
+}
+
+fn inspect_response(host: str, port: int, raw_resp: str) -> BannerReport
+    requires len(host) > 0
+    requires port > 0 and port <= 65535
+    ensures return.response_size >= 0
+{
+    let resp_len = len(raw_resp)
+    let is_http_protocol = str_contains(raw_resp, "HTTP/1.") or str_contains(raw_resp, "HTTP/2")
+    let has_nginx = str_contains(raw_resp, "nginx") or str_contains(raw_resp, "Server: nginx")
+    let has_apache = str_contains(raw_resp, "Apache") or str_contains(raw_resp, "Server: Apache")
+
+    let report = BannerReport {
+        target: host,
+        port: port,
+        is_http: is_http_protocol,
+        server_nginx: has_nginx,
+        server_apache: has_apache,
+        response_size: resp_len
+    }
+    return report
+}
+
+fn scan_http_endpoint(host: str, port: int, path: str) -> void
+    requires len(host) > 0
+    requires port > 0 and port <= 65535
+{
+    print("==================================================")
+    print("AXIOM HTTP BANNER GRABBER")
+    print("Hedef  :", host)
+    print("Port   :", port)
+    print("İstek  :", path)
+    print("==================================================")
+
+    let response = http_get(host, port, path)
+    let report = inspect_response(host, port, response)
+
+    if report.response_size == 0 {
+        print("[!] Hedefe baglanilamadi veya servis yanit vermedi.")
+        return
+    }
+
+    print("[+] Yanit Boyutu (bayt):", report.response_size)
+    print("[+] Gecerli HTTP Servisi:", report.is_http)
+
+    if report.server_nginx {
+        print("[*] Tespit Edilen Web Sunucusu: Nginx")
+    }
+    if report.server_apache {
+        print("[*] Tespit Edilen Web Sunucusu: Apache")
+    }
+
+    // Ilk 120 karakteri banner olarak goster
+    print("[+] Ham Yanit Basligi (Preview):")
+    print(response)
+}
+
+fn main() -> void {
+    // 1. Simule Edilmis Banner Analizi
+    let mock_response = "HTTP/1.1 200 OK\r\nServer: nginx/1.24.0\r\nContent-Type: text/html\r\n\r\n<html>Axiom</html>"
+    let mock_report = inspect_response("127.0.0.1", 80, mock_response)
+    
+    verify mock_report.is_http == true, "HTTP yaniti dogrulanamadi"
+    verify mock_report.server_nginx == true, "Nginx tespiti basarisiz oldu"
+    verify mock_report.response_size > 0, "Boyut gecersiz"
+
+    print("✓ Banner teshis mantigi basariyla dogrulandi.")
+
+    // 2. Canli Tarama Cagrisi (Port kapali olsa bile guvenle calisir)
+    scan_http_endpoint("127.0.0.1", 8080, "/")
+}

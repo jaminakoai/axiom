@@ -1,0 +1,10 @@
+// Axiom Standard Library (std) - Base64 Encoding / Decoding (RFC 4648)
+// std:encoding:base64
+
+fn base64_encode(s: str) -> str {
+    return rt_base64_encode(s)
+}
+
+fn base64_decode(s: str) -> str {
+    return rt_base64_decode(s)
+}

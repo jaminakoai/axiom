@@ -1,0 +1,22 @@
+// Axiom Standard Library (std) - JSON Web Token (RFC 7519, HS256)
+// std:security:jwt
+
+fn jwt_create_hs256(payload_json: str, secret: str) -> str {
+    return rt_jwt_create_hs256(payload_json, secret)
+}
+
+fn jwt_verify_hs256(token: str, secret: str) -> bool {
+    return rt_jwt_verify_hs256(token, secret)
+}
+
+fn jwt_get_header(token: str) -> str {
+    return rt_jwt_get_header(token)
+}
+
+fn jwt_get_payload(token: str) -> str {
+    return rt_jwt_get_payload(token)
+}
+
+fn jwt_get_claim(token: str, claim_name: str) -> str {
+    return rt_jwt_get_claim(token, claim_name)
+}

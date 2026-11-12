@@ -1,0 +1,34 @@
+// Axiom Standard Library - Web & API Fuzzing and Payload Management
+// std:security:fuzzer
+
+fn fuzz_replace_marker(template: str, marker: str, payload: str) -> str {
+    return rt_fuzz_replace_marker(template, marker, payload)
+}
+
+fn fuzz_url_encode(payload: str) -> str {
+    return rt_fuzz_url_encode(payload)
+}
+
+fn fuzz_double_encode(payload: str) -> str {
+    return rt_fuzz_double_encode(payload)
+}
+
+fn fuzz_add_null_byte(payload: str) -> str {
+    return rt_fuzz_add_null_byte(payload)
+}
+
+fn wordlist_load(path: str) -> int {
+    return rt_wordlist_load(path)
+}
+
+fn wordlist_count(wl: int) -> int {
+    return rt_wordlist_count(wl)
+}
+
+fn wordlist_get(wl: int, idx: int) -> str {
+    return rt_wordlist_get(wl, idx)
+}
+
+fn wordlist_free(wl: int) -> void {
+    rt_wordlist_free(wl)
+}

@@ -1,0 +1,26 @@
+// Axiom Standard Library - CLI Arguments & Options Parser
+// std:cli:args
+
+fn cli_args_count() -> int {
+    return rt_cli_args_count()
+}
+
+fn cli_args_get(idx: int) -> str {
+    return rt_cli_args_get(idx)
+}
+
+fn cli_has_flag(flag: str) -> bool {
+    return rt_cli_has_flag(flag)
+}
+
+fn cli_get_option(opt: str, default_val: str) -> str {
+    return rt_cli_get_option(opt, default_val)
+}
+
+fn cli_get_int_option(opt: str, default_val: int) -> int {
+    return rt_cli_get_int_option(opt, default_val)
+}
+
+fn cli_set_args(args: str[]) -> void {
+    rt_cli_set_args(args)
+}

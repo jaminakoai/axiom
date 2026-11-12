@@ -1,0 +1,37 @@
+// Axiom Standard Library: std:ai:linalg
+// SIMD/AVX2 Hizlandirmali Matris ve Vektor Cebiri
+
+import "std/ai/tensor.ax"
+
+fn matmul(a: Tensor, b: Tensor) -> Tensor
+    requires a.cols == b.rows
+    ensures return.rows == a.rows and return.cols == b.cols
+{
+    let h: int = tensor_matmul(a.handle, b.handle);
+    let r: int = tensor_rows(h);
+    let c: int = tensor_cols(h);
+    return Tensor { handle: h, rows: r, cols: c };
+}
+
+fn mat_add(a: Tensor, b: Tensor) -> Tensor
+    requires a.rows == b.rows and a.cols == b.cols
+    ensures return.rows == a.rows and return.cols == a.cols
+{
+    let h: int = tensor_add(a.handle, b.handle);
+    let r: int = tensor_rows(h);
+    let c: int = tensor_cols(h);
+    return Tensor { handle: h, rows: r, cols: c };
+}
+
+fn mat_transpose(a: Tensor) -> Tensor
+    ensures return.rows == a.cols and return.cols == a.rows
+{
+    let h: int = tensor_transpose(a.handle);
+    let r: int = tensor_rows(h);
+    let c: int = tensor_cols(h);
+    return Tensor { handle: h, rows: r, cols: c };
+}
+
+fn dot(a: Tensor, b: Tensor) -> float {
+    return dot_product(a.handle, b.handle);
+}

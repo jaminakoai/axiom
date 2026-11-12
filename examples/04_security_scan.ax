@@ -1,0 +1,69 @@
+# Axiom (λx) - Ornek 4: Guvenlik ve Port Tarama Modulu
+
+fn is_well_known_service(port: int) -> bool
+    requires port >= 1 and port <= 65535
+{
+    if port == 80 {
+        return true
+    }
+    if port == 443 {
+        return true
+    }
+    if port == 22 {
+        return true
+    }
+    if port == 3306 {
+        return true
+    }
+    if port == 5432 {
+        return true
+    }
+    return false
+}
+
+fn simulate_port_probe(ip: str, port: int) -> int
+    requires port >= 1 and port <= 65535
+{
+    # Simule edilmis soket baglantisi
+    if is_well_known_service(port) {
+        print("[ACIK PORT]", ip, ":", port, "-> Standart Servis Tespit Edildi")
+        return 1
+    }
+    return 0
+}
+
+fn scan_target_range(target_host: str, start_port: int, end_port: int) -> int
+    requires start_port >= 1 and end_port <= 65535 and start_port <= end_port
+    ensures return >= 0
+{
+    print("Hedef Host Taramasi Baslatildi:", target_host)
+    print("Aralik:", start_port, "..", end_port)
+
+    let mut open_count = 0
+    let mut current = start_port
+
+    while current <= end_port {
+        let status = simulate_port_probe(target_host, current)
+        if status == 1 {
+            open_count = open_count + 1
+        }
+        current = current + 1
+    }
+
+    return open_count
+}
+
+fn main() -> int {
+    print("========================================")
+    print("  AXIOM SECURITY NETWORK ANALYZER v0.1  ")
+    print("========================================")
+
+    let target = "192.168.1.105"
+    let total_found = scan_target_range(target, 20, 90)
+
+    print("----------------------------------------")
+    print("Tarama Tamamlandi. Tespit Edilen Servis Sayisi:", total_found)
+    verify total_found == 2, "20-90 araliginda tam 2 servis (22, 80) bulunmaliydi!"
+
+    return 0
+}

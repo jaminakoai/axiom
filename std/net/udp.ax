@@ -1,0 +1,22 @@
+// Axiom Standard Library (std) - UDP Sockets
+// std:net:udp
+
+fn udp_socket() -> int {
+    return rt_udp_socket()
+}
+
+fn udp_bind(port: int) -> int {
+    return rt_udp_bind(port)
+}
+
+fn udp_sendto(fd: int, host: str, port: int, data: str) -> int {
+    return rt_udp_sendto(fd, host, port, data)
+}
+
+fn udp_recvfrom(fd: int, max_bytes: int) -> str {
+    return rt_udp_recvfrom(fd, max_bytes)
+}
+
+fn udp_close(fd: int) -> void {
+    rt_udp_close(fd)
+}

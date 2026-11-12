@@ -1,0 +1,23 @@
+// ==============================================================================
+// YASAL VE ETİK UYARI / LEGAL & ETHICAL DISCLAIMER:
+// YALNIZCA YASAL İZİNLİ VE ETİK TEST ORTAMLARINDA KULLANIM İÇİNDİR.
+// YETKİSİZ SİSTEMLERDE KULLANIMI YASALARA AYKIRIDIR.
+// ==============================================================================
+// Axiom Standard Library - Environment Diagnostics & Anti-Analysis (std:security:evasion)
+// std/security/evasion.ax
+
+fn evasion_is_debugger_present() -> bool {
+    return rt_diag_is_debugged()
+}
+
+fn evasion_is_vm_or_sandbox() -> bool {
+    return rt_diag_is_virtualized()
+}
+
+fn evasion_disable_core_dump() -> void {
+    rt_diag_set_dumpable(false)
+}
+
+fn evasion_enable_core_dump() -> void {
+    rt_diag_set_dumpable(true)
+}

@@ -1,0 +1,94 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/ast.ax - AST ve Veri Modelleri
+
+struct ASTParam {
+    name: str,
+    type_name: str
+}
+
+fn ast_param_new(name: str, type_name: str) -> ASTParam {
+    return ASTParam {
+        name: name,
+        type_name: type_name
+    }
+}
+
+struct ASTField {
+    name: str,
+    type_name: str
+}
+
+fn ast_field_new(name: str, type_name: str) -> ASTField {
+    return ASTField {
+        name: name,
+        type_name: type_name
+    }
+}
+
+struct ASTStruct {
+    name: str,
+    type_params: str[],
+    fields: ASTField[]
+}
+
+fn ast_struct_new(name: str, fields: ASTField[]) -> ASTStruct {
+    let empty_tp: str[] = []
+    return ASTStruct {
+        name: name,
+        type_params: empty_tp,
+        fields: fields
+    }
+}
+
+struct ASTFunction {
+    name: str,
+    params: ASTParam[],
+    return_type: str,
+    requires_expr: str,
+    ensures_expr: str,
+    body_code: str,
+    // Tip parametresi iceren fonksiyonlar (`fn f<T>(x: T)`). Tek gecisli
+    // derleyici govdeyi T icin dogru uretemez; bu yuzden govde BASILMAZ ve
+    // cagrilar tipli makrolara yonlendirilir (bkz. result_* eslemesi).
+    is_generic: bool
+}
+
+fn ast_function_new(name: str, params: ASTParam[], return_type: str, req: str, ens: str, body: str) -> ASTFunction {
+    return ASTFunction {
+        name: name,
+        params: params,
+        return_type: return_type,
+        requires_expr: req,
+        ensures_expr: ens,
+        body_code: body,
+        is_generic: false
+    }
+}
+
+fn ast_function_new_generic(name: str, params: ASTParam[], return_type: str, req: str, ens: str, body: str) -> ASTFunction {
+    return ASTFunction {
+        name: name,
+        params: params,
+        return_type: return_type,
+        requires_expr: req,
+        ensures_expr: ens,
+        body_code: body,
+        is_generic: true
+    }
+}
+
+struct ASTProgram {
+    structs: ASTStruct[],
+    functions: ASTFunction[],
+    top_level_code: str
+}
+
+fn ast_program_new() -> ASTProgram {
+    let empty_structs: ASTStruct[] = []
+    let empty_functions: ASTFunction[] = []
+    return ASTProgram {
+        structs: empty_structs,
+        functions: empty_functions,
+        top_level_code: ""
+    }
+}

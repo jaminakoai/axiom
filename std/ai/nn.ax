@@ -1,0 +1,65 @@
+// Axiom Standard Library: std:ai:nn
+// Sinir Agi Katmanlari ve Aktivasyon Fonksiyonlari
+
+import "std/ai/tensor.ax"
+import "std/ai/linalg.ax"
+
+fn relu(x: float) -> float {
+    return nn_relu(x);
+}
+
+fn sigmoid(x: float) -> float {
+    return nn_sigmoid(x);
+}
+
+fn tensor_apply_relu(t: Tensor) -> Tensor {
+    let out: Tensor = tensor_new(t.rows, t.cols);
+    let mut r: int = 0;
+    while (r < t.rows) {
+        let mut c: int = 0;
+        while (c < t.cols) {
+            let v: float = tensor_get_val(t, r, c);
+            tensor_set_val(out, r, c, nn_relu(v));
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    return out;
+}
+
+fn tensor_apply_sigmoid(t: Tensor) -> Tensor {
+    let out: Tensor = tensor_new(t.rows, t.cols);
+    let mut r: int = 0;
+    while (r < t.rows) {
+        let mut c: int = 0;
+        while (c < t.cols) {
+            let v: float = tensor_get_val(t, r, c);
+            tensor_set_val(out, r, c, nn_sigmoid(v));
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    return out;
+}
+
+fn linear_forward(input: Tensor, weights: Tensor, bias: Tensor) -> Tensor {
+    let prod: Tensor = matmul(input, weights);
+    let res: Tensor = mat_add(prod, bias);
+    return res;
+}
+
+fn mse_loss(pred: Tensor, target: Tensor) -> float {
+    let mut total: float = 0.0;
+    let mut r: int = 0;
+    while (r < pred.rows) {
+        let mut c: int = 0;
+        while (c < pred.cols) {
+            let diff: float = tensor_get_val(pred, r, c) - tensor_get_val(target, r, c);
+            total = total + (diff * diff);
+            c = c + 1;
+        }
+        r = r + 1;
+    }
+    let count: float = (pred.rows * pred.cols) * 1.0;
+    return total / count;
+}

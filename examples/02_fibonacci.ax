@@ -1,0 +1,36 @@
+# Axiom (λx) - Ornek 2: Fibonacci ve Performans Testi
+
+fn fib_iterative(n: int) -> int
+    requires n >= 0
+{
+    if n <= 1 {
+        return n
+    }
+
+    let mut a = 0
+    let mut b = 1
+    let mut count = 2
+
+    while count <= n {
+        let temp = a + b
+        a = b
+        b = temp
+        count = count + 1
+    }
+
+    return b
+}
+
+fn main() -> int {
+    print("Axiom Native Fibonacci Hesabi:")
+    for i in 0..15 {
+        let res = fib_iterative(i)
+        print("fib(", i, ") =", res)
+    }
+
+    # Buyuk sayi testi
+    let f45 = fib_iterative(45)
+    print("fib(45) degeri =", f45)
+
+    return 0
+}

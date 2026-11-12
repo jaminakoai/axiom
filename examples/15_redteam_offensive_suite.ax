@@ -1,0 +1,78 @@
+// Axiom (λx) - Ornek 15: Red Team & Ofansif Siber Guvenlik Suiti (Faz 2)
+// examples/15_redteam_offensive_suite.ax
+
+import "std:security:shellcode"
+import "std:net:packet_crafter"
+import "std:security:evasion"
+import "std:net:c2"
+import "std:security:memdump"
+import "std:os:process"
+
+fn main() -> int {
+    print("================================================================")
+    print("   AXIOM (λx) RED TEAM & OFANSIF SIBER GUVENLIK SUITI (FAZ 2)   ")
+    print("================================================================")
+
+    // 1. Dinamik Bellekte Calistirma (RWX JIT Shellcode Engine)
+    print("\n[ADIM 1] Dinamik RWX Bellek ve Makine Kodu Yurutme")
+    // x86_64 makine talimati:
+    // b8 2a 00 00 00 -> mov eax, 42
+    // c3             -> ret
+    let test_shellcode = "b82a000000c3"
+    let exit_code = shellcode_execute(test_shellcode)
+    print("  -> Calistirilan Shellcode Hex :", test_shellcode)
+    print("  -> Donen Deger (Return Code)  :", exit_code)
+    verify exit_code == 42, "Shellcode return degeri 42 olmaliydi!"
+    print("  [✓] std:security:shellcode dogrulandi.")
+
+    // 2. Ozel Ag Paketi Sentezi (Raw Packet Crafter)
+    print("\n[ADIM 2] Ozel IP ve TCP SYN Paketi Sentezi")
+    let ip_hdr = craft_ipv4_header("192.168.1.100", "10.0.0.1", 6, 20)
+    print("  -> Sentezlenen IPv4 Basligi   :", ip_hdr)
+    verify len(ip_hdr) == 40, "IPv4 basligi 20 bayt (40 hex) olmalidir!"
+
+    let tcp_syn = craft_tcp_syn("192.168.1.100", "10.0.0.1", 44444, 80)
+    print("  -> Sentezlenen TCP SYN Baslik :", tcp_syn)
+    verify len(tcp_syn) == 40, "TCP basligi 20 bayt (40 hex) olmalidir!"
+    print("  [✓] std:net:packet_crafter dogrulandi.")
+
+    // 3. Ortam Teshisi ve Evasion Denetimi
+    print("\n[ADIM 3] Ortam Teshisi ve Hata Ayiklayici Tespiti")
+    let is_debug = evasion_is_debugger_present()
+    let is_vm = evasion_is_vm_or_sandbox()
+    print("  -> Debugger / Ptrace Aktif mi :", is_debug)
+    print("  -> Hypervisor / VM Tespiti    :", is_vm)
+    evasion_disable_core_dump()
+    print("  -> Core Dump Korumasi         : Aktif (PR_SET_DUMPABLE 0)")
+    print("  [✓] std:security:evasion dogrulandi.")
+
+    // 4. Sifreli C2 Ajan Protokolu (Beaconing)
+    print("\n[ADIM 4] Sifreli C2 Ajan Protokolu (Beaconing)")
+    let agent_id = "AXIOM-RED-007"
+    let c2_secret = "master_super_secret_c2_key_32bytes!"
+    let status_data = "{\"status\":\"active\",\"tasks\":0,\"host\":\"pentest-node\"}"
+
+    let beacon = c2_generate_beacon(agent_id, c2_secret, status_data)
+    print("  -> Uretilen C2 Beacon (B64)   :", beacon)
+
+    let parsed_data = c2_parse_beacon(beacon, c2_secret)
+    print("  -> Cozulen C2 Beacon Verisi   :", parsed_data)
+    verify str_contains(parsed_data, "pentest-node"), "C2 verisi cozulup dogrulanmaliydi!"
+    print("  [✓] std:net:c2 dogrulandi.")
+
+    // 5. Surec Bellek Taramasi ve Adli Teshis (Proc Memory Inspection)
+    print("\n[ADIM 5] Canli Surec Bellek Inceleme ve Teshis")
+    evasion_enable_core_dump()
+    let my_pid = process_get_pid()
+    print("  -> Mevcut Surec PID           :", my_pid)
+    let magic_secret = "AXIOM_SECRET_MEMORY_CANARY_XYZ999"
+    let matches = memdump_search_pattern(my_pid, magic_secret)
+    print("  -> Bellekte Bulunan Eslesme   :", matches)
+    verify matches >= 1, "Bellekteki canary string bulunmaliydi!"
+    print("  [✓] std:security:memdump dogrulandi.")
+
+    print("\n================================================================")
+    print("  TUM FAZ 2 RED TEAM GUVENLIK MODULLERI BASARIYLA DOGRULANDI!    ")
+    print("================================================================")
+    return 0
+}

@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Axiom API</title>
+<style>
+:root{--bg:#fff;--fg:#1a1a1a;--muted:#666;--border:#e2e2e2;--code:#f5f5f5;--accent:#0a58ca}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;color:var(--fg);background:var(--bg)}
+header{position:sticky;top:0;background:var(--bg);border-bottom:1px solid var(--border);padding:12px 24px;z-index:10}
+header h1{margin:0;font-size:18px}
+header .sub{color:var(--muted);font-size:13px}
+main{display:grid;grid-template-columns:260px 1fr;max-width:1200px;margin:0 auto}
+nav{padding:24px;border-right:1px solid var(--border);position:sticky;top:56px;height:calc(100vh - 56px);overflow:auto;font-size:14px}
+nav h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:18px 0 6px}
+nav a{display:block;color:var(--fg);text-decoration:none;padding:2px 0}
+nav a:hover{color:var(--accent)}
+section{padding:24px 32px;min-width:0}
+h2.mod{font-size:20px;margin:32px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.item{border:1px solid var(--border);border-radius:8px;padding:16px;margin:0 0 16px}
+.item h3{margin:0 0 8px;font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.badge{font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-radius:999px;padding:2px 8px;background:var(--code);color:var(--muted);margin-right:8px}
+pre,code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px}
+pre{background:var(--code);padding:10px 12px;border-radius:6px;overflow:auto;margin:8px 0}
+.doc p{margin:6px 0}
+.muted{color:var(--muted)}
+.contract{font-size:13px;margin:6px 0}
+.contract span{color:var(--muted)}
+td,th{text-align:left;padding:4px 10px 4px 0;font-size:14px;vertical-align:top}
+@media(max-width:800px){main{grid-template-columns:1fr}nav{display:none}}
+</style></head>
+<body>
+<header><h1>Axiom API</h1>
+<div class="sub">Axiom (λx) API — <code>///</code> doc comment'lerinden üretildi</div></header>
+<main>
+<nav><h2>std/ai/autograd.ax</h2><a href="#mod-std-ai-autograd-ax-GradNode">GradNode</a><a href="#mod-std-ai-autograd-ax-autograd_create_node">autograd_create_node</a><a href="#mod-std-ai-autograd-ax-autograd_accumulate_grad">autograd_accumulate_grad</a><a href="#mod-std-ai-autograd-ax-autograd_backward_relu">autograd_backward_relu</a><a href="#mod-std-ai-autograd-ax-autograd_backward_sigmoid">autograd_backward_sigmoid</a><h2>std/ai/inference.ax</h2><a href="#mod-std-ai-inference-ax-ModelWeights">ModelWeights</a><a href="#mod-std-ai-inference-ax-model_predict">model_predict</a><a href="#mod-std-ai-inference-ax-model_classify">model_classify</a><h2>std/ai/linalg.ax</h2><a href="#mod-std-ai-linalg-ax-matmul">matmul</a><a href="#mod-std-ai-linalg-ax-mat_add">mat_add</a><a href="#mod-std-ai-linalg-ax-mat_transpose">mat_transpose</a><a href="#mod-std-ai-linalg-ax-dot">dot</a><h2>std/ai/nn.ax</h2><a href="#mod-std-ai-nn-ax-relu">relu</a><a href="#mod-std-ai-nn-ax-sigmoid">sigmoid</a><a href="#mod-std-ai-nn-ax-tensor_apply_relu">tensor_apply_relu</a><a href="#mod-std-ai-nn-ax-tensor_apply_sigmoid">tensor_apply_sigmoid</a><a href="#mod-std-ai-nn-ax-linear_forward">linear_forward</a><a href="#mod-std-ai-nn-ax-mse_loss">mse_loss</a><h2>std/ai/tensor.ax</h2><a href="#mod-std-ai-tensor-ax-Tensor">Tensor</a><a href="#mod-std-ai-tensor-ax-tensor_new">tensor_new</a><a href="#mod-std-ai-tensor-ax-tensor_set_val">tensor_set_val</a><a href="#mod-std-ai-tensor-ax-tensor_get_val">tensor_get_val</a><a href="#mod-std-ai-tensor-ax-tensor_destroy">tensor_destroy</a><a href="#mod-std-ai-tensor-ax-tensor_print">tensor_print</a><h2>std/cli/args.ax</h2><a href="#mod-std-cli-args-ax-cli_args_count">cli_args_count</a><a href="#mod-std-cli-args-ax-cli_args_get">cli_args_get</a><a href="#mod-std-cli-args-ax-cli_has_flag">cli_has_flag</a><a href="#mod-std-cli-args-ax-cli_get_option">cli_get_option</a><a href="#mod-std-cli-args-ax-cli_get_int_option">cli_get_int_option</a><a href="#mod-std-cli-args-ax-cli_set_args">cli_set_args</a><h2>std/collections/map.ax</h2><a href="#mod-std-collections-map-ax-map_create">map_create</a><a href="#mod-std-collections-map-ax-map_set">map_set</a><a href="#mod-std-collections-map-ax-map_get">map_get</a><a href="#mod-std-collections-map-ax-map_has">map_has</a><a href="#mod-std-collections-map-ax-map_delete">map_delete</a><a href="#mod-std-collections-map-ax-map_len">map_len</a><a href="#mod-std-collections-map-ax-map_free">map_free</a><h2>std/collections/queue.ax</h2><a href="#mod-std-collections-queue-ax-queue_create">queue_create</a><a href="#mod-std-collections-queue-ax-queue_push">queue_push</a><a href="#mod-std-collections-queue-ax-queue_pop">queue_pop</a><a href="#mod-std-collections-queue-ax-queue_len">queue_len</a><a href="#mod-std-collections-queue-ax-queue_is_empty">queue_is_empty</a><a href="#mod-std-collections-queue-ax-queue_free">queue_free</a><h2>std/compress/zlib.ax</h2><a href="#mod-std-compress-zlib-ax-gzip_compress">gzip_compress</a><a href="#mod-std-compress-zlib-ax-gzip_decompress">gzip_decompress</a><a href="#mod-std-compress-zlib-ax-zlib_compress_str">zlib_compress_str</a><a href="#mod-std-compress-zlib-ax-zlib_decompress_str">zlib_decompress_str</a><h2>std/core/error.ax</h2><a href="#mod-std-core-error-ax-Result">Result</a><a href="#mod-std-core-error-ax-result_ok">result_ok</a><a href="#mod-std-core-error-ax-result_err_with">result_err_with</a><a href="#mod-std-core-error-ax-result_err_int">result_err_int</a><a href="#mod-std-core-error-ax-result_err_str">result_err_str</a><a href="#mod-std-core-error-ax-result_err_bool">result_err_bool</a><a href="#mod-std-core-error-ax-result_err_strs">result_err_strs</a><a href="#mod-std-core-error-ax-result_is_ok">result_is_ok</a><a href="#mod-std-core-error-ax-result_is_err">result_is_err</a><a href="#mod-std-core-error-ax-result_error">result_error</a><a href="#mod-std-core-error-ax-result_unwrap">result_unwrap</a><a href="#mod-std-core-error-ax-result_unwrap_or">result_unwrap_or</a><a href="#mod-std-core-error-ax-result_expect">result_expect</a><h2>std/core/option.ax</h2><a href="#mod-std-core-option-ax-OptionInt">OptionInt</a><a href="#mod-std-core-option-ax-OptionStr">OptionStr</a><a href="#mod-std-core-option-ax-OptionBool">OptionBool</a><a href="#mod-std-core-option-ax-some_int">some_int</a><a href="#mod-std-core-option-ax-none_int">none_int</a><a href="#mod-std-core-option-ax-some_str">some_str</a><a href="#mod-std-core-option-ax-none_str">none_str</a><a href="#mod-std-core-option-ax-some_bool">some_bool</a><a href="#mod-std-core-option-ax-none_bool">none_bool</a><a href="#mod-std-core-option-ax-some">some</a><a href="#mod-std-core-option-ax-some">some</a><a href="#mod-std-core-option-ax-some">some</a><a href="#mod-std-core-option-ax-is_some">is_some</a><a href="#mod-std-core-option-ax-is_some">is_some</a><a href="#mod-std-core-option-ax-is_some">is_some</a><a href="#mod-std-core-option-ax-is_none">is_none</a><a href="#mod-std-core-option-ax-is_none">is_none</a><a href="#mod-std-core-option-ax-is_none">is_none</a><a href="#mod-std-core-option-ax-unwrap">unwrap</a><a href="#mod-std-core-option-ax-unwrap">unwrap</a><a href="#mod-std-core-option-ax-unwrap">unwrap</a><a href="#mod-std-core-option-ax-unwrap_or">unwrap_or</a><a href="#mod-std-core-option-ax-unwrap_or">unwrap_or</a><a href="#mod-std-core-option-ax-unwrap_or">unwrap_or</a><h2>std/core/result.ax</h2><a href="#mod-std-core-result-ax-ResultInt">ResultInt</a><a href="#mod-std-core-result-ax-ResultStr">ResultStr</a><a href="#mod-std-core-result-ax-ok_int">ok_int</a><a href="#mod-std-core-result-ax-err_int">err_int</a><a href="#mod-std-core-result-ax-ok_str">ok_str</a><a href="#mod-std-core-result-ax-err_str">err_str</a><a href="#mod-std-core-result-ax-is_ok">is_ok</a><a href="#mod-std-core-result-ax-is_ok">is_ok</a><a href="#mod-std-core-result-ax-is_err">is_err</a><a href="#mod-std-core-result-ax-is_err">is_err</a><a href="#mod-std-core-result-ax-unwrap">unwrap</a><a href="#mod-std-core-result-ax-unwrap">unwrap</a><a href="#mod-std-core-result-ax-unwrap_err">unwrap_err</a><a href="#mod-std-core-result-ax-unwrap_err">unwrap_err</a><h2>std/crypto/aes.ax</h2><a href="#mod-std-crypto-aes-ax-aes256_cbc_encrypt">aes256_cbc_encrypt</a><a href="#mod-std-crypto-aes-ax-aes256_cbc_decrypt">aes256_cbc_decrypt</a><a href="#mod-std-crypto-aes-ax-aes128_cbc_encrypt">aes128_cbc_encrypt</a><a href="#mod-std-crypto-aes-ax-aes128_cbc_decrypt">aes128_cbc_decrypt</a><h2>std/crypto/hash.ax</h2><a href="#mod-std-crypto-hash-ax-hash_md5">hash_md5</a><a href="#mod-std-crypto-hash-ax-hash_sha1">hash_sha1</a><a href="#mod-std-crypto-hash-ax-hash_sha256">hash_sha256</a><h2>std/crypto/tls.ax</h2><a href="#mod-std-crypto-tls-ax-tls_connect">tls_connect</a><a href="#mod-std-crypto-tls-ax-tls_send">tls_send</a><a href="#mod-std-crypto-tls-ax-tls_recv">tls_recv</a><a href="#mod-std-crypto-tls-ax-tls_close">tls_close</a><a href="#mod-std-crypto-tls-ax-https_get">https_get</a><a href="#mod-std-crypto-tls-ax-https_get_result">https_get_result</a><h2>std/encoding/base64.ax</h2><a href="#mod-std-encoding-base64-ax-base64_encode">base64_encode</a><a href="#mod-std-encoding-base64-ax-base64_decode">base64_decode</a><h2>std/encoding/hex.ax</h2><a href="#mod-std-encoding-hex-ax-hex_encode">hex_encode</a><a href="#mod-std-encoding-hex-ax-hex_decode">hex_decode</a><h2>std/encoding/html.ax</h2><a href="#mod-std-encoding-html-ax-html_escape">html_escape</a><a href="#mod-std-encoding-html-ax-html_unescape">html_unescape</a><a href="#mod-std-encoding-html-ax-html_strip_tags">html_strip_tags</a><h2>std/encoding/json.ax</h2><a href="#mod-std-encoding-json-ax-json_get_str">json_get_str</a><a href="#mod-std-encoding-json-ax-json_get_int">json_get_int</a><a href="#mod-std-encoding-json-ax-json_get_bool">json_get_bool</a><a href="#mod-std-encoding-json-ax-json_has_key">json_has_key</a><a href="#mod-std-encoding-json-ax-json_build_object">json_build_object</a><a href="#mod-std-encoding-json-ax-json_escape">json_escape</a><a href="#mod-std-encoding-json-ax-_json_precheck">_json_precheck</a><a href="#mod-std-encoding-json-ax-json_get_str_result">json_get_str_result</a><a href="#mod-std-encoding-json-ax-json_get_int_result">json_get_int_result</a><a href="#mod-std-encoding-json-ax-json_get_bool_result">json_get_bool_result</a><a href="#mod-std-encoding-json-ax-json_parse_result">json_parse_result</a><a href="#mod-std-encoding-json-ax-json_doc_free">json_doc_free</a><a href="#mod-std-encoding-json-ax-_json_node_or_err">_json_node_or_err</a><a href="#mod-std-encoding-json-ax-json_str_at">json_str_at</a><a href="#mod-std-encoding-json-ax-json_int_at">json_int_at</a><a href="#mod-std-encoding-json-ax-json_float_at">json_float_at</a><a href="#mod-std-encoding-json-ax-json_bool_at">json_bool_at</a><a href="#mod-std-encoding-json-ax-json_has_path">json_has_path</a><a href="#mod-std-encoding-json-ax-json_is_null_at">json_is_null_at</a><a href="#mod-std-encoding-json-ax-json_len_at">json_len_at</a><h2>std/io/binary.ax</h2><a href="#mod-std-io-binary-ax-buf_create">buf_create</a><a href="#mod-std-io-binary-ax-buf_write_u8">buf_write_u8</a><a href="#mod-std-io-binary-ax-buf_write_u16_be">buf_write_u16_be</a><a href="#mod-std-io-binary-ax-buf_write_u16_le">buf_write_u16_le</a><a href="#mod-std-io-binary-ax-buf_write_u32_be">buf_write_u32_be</a><a href="#mod-std-io-binary-ax-buf_write_u32_le">buf_write_u32_le</a><a href="#mod-std-io-binary-ax-buf_write_u64_be">buf_write_u64_be</a><a href="#mod-std-io-binary-ax-buf_write_u64_le">buf_write_u64_le</a><a href="#mod-std-io-binary-ax-buf_write_str">buf_write_str</a><a href="#mod-std-io-binary-ax-buf_to_hex">buf_to_hex</a><a href="#mod-std-io-binary-ax-buf_to_str">buf_to_str</a><a href="#mod-std-io-binary-ax-buf_len">buf_len</a><a href="#mod-std-io-binary-ax-buf_from_hex">buf_from_hex</a><a href="#mod-std-io-binary-ax-buf_read_u8">buf_read_u8</a><a href="#mod-std-io-binary-ax-buf_read_u16_be">buf_read_u16_be</a><a href="#mod-std-io-binary-ax-buf_read_u16_le">buf_read_u16_le</a><a href="#mod-std-io-binary-ax-buf_read_u32_be">buf_read_u32_be</a><a href="#mod-std-io-binary-ax-buf_read_u32_le">buf_read_u32_le</a><a href="#mod-std-io-binary-ax-buf_read_u64_be">buf_read_u64_be</a><a href="#mod-std-io-binary-ax-buf_read_u64_le">buf_read_u64_le</a><a href="#mod-std-io-binary-ax-buf_free">buf_free</a><h2>std/io/csv.ax</h2><a href="#mod-std-io-csv-ax-csv_create">csv_create</a><a href="#mod-std-io-csv-ax-csv_add_row">csv_add_row</a><a href="#mod-std-io-csv-ax-csv_to_str">csv_to_str</a><a href="#mod-std-io-csv-ax-csv_save_file">csv_save_file</a><a href="#mod-std-io-csv-ax-csv_free">csv_free</a><h2>std/io/file.ax</h2><a href="#mod-std-io-file-ax-read_file">read_file</a><a href="#mod-std-io-file-ax-write_file">write_file</a><a href="#mod-std-io-file-ax-file_present">file_present</a><a href="#mod-std-io-file-ax-append_file">append_file</a><a href="#mod-std-io-file-ax-read_lines">read_lines</a><a href="#mod-std-io-file-ax-file_size_result">file_size_result</a><a href="#mod-std-io-file-ax-dir_present">dir_present</a><a href="#mod-std-io-file-ax-list_dir_result">list_dir_result</a><a href="#mod-std-io-file-ax-remove_file_result">remove_file_result</a><a href="#mod-std-io-file-ax-rename_file_result">rename_file_result</a><a href="#mod-std-io-file-ax-create_dir_result">create_dir_result</a><a href="#mod-std-io-file-ax-copy_file_result">copy_file_result</a><h2>std/log/logger.ax</h2><a href="#mod-std-log-logger-ax-log_set_level">log_set_level</a><a href="#mod-std-log-logger-ax-log_debug">log_debug</a><a href="#mod-std-log-logger-ax-log_info">log_info</a><a href="#mod-std-log-logger-ax-log_warn">log_warn</a><a href="#mod-std-log-logger-ax-log_error">log_error</a><h2>std/net/c2.ax</h2><a href="#mod-std-net-c2-ax-c2_crypto_random_hex">c2_crypto_random_hex</a><a href="#mod-std-net-c2-ax-c2_hmac_sha256">c2_hmac_sha256</a><a href="#mod-std-net-c2-ax-c2_crypto_memcmp">c2_crypto_memcmp</a><a href="#mod-std-net-c2-ax-c2_generate_beacon">c2_generate_beacon</a><a href="#mod-std-net-c2-ax-c2_parse_beacon">c2_parse_beacon</a><h2>std/net/dns.ax</h2><a href="#mod-std-net-dns-ax-dns_resolve_ipv4">dns_resolve_ipv4</a><a href="#mod-std-net-dns-ax-dns_resolve_ipv6">dns_resolve_ipv6</a><a href="#mod-std-net-dns-ax-dns_reverse_lookup">dns_reverse_lookup</a><h2>std/net/event_loop.ax</h2><a href="#mod-std-net-event_loop-ax-EpollEventLoop">EpollEventLoop</a><a href="#mod-std-net-event_loop-ax-EventKind">EventKind</a><a href="#mod-std-net-event_loop-ax-EpollEvent">EpollEvent</a><a href="#mod-std-net-event_loop-ax-event_kind_new">event_kind_new</a><a href="#mod-std-net-event_loop-ax-event_loop_new">event_loop_new</a><a href="#mod-std-net-event_loop-ax-event_loop_new_with_capacity">event_loop_new_with_capacity</a><a href="#mod-std-net-event_loop-ax-event_loop_add">event_loop_add</a><a href="#mod-std-net-event_loop-ax-event_loop_mod">event_loop_mod</a><a href="#mod-std-net-event_loop-ax-event_loop_del">event_loop_del</a><a href="#mod-std-net-event_loop-ax-event_loop_poll">event_loop_poll</a><a href="#mod-std-net-event_loop-ax-event_loop_get_event">event_loop_get_event</a><a href="#mod-std-net-event_loop-ax-event_loop_event_fd">event_loop_event_fd</a><a href="#mod-std-net-event_loop-ax-event_loop_event_events">event_loop_event_events</a><a href="#mod-std-net-event_loop-ax-event_loop_close">event_loop_close</a><a href="#mod-std-net-event_loop-ax-event_is_readable">event_is_readable</a><a href="#mod-std-net-event_loop-ax-event_is_writable">event_is_writable</a><a href="#mod-std-net-event_loop-ax-event_is_error">event_is_error</a><a href="#mod-std-net-event_loop-ax-event_is_hangup">event_is_hangup</a><a href="#mod-std-net-event_loop-ax-net_set_nonblocking">net_set_nonblocking</a><a href="#mod-std-net-event_loop-ax-tcp_server_nonblocking">tcp_server_nonblocking</a><a href="#mod-std-net-event_loop-ax-tcp_accept_nonblocking">tcp_accept_nonblocking</a><a href="#mod-std-net-event_loop-ax-fd_write">fd_write</a><a href="#mod-std-net-event_loop-ax-fd_read">fd_read</a><a href="#mod-std-net-event_loop-ax-pipe_create">pipe_create</a><a href="#mod-std-net-event_loop-ax-pipe_read_fd">pipe_read_fd</a><a href="#mod-std-net-event_loop-ax-pipe_write_fd">pipe_write_fd</a><a href="#mod-std-net-event_loop-ax-pipe_close">pipe_close</a><a href="#mod-std-net-event_loop-ax-socketpair_create">socketpair_create</a><a href="#mod-std-net-event_loop-ax-socketpair_fd1">socketpair_fd1</a><a href="#mod-std-net-event_loop-ax-socketpair_fd2">socketpair_fd2</a><a href="#mod-std-net-event_loop-ax-socketpair_close">socketpair_close</a><h2>std/net/http.ax</h2><a href="#mod-std-net-http-ax-HttpResponse">HttpResponse</a><a href="#mod-std-net-http-ax-FetchResult">FetchResult</a><a href="#mod-std-net-http-ax-_read_response">_read_response</a><a href="#mod-std-net-http-ax-http_once">http_once</a><a href="#mod-std-net-http-ax-_is_redirect">_is_redirect</a><a href="#mod-std-net-http-ax-http_status">http_status</a><a href="#mod-std-net-http-ax-http_body">http_body</a><a href="#mod-std-net-http-ax-http_request">http_request</a><a href="#mod-std-net-http-ax-_http_request_impl">_http_request_impl</a><a href="#mod-std-net-http-ax-http_get">http_get</a><a href="#mod-std-net-http-ax-http_get_result">http_get_result</a><h2>std/net/http_server.ax</h2><a href="#mod-std-net-http_server-ax-http_server_create">http_server_create</a><a href="#mod-std-net-http_server-ax-http_server_accept">http_server_accept</a><a href="#mod-std-net-http_server-ax-http_server_send_response">http_server_send_response</a><a href="#mod-std-net-http_server-ax-http_server_close">http_server_close</a><h2>std/net/packet_crafter.ax</h2><a href="#mod-std-net-packet_crafter-ax-craft_ipv4_header">craft_ipv4_header</a><a href="#mod-std-net-packet_crafter-ax-craft_tcp_syn">craft_tcp_syn</a><a href="#mod-std-net-packet_crafter-ax-craft_tcp_custom">craft_tcp_custom</a><a href="#mod-std-net-packet_crafter-ax-craft_udp_packet">craft_udp_packet</a><h2>std/net/pcap.ax</h2><a href="#mod-std-net-pcap-ax-pcap_open_writer">pcap_open_writer</a><a href="#mod-std-net-pcap-ax-pcap_record_packet">pcap_record_packet</a><a href="#mod-std-net-pcap-ax-pcap_open_reader">pcap_open_reader</a><a href="#mod-std-net-pcap-ax-pcap_read_next">pcap_read_next</a><a href="#mod-std-net-pcap-ax-pcap_get_packet_count">pcap_get_packet_count</a><a href="#mod-std-net-pcap-ax-pcap_file_close">pcap_file_close</a><h2>std/net/raw_socket.ax</h2><a href="#mod-std-net-raw_socket-ax-icmp_ping">icmp_ping</a><a href="#mod-std-net-raw_socket-ax-tcp_ping">tcp_ping</a><a href="#mod-std-net-raw_socket-ax-raw_checksum">raw_checksum</a><h2>std/net/udp.ax</h2><a href="#mod-std-net-udp-ax-udp_socket">udp_socket</a><a href="#mod-std-net-udp-ax-udp_bind">udp_bind</a><a href="#mod-std-net-udp-ax-udp_sendto">udp_sendto</a><a href="#mod-std-net-udp-ax-udp_recvfrom">udp_recvfrom</a><a href="#mod-std-net-udp-ax-udp_close">udp_close</a><h2>std/net/url.ax</h2><a href="#mod-std-net-url-ax-Url">Url</a><a href="#mod-std-net-url-ax-url_encode">url_encode</a><a href="#mod-std-net-url-ax-url_decode">url_decode</a><a href="#mod-std-net-url-ax-url_parse">url_parse</a><h2>std/net/websocket.ax</h2><a href="#mod-std-net-websocket-ax-ws_connect">ws_connect</a><a href="#mod-std-net-websocket-ax-ws_send">ws_send</a><a href="#mod-std-net-websocket-ax-ws_recv">ws_recv</a><a href="#mod-std-net-websocket-ax-ws_close">ws_close</a><h2>std/os/forensics.ax</h2><a href="#mod-std-os-forensics-ax-forensics_list_listening_ports">forensics_list_listening_ports</a><a href="#mod-std-os-forensics-ax-forensics_list_processes">forensics_list_processes</a><a href="#mod-std-os-forensics-ax-forensics_list_kernel_modules">forensics_list_kernel_modules</a><a href="#mod-std-os-forensics-ax-forensics_is_module_loaded">forensics_is_module_loaded</a><h2>std/os/process.ax</h2><a href="#mod-std-os-process-ax-process_exec_output">process_exec_output</a><a href="#mod-std-os-process-ax-process_get_pid">process_get_pid</a><a href="#mod-std-os-process-ax-process_kill">process_kill</a><a href="#mod-std-os-process-ax-process_spawn_bg">process_spawn_bg</a><a href="#mod-std-os-process-ax-process_exec_argv">process_exec_argv</a><a href="#mod-std-os-process-ax-exec_output_result">exec_output_result</a><h2>std/security/evasion.ax</h2><a href="#mod-std-security-evasion-ax-evasion_is_debugger_present">evasion_is_debugger_present</a><a href="#mod-std-security-evasion-ax-evasion_is_vm_or_sandbox">evasion_is_vm_or_sandbox</a><a href="#mod-std-security-evasion-ax-evasion_disable_core_dump">evasion_disable_core_dump</a><a href="#mod-std-security-evasion-ax-evasion_enable_core_dump">evasion_enable_core_dump</a><h2>std/security/fuzzer.ax</h2><a href="#mod-std-security-fuzzer-ax-fuzz_replace_marker">fuzz_replace_marker</a><a href="#mod-std-security-fuzzer-ax-fuzz_url_encode">fuzz_url_encode</a><a href="#mod-std-security-fuzzer-ax-fuzz_double_encode">fuzz_double_encode</a><a href="#mod-std-security-fuzzer-ax-fuzz_add_null_byte">fuzz_add_null_byte</a><a href="#mod-std-security-fuzzer-ax-wordlist_load">wordlist_load</a><a href="#mod-std-security-fuzzer-ax-wordlist_count">wordlist_count</a><a href="#mod-std-security-fuzzer-ax-wordlist_get">wordlist_get</a><a href="#mod-std-security-fuzzer-ax-wordlist_free">wordlist_free</a><h2>std/security/integrity.ax</h2><a href="#mod-std-security-integrity-ax-fim_calculate_hash">fim_calculate_hash</a><a href="#mod-std-security-integrity-ax-fim_verify_baseline">fim_verify_baseline</a><h2>std/security/jwt.ax</h2><a href="#mod-std-security-jwt-ax-jwt_create_hs256">jwt_create_hs256</a><a href="#mod-std-security-jwt-ax-jwt_verify_hs256">jwt_verify_hs256</a><a href="#mod-std-security-jwt-ax-jwt_get_header">jwt_get_header</a><a href="#mod-std-security-jwt-ax-jwt_get_payload">jwt_get_payload</a><a href="#mod-std-security-jwt-ax-jwt_get_claim">jwt_get_claim</a><h2>std/security/memdump.ax</h2><a href="#mod-std-security-memdump-ax-memdump_search_pattern">memdump_search_pattern</a><a href="#mod-std-security-memdump-ax-memdump_get_maps">memdump_get_maps</a><h2>std/security/shellcode.ax</h2><a href="#mod-std-security-shellcode-ax-shellcode_execute">shellcode_execute</a><a href="#mod-std-security-shellcode-ax-shellcode_allocate_rwx">shellcode_allocate_rwx</a><a href="#mod-std-security-shellcode-ax-shellcode_protect">shellcode_protect</a><h2>std/security/sigma.ax</h2><a href="#mod-std-security-sigma-ax-SigmaFieldMatch">SigmaFieldMatch</a><a href="#mod-std-security-sigma-ax-SigmaRule">SigmaRule</a><a href="#mod-std-security-sigma-ax-SigmaEvent">SigmaEvent</a><a href="#mod-std-security-sigma-ax-SigmaAlert">SigmaAlert</a><a href="#mod-std-security-sigma-ax-SigmaRuleEngine">SigmaRuleEngine</a><a href="#mod-std-security-sigma-ax-sigma_rule_new">sigma_rule_new</a><a href="#mod-std-security-sigma-ax-sigma_rule_add_selection">sigma_rule_add_selection</a><a href="#mod-std-security-sigma-ax-sigma_rule_add_filter">sigma_rule_add_filter</a><a href="#mod-std-security-sigma-ax-sigma_rule_set_condition">sigma_rule_set_condition</a><a href="#mod-std-security-sigma-ax-sigma_event_new">sigma_event_new</a><a href="#mod-std-security-sigma-ax-sigma_event_set">sigma_event_set</a><a href="#mod-std-security-sigma-ax-sigma_event_get">sigma_event_get</a><a href="#mod-std-security-sigma-ax-sigma_parse_web_log">sigma_parse_web_log</a><a href="#mod-std-security-sigma-ax-sigma_parse_auth_log">sigma_parse_auth_log</a><a href="#mod-std-security-sigma-ax-_sigma_last_index_of">_sigma_last_index_of</a><a href="#mod-std-security-sigma-ax-sigma_parse_syslog">sigma_parse_syslog</a><a href="#mod-std-security-sigma-ax-sigma_level_to_score">sigma_level_to_score</a><a href="#mod-std-security-sigma-ax-sigma_eval_op">sigma_eval_op</a><a href="#mod-std-security-sigma-ax-sigma_rule_eval">sigma_rule_eval</a><a href="#mod-std-security-sigma-ax-sigma_engine_new">sigma_engine_new</a><a href="#mod-std-security-sigma-ax-sigma_engine_add_rule">sigma_engine_add_rule</a><a href="#mod-std-security-sigma-ax-sigma_engine_eval">sigma_engine_eval</a><a href="#mod-std-security-sigma-ax-sigma_engine_eval_raw">sigma_engine_eval_raw</a><a href="#mod-std-security-sigma-ax-sigma_engine_has_alert">sigma_engine_has_alert</a><a href="#mod-std-security-sigma-ax-sigma_engine_highest_risk_score">sigma_engine_highest_risk_score</a><a href="#mod-std-security-sigma-ax-sigma_engine_highest_severity">sigma_engine_highest_severity</a><a href="#mod-std-security-sigma-ax-sigma_get_default_ruleset">sigma_get_default_ruleset</a><a href="#mod-std-security-sigma-ax-sigma_match_rule">sigma_match_rule</a><a href="#mod-std-security-sigma-ax-sigma_count_matches">sigma_count_matches</a><a href="#mod-std-security-sigma-ax-sigma_detect_attack">sigma_detect_attack</a><h2>std/security/yara.ax</h2><a href="#mod-std-security-yara-ax-YaraMatch">YaraMatch</a><a href="#mod-std-security-yara-ax-YaraRule">YaraRule</a><a href="#mod-std-security-yara-ax-YaraRuleSet">YaraRuleSet</a><a href="#mod-std-security-yara-ax-yara_rule_new">yara_rule_new</a><a href="#mod-std-security-yara-ax-yara_rule_add_pattern">yara_rule_add_pattern</a><a href="#mod-std-security-yara-ax-yara_rule_set_offset_bounds">yara_rule_set_offset_bounds</a><a href="#mod-std-security-yara-ax-yara_rule_set_at_offset">yara_rule_set_at_offset</a><a href="#mod-std-security-yara-ax-yara_ruleset_new">yara_ruleset_new</a><a href="#mod-std-security-yara-ax-yara_ruleset_add_rule">yara_ruleset_add_rule</a><a href="#mod-std-security-yara-ax-yara_find_hex_wildcard">yara_find_hex_wildcard</a><a href="#mod-std-security-yara-ax-yara_find_hex_wildcard_at">yara_find_hex_wildcard_at</a><a href="#mod-std-security-yara-ax-yara_match_hex_wildcard">yara_match_hex_wildcard</a><a href="#mod-std-security-yara-ax-yara_find_hex_stream">yara_find_hex_stream</a><a href="#mod-std-security-yara-ax-yara_scan_hex_stream">yara_scan_hex_stream</a><a href="#mod-std-security-yara-ax-yara_scan_buf">yara_scan_buf</a><a href="#mod-std-security-yara-ax-yara_scan_single_pattern">yara_scan_single_pattern</a><a href="#mod-std-security-yara-ax-yara_scan_rule">yara_scan_rule</a><a href="#mod-std-security-yara-ax-yara_rule_is_match">yara_rule_is_match</a><a href="#mod-std-security-yara-ax-yara_ruleset_scan">yara_ruleset_scan</a><a href="#mod-std-security-yara-ax-yara_ruleset_has_match">yara_ruleset_has_match</a><a href="#mod-std-security-yara-ax-yara_ruleset_count_matches">yara_ruleset_count_matches</a><a href="#mod-std-security-yara-ax-yara_scan_buffer">yara_scan_buffer</a><a href="#mod-std-security-yara-ax-yara_scan_regex">yara_scan_regex</a><a href="#mod-std-security-yara-ax-yara_scan_hex">yara_scan_hex</a><h2>std/security/yara_rules.ax</h2><a href="#mod-std-security-yara_rules-ax-_trim_blank">_trim_blank</a><a href="#mod-std-security-yara_rules-ax-_is_blank">_is_blank</a><a href="#mod-std-security-yara_rules-ax-_starts_with_ci">_starts_with_ci</a><a href="#mod-std-security-yara_rules-ax-_parse_rule_name">_parse_rule_name</a><a href="#mod-std-security-yara_rules-ax-_empty_parts">_empty_parts</a><a href="#mod-std-security-yara_rules-ax-_parse_string_def">_parse_string_def</a><a href="#mod-std-security-yara_rules-ax-_parse_condition">_parse_condition</a><a href="#mod-std-security-yara_rules-ax-parse_yara_rules">parse_yara_rules</a><h2>std/target/wasm.ax</h2><a href="#mod-std-target-wasm-ax-WasmExport">WasmExport</a><a href="#mod-std-target-wasm-ax-WasmModule">WasmModule</a><a href="#mod-std-target-wasm-ax-wasm_module_new">wasm_module_new</a><a href="#mod-std-target-wasm-ax-wasm_add_export">wasm_add_export</a><a href="#mod-std-target-wasm-ax-wasm_get_magic_hex">wasm_get_magic_hex</a><a href="#mod-std-target-wasm-ax-wasm_validate_magic_hex">wasm_validate_magic_hex</a><h2>std/text/regex.ax</h2><a href="#mod-std-text-regex-ax-regex_is_match">regex_is_match</a><a href="#mod-std-text-regex-ax-regex_find">regex_find</a><a href="#mod-std-text-regex-ax-regex_replace">regex_replace</a><a href="#mod-std-text-regex-ax-regex_validate">regex_validate</a><a href="#mod-std-text-regex-ax-regex_risk_level">regex_risk_level</a><a href="#mod-std-text-regex-ax-_regex_require_valid">_regex_require_valid</a><a href="#mod-std-text-regex-ax-regex_is_match_result">regex_is_match_result</a><a href="#mod-std-text-regex-ax-regex_find_result">regex_find_result</a><a href="#mod-std-text-regex-ax-regex_replace_result">regex_replace_result</a><a href="#mod-std-text-regex-ax-regex_escape">regex_escape</a><a href="#mod-std-text-regex-ax-regex_compile_result">regex_compile_result</a><h2>std/text/unicode.ax</h2><a href="#mod-std-text-unicode-ax-utf8_codepoint_count">utf8_codepoint_count</a><a href="#mod-std-text-unicode-ax-grapheme_len">grapheme_len</a><a href="#mod-std-text-unicode-ax-grapheme_at">grapheme_at</a><a href="#mod-std-text-unicode-ax-to_upper_tr">to_upper_tr</a><a href="#mod-std-text-unicode-ax-to_lower_tr">to_lower_tr</a><a href="#mod-std-text-unicode-ax-is_avx2_supported">is_avx2_supported</a><a href="#mod-std-text-unicode-ax-unicode_nfd">unicode_nfd</a><a href="#mod-std-text-unicode-ax-unicode_nfc">unicode_nfc</a><a href="#mod-std-text-unicode-ax-unicode_is_nfd">unicode_is_nfd</a><a href="#mod-std-text-unicode-ax-unicode_is_nfc">unicode_is_nfc</a><a href="#mod-std-text-unicode-ax-unicode_normalize">unicode_normalize</a><a href="#mod-std-text-unicode-ax-unicode_ucd_version">unicode_ucd_version</a><a href="#mod-std-text-unicode-ax-unicode_normalize_result">unicode_normalize_result</a><a href="#mod-std-text-unicode-ax-unicode_canonical_eq">unicode_canonical_eq</a><h2>std/time/date.ax</h2><a href="#mod-std-time-date-ax-date_now_iso">date_now_iso</a><a href="#mod-std-time-date-ax-date_now_epoch">date_now_epoch</a><a href="#mod-std-time-date-ax-date_format_epoch">date_format_epoch</a><a href="#mod-std-time-date-ax-date_diff_seconds">date_diff_seconds</a><a href="#mod-std-time-date-ax-date_format_tz">date_format_tz</a><a href="#mod-std-time-date-ax-date_iso_tz">date_iso_tz</a><a href="#mod-std-time-date-ax-date_parse_iso">date_parse_iso</a><a href="#mod-std-time-date-ax-date_local_offset_minutes">date_local_offset_minutes</a><a href="#mod-std-time-date-ax-date_offset_label">date_offset_label</a><a href="#mod-std-time-date-ax-date_iso_local">date_iso_local</a><a href="#mod-std-time-date-ax-date_duration_label">date_duration_label</a><h2>std/web/app.ax</h2><a href="#mod-std-web-app-ax-Context">Context</a><a href="#mod-std-web-app-ax-context_new">context_new</a><a href="#mod-std-web-app-ax-cors_middleware">cors_middleware</a><a href="#mod-std-web-app-ax-auth_middleware">auth_middleware</a><a href="#mod-std-web-app-ax-json_response">json_response</a><a href="#mod-std-web-app-ax-html_response">html_response</a><h2>std/web/router.ax</h2><a href="#mod-std-web-router-ax-RouteMatch">RouteMatch</a><a href="#mod-std-web-router-ax-Route">Route</a><a href="#mod-std-web-router-ax-Router">Router</a><a href="#mod-std-web-router-ax-router_new">router_new</a><a href="#mod-std-web-router-ax-router_add">router_add</a><a href="#mod-std-web-router-ax-router_match">router_match</a><h2>std/web/template.ax</h2><a href="#mod-std-web-template-ax-template_escape">template_escape</a><a href="#mod-std-web-template-ax-template_render_var">template_render_var</a><a href="#mod-std-web-template-ax-template_render_raw">template_render_raw</a></nav>
+<section><h2 class="mod" id="mod-std-ai-autograd-ax">std/ai/autograd.ax</h2><div class="item" id="mod-std-ai-autograd-ax-GradNode">
+<h3><span class="badge">struct</span>struct GradNode</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>id</code></td><td><code>int</code></td></tr>
+<tr><td><code>grad</code></td><td><code>float</code></td></tr>
+<tr><td><code>requires_grad</code></td><td><code>bool</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-ai-autograd-ax-autograd_create_node">
+<h3><span class="badge">fn</span>fn autograd_create_node(id: int, requires_grad: bool) -&gt; GradNode</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-autograd-ax-autograd_accumulate_grad">
+<h3><span class="badge">fn</span>fn autograd_accumulate_grad(node: GradNode, incoming: float) -&gt; GradNode</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-autograd-ax-autograd_backward_relu">
+<h3><span class="badge">fn</span>fn autograd_backward_relu(grad_output: float, forward_input: float) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-autograd-ax-autograd_backward_sigmoid">
+<h3><span class="badge">fn</span>fn autograd_backward_sigmoid(grad_output: float, forward_output: float) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-ai-inference-ax">std/ai/inference.ax</h2><div class="item" id="mod-std-ai-inference-ax-ModelWeights">
+<h3><span class="badge">struct</span>struct ModelWeights</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>w1</code></td><td><code>Tensor</code></td></tr>
+<tr><td><code>b1</code></td><td><code>Tensor</code></td></tr>
+<tr><td><code>w2</code></td><td><code>Tensor</code></td></tr>
+<tr><td><code>b2</code></td><td><code>Tensor</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-ai-inference-ax-model_predict">
+<h3><span class="badge">fn</span>fn model_predict(model: ModelWeights, input: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-inference-ax-model_classify">
+<h3><span class="badge">fn</span>fn model_classify(output_probs: Tensor) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-ai-linalg-ax">std/ai/linalg.ax</h2><div class="item" id="mod-std-ai-linalg-ax-matmul">
+<h3><span class="badge">fn</span>fn matmul(a: Tensor, b: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>a.cols == b.rows</code></div>
+<div class="contract"><span>ensures:</span> <code>return.rows == a.rows and return.cols == b.cols</code></div>
+</div><div class="item" id="mod-std-ai-linalg-ax-mat_add">
+<h3><span class="badge">fn</span>fn mat_add(a: Tensor, b: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>a.rows == b.rows and a.cols == b.cols</code></div>
+<div class="contract"><span>ensures:</span> <code>return.rows == a.rows and return.cols == a.cols</code></div>
+</div><div class="item" id="mod-std-ai-linalg-ax-mat_transpose">
+<h3><span class="badge">fn</span>fn mat_transpose(a: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>ensures:</span> <code>return.rows == a.cols and return.cols == a.rows</code></div>
+</div><div class="item" id="mod-std-ai-linalg-ax-dot">
+<h3><span class="badge">fn</span>fn dot(a: Tensor, b: Tensor) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-ai-nn-ax">std/ai/nn.ax</h2><div class="item" id="mod-std-ai-nn-ax-relu">
+<h3><span class="badge">fn</span>fn relu(x: float) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-nn-ax-sigmoid">
+<h3><span class="badge">fn</span>fn sigmoid(x: float) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-nn-ax-tensor_apply_relu">
+<h3><span class="badge">fn</span>fn tensor_apply_relu(t: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-nn-ax-tensor_apply_sigmoid">
+<h3><span class="badge">fn</span>fn tensor_apply_sigmoid(t: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-nn-ax-linear_forward">
+<h3><span class="badge">fn</span>fn linear_forward(input: Tensor, weights: Tensor, bias: Tensor) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-nn-ax-mse_loss">
+<h3><span class="badge">fn</span>fn mse_loss(pred: Tensor, target: Tensor) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-ai-tensor-ax">std/ai/tensor.ax</h2><div class="item" id="mod-std-ai-tensor-ax-Tensor">
+<h3><span class="badge">struct</span>struct Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>handle</code></td><td><code>int</code></td></tr>
+<tr><td><code>rows</code></td><td><code>int</code></td></tr>
+<tr><td><code>cols</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-ai-tensor-ax-tensor_new">
+<h3><span class="badge">fn</span>fn tensor_new(rows: int, cols: int) -&gt; Tensor</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>rows &gt; 0 and cols &gt; 0</code></div>
+<div class="contract"><span>ensures:</span> <code>return.rows == rows and return.cols == cols</code></div>
+</div><div class="item" id="mod-std-ai-tensor-ax-tensor_set_val">
+<h3><span class="badge">fn</span>fn tensor_set_val(t: Tensor, r: int, c: int, val: float) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>r &gt;= 0 and r &lt; t.rows and c &gt;= 0 and c &lt; t.cols</code></div>
+</div><div class="item" id="mod-std-ai-tensor-ax-tensor_get_val">
+<h3><span class="badge">fn</span>fn tensor_get_val(t: Tensor, r: int, c: int) -&gt; float</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>r &gt;= 0 and r &lt; t.rows and c &gt;= 0 and c &lt; t.cols</code></div>
+</div><div class="item" id="mod-std-ai-tensor-ax-tensor_destroy">
+<h3><span class="badge">fn</span>fn tensor_destroy(t: Tensor) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-ai-tensor-ax-tensor_print">
+<h3><span class="badge">fn</span>fn tensor_print(t: Tensor) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-cli-args-ax">std/cli/args.ax</h2><div class="item" id="mod-std-cli-args-ax-cli_args_count">
+<h3><span class="badge">fn</span>fn cli_args_count() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-cli-args-ax-cli_args_get">
+<h3><span class="badge">fn</span>fn cli_args_get(idx: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-cli-args-ax-cli_has_flag">
+<h3><span class="badge">fn</span>fn cli_has_flag(flag: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-cli-args-ax-cli_get_option">
+<h3><span class="badge">fn</span>fn cli_get_option(opt: str, default_val: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-cli-args-ax-cli_get_int_option">
+<h3><span class="badge">fn</span>fn cli_get_int_option(opt: str, default_val: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-cli-args-ax-cli_set_args">
+<h3><span class="badge">fn</span>fn cli_set_args(args: str[]) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-collections-map-ax">std/collections/map.ax</h2><div class="item" id="mod-std-collections-map-ax-map_create">
+<h3><span class="badge">fn</span>fn map_create() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_set">
+<h3><span class="badge">fn</span>fn map_set(m: int, key: str, val: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_get">
+<h3><span class="badge">fn</span>fn map_get(m: int, key: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_has">
+<h3><span class="badge">fn</span>fn map_has(m: int, key: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_delete">
+<h3><span class="badge">fn</span>fn map_delete(m: int, key: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_len">
+<h3><span class="badge">fn</span>fn map_len(m: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-map-ax-map_free">
+<h3><span class="badge">fn</span>fn map_free(m: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-collections-queue-ax">std/collections/queue.ax</h2><div class="item" id="mod-std-collections-queue-ax-queue_create">
+<h3><span class="badge">fn</span>fn queue_create() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-queue-ax-queue_push">
+<h3><span class="badge">fn</span>fn queue_push(q: int, item: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-queue-ax-queue_pop">
+<h3><span class="badge">fn</span>fn queue_pop(q: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-queue-ax-queue_len">
+<h3><span class="badge">fn</span>fn queue_len(q: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-queue-ax-queue_is_empty">
+<h3><span class="badge">fn</span>fn queue_is_empty(q: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-collections-queue-ax-queue_free">
+<h3><span class="badge">fn</span>fn queue_free(q: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-compress-zlib-ax">std/compress/zlib.ax</h2><div class="item" id="mod-std-compress-zlib-ax-gzip_compress">
+<h3><span class="badge">fn</span>fn gzip_compress(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-compress-zlib-ax-gzip_decompress">
+<h3><span class="badge">fn</span>fn gzip_decompress(hex_str: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-compress-zlib-ax-zlib_compress_str">
+<h3><span class="badge">fn</span>fn zlib_compress_str(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-compress-zlib-ax-zlib_decompress_str">
+<h3><span class="badge">fn</span>fn zlib_decompress_str(hex_str: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-core-error-ax">std/core/error.ax</h2><div class="item" id="mod-std-core-error-ax-Result">
+<h3><span class="badge">struct</span>struct Result&lt;T, E&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>is_ok</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>T</code></td></tr>
+<tr><td><code>error</code></td><td><code>E</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-error-ax-result_ok">
+<h3><span class="badge">fn</span>fn result_ok&lt;T&gt;(v: T) -&gt; Result&lt;T, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_err_with">
+<h3><span class="badge">fn</span>fn result_err_with&lt;T&gt;(msg: str, empty: T) -&gt; Result&lt;T, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_err_int">
+<h3><span class="badge">fn</span>fn result_err_int(msg: str) -&gt; Result&lt;int, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_err_str">
+<h3><span class="badge">fn</span>fn result_err_str(msg: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_err_bool">
+<h3><span class="badge">fn</span>fn result_err_bool(msg: str) -&gt; Result&lt;bool, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_err_strs">
+<h3><span class="badge">fn</span>fn result_err_strs(msg: str) -&gt; Result&lt;str[], str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_is_ok">
+<h3><span class="badge">fn</span>fn result_is_ok&lt;T&gt;(r: Result&lt;T, str&gt;) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_is_err">
+<h3><span class="badge">fn</span>fn result_is_err&lt;T&gt;(r: Result&lt;T, str&gt;) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_error">
+<h3><span class="badge">fn</span>fn result_error&lt;T&gt;(r: Result&lt;T, str&gt;) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_unwrap">
+<h3><span class="badge">fn</span>fn result_unwrap&lt;T&gt;(r: Result&lt;T, str&gt;) -&gt; T</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_unwrap_or">
+<h3><span class="badge">fn</span>fn result_unwrap_or&lt;T&gt;(r: Result&lt;T, str&gt;, fallback: T) -&gt; T</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-error-ax-result_expect">
+<h3><span class="badge">fn</span>fn result_expect&lt;T&gt;(r: Result&lt;T, str&gt;, msg: str) -&gt; T</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-core-option-ax">std/core/option.ax</h2><div class="item" id="mod-std-core-option-ax-OptionInt">
+<h3><span class="badge">struct</span>struct OptionInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>has_value</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-option-ax-OptionStr">
+<h3><span class="badge">struct</span>struct OptionStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>has_value</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-option-ax-OptionBool">
+<h3><span class="badge">struct</span>struct OptionBool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>has_value</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>bool</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-option-ax-some_int">
+<h3><span class="badge">fn</span>fn some_int(val: int) -&gt; OptionInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-none_int">
+<h3><span class="badge">fn</span>fn none_int() -&gt; OptionInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-some_str">
+<h3><span class="badge">fn</span>fn some_str(val: str) -&gt; OptionStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-none_str">
+<h3><span class="badge">fn</span>fn none_str() -&gt; OptionStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-some_bool">
+<h3><span class="badge">fn</span>fn some_bool(val: bool) -&gt; OptionBool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-none_bool">
+<h3><span class="badge">fn</span>fn none_bool() -&gt; OptionBool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-some">
+<h3><span class="badge">fn</span>fn some(val: int) -&gt; OptionInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-some">
+<h3><span class="badge">fn</span>fn some(val: str) -&gt; OptionStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-some">
+<h3><span class="badge">fn</span>fn some(val: bool) -&gt; OptionBool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_some">
+<h3><span class="badge">fn</span>fn is_some(opt: OptionInt) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_some">
+<h3><span class="badge">fn</span>fn is_some(opt: OptionStr) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_some">
+<h3><span class="badge">fn</span>fn is_some(opt: OptionBool) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_none">
+<h3><span class="badge">fn</span>fn is_none(opt: OptionInt) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_none">
+<h3><span class="badge">fn</span>fn is_none(opt: OptionStr) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-is_none">
+<h3><span class="badge">fn</span>fn is_none(opt: OptionBool) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap">
+<h3><span class="badge">fn</span>fn unwrap(opt: OptionInt) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap">
+<h3><span class="badge">fn</span>fn unwrap(opt: OptionStr) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap">
+<h3><span class="badge">fn</span>fn unwrap(opt: OptionBool) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap_or">
+<h3><span class="badge">fn</span>fn unwrap_or(opt: OptionInt, default_val: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap_or">
+<h3><span class="badge">fn</span>fn unwrap_or(opt: OptionStr, default_val: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-option-ax-unwrap_or">
+<h3><span class="badge">fn</span>fn unwrap_or(opt: OptionBool, default_val: bool) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-core-result-ax">std/core/result.ax</h2><div class="item" id="mod-std-core-result-ax-ResultInt">
+<h3><span class="badge">struct</span>struct ResultInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>is_ok</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>int</code></td></tr>
+<tr><td><code>error</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-result-ax-ResultStr">
+<h3><span class="badge">struct</span>struct ResultStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>is_ok</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>str</code></td></tr>
+<tr><td><code>error</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-core-result-ax-ok_int">
+<h3><span class="badge">fn</span>fn ok_int(val: int) -&gt; ResultInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-err_int">
+<h3><span class="badge">fn</span>fn err_int(err: str) -&gt; ResultInt</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-ok_str">
+<h3><span class="badge">fn</span>fn ok_str(val: str) -&gt; ResultStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-err_str">
+<h3><span class="badge">fn</span>fn err_str(err: str) -&gt; ResultStr</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-is_ok">
+<h3><span class="badge">fn</span>fn is_ok(res: ResultInt) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-is_ok">
+<h3><span class="badge">fn</span>fn is_ok(res: ResultStr) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-is_err">
+<h3><span class="badge">fn</span>fn is_err(res: ResultInt) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-is_err">
+<h3><span class="badge">fn</span>fn is_err(res: ResultStr) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-unwrap">
+<h3><span class="badge">fn</span>fn unwrap(res: ResultInt) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-unwrap">
+<h3><span class="badge">fn</span>fn unwrap(res: ResultStr) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-unwrap_err">
+<h3><span class="badge">fn</span>fn unwrap_err(res: ResultInt) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-core-result-ax-unwrap_err">
+<h3><span class="badge">fn</span>fn unwrap_err(res: ResultStr) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-crypto-aes-ax">std/crypto/aes.ax</h2><div class="item" id="mod-std-crypto-aes-ax-aes256_cbc_encrypt">
+<h3><span class="badge">fn</span>fn aes256_cbc_encrypt(plaintext: str, key_hex: str, iv_hex: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-aes-ax-aes256_cbc_decrypt">
+<h3><span class="badge">fn</span>fn aes256_cbc_decrypt(ciphertext_hex: str, key_hex: str, iv_hex: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-aes-ax-aes128_cbc_encrypt">
+<h3><span class="badge">fn</span>fn aes128_cbc_encrypt(plaintext: str, key_hex: str, iv_hex: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-aes-ax-aes128_cbc_decrypt">
+<h3><span class="badge">fn</span>fn aes128_cbc_decrypt(ciphertext_hex: str, key_hex: str, iv_hex: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-crypto-hash-ax">std/crypto/hash.ax</h2><div class="item" id="mod-std-crypto-hash-ax-hash_md5">
+<h3><span class="badge">fn</span>fn hash_md5(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-hash-ax-hash_sha1">
+<h3><span class="badge">fn</span>fn hash_sha1(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-hash-ax-hash_sha256">
+<h3><span class="badge">fn</span>fn hash_sha256(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-crypto-tls-ax">std/crypto/tls.ax</h2><div class="item" id="mod-std-crypto-tls-ax-tls_connect">
+<h3><span class="badge">fn</span>fn tls_connect(host: str, port: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-tls-ax-tls_send">
+<h3><span class="badge">fn</span>fn tls_send(tls_id: int, data: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-tls-ax-tls_recv">
+<h3><span class="badge">fn</span>fn tls_recv(tls_id: int, max_bytes: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-tls-ax-tls_close">
+<h3><span class="badge">fn</span>fn tls_close(tls_id: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-tls-ax-https_get">
+<h3><span class="badge">fn</span>fn https_get(host: str, port: int, path: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-crypto-tls-ax-https_get_result">
+<h3><span class="badge">fn</span>fn https_get_result(host: str, port: int, path: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-encoding-base64-ax">std/encoding/base64.ax</h2><div class="item" id="mod-std-encoding-base64-ax-base64_encode">
+<h3><span class="badge">fn</span>fn base64_encode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-base64-ax-base64_decode">
+<h3><span class="badge">fn</span>fn base64_decode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-encoding-hex-ax">std/encoding/hex.ax</h2><div class="item" id="mod-std-encoding-hex-ax-hex_encode">
+<h3><span class="badge">fn</span>fn hex_encode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-hex-ax-hex_decode">
+<h3><span class="badge">fn</span>fn hex_decode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-encoding-html-ax">std/encoding/html.ax</h2><div class="item" id="mod-std-encoding-html-ax-html_escape">
+<h3><span class="badge">fn</span>fn html_escape(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-html-ax-html_unescape">
+<h3><span class="badge">fn</span>fn html_unescape(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-html-ax-html_strip_tags">
+<h3><span class="badge">fn</span>fn html_strip_tags(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-encoding-json-ax">std/encoding/json.ax</h2><div class="item" id="mod-std-encoding-json-ax-json_get_str">
+<h3><span class="badge">fn</span>fn json_get_str(json: str, key: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_get_int">
+<h3><span class="badge">fn</span>fn json_get_int(json: str, key: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_get_bool">
+<h3><span class="badge">fn</span>fn json_get_bool(json: str, key: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_has_key">
+<h3><span class="badge">fn</span>fn json_has_key(json: str, key: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_build_object">
+<h3><span class="badge">fn</span>fn json_build_object(keys: str[], values: str[]) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_escape">
+<h3><span class="badge">fn</span>fn json_escape(s: str) -&gt; str</h3>
+<div class="doc"><p>JSON string degerini kacis dizileriyle guvenli hale getirir.</p>
+<p>`json_build_object` degerleri kacislar; elle JSON kurarken (dizi, ic ice</p>
+<p>nesne) bu fonksiyon kullanilmalidir.</p></div>
+</div><div class="item" id="mod-std-encoding-json-ax-_json_precheck">
+<h3><span class="badge">fn</span>fn _json_precheck(json: str, key: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_get_str_result">
+<h3><span class="badge">fn</span>fn json_get_str_result(json: str, key: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_get_int_result">
+<h3><span class="badge">fn</span>fn json_get_int_result(json: str, key: str) -&gt; Result&lt;int, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_get_bool_result">
+<h3><span class="badge">fn</span>fn json_get_bool_result(json: str, key: str) -&gt; Result&lt;bool, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_parse_result">
+<h3><span class="badge">fn</span>fn json_parse_result(text: str) -&gt; Result&lt;int, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_doc_free">
+<h3><span class="badge">fn</span>fn json_doc_free(h: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-_json_node_or_err">
+<h3><span class="badge">fn</span>fn _json_node_or_err(h: int, path: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_str_at">
+<h3><span class="badge">fn</span>fn json_str_at(h: int, path: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_int_at">
+<h3><span class="badge">fn</span>fn json_int_at(h: int, path: str) -&gt; Result&lt;int, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_float_at">
+<h3><span class="badge">fn</span>fn json_float_at(h: int, path: str) -&gt; Result&lt;float, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_bool_at">
+<h3><span class="badge">fn</span>fn json_bool_at(h: int, path: str) -&gt; Result&lt;bool, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_has_path">
+<h3><span class="badge">fn</span>fn json_has_path(h: int, path: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_is_null_at">
+<h3><span class="badge">fn</span>fn json_is_null_at(h: int, path: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-encoding-json-ax-json_len_at">
+<h3><span class="badge">fn</span>fn json_len_at(h: int, path: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-io-binary-ax">std/io/binary.ax</h2><div class="item" id="mod-std-io-binary-ax-buf_create">
+<h3><span class="badge">fn</span>fn buf_create(cap: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u8">
+<h3><span class="badge">fn</span>fn buf_write_u8(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u16_be">
+<h3><span class="badge">fn</span>fn buf_write_u16_be(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u16_le">
+<h3><span class="badge">fn</span>fn buf_write_u16_le(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u32_be">
+<h3><span class="badge">fn</span>fn buf_write_u32_be(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u32_le">
+<h3><span class="badge">fn</span>fn buf_write_u32_le(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u64_be">
+<h3><span class="badge">fn</span>fn buf_write_u64_be(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_u64_le">
+<h3><span class="badge">fn</span>fn buf_write_u64_le(b: int, val: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_write_str">
+<h3><span class="badge">fn</span>fn buf_write_str(b: int, s: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_to_hex">
+<h3><span class="badge">fn</span>fn buf_to_hex(b: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_to_str">
+<h3><span class="badge">fn</span>fn buf_to_str(b: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_len">
+<h3><span class="badge">fn</span>fn buf_len(b: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_from_hex">
+<h3><span class="badge">fn</span>fn buf_from_hex(hex_str: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u8">
+<h3><span class="badge">fn</span>fn buf_read_u8(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u16_be">
+<h3><span class="badge">fn</span>fn buf_read_u16_be(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u16_le">
+<h3><span class="badge">fn</span>fn buf_read_u16_le(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u32_be">
+<h3><span class="badge">fn</span>fn buf_read_u32_be(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u32_le">
+<h3><span class="badge">fn</span>fn buf_read_u32_le(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u64_be">
+<h3><span class="badge">fn</span>fn buf_read_u64_be(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_read_u64_le">
+<h3><span class="badge">fn</span>fn buf_read_u64_le(b: int, offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-binary-ax-buf_free">
+<h3><span class="badge">fn</span>fn buf_free(b: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-io-csv-ax">std/io/csv.ax</h2><div class="item" id="mod-std-io-csv-ax-csv_create">
+<h3><span class="badge">fn</span>fn csv_create() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-csv-ax-csv_add_row">
+<h3><span class="badge">fn</span>fn csv_add_row(csv_id: int, cols: str[]) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-csv-ax-csv_to_str">
+<h3><span class="badge">fn</span>fn csv_to_str(csv_id: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-csv-ax-csv_save_file">
+<h3><span class="badge">fn</span>fn csv_save_file(csv_id: int, path: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-csv-ax-csv_free">
+<h3><span class="badge">fn</span>fn csv_free(csv_id: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-io-file-ax">std/io/file.ax</h2><div class="item" id="mod-std-io-file-ax-read_file">
+<h3><span class="badge">fn</span>fn read_file(path: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-file-ax-write_file">
+<h3><span class="badge">fn</span>fn write_file(path: str, content: str) -&gt; Result&lt;bool, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-file-ax-file_present">
+<h3><span class="badge">fn</span>fn file_present(path: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-file-ax-append_file">
+<h3><span class="badge">fn</span>fn append_file(path: str, content: str) -&gt; Result&lt;bool, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-file-ax-read_lines">
+<h3><span class="badge">fn</span>fn read_lines(path: str) -&gt; Result&lt;str[], str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-io-file-ax-file_size_result">
+<h3><span class="badge">fn</span>fn file_size_result(path: str) -&gt; Result&lt;int, str&gt;</h3>
+<div class="doc"><p>Dosyanin bayt boyutu. Dosya yoksa veya normal dosya degilse Err.</p></div>
+</div><div class="item" id="mod-std-io-file-ax-dir_present">
+<h3><span class="badge">fn</span>fn dir_present(path: str) -&gt; bool</h3>
+<div class="doc"><p>Yol bir dizin mi? (hata uretmez; yoksa false)</p></div>
+</div><div class="item" id="mod-std-io-file-ax-list_dir_result">
+<h3><span class="badge">fn</span>fn list_dir_result(path: str) -&gt; Result&lt;str[], str&gt;</h3>
+<div class="doc"><p>Dizin girdilerini sirali olarak dondurur.</p>
+<p>Girdiler `list_dir` yerlesiginden gelir (satir sonu `\n`), `.`/`..` haric</p>
+<p>ve sozluk sirasindadir. Bos dizi mesru bir sonuctur.</p></div>
+</div><div class="item" id="mod-std-io-file-ax-remove_file_result">
+<h3><span class="badge">fn</span>fn remove_file_result(path: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Dosyayi (veya bos dizini) siler.</p></div>
+</div><div class="item" id="mod-std-io-file-ax-rename_file_result">
+<h3><span class="badge">fn</span>fn rename_file_result(from: str, to: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Dosyayi/dizini yeniden adlandirir veya tasir.</p></div>
+</div><div class="item" id="mod-std-io-file-ax-create_dir_result">
+<h3><span class="badge">fn</span>fn create_dir_result(path: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Dizini (ara dizinlerle birlikte) olusturur. Zaten varsa Ok(true).</p></div>
+</div><div class="item" id="mod-std-io-file-ax-copy_file_result">
+<h3><span class="badge">fn</span>fn copy_file_result(from: str, to: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Bir metin dosyasini kopyalar (hedef varsa uzerine yazar).</p>
+<p>KISIT: `file_read`/`file_write` metin (NUL sonlandirmali) tabanlidir;</p>
+<p>icinde NUL bayti bulunan ikili dosyalar icin kullanmayin.</p></div>
+</div><h2 class="mod" id="mod-std-log-logger-ax">std/log/logger.ax</h2><div class="item" id="mod-std-log-logger-ax-log_set_level">
+<h3><span class="badge">fn</span>fn log_set_level(level: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-log-logger-ax-log_debug">
+<h3><span class="badge">fn</span>fn log_debug(module: str, msg: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-log-logger-ax-log_info">
+<h3><span class="badge">fn</span>fn log_info(module: str, msg: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-log-logger-ax-log_warn">
+<h3><span class="badge">fn</span>fn log_warn(module: str, msg: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-log-logger-ax-log_error">
+<h3><span class="badge">fn</span>fn log_error(module: str, msg: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-c2-ax">std/net/c2.ax</h2><div class="item" id="mod-std-net-c2-ax-c2_crypto_random_hex">
+<h3><span class="badge">fn</span>fn c2_crypto_random_hex(num_bytes: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-c2-ax-c2_hmac_sha256">
+<h3><span class="badge">fn</span>fn c2_hmac_sha256(key: str, data: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-c2-ax-c2_crypto_memcmp">
+<h3><span class="badge">fn</span>fn c2_crypto_memcmp(s1: str, s2: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-c2-ax-c2_generate_beacon">
+<h3><span class="badge">fn</span>fn c2_generate_beacon(agent_id: str, secret_key: str, status_payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(agent_id) &gt; 0</code>; <code>len(secret_key) &gt;= 16</code></div>
+</div><div class="item" id="mod-std-net-c2-ax-c2_parse_beacon">
+<h3><span class="badge">fn</span>fn c2_parse_beacon(beacon_b64: str, secret_key: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(beacon_b64) &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-net-dns-ax">std/net/dns.ax</h2><div class="item" id="mod-std-net-dns-ax-dns_resolve_ipv4">
+<h3><span class="badge">fn</span>fn dns_resolve_ipv4(host: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-dns-ax-dns_resolve_ipv6">
+<h3><span class="badge">fn</span>fn dns_resolve_ipv6(host: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-dns-ax-dns_reverse_lookup">
+<h3><span class="badge">fn</span>fn dns_reverse_lookup(ip: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-event_loop-ax">std/net/event_loop.ax</h2><div class="item" id="mod-std-net-event_loop-ax-EpollEventLoop">
+<h3><span class="badge">struct</span>struct EpollEventLoop</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>epfd</code></td><td><code>int</code></td></tr>
+<tr><td><code>max_events</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-event_loop-ax-EventKind">
+<h3><span class="badge">struct</span>struct EventKind</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>epoll_in</code></td><td><code>int</code></td></tr>
+<tr><td><code>epoll_out</code></td><td><code>int</code></td></tr>
+<tr><td><code>epoll_err</code></td><td><code>int</code></td></tr>
+<tr><td><code>epoll_hup</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-event_loop-ax-EpollEvent">
+<h3><span class="badge">struct</span>struct EpollEvent</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>fd</code></td><td><code>int</code></td></tr>
+<tr><td><code>events</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_kind_new">
+<h3><span class="badge">fn</span>fn event_kind_new() -&gt; EventKind</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_new">
+<h3><span class="badge">fn</span>fn event_loop_new() -&gt; EpollEventLoop</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_new_with_capacity">
+<h3><span class="badge">fn</span>fn event_loop_new_with_capacity(capacity: int) -&gt; EpollEventLoop</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_add">
+<h3><span class="badge">fn</span>fn event_loop_add(loop: EpollEventLoop, fd: int, events: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_mod">
+<h3><span class="badge">fn</span>fn event_loop_mod(loop: EpollEventLoop, fd: int, events: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_del">
+<h3><span class="badge">fn</span>fn event_loop_del(loop: EpollEventLoop, fd: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_poll">
+<h3><span class="badge">fn</span>fn event_loop_poll(loop: EpollEventLoop, timeout_ms: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_get_event">
+<h3><span class="badge">fn</span>fn event_loop_get_event(loop: EpollEventLoop, index: int) -&gt; EpollEvent</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_event_fd">
+<h3><span class="badge">fn</span>fn event_loop_event_fd(loop: EpollEventLoop, index: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_event_events">
+<h3><span class="badge">fn</span>fn event_loop_event_events(loop: EpollEventLoop, index: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_loop_close">
+<h3><span class="badge">fn</span>fn event_loop_close(loop: EpollEventLoop) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_is_readable">
+<h3><span class="badge">fn</span>fn event_is_readable(events: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_is_writable">
+<h3><span class="badge">fn</span>fn event_is_writable(events: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_is_error">
+<h3><span class="badge">fn</span>fn event_is_error(events: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-event_is_hangup">
+<h3><span class="badge">fn</span>fn event_is_hangup(events: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-net_set_nonblocking">
+<h3><span class="badge">fn</span>fn net_set_nonblocking(fd: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-tcp_server_nonblocking">
+<h3><span class="badge">fn</span>fn tcp_server_nonblocking(port: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-tcp_accept_nonblocking">
+<h3><span class="badge">fn</span>fn tcp_accept_nonblocking(server_fd: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-fd_write">
+<h3><span class="badge">fn</span>fn fd_write(fd: int, data: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-fd_read">
+<h3><span class="badge">fn</span>fn fd_read(fd: int, max_len: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-pipe_create">
+<h3><span class="badge">fn</span>fn pipe_create() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-pipe_read_fd">
+<h3><span class="badge">fn</span>fn pipe_read_fd(handle: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-pipe_write_fd">
+<h3><span class="badge">fn</span>fn pipe_write_fd(handle: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-pipe_close">
+<h3><span class="badge">fn</span>fn pipe_close(handle: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-socketpair_create">
+<h3><span class="badge">fn</span>fn socketpair_create() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-socketpair_fd1">
+<h3><span class="badge">fn</span>fn socketpair_fd1(handle: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-socketpair_fd2">
+<h3><span class="badge">fn</span>fn socketpair_fd2(handle: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-event_loop-ax-socketpair_close">
+<h3><span class="badge">fn</span>fn socketpair_close(handle: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-http-ax">std/net/http.ax</h2><div class="item" id="mod-std-net-http-ax-HttpResponse">
+<h3><span class="badge">struct</span>struct HttpResponse</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>status</code></td><td><code>int</code></td></tr>
+<tr><td><code>location</code></td><td><code>str</code></td></tr>
+<tr><td><code>content_type</code></td><td><code>str</code></td></tr>
+<tr><td><code>body</code></td><td><code>str</code></td></tr>
+<tr><td><code>redirects</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-http-ax-FetchResult">
+<h3><span class="badge">struct</span>struct FetchResult</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>is_ok</code></td><td><code>bool</code></td></tr>
+<tr><td><code>value</code></td><td><code>HttpResponse</code></td></tr>
+<tr><td><code>error</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-http-ax-_read_response">
+<h3><span class="badge">fn</span>fn _read_response(fd: int, max_bytes: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-http_once">
+<h3><span class="badge">fn</span>fn http_once(host: str, port: int, method: str, path: str, timeout_ms: int) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-_is_redirect">
+<h3><span class="badge">fn</span>fn _is_redirect(status: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-http_status">
+<h3><span class="badge">fn</span>fn http_status(response: str) -&gt; Result&lt;int, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-http_body">
+<h3><span class="badge">fn</span>fn http_body(response: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-http_request">
+<h3><span class="badge">fn</span>fn http_request(host: str, port: int, method: str, path: str, timeout_ms: int) -&gt; FetchResult</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-_http_request_impl">
+<h3><span class="badge">fn</span>fn _http_request_impl(host: str, port: int, method: str, path: str, timeout_ms: int, start_host: str, start_port: int, hop: int, max_hops: int) -&gt; FetchResult</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http-ax-http_get">
+<h3><span class="badge">fn</span>fn http_get(host: str, port: int, path: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(host) &gt; 0</code>; <code>port &gt; 0 and port &lt;= 65535</code></div>
+</div><div class="item" id="mod-std-net-http-ax-http_get_result">
+<h3><span class="badge">fn</span>fn http_get_result(host: str, port: int, path: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-http_server-ax">std/net/http_server.ax</h2><div class="item" id="mod-std-net-http_server-ax-http_server_create">
+<h3><span class="badge">fn</span>fn http_server_create(port: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http_server-ax-http_server_accept">
+<h3><span class="badge">fn</span>fn http_server_accept(server_fd: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http_server-ax-http_server_send_response">
+<h3><span class="badge">fn</span>fn http_server_send_response(client_fd: int, status: int, content_type: str, body: str) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-http_server-ax-http_server_close">
+<h3><span class="badge">fn</span>fn http_server_close(server_fd: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-packet_crafter-ax">std/net/packet_crafter.ax</h2><div class="item" id="mod-std-net-packet_crafter-ax-craft_ipv4_header">
+<h3><span class="badge">fn</span>fn craft_ipv4_header(src_ip: str, dst_ip: str, protocol: int, payload_len: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(src_ip) &gt; 0</code>; <code>len(dst_ip) &gt; 0</code>; <code>protocol &gt;= 0 and protocol &lt;= 255</code></div>
+</div><div class="item" id="mod-std-net-packet_crafter-ax-craft_tcp_syn">
+<h3><span class="badge">fn</span>fn craft_tcp_syn(src_ip: str, dst_ip: str, src_port: int, dst_port: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>src_port &gt; 0 and src_port &lt;= 65535</code>; <code>dst_port &gt; 0 and dst_port &lt;= 65535</code></div>
+</div><div class="item" id="mod-std-net-packet_crafter-ax-craft_tcp_custom">
+<h3><span class="badge">fn</span>fn craft_tcp_custom(src_ip: str, dst_ip: str, src_port: int, dst_port: int, seq: int, flags: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>src_port &gt; 0 and src_port &lt;= 65535</code>; <code>dst_port &gt; 0 and dst_port &lt;= 65535</code></div>
+</div><div class="item" id="mod-std-net-packet_crafter-ax-craft_udp_packet">
+<h3><span class="badge">fn</span>fn craft_udp_packet(src_port: int, dst_port: int, payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>src_port &gt; 0 and src_port &lt;= 65535</code>; <code>dst_port &gt; 0 and dst_port &lt;= 65535</code></div>
+</div><h2 class="mod" id="mod-std-net-pcap-ax">std/net/pcap.ax</h2><div class="item" id="mod-std-net-pcap-ax-pcap_open_writer">
+<h3><span class="badge">fn</span>fn pcap_open_writer(file_path: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(file_path) &gt; 0</code></div>
+</div><div class="item" id="mod-std-net-pcap-ax-pcap_record_packet">
+<h3><span class="badge">fn</span>fn pcap_record_packet(writer_handle: int, packet_hex: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>writer_handle &gt; 0</code>; <code>len(packet_hex) &gt; 0</code></div>
+</div><div class="item" id="mod-std-net-pcap-ax-pcap_open_reader">
+<h3><span class="badge">fn</span>fn pcap_open_reader(file_path: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(file_path) &gt; 0</code></div>
+</div><div class="item" id="mod-std-net-pcap-ax-pcap_read_next">
+<h3><span class="badge">fn</span>fn pcap_read_next(reader_handle: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>reader_handle &gt; 0</code></div>
+</div><div class="item" id="mod-std-net-pcap-ax-pcap_get_packet_count">
+<h3><span class="badge">fn</span>fn pcap_get_packet_count(handle: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>handle &gt; 0</code></div>
+</div><div class="item" id="mod-std-net-pcap-ax-pcap_file_close">
+<h3><span class="badge">fn</span>fn pcap_file_close(handle: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>handle &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-net-raw_socket-ax">std/net/raw_socket.ax</h2><div class="item" id="mod-std-net-raw_socket-ax-icmp_ping">
+<h3><span class="badge">fn</span>fn icmp_ping(host: str, timeout_ms: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-raw_socket-ax-tcp_ping">
+<h3><span class="badge">fn</span>fn tcp_ping(host: str, port: int, timeout_ms: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-raw_socket-ax-raw_checksum">
+<h3><span class="badge">fn</span>fn raw_checksum(data_hex: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-udp-ax">std/net/udp.ax</h2><div class="item" id="mod-std-net-udp-ax-udp_socket">
+<h3><span class="badge">fn</span>fn udp_socket() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-udp-ax-udp_bind">
+<h3><span class="badge">fn</span>fn udp_bind(port: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-udp-ax-udp_sendto">
+<h3><span class="badge">fn</span>fn udp_sendto(fd: int, host: str, port: int, data: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-udp-ax-udp_recvfrom">
+<h3><span class="badge">fn</span>fn udp_recvfrom(fd: int, max_bytes: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-udp-ax-udp_close">
+<h3><span class="badge">fn</span>fn udp_close(fd: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-url-ax">std/net/url.ax</h2><div class="item" id="mod-std-net-url-ax-Url">
+<h3><span class="badge">struct</span>struct Url</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>scheme</code></td><td><code>str</code></td></tr>
+<tr><td><code>host</code></td><td><code>str</code></td></tr>
+<tr><td><code>port</code></td><td><code>int</code></td></tr>
+<tr><td><code>path</code></td><td><code>str</code></td></tr>
+<tr><td><code>query</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-net-url-ax-url_encode">
+<h3><span class="badge">fn</span>fn url_encode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-url-ax-url_decode">
+<h3><span class="badge">fn</span>fn url_decode(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-url-ax-url_parse">
+<h3><span class="badge">fn</span>fn url_parse(raw: str) -&gt; Url</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-net-websocket-ax">std/net/websocket.ax</h2><div class="item" id="mod-std-net-websocket-ax-ws_connect">
+<h3><span class="badge">fn</span>fn ws_connect(host: str, port: int, path: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-websocket-ax-ws_send">
+<h3><span class="badge">fn</span>fn ws_send(fd: int, message: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-websocket-ax-ws_recv">
+<h3><span class="badge">fn</span>fn ws_recv(fd: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-net-websocket-ax-ws_close">
+<h3><span class="badge">fn</span>fn ws_close(fd: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-os-forensics-ax">std/os/forensics.ax</h2><div class="item" id="mod-std-os-forensics-ax-forensics_list_listening_ports">
+<h3><span class="badge">fn</span>fn forensics_list_listening_ports() -&gt; str</h3>
+<div class="doc"><p>Dinlenen TCP portlarini `ip:port` satirlari olarak dondurur.</p></div>
+</div><div class="item" id="mod-std-os-forensics-ax-forensics_list_processes">
+<h3><span class="badge">fn</span>fn forensics_list_processes() -&gt; str</h3>
+<div class="doc"><p>Calisan surecleri `pid:ad` satirlari olarak dondurur (/proc tabanli).</p></div>
+</div><div class="item" id="mod-std-os-forensics-ax-forensics_list_kernel_modules">
+<h3><span class="badge">fn</span>fn forensics_list_kernel_modules() -&gt; str</h3>
+<div class="doc"><p>Yuklu kernel modullerini virgulle ayrilmis liste olarak dondurur.</p></div>
+</div><div class="item" id="mod-std-os-forensics-ax-forensics_is_module_loaded">
+<h3><span class="badge">fn</span>fn forensics_is_module_loaded(module_name: str) -&gt; bool</h3>
+<div class="doc"><p>Verilen kernel modulu yuklu mu?</p></div>
+<div class="contract"><span>requires:</span> <code>len(module_name) &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-os-process-ax">std/os/process.ax</h2><div class="item" id="mod-std-os-process-ax-process_exec_output">
+<h3><span class="badge">fn</span>fn process_exec_output(cmd: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-os-process-ax-process_get_pid">
+<h3><span class="badge">fn</span>fn process_get_pid() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-os-process-ax-process_kill">
+<h3><span class="badge">fn</span>fn process_kill(pid: int, sig: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-os-process-ax-process_spawn_bg">
+<h3><span class="badge">fn</span>fn process_spawn_bg(cmd: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-os-process-ax-process_exec_argv">
+<h3><span class="badge">fn</span>fn process_exec_argv(args: str[]) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-os-process-ax-exec_output_result">
+<h3><span class="badge">fn</span>fn exec_output_result(cmd: str) -&gt; Result&lt;str, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-security-evasion-ax">std/security/evasion.ax</h2><div class="item" id="mod-std-security-evasion-ax-evasion_is_debugger_present">
+<h3><span class="badge">fn</span>fn evasion_is_debugger_present() -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-evasion-ax-evasion_is_vm_or_sandbox">
+<h3><span class="badge">fn</span>fn evasion_is_vm_or_sandbox() -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-evasion-ax-evasion_disable_core_dump">
+<h3><span class="badge">fn</span>fn evasion_disable_core_dump() -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-evasion-ax-evasion_enable_core_dump">
+<h3><span class="badge">fn</span>fn evasion_enable_core_dump() -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-security-fuzzer-ax">std/security/fuzzer.ax</h2><div class="item" id="mod-std-security-fuzzer-ax-fuzz_replace_marker">
+<h3><span class="badge">fn</span>fn fuzz_replace_marker(template: str, marker: str, payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-fuzz_url_encode">
+<h3><span class="badge">fn</span>fn fuzz_url_encode(payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-fuzz_double_encode">
+<h3><span class="badge">fn</span>fn fuzz_double_encode(payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-fuzz_add_null_byte">
+<h3><span class="badge">fn</span>fn fuzz_add_null_byte(payload: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-wordlist_load">
+<h3><span class="badge">fn</span>fn wordlist_load(path: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-wordlist_count">
+<h3><span class="badge">fn</span>fn wordlist_count(wl: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-wordlist_get">
+<h3><span class="badge">fn</span>fn wordlist_get(wl: int, idx: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-fuzzer-ax-wordlist_free">
+<h3><span class="badge">fn</span>fn wordlist_free(wl: int) -&gt; void</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-security-integrity-ax">std/security/integrity.ax</h2><div class="item" id="mod-std-security-integrity-ax-fim_calculate_hash">
+<h3><span class="badge">fn</span>fn fim_calculate_hash(file_path: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(file_path) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-integrity-ax-fim_verify_baseline">
+<h3><span class="badge">fn</span>fn fim_verify_baseline(file_path: str, expected_sha256: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(file_path) &gt; 0</code>; <code>len(expected_sha256) == 64</code></div>
+</div><h2 class="mod" id="mod-std-security-jwt-ax">std/security/jwt.ax</h2><div class="item" id="mod-std-security-jwt-ax-jwt_create_hs256">
+<h3><span class="badge">fn</span>fn jwt_create_hs256(payload_json: str, secret: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-jwt-ax-jwt_verify_hs256">
+<h3><span class="badge">fn</span>fn jwt_verify_hs256(token: str, secret: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-jwt-ax-jwt_get_header">
+<h3><span class="badge">fn</span>fn jwt_get_header(token: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-jwt-ax-jwt_get_payload">
+<h3><span class="badge">fn</span>fn jwt_get_payload(token: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-jwt-ax-jwt_get_claim">
+<h3><span class="badge">fn</span>fn jwt_get_claim(token: str, claim_name: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-security-memdump-ax">std/security/memdump.ax</h2><div class="item" id="mod-std-security-memdump-ax-memdump_search_pattern">
+<h3><span class="badge">fn</span>fn memdump_search_pattern(pid: int, pattern: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>pid &gt; 0</code>; <code>len(pattern) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-memdump-ax-memdump_get_maps">
+<h3><span class="badge">fn</span>fn memdump_get_maps(pid: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>pid &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-security-shellcode-ax">std/security/shellcode.ax</h2><div class="item" id="mod-std-security-shellcode-ax-shellcode_execute">
+<h3><span class="badge">fn</span>fn shellcode_execute(shellcode_hex: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>len(shellcode_hex) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-shellcode-ax-shellcode_allocate_rwx">
+<h3><span class="badge">fn</span>fn shellcode_allocate_rwx(size: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>size &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-shellcode-ax-shellcode_protect">
+<h3><span class="badge">fn</span>fn shellcode_protect(ptr: int, size: int, prot_flags: int) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<div class="contract"><span>requires:</span> <code>ptr &gt; 0</code>; <code>size &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-security-sigma-ax">std/security/sigma.ax</h2><div class="item" id="mod-std-security-sigma-ax-SigmaFieldMatch">
+<h3><span class="badge">struct</span>struct SigmaFieldMatch</h3>
+<div class="doc"><p>Tek bir alan/operator/deger uclusu (selection veya filter).</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>field</code></td><td><code>str</code></td></tr>
+<tr><td><code>operator</code></td><td><code>str</code></td></tr>
+<tr><td><code>value</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-sigma-ax-SigmaRule">
+<h3><span class="badge">struct</span>struct SigmaRule</h3>
+<div class="doc"><p>Sigma kurali: log turu, secimler, filtreler ve kosul.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>id</code></td><td><code>str</code></td></tr>
+<tr><td><code>title</code></td><td><code>str</code></td></tr>
+<tr><td><code>log_type</code></td><td><code>str</code></td></tr>
+<tr><td><code>level</code></td><td><code>str</code></td></tr>
+<tr><td><code>selections</code></td><td><code>SigmaFieldMatch[]</code></td></tr>
+<tr><td><code>filters</code></td><td><code>SigmaFieldMatch[]</code></td></tr>
+<tr><td><code>condition</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-sigma-ax-SigmaEvent">
+<h3><span class="badge">struct</span>struct SigmaEvent</h3>
+<div class="doc"><p>Ayristirilmis log olayi (`keys`/`values` anahtar-deger ciftleri).</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>log_type</code></td><td><code>str</code></td></tr>
+<tr><td><code>raw</code></td><td><code>str</code></td></tr>
+<tr><td><code>keys</code></td><td><code>str[]</code></td></tr>
+<tr><td><code>values</code></td><td><code>str[]</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-sigma-ax-SigmaAlert">
+<h3><span class="badge">struct</span>struct SigmaAlert</h3>
+<div class="doc"><p>Kural eslesmesinden uretilen uyari.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>rule_id</code></td><td><code>str</code></td></tr>
+<tr><td><code>rule_title</code></td><td><code>str</code></td></tr>
+<tr><td><code>log_type</code></td><td><code>str</code></td></tr>
+<tr><td><code>level</code></td><td><code>str</code></td></tr>
+<tr><td><code>risk_score</code></td><td><code>int</code></td></tr>
+<tr><td><code>matched</code></td><td><code>bool</code></td></tr>
+<tr><td><code>matched_reason</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-sigma-ax-SigmaRuleEngine">
+<h3><span class="badge">struct</span>struct SigmaRuleEngine</h3>
+<div class="doc"><p>Kurallari toplayip olaylara uygulayan motor.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>rules</code></td><td><code>SigmaRule[]</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_rule_new">
+<h3><span class="badge">fn</span>fn sigma_rule_new(id: str, title: str, log_type: str, level: str) -&gt; SigmaRule</h3>
+<div class="doc"><p>Yeni Sigma kurali olusturur.</p>
+<p>`log_type` ornegin `&quot;auth&quot;`, `&quot;web&quot;`, `&quot;syslog&quot;` veya `&quot;*&quot;`.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_rule_add_selection">
+<h3><span class="badge">fn</span>fn sigma_rule_add_selection(rule: SigmaRule, field: str, operator: str, value: str) -&gt; SigmaRule</h3>
+<div class="doc"><p>Kurala secim (selection) kosulu ekler.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_rule_add_filter">
+<h3><span class="badge">fn</span>fn sigma_rule_add_filter(rule: SigmaRule, field: str, operator: str, value: str) -&gt; SigmaRule</h3>
+<div class="doc"><p>Kurala yanlis-pozitif filtresi ekler (eslesirse uyari bastirilir).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_rule_set_condition">
+<h3><span class="badge">fn</span>fn sigma_rule_set_condition(rule: SigmaRule, condition: str) -&gt; SigmaRule</h3>
+<div class="doc"><p>Kural kosulunu degistirir (varsayilan `&quot;selection&quot;`).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_event_new">
+<h3><span class="badge">fn</span>fn sigma_event_new(log_type: str, raw: str) -&gt; SigmaEvent</h3>
+<div class="doc"><p>Ham satirdan olay olusturur; `message` ve `raw` alanlari doldurulur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_event_set">
+<h3><span class="badge">fn</span>fn sigma_event_set(event: SigmaEvent, key: str, val: str) -&gt; SigmaEvent</h3>
+<div class="doc"><p>Olayda alan atar/degistirir.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_event_get">
+<h3><span class="badge">fn</span>fn sigma_event_get(event: SigmaEvent, key: str) -&gt; str</h3>
+<div class="doc"><p>Olaydan alan okur; yoksa bos string.</p>
+<p>`message`/`raw` her zaman ham satira duser.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_parse_web_log">
+<h3><span class="badge">fn</span>fn sigma_parse_web_log(line: str) -&gt; SigmaEvent</h3>
+<div class="doc"><p>HTTP erisim logunu ayristirir (method, uri, status, ip).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_parse_auth_log">
+<h3><span class="badge">fn</span>fn sigma_parse_auth_log(line: str) -&gt; SigmaEvent</h3>
+<div class="doc"><p>sshd/PAM kimlik dogrulama logunu ayristirir (user, ip, action).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-_sigma_last_index_of">
+<h3><span class="badge">fn</span>fn _sigma_last_index_of(s: str, ch: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_parse_syslog">
+<h3><span class="badge">fn</span>fn sigma_parse_syslog(line: str) -&gt; SigmaEvent</h3>
+<div class="doc"><p>Genel syslog satirini ayristirir; `service` alanini cikarir.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_level_to_score">
+<h3><span class="badge">fn</span>fn sigma_level_to_score(level: str) -&gt; int</h3>
+<div class="doc"><p>Seviyeyi risk puanina cevirir (Low=25 ... Critical=100).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_eval_op">
+<h3><span class="badge">fn</span>fn sigma_eval_op(field_val: str, operator: str, expected: str) -&gt; bool</h3>
+<div class="doc"><p>Alan degerini operatorle karsilastirir.</p>
+<p>Operatorler: `contains`, `startswith`, `endswith`, `equals`, `regex`.</p>
+<p>Bilinmeyen operator **fail-closed** (`false`) doner.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_rule_eval">
+<h3><span class="badge">fn</span>fn sigma_rule_eval(rule: SigmaRule, event: SigmaEvent) -&gt; SigmaAlert</h3>
+<div class="doc"><p>Kurali tek bir olaya uygular ve uyari dondurur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_new">
+<h3><span class="badge">fn</span>fn sigma_engine_new() -&gt; SigmaRuleEngine</h3>
+<div class="doc"><p>Bos kural motoru olusturur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_add_rule">
+<h3><span class="badge">fn</span>fn sigma_engine_add_rule(engine: SigmaRuleEngine, rule: SigmaRule) -&gt; SigmaRuleEngine</h3>
+<div class="doc"><p>Motora kural ekler.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_eval">
+<h3><span class="badge">fn</span>fn sigma_engine_eval(engine: SigmaRuleEngine, event: SigmaEvent) -&gt; SigmaAlert[]</h3>
+<div class="doc"><p>Tum kurallari bir olaya uygular; eslesen uyarilari dondurur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_eval_raw">
+<h3><span class="badge">fn</span>fn sigma_engine_eval_raw(engine: SigmaRuleEngine, log_line: str, log_type: str) -&gt; SigmaAlert[]</h3>
+<div class="doc"><p>Ham log satirini ayristirip motoru uygular.</p>
+<p>`log_type` ayristiriciyi secer; kuralin `log_type`&#x27;i ile eslesmelidir.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_has_alert">
+<h3><span class="badge">fn</span>fn sigma_engine_has_alert(engine: SigmaRuleEngine, event: SigmaEvent) -&gt; bool</h3>
+<div class="doc"><p>Olayda en az bir kural eslesiyor mu?</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_highest_risk_score">
+<h3><span class="badge">fn</span>fn sigma_engine_highest_risk_score(alerts: SigmaAlert[]) -&gt; int</h3>
+<div class="doc"><p>Uyarilar arasindaki en yuksek risk puanini dondurur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_engine_highest_severity">
+<h3><span class="badge">fn</span>fn sigma_engine_highest_severity(alerts: SigmaAlert[]) -&gt; str</h3>
+<div class="doc"><p>Uyarilar arasindaki en yuksek seviyeyi dondurur.</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_get_default_ruleset">
+<h3><span class="badge">fn</span>fn sigma_get_default_ruleset() -&gt; SigmaRuleEngine</h3>
+<div class="doc"><p>Hazir gelen varsayilan kural setini dondurur (SSH, SQLi, XSS, traversal).</p></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_match_rule">
+<h3><span class="badge">fn</span>fn sigma_match_rule(log_line: str, pattern: str) -&gt; bool</h3>
+<div class="doc"><p>Geriye donuk uyumluluk: satirda desen var mi?</p></div>
+<div class="contract"><span>requires:</span> <code>len(log_line) &gt; 0</code>; <code>len(pattern) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_count_matches">
+<h3><span class="badge">fn</span>fn sigma_count_matches(logs: str[], pattern: str) -&gt; int</h3>
+<div class="doc"><p>Geriye donuk uyumluluk: desenle eslesen log sayisi.</p></div>
+<div class="contract"><span>requires:</span> <code>len(pattern) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-sigma-ax-sigma_detect_attack">
+<h3><span class="badge">fn</span>fn sigma_detect_attack(log_line: str) -&gt; str</h3>
+<div class="doc"><p>Satirda saldiri imzasi varsa turunu (`&quot;sqli&quot;`, `&quot;xss&quot;`, ...) dondurur.</p></div>
+</div><h2 class="mod" id="mod-std-security-yara-ax">std/security/yara.ax</h2><div class="item" id="mod-std-security-yara-ax-YaraMatch">
+<h3><span class="badge">struct</span>struct YaraMatch</h3>
+<div class="doc"><p>Bir desen eslesmesinin sonucu.</p>
+<p>`offset` eslesmenin bayt konumu, `matched_len` uzunlugu;</p>
+<p>eslesme yoksa `matched = false` ve `offset = -1`.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>rule_name</code></td><td><code>str</code></td></tr>
+<tr><td><code>pattern_id</code></td><td><code>str</code></td></tr>
+<tr><td><code>offset</code></td><td><code>int</code></td></tr>
+<tr><td><code>matched_len</code></td><td><code>int</code></td></tr>
+<tr><td><code>matched</code></td><td><code>bool</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-yara-ax-YaraRule">
+<h3><span class="badge">struct</span>struct YaraRule</h3>
+<div class="doc"><p>Tek bir YARA kurali: desenler, kosul ve ofset sinirlari.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>name</code></td><td><code>str</code></td></tr>
+<tr><td><code>patterns</code></td><td><code>str[]</code></td></tr>
+<tr><td><code>pattern_names</code></td><td><code>str[]</code></td></tr>
+<tr><td><code>condition</code></td><td><code>str</code></td></tr>
+<tr><td><code>min_offset</code></td><td><code>int</code></td></tr>
+<tr><td><code>max_offset</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-yara-ax-YaraRuleSet">
+<h3><span class="badge">struct</span>struct YaraRuleSet</h3>
+<div class="doc"><p>Birden cok `YaraRule` barindiran kural seti.</p></div>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>rules</code></td><td><code>YaraRule[]</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-security-yara-ax-yara_rule_new">
+<h3><span class="badge">fn</span>fn yara_rule_new(name: str, condition: str) -&gt; YaraRule</h3>
+<div class="doc"><p>Yeni bir kural olusturur.</p>
+<p>`condition`: `&quot;any of them&quot;`, `&quot;all of them&quot;` veya `&quot;N of them&quot;`.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_rule_add_pattern">
+<h3><span class="badge">fn</span>fn yara_rule_add_pattern(rule: YaraRule, pattern_id: str, pattern_str: str) -&gt; YaraRule</h3>
+<div class="doc"><p>Kurala bir desen ekler.</p>
+<p>`pattern_id` (`&quot;$a&quot;`) ve `pattern_str` (`&quot;str:...&quot;`, `&quot;hex:...&quot;`,</p>
+<p>`&quot;regex:...&quot;`) birlikte saklanir.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_rule_set_offset_bounds">
+<h3><span class="badge">fn</span>fn yara_rule_set_offset_bounds(rule: YaraRule, min_offset: int, max_offset: int) -&gt; YaraRule</h3>
+<div class="doc"><p>Eslesmenin aranacagi ofset araligini sinirlar (dahil).</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_rule_set_at_offset">
+<h3><span class="badge">fn</span>fn yara_rule_set_at_offset(rule: YaraRule, offset: int) -&gt; YaraRule</h3>
+<div class="doc"><p>Eslesmeyi tek bir kesin ofsete sabitler.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_ruleset_new">
+<h3><span class="badge">fn</span>fn yara_ruleset_new() -&gt; YaraRuleSet</h3>
+<div class="doc"><p>Bos bir kural seti olusturur.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_ruleset_add_rule">
+<h3><span class="badge">fn</span>fn yara_ruleset_add_rule(ruleset: YaraRuleSet, rule: YaraRule) -&gt; YaraRuleSet</h3>
+<div class="doc"><p>Kural setine kural ekler (yeni set dondurur).</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_find_hex_wildcard">
+<h3><span class="badge">fn</span>fn yara_find_hex_wildcard(target: str, hex_pattern: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_find_hex_wildcard_at">
+<h3><span class="badge">fn</span>fn yara_find_hex_wildcard_at(target: str, hex_pattern: str, min_offset: int, max_offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_match_hex_wildcard">
+<h3><span class="badge">fn</span>fn yara_match_hex_wildcard(target: str, hex_pattern: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_find_hex_stream">
+<h3><span class="badge">fn</span>fn yara_find_hex_stream(hex_target: str, hex_pattern: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_hex_stream">
+<h3><span class="badge">fn</span>fn yara_scan_hex_stream(hex_target: str, hex_pattern: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_buf">
+<h3><span class="badge">fn</span>fn yara_scan_buf(buf_handle: int, hex_pattern: str, min_offset: int, max_offset: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_single_pattern">
+<h3><span class="badge">fn</span>fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -&gt; YaraMatch</h3>
+<div class="doc"><p>Tek bir deseni hedefte tarar.</p>
+<p>`min_offset`/`max_offset` `-1` ise sinir yoktur.</p>
+<p>Desen turleri: `str:`, `hex:` (`??` joker), `regex:`.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_rule">
+<h3><span class="badge">fn</span>fn yara_scan_rule(target: str, rule: YaraRule) -&gt; YaraMatch</h3>
+<div class="doc"><p>Kuralin tum desenlerini tarar ve kosulunu uygular.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_rule_is_match">
+<h3><span class="badge">fn</span>fn yara_rule_is_match(target: str, rule: YaraRule) -&gt; bool</h3>
+<div class="doc"><p>Kural hedefle eslesiyor mu? (kisa yol)</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_ruleset_scan">
+<h3><span class="badge">fn</span>fn yara_ruleset_scan(target: str, ruleset: YaraRuleSet) -&gt; YaraMatch[]</h3>
+<div class="doc"><p>Kural setindeki tum eslesmeleri dondurur.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_ruleset_has_match">
+<h3><span class="badge">fn</span>fn yara_ruleset_has_match(target: str, ruleset: YaraRuleSet) -&gt; bool</h3>
+<div class="doc"><p>Kural setinde en az bir eslesme var mi?</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_ruleset_count_matches">
+<h3><span class="badge">fn</span>fn yara_ruleset_count_matches(target: str, ruleset: YaraRuleSet) -&gt; int</h3>
+<div class="doc"><p>Kural setindeki eslesen kural sayisi.</p></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_buffer">
+<h3><span class="badge">fn</span>fn yara_scan_buffer(buf: str, keyword_pattern: str) -&gt; bool</h3>
+<div class="doc"><p>Geriye donuk uyumluluk: hedefte anahtar sozcuk arar.</p></div>
+<div class="contract"><span>requires:</span> <code>len(buf) &gt; 0</code>; <code>len(keyword_pattern) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_regex">
+<h3><span class="badge">fn</span>fn yara_scan_regex(buf: str, regex_pattern: str) -&gt; bool</h3>
+<div class="doc"><p>Geriye donuk uyumluluk: hedefte regex eslesmesi arar.</p></div>
+<div class="contract"><span>requires:</span> <code>len(buf) &gt; 0</code>; <code>len(regex_pattern) &gt; 0</code></div>
+</div><div class="item" id="mod-std-security-yara-ax-yara_scan_hex">
+<h3><span class="badge">fn</span>fn yara_scan_hex(hex_data: str, hex_pattern: str) -&gt; bool</h3>
+<div class="doc"><p>Geriye donuk uyumluluk: hex veride hex deseni arar.</p></div>
+<div class="contract"><span>requires:</span> <code>len(hex_data) &gt; 0</code>; <code>len(hex_pattern) &gt; 0</code></div>
+</div><h2 class="mod" id="mod-std-security-yara_rules-ax">std/security/yara_rules.ax</h2><div class="item" id="mod-std-security-yara_rules-ax-_trim_blank">
+<h3><span class="badge">fn</span>fn _trim_blank(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_is_blank">
+<h3><span class="badge">fn</span>fn _is_blank(s: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_starts_with_ci">
+<h3><span class="badge">fn</span>fn _starts_with_ci(s: str, prefix: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_parse_rule_name">
+<h3><span class="badge">fn</span>fn _parse_rule_name(line: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_empty_parts">
+<h3><span class="badge">fn</span>fn _empty_parts() -&gt; str[]</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_parse_string_def">
+<h3><span class="badge">fn</span>fn _parse_string_def(line: str) -&gt; str[]</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-_parse_condition">
+<h3><span class="badge">fn</span>fn _parse_condition(line: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-security-yara_rules-ax-parse_yara_rules">
+<h3><span class="badge">fn</span>fn parse_yara_rules(text: str) -&gt; Result&lt;YaraRuleSet, str&gt;</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-target-wasm-ax">std/target/wasm.ax</h2><div class="item" id="mod-std-target-wasm-ax-WasmExport">
+<h3><span class="badge">struct</span>struct WasmExport</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>name</code></td><td><code>str</code></td></tr>
+<tr><td><code>kind</code></td><td><code>int</code></td></tr>
+<tr><td><code>index</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-target-wasm-ax-WasmModule">
+<h3><span class="badge">struct</span>struct WasmModule</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>version</code></td><td><code>int</code></td></tr>
+<tr><td><code>exports</code></td><td><code>WasmExport[]</code></td></tr>
+<tr><td><code>byte_count</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-target-wasm-ax-wasm_module_new">
+<h3><span class="badge">fn</span>fn wasm_module_new() -&gt; WasmModule</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-target-wasm-ax-wasm_add_export">
+<h3><span class="badge">fn</span>fn wasm_add_export(m: WasmModule, name: str, kind: int, index: int) -&gt; WasmModule</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-target-wasm-ax-wasm_get_magic_hex">
+<h3><span class="badge">fn</span>fn wasm_get_magic_hex() -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-target-wasm-ax-wasm_validate_magic_hex">
+<h3><span class="badge">fn</span>fn wasm_validate_magic_hex(hex_str: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-text-regex-ax">std/text/regex.ax</h2><div class="item" id="mod-std-text-regex-ax-regex_is_match">
+<h3><span class="badge">fn</span>fn regex_is_match(pattern: str, text: str) -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-regex-ax-regex_find">
+<h3><span class="badge">fn</span>fn regex_find(pattern: str, text: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-regex-ax-regex_replace">
+<h3><span class="badge">fn</span>fn regex_replace(pattern: str, text: str, repl: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-regex-ax-regex_validate">
+<h3><span class="badge">fn</span>fn regex_validate(pattern: str) -&gt; str</h3>
+<div class="doc"><p>Desen gecerli ve guvenli mi? Gecerliyse bos metin, aksi halde neden.</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-regex_risk_level">
+<h3><span class="badge">fn</span>fn regex_risk_level(pattern: str) -&gt; int</h3>
+<div class="doc"><p>Desenin maliyet sinifi: 0 = guvenli, 1 = pahali, 2 = reddedilir.</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-_regex_require_valid">
+<h3><span class="badge">fn</span>fn _regex_require_valid(pattern: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-regex-ax-regex_is_match_result">
+<h3><span class="badge">fn</span>fn regex_is_match_result(pattern: str, text: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Gecerli desen icin Ok(bool); gecersiz/guvensiz desen icin Err(neden).</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-regex_find_result">
+<h3><span class="badge">fn</span>fn regex_find_result(pattern: str, text: str) -&gt; Result&lt;str, str&gt;</h3>
+<div class="doc"><p>Bulunan ilk eslesme; eslesme yoksa Ok(&quot;&quot;) (bu bir hata degildir).</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-regex_replace_result">
+<h3><span class="badge">fn</span>fn regex_replace_result(pattern: str, text: str, repl: str) -&gt; Result&lt;str, str&gt;</h3>
+<div class="doc"><p>Tum eslesmeleri degistirir; gecersiz desen Err doner.</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-regex_escape">
+<h3><span class="badge">fn</span>fn regex_escape(text: str) -&gt; str</h3>
+<div class="doc"><p>Metni regex meta-karakterlerinden kacirir (literal arama icin).</p></div>
+</div><div class="item" id="mod-std-text-regex-ax-regex_compile_result">
+<h3><span class="badge">fn</span>fn regex_compile_result(pattern: str) -&gt; Result&lt;bool, str&gt;</h3>
+<div class="doc"><p>Desen gecerliyse Ok(true), degilse Err(neden). Kurulum dogrulamasi icin.</p></div>
+</div><h2 class="mod" id="mod-std-text-unicode-ax">std/text/unicode.ax</h2><div class="item" id="mod-std-text-unicode-ax-utf8_codepoint_count">
+<h3><span class="badge">fn</span>fn utf8_codepoint_count(s: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-grapheme_len">
+<h3><span class="badge">fn</span>fn grapheme_len(s: str) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-grapheme_at">
+<h3><span class="badge">fn</span>fn grapheme_at(s: str, idx: int) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-to_upper_tr">
+<h3><span class="badge">fn</span>fn to_upper_tr(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-to_lower_tr">
+<h3><span class="badge">fn</span>fn to_lower_tr(s: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-is_avx2_supported">
+<h3><span class="badge">fn</span>fn is_avx2_supported() -&gt; bool</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_nfd">
+<h3><span class="badge">fn</span>fn unicode_nfd(s: str) -&gt; str</h3>
+<div class="doc"><p>Kanonik ayrıştırma: é -&gt; e + U+0301, Hangul heceleri jamo&#x27;ya ayrılır.</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_nfc">
+<h3><span class="badge">fn</span>fn unicode_nfc(s: str) -&gt; str</h3>
+<div class="doc"><p>Kanonik birleştirme: e + U+0301 -&gt; é.</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_is_nfd">
+<h3><span class="badge">fn</span>fn unicode_is_nfd(s: str) -&gt; bool</h3>
+<div class="doc"><p>Metin zaten NFD biçiminde mi?</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_is_nfc">
+<h3><span class="badge">fn</span>fn unicode_is_nfc(s: str) -&gt; bool</h3>
+<div class="doc"><p>Metin zaten NFC biçiminde mi?</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_normalize">
+<h3><span class="badge">fn</span>fn unicode_normalize(s: str, form: str) -&gt; str</h3>
+<div class="doc"><p>&quot;NFC&quot; veya &quot;NFD&quot; seçer. Bilinmeyen biçim için boş metin.</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_ucd_version">
+<h3><span class="badge">fn</span>fn unicode_ucd_version() -&gt; str</h3>
+<div class="doc"><p>Gömülü Unicode Character Database sürümü (örn. &quot;15.1.0&quot;).</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_normalize_result">
+<h3><span class="badge">fn</span>fn unicode_normalize_result(s: str, form: str) -&gt; Result&lt;str, str&gt;</h3>
+<div class="doc"><p>Normalleştirme; desteklenmeyen biçimde Err döner.</p></div>
+</div><div class="item" id="mod-std-text-unicode-ax-unicode_canonical_eq">
+<h3><span class="badge">fn</span>fn unicode_canonical_eq(a: str, b: str) -&gt; bool</h3>
+<div class="doc"><p>Metni NFC&#x27;ye getirip karşılaştırır (görsel eşdeğerlik için).</p></div>
+</div><h2 class="mod" id="mod-std-time-date-ax">std/time/date.ax</h2><div class="item" id="mod-std-time-date-ax-date_now_iso">
+<h3><span class="badge">fn</span>fn date_now_iso() -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-time-date-ax-date_now_epoch">
+<h3><span class="badge">fn</span>fn date_now_epoch() -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-time-date-ax-date_format_epoch">
+<h3><span class="badge">fn</span>fn date_format_epoch(epoch: int, fmt: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-time-date-ax-date_diff_seconds">
+<h3><span class="badge">fn</span>fn date_diff_seconds(t1: int, t2: int) -&gt; int</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-time-date-ax-date_format_tz">
+<h3><span class="badge">fn</span>fn date_format_tz(epoch: int, fmt: str, offset_minutes: int) -&gt; str</h3>
+<div class="doc"><p>epoch&#x27;u verilen ofsete gore bicimlendirir (`strftime` deseni).</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_iso_tz">
+<h3><span class="badge">fn</span>fn date_iso_tz(epoch: int, offset_minutes: int) -&gt; str</h3>
+<div class="doc"><p>epoch&#x27;u ISO 8601 olarak verilen ofsetle dondurur (`...Z` veya `...+03:00`).</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_parse_iso">
+<h3><span class="badge">fn</span>fn date_parse_iso(text: str) -&gt; Result&lt;int, str&gt;</h3>
+<div class="doc"><p>ISO 8601 metnini epoch&#x27;a cevirir; ofset varsa UTC&#x27;ye indirger.</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_local_offset_minutes">
+<h3><span class="badge">fn</span>fn date_local_offset_minutes() -&gt; int</h3>
+<div class="doc"><p>Sistemin yerel ofsetini dakika cinsinden dondurur (o anki DST dahil).</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_offset_label">
+<h3><span class="badge">fn</span>fn date_offset_label(offset_minutes: int) -&gt; str</h3>
+<div class="doc"><p>Ofseti `+03:00` / `-05:30` bicimine cevirir.</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_iso_local">
+<h3><span class="badge">fn</span>fn date_iso_local(epoch: int) -&gt; str</h3>
+<div class="doc"><p>epoch&#x27;u ISO 8601 olarak yerel ofsetle dondurur.</p></div>
+</div><div class="item" id="mod-std-time-date-ax-date_duration_label">
+<h3><span class="badge">fn</span>fn date_duration_label(seconds: int) -&gt; str</h3>
+<div class="doc"><p>Iki epoch arasindaki farki insan-okur bicime cevirir (orn. &quot;2g 03s 04d&quot;).</p></div>
+</div><h2 class="mod" id="mod-std-web-app-ax">std/web/app.ax</h2><div class="item" id="mod-std-web-app-ax-Context">
+<h3><span class="badge">struct</span>struct Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>method</code></td><td><code>str</code></td></tr>
+<tr><td><code>path</code></td><td><code>str</code></td></tr>
+<tr><td><code>body</code></td><td><code>str</code></td></tr>
+<tr><td><code>status_code</code></td><td><code>int</code></td></tr>
+<tr><td><code>response_body</code></td><td><code>str</code></td></tr>
+<tr><td><code>authorized</code></td><td><code>bool</code></td></tr>
+<tr><td><code>cors_header</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-web-app-ax-context_new">
+<h3><span class="badge">fn</span>fn context_new(method: str, path: str, body: str) -&gt; Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-app-ax-cors_middleware">
+<h3><span class="badge">fn</span>fn cors_middleware(ctx: Context, allowed_origin: str) -&gt; Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-app-ax-auth_middleware">
+<h3><span class="badge">fn</span>fn auth_middleware(ctx: Context, expected_token: str, provided_token: str) -&gt; Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-app-ax-json_response">
+<h3><span class="badge">fn</span>fn json_response(ctx: Context, status: int, payload: str) -&gt; Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-app-ax-html_response">
+<h3><span class="badge">fn</span>fn html_response(ctx: Context, status: int, html: str) -&gt; Context</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-web-router-ax">std/web/router.ax</h2><div class="item" id="mod-std-web-router-ax-RouteMatch">
+<h3><span class="badge">struct</span>struct RouteMatch</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>matched</code></td><td><code>bool</code></td></tr>
+<tr><td><code>handler_id</code></td><td><code>int</code></td></tr>
+<tr><td><code>param_key</code></td><td><code>str</code></td></tr>
+<tr><td><code>param_val</code></td><td><code>str</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-web-router-ax-Route">
+<h3><span class="badge">struct</span>struct Route</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>method</code></td><td><code>str</code></td></tr>
+<tr><td><code>pattern</code></td><td><code>str</code></td></tr>
+<tr><td><code>handler_id</code></td><td><code>int</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-web-router-ax-Router">
+<h3><span class="badge">struct</span>struct Router</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+<table><tr><th>Alan</th><th>Tip</th></tr>
+<tr><td><code>routes</code></td><td><code>Route[]</code></td></tr>
+</table>
+</div><div class="item" id="mod-std-web-router-ax-router_new">
+<h3><span class="badge">fn</span>fn router_new() -&gt; Router</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-router-ax-router_add">
+<h3><span class="badge">fn</span>fn router_add(router: Router, method: str, pattern: str, handler_id: int) -&gt; Router</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-router-ax-router_match">
+<h3><span class="badge">fn</span>fn router_match(router: Router, method: str, path: str) -&gt; RouteMatch</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><h2 class="mod" id="mod-std-web-template-ax">std/web/template.ax</h2><div class="item" id="mod-std-web-template-ax-template_escape">
+<h3><span class="badge">fn</span>fn template_escape(raw_str: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-template-ax-template_render_var">
+<h3><span class="badge">fn</span>fn template_render_var(tpl: str, key: str, val: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div><div class="item" id="mod-std-web-template-ax-template_render_raw">
+<h3><span class="badge">fn</span>fn template_render_raw(tpl: str, key: str, raw_val: str) -&gt; str</h3>
+<p class="muted">Bu öğe için `///` doc comment yok.</p>
+</div></section>
+</main>
+</body></html>

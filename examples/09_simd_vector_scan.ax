@@ -1,0 +1,67 @@
+// Axiom (λx) - Ornek 9: Heterojen SIMD Hizlandirma ve Paralel Vektor Port Taramasi
+// 4x64-bit AVX2/SSE Vektor Donanim Hatti ile Guvenlik Imza Taramasi
+
+@simd
+fn parallel_signature_score(weights: int[], base_risk: int[]) -> int
+    requires len(weights) > 0 and len(base_risk) > 0
+    ensures return >= 0
+{
+    // 4x64-bit donanimsal SIMD paralel carpma
+    let multiplied = simd_mul_i64(weights, base_risk)
+
+    // SIMD paralel toplama ve indirgeme (reduction)
+    let total_score = simd_sum_i64(multiplied)
+    return total_score
+}
+
+@simd
+fn vector_port_threat_scanner(ports: int[], target_vuln_port: int) -> int
+    requires len(ports) > 0
+    ensures return >= 0
+{
+    // Paralel SIMD ile eslesen kritik port sayisini tara
+    let matches = simd_scan_match(ports, target_vuln_port)
+    return matches
+}
+
+fn main() -> void {
+    print("==========================================================")
+    print("  Axiom (λx) - Heterojen SIMD AVX2/SSE Guvenlik Taramasi  ")
+    print("==========================================================")
+
+    let t_start = time_now_ms()
+
+    // 1. Kritik port listesi (Web, SSH, DB, RDP, Telnet, SMB vb.)
+    let scanned_ports = [22, 80, 443, 8080, 21, 23, 445, 3389, 80, 80, 443, 80]
+    print("[+] Taranan toplam port adedi:", len(scanned_ports))
+
+    // 2. SIMD Vektor ile 80 (HTTP) ve 443 (HTTPS) kritik portlarini paralel tara
+    let http_hits = vector_port_threat_scanner(scanned_ports, 80)
+    let https_hits = vector_port_threat_scanner(scanned_ports, 443)
+    let smb_hits = vector_port_threat_scanner(scanned_ports, 445)
+
+    print("[*] SIMD Tespit Edilen Port 80  (HTTP)  adedi :", http_hits)
+    print("[*] SIMD Tespit Edilen Port 443 (HTTPS) adedi :", https_hits)
+    print("[*] SIMD Tespit Edilen Port 445 (SMB)   adedi :", smb_hits)
+
+    verify http_hits == 4, "HTTP port sayisi 4 olmalidir!"
+    verify https_hits == 2, "HTTPS port sayisi 2 olmalidir!"
+
+    // 3. 4x64-bit SIMD Paralel Tehdit Skoru Hesaplama
+    let severity_weights = [10, 20, 50, 100]
+    let vuln_occurrences = [3, 2, 1, 4]
+
+    let vector_sum = simd_add_i64(severity_weights, vuln_occurrences)
+    print("[+] SIMD Paralel Vektor Toplami Lane 0:", vector_sum[0])
+    print("[+] SIMD Paralel Vektor Toplami Lane 1:", vector_sum[1])
+    print("[+] SIMD Paralel Vektor Toplami Lane 2:", vector_sum[2])
+    print("[+] SIMD Paralel Vektor Toplami Lane 3:", vector_sum[3])
+
+    let total_risk = parallel_signature_score(severity_weights, vuln_occurrences)
+    print("[!] Hesaplanmis Toplam SIMD Tehdit Skoru :", total_risk)
+    verify total_risk == 520, "Toplam risk skoru 520 olmalidir!"
+
+    let t_elapsed = time_now_ms() - t_start
+    print("[✓] SIMD Donanim Hizlandirmali Tarama Tamamlandi. Sure (ms):", t_elapsed)
+    print("==========================================================")
+}

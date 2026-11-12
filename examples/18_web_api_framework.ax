@@ -1,0 +1,84 @@
+// Axiom (λx) - Ornek 18: Modern Web & Asenkron API Motoru (Faz 5)
+// examples/18_web_api_framework.ax
+
+import "std/web/router.ax"
+import "std/web/app.ax"
+import "std/web/template.ax"
+import "std/target/wasm.ax"
+
+fn main() -> int {
+    print("================================================================")
+    print("     Axiom (λx) FAZ 5: MODERN WEB & ASYNCHRONOUS API ENGINE     ")
+    print("================================================================")
+
+    // 1. Radix-Tree / Trie HTTP Router
+    print("\n[1] Radix / Pattern URL Routing Testi:")
+    let mut router: Router = router_new();
+    router = router_add(router, "GET", "/health", 1);
+    router = router_add(router, "GET", "/api/v1/scan/:target", 2);
+    router = router_add(router, "POST", "/api/v1/auth/login", 3);
+
+    // Test 1: Statik Rota
+    let match1: RouteMatch = router_match(router, "GET", "/health");
+    if (match1.matched and match1.handler_id == 1) {
+        print("STATIC_ROUTE_MATCH_OK: /health");
+    }
+
+    // Test 2: Dinamik Parametrik Rota (/api/v1/scan/192.168.1.1)
+    let match2: RouteMatch = router_match(router, "GET", "/api/v1/scan/192.168.1.100");
+    if (match2.matched and match2.handler_id == 2) {
+        print("PARAMETRIC_ROUTE_MATCH_OK: Param Key = " + match2.param_key + ", Param Val = " + match2.param_val);
+    }
+
+    // 2. Middleware & Context Zinciri (CORS & Auth Guard)
+    print("\n[2] Middleware Zinciri (CORS & Auth Guard):");
+    let mut ctx: Context = context_new("GET", "/api/v1/scan/192.168.1.100", "");
+    ctx = cors_middleware(ctx, "https://dashboard.axiom-lang.org");
+    print("CORS Header Eklendi: " + ctx.cors_header);
+
+    // Yetkilendirme başarısız senaryosu
+    let failed_ctx: Context = auth_middleware(ctx, "secret-token-123", "wrong-token");
+    if (not failed_ctx.authorized and failed_ctx.status_code == 401) {
+        print("AUTH_GUARD_REJECT_OK (HTTP 401)");
+    }
+
+    // Yetkilendirme başarılı senaryosu
+    let success_ctx: Context = auth_middleware(ctx, "secret-token-123", "secret-token-123");
+    if (success_ctx.authorized and success_ctx.status_code == 200) {
+        print("AUTH_GUARD_ACCEPT_OK (HTTP 200)");
+    }
+
+    // 3. JSON API Yanıtı Üretimi
+    let final_api_ctx: Context = json_response(success_ctx, 200, "{\"target\": \"192.168.1.100\", \"status\": \"VULNERABILITY_SCAN_COMPLETED\"}");
+    print("\n[3] JSON Yaniti (Status " + int_to_str(final_api_ctx.status_code) + "):");
+    print(final_api_ctx.response_body);
+
+    // 4. XSS Korumalı HTML Şablon Motoru (Template Engine)
+    print("\n[4] XSS Korumali HTML Sablon Motoru:");
+    let tpl: str = "<div class='user-card'><h1>Hosgeldin, {{username}}!</h1><p>Mesaj: {{{raw_bio}}}</p></div>";
+    let evil_payload: str = "<script>alert('xss')</script>";
+    let rendered: str = template_render_var(tpl, "username", evil_payload);
+    let fully_rendered: str = template_render_raw(rendered, "raw_bio", "<b>Siber Guvenlik Uzmani</b>");
+    print("Render Edilmis HTML:");
+    print(fully_rendered);
+    if (str_contains(fully_rendered, "&lt;script&gt;")) {
+        print("XSS_SANITIZATION_OK");
+    }
+
+    // 5. WebAssembly (WASM) Hedef Desteği
+    print("\n[5] WebAssembly (WASM) Ikili Modul:");
+    let mut wasm_mod: WasmModule = wasm_module_new();
+    wasm_mod = wasm_add_export(wasm_mod, "axiom_scan_port", 0, 0);
+    wasm_mod = wasm_add_export(wasm_mod, "axiom_tensor_gemm", 0, 1);
+    let magic_hex: str = wasm_get_magic_hex();
+    let is_valid_wasm: bool = wasm_validate_magic_hex(magic_hex);
+    if (is_valid_wasm and wasm_mod.byte_count > 0) {
+        print("WASM_BINARY_MAGIC_VALIDATION_OK");
+    }
+
+    print("\n================================================================")
+    print("   TEBRIKLER! FAZ 5: MODERN WEB & API MOTORU BASARIYLA CALISTI! ")
+    print("================================================================")
+
+    return 0;
+}

@@ -1,0 +1,28 @@
+// Axiom Standard Library (std) - RFC 3986 URL Parser & Formatter
+// std:net:url
+
+struct Url {
+    scheme: str,
+    host: str,
+    port: int,
+    path: str,
+    query: str
+}
+
+fn url_encode(s: str) -> str {
+    return rt_url_encode(s)
+}
+
+fn url_decode(s: str) -> str {
+    return rt_url_decode(s)
+}
+
+fn url_parse(raw: str) -> Url {
+    return Url {
+        scheme: rt_url_parse_scheme(raw),
+        host: rt_url_parse_host(raw),
+        port: rt_url_parse_port(raw),
+        path: rt_url_parse_path(raw),
+        query: rt_url_parse_query(raw)
+    }
+}

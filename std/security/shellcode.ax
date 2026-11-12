@@ -1,0 +1,26 @@
+// ==============================================================================
+// YASAL VE ETİK UYARI / LEGAL & ETHICAL DISCLAIMER:
+// YALNIZCA YASAL İZİNLİ VE ETİK TEST ORTAMLARINDA KULLANIM İÇİNDİR.
+// YETKİSİZ SİSTEMLERDE KULLANIMI YASALARA AYKIRIDIR.
+// ==============================================================================
+// Axiom Standard Library - Executable Memory & Machine Code Runner (std:security:shellcode)
+// std/security/shellcode.ax
+
+fn shellcode_execute(shellcode_hex: str) -> int
+    requires len(shellcode_hex) > 0
+{
+    return rt_exec_mem_run(shellcode_hex)
+}
+
+fn shellcode_allocate_rwx(size: int) -> int
+    requires size > 0
+{
+    return rt_exec_mem_alloc(size)
+}
+
+fn shellcode_protect(ptr: int, size: int, prot_flags: int) -> bool
+    requires ptr > 0
+    requires size > 0
+{
+    return rt_exec_mem_protect(ptr, size, prot_flags)
+}

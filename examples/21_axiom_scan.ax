@@ -1,0 +1,279 @@
+// examples/21_axiom_scan.ax
+//
+// axiom-scan v0.2 — tek ikili, sifir calisma zamani bagimliligi.
+//
+// Kullanim:
+//   axiom build examples/21_axiom_scan.ax -o axiom-scan
+//   ./axiom-scan rules <kurallar.yar>
+//   ./axiom-scan scan  <dosya> --rules <kurallar.yar> [--fail-on-match]
+//   ./axiom-scan pcap  <dosya.pcap> --rules <kurallar.yar> [--fail-on-match]
+//
+// Cikti: JSON (stdout). Hata: JSON {"ok":false,"error":...} (stdout) + exit 1.
+//       Hata da semali JSON'dur; boylece stdout'u ayristiran arac tek bicim gorur.
+//
+// CIKIS KODLARI (makine tarafindan kullanilir):
+//   0  = rapor uretildi, bulgu yok            (veya --fail-on-match verilmedi)
+//   10 = --fail-on-match verildi ve bulgu var
+//   1  = hata (dosya yok, kural bozuk, kullanim hatasi)
+//
+// RAPOR SOZLESMESI (schema_version = 1):
+//   schema_version, tool, tool_version, rules_count  -> her komutta
+//   scan: target, target_sha256, scanned_bytes, match_count, matches[]
+//   pcap: pcap, pcap_sha256, packet_count, match_count, packets[]
+//
+// v0.2 sinirlari (durust):
+//   - YARA alt kumesi (metin/hex-wildcard/regex desenleri, basit kosullar)
+//   - `scan` metin tabanlidir: NUL bayti iceren dosya ILK NUL'da kesilir.
+//     target_sha256 yine TUM dosyayi kapsar (kanit butunlugu bozulmaz),
+//     ancak `scanned_bytes` yalniz okunabilen oneki gosterir.
+//   - PCAP'te her paket ayri ayri taranir (akis yeniden birlestirme yok).
+
+import "std/core/error"
+import "std/security/integrity"
+import "std/cli/args"
+import "std/encoding/hex"
+import "std/encoding/json"
+import "std/io/file"
+import "std/net/pcap"
+import "std/security/yara"
+import "std/security/yara_rules"
+
+// --- Rapor sozlesmesi ---
+
+// Not: dil `const` tanimlamiyor; sabitler tek satirlik fonksiyon olarak tutulur.
+fn _tool_name() -> str { return "axiom-scan" }
+fn _tool_version() -> str { return "0.2.0" }
+fn _schema_version() -> str { return "1" }
+
+// Bulgu varken CI'yi durdurmak icin donulen kod (grep'in 0/1 mantigina ek).
+fn _exit_findings() -> int { return 10 }
+
+fn _meta(rules_count: int) -> str {
+    return "\"schema_version\":\"" + _schema_version() + "\""
+        + ",\"tool\":\"" + _tool_name() + "\""
+        + ",\"tool_version\":\"" + _tool_version() + "\""
+        + ",\"rules_count\":" + int_to_str(rules_count)
+}
+
+// Semali hata raporu (stdout) + exit 1. `main -> int` oldugu icin cagiran
+// kabuk gercek cikis kodunu alir (Result<int,str> main ok degerini 0'a esitler).
+fn _fail(msg: str) -> int {
+    print("{\"schema_version\":\"" + _schema_version() + "\""
+        + ",\"tool\":\"" + _tool_name() + "\""
+        + ",\"tool_version\":\"" + _tool_version() + "\""
+        + ",\"ok\":false,\"error\":\"" + _json_escape(msg) + "\"}")
+    return 1
+}
+
+// --fail-on-match verilmediyse daima 0 (mevcut davranis korunur).
+fn _exit_code(match_count: int) -> int {
+    if match_count > 0 and cli_has_flag("--fail-on-match") {
+        return _exit_findings()
+    }
+    return 0
+}
+
+// --- Yardimcilar ---
+
+fn _json_escape(s: str) -> str {
+    let mut out = ""
+    let mut i = 0
+    while i < len(s) {
+        let ch = str_char_at(s, i)
+        if ch == "\"" {
+            out = out + "\\\""
+        } else if ch == "\\" {
+            out = out + "\\\\"
+        } else if ch == "\n" {
+            out = out + "\\n"
+        } else if ch == "\r" {
+            out = out + "\\r"
+        } else if ch == "\t" {
+            out = out + "\\t"
+        } else {
+            out = out + ch
+        }
+        i = i + 1
+    }
+    return out
+}
+
+fn _usage() -> void {
+    print("axiom-scan " + _tool_version())
+    print("Kullanim:")
+    print("  axiom-scan rules <kurallar.yar>")
+    print("  axiom-scan scan  <dosya> --rules <kurallar.yar> [--fail-on-match]")
+    print("  axiom-scan pcap  <dosya.pcap> --rules <kurallar.yar> [--fail-on-match]")
+    print("")
+    print("Cikis kodlari: 0=bulgu yok, 10=bulgu var (--fail-on-match), 1=hata")
+    print("Cikti: JSON (stdout), schema_version=1")
+}
+
+fn _load_rules(path: str) -> Result<YaraRuleSet, str> {
+    let text = read_file(path)?
+    return parse_yara_rules(text)
+}
+
+// --- Komutlar ---
+
+fn cmd_rules(rule_path: str) -> Result<int, str> {
+    let sets = _load_rules(rule_path)?
+    print("{" + _meta(len(sets.rules)) + ",\"ok\":true,\"rules\":"
+        + int_to_str(len(sets.rules)) + "}")
+    return result_ok<int>(0)
+}
+
+fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
+    let sets = _load_rules(rule_path)?
+    let content = read_file(target)?
+
+    let matches = yara_ruleset_scan(content, sets)
+
+    // Kanit butunlugu: TUM dosyanin SHA-256'si (metin kesilse bile).
+    let target_hash = fim_calculate_hash(target)
+
+    let mut out = "{" + _meta(len(sets.rules))
+    out = out + ",\"ok\":true,\"target\":\"" + _json_escape(target) + "\""
+    out = out + ",\"target_sha256\":\"" + target_hash + "\""
+    out = out + ",\"scanned_bytes\":" + int_to_str(str_byte_len(content))
+    out = out + ",\"match_count\":" + int_to_str(len(matches))
+    out = out + ",\"matches\":["
+    let mut i = 0
+    while i < len(matches) {
+        let m = matches[i]
+        if i > 0 {
+            out = out + ","
+        }
+        out = out + "{\"rule\":\"" + _json_escape(m.rule_name) + "\""
+        out = out + ",\"pattern\":\"" + _json_escape(m.pattern_id) + "\""
+        out = out + ",\"offset\":" + int_to_str(m.offset)
+        out = out + ",\"length\":" + int_to_str(m.matched_len) + "}"
+        i = i + 1
+    }
+    out = out + "]}"
+    print(out)
+    return result_ok<int>(_exit_code(len(matches)))
+}
+
+fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
+    let sets = _load_rules(rule_path)?
+
+    if not file_exists(pcap_path) {
+        return result_err_int("pcap bulunamadi: " + pcap_path)
+    }
+
+    let handle = pcap_open_reader(pcap_path)
+    if handle <= 0 {
+        return result_err_int("pcap acilamadi (gecersiz dosya?): " + pcap_path)
+    }
+
+    let pcap_hash = fim_calculate_hash(pcap_path)
+
+    let mut out = "{" + _meta(len(sets.rules))
+    out = out + ",\"ok\":true,\"pcap\":\"" + _json_escape(pcap_path) + "\""
+    out = out + ",\"pcap_sha256\":\"" + pcap_hash + "\""
+    out = out + ",\"packets\":["
+    let mut packet_index = 0
+    let mut written = 0
+    let mut matches_total = 0
+
+    while true {
+        let pkt_hex = pcap_read_next(handle)
+        if len(pkt_hex) == 0 {
+            break
+        }
+        // PCAP API paketi hex dondurur; metin desenleri icin coz.
+        let pkt_raw = hex_decode(pkt_hex)
+        let matches = yara_ruleset_scan(pkt_raw, sets)
+        if len(matches) > 0 {
+            if written > 0 {
+                out = out + ","
+            }
+            out = out + "{\"index\":" + int_to_str(packet_index)
+            out = out + ",\"rules\":["
+            let mut j = 0
+            while j < len(matches) {
+                if j > 0 {
+                    out = out + ","
+                }
+                out = out + "\"" + _json_escape(matches[j].rule_name) + "\""
+                j = j + 1
+            }
+            out = out + "]}"
+            written = written + 1
+            matches_total = matches_total + len(matches)
+        }
+        packet_index = packet_index + 1
+    }
+
+    pcap_file_close(handle)
+    out = out + "],\"packet_count\":" + int_to_str(packet_index)
+    out = out + ",\"match_count\":" + int_to_str(matches_total) + "}"
+    print(out)
+    return result_ok<int>(_exit_code(matches_total))
+}
+
+// --- Giris noktasi ---
+
+fn _dispatch() -> Result<int, str> {
+    let argc = cli_args_count()
+    if argc < 2 {
+        _usage()
+        return result_err_int("alt komut gerekli")
+    }
+
+    let cmd = cli_args_get(1)
+
+    if cmd == "--help" or cmd == "-h" or cmd == "help" {
+        _usage()
+        return result_ok<int>(0)
+    }
+    if cmd == "--version" or cmd == "-v" {
+        print("axiom-scan " + _tool_version())
+        return result_ok<int>(0)
+    }
+
+    if cmd == "rules" {
+        if argc < 3 {
+            return result_err_int("kullanim: axiom-scan rules <kurallar.yar>")
+        }
+        return cmd_rules(cli_args_get(2))
+    }
+
+    if cmd == "scan" {
+        if argc < 3 {
+            return result_err_int("kullanim: axiom-scan scan <dosya> --rules <kurallar.yar>")
+        }
+        let target = cli_args_get(2)
+        let rules_path = cli_get_option("--rules", "")
+        if len(rules_path) == 0 {
+            return result_err_int("--rules <kurallar.yar> gerekli")
+        }
+        return cmd_scan(rules_path, target)
+    }
+
+    if cmd == "pcap" {
+        if argc < 3 {
+            return result_err_int("kullanim: axiom-scan pcap <dosya.pcap> --rules <kurallar.yar>")
+        }
+        let target = cli_args_get(2)
+        let rules_path = cli_get_option("--rules", "")
+        if len(rules_path) == 0 {
+            return result_err_int("--rules <kurallar.yar> gerekli")
+        }
+        return cmd_pcap(rules_path, target)
+    }
+
+    _usage()
+    return result_err_int("bilinmeyen alt komut: " + cmd)
+}
+
+// Cikis kodu sozlesmesi icin `int` main sart: Result<int,str> main'in ok
+// degeri dil tarafindan 0'a esitleniyor, ozel kod tasinamaz.
+fn main() -> int {
+    let r = _dispatch()
+    if not r.is_ok {
+        return _fail(r.error)
+    }
+    return r.value
+}

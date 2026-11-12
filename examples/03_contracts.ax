@@ -1,0 +1,32 @@
+# Axiom (λx) - Ornek 3: Guvenlik Sozlesmeleri ve Mantik Dogrulama (Contracts)
+
+fn safe_divide(numerator: int, denominator: int) -> int
+    requires denominator != 0
+    ensures return * denominator <= numerator
+{
+    return numerator / denominator
+}
+
+fn validate_network_port(port: int) -> bool
+    requires port >= 1 and port <= 65535
+{
+    print("[PORT GECERLI]", port)
+    return true
+}
+
+fn main() -> int {
+    print("=== Axiom Formal Contract Dogrulama Testi ===")
+
+    # 1. Gecerli bolme islemi
+    let result = safe_divide(100, 5)
+    print("100 / 5 =", result)
+    verify result == 20, "Bolme sonucu 20 olmalidir!"
+
+    # 2. Gecerli port denetimleri
+    validate_network_port(80)
+    validate_network_port(443)
+    validate_network_port(8080)
+
+    print("Tum sozlesmeler (requires / ensures / verify) basariyla dogrulandi!")
+    return 0
+}

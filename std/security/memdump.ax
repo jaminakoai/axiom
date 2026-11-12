@@ -1,0 +1,20 @@
+// ==============================================================================
+// YASAL VE ETİK UYARI / LEGAL & ETHICAL DISCLAIMER:
+// YALNIZCA YASAL İZİNLİ VE ETİK TEST ORTAMLARINDA KULLANIM İÇİNDİR.
+// YETKİSİZ SİSTEMLERDE KULLANIMI YASALARA AYKIRIDIR.
+// ==============================================================================
+// Axiom Standard Library - Process Memory Forensics & Pattern Search (std:security:memdump)
+// std/security/memdump.ax
+
+fn memdump_search_pattern(pid: int, pattern: str) -> int
+    requires pid > 0
+    requires len(pattern) > 0
+{
+    return rt_proc_search_pattern(pid, pattern)
+}
+
+fn memdump_get_maps(pid: int) -> str
+    requires pid > 0
+{
+    return rt_proc_get_maps(pid)
+}

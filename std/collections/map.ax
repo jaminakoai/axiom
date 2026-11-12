@@ -1,0 +1,30 @@
+// Axiom Standard Library - High Performance Hash Map
+// std:collections:map
+
+fn map_create() -> int {
+    return rt_map_create()
+}
+
+fn map_set(m: int, key: str, val: str) -> void {
+    rt_map_set(m, key, val)
+}
+
+fn map_get(m: int, key: str) -> str {
+    return rt_map_get(m, key)
+}
+
+fn map_has(m: int, key: str) -> bool {
+    return rt_map_has(m, key)
+}
+
+fn map_delete(m: int, key: str) -> bool {
+    return rt_map_delete(m, key)
+}
+
+fn map_len(m: int) -> int {
+    return rt_map_len(m)
+}
+
+fn map_free(m: int) -> void {
+    rt_map_free(m)
+}

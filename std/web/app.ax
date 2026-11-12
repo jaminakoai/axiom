@@ -1,0 +1,87 @@
+// Axiom Standard Library: std:web:app
+// Asenkron Web Uygulama Cercevesi & Middleware Mimarisi
+
+import "std/web/router.ax"
+
+struct Context {
+    method: str,
+    path: str,
+    body: str,
+    status_code: int,
+    response_body: str,
+    authorized: bool,
+    cors_header: str
+}
+
+fn context_new(method: str, path: str, body: str) -> Context {
+    return Context {
+        method: method,
+        path: path,
+        body: body,
+        status_code: 200,
+        response_body: "",
+        authorized: true,
+        cors_header: ""
+    };
+}
+
+fn cors_middleware(ctx: Context, allowed_origin: str) -> Context {
+    let header_val: str = "Access-Control-Allow-Origin: " + allowed_origin;
+    return Context {
+        method: ctx.method,
+        path: ctx.path,
+        body: ctx.body,
+        status_code: ctx.status_code,
+        response_body: ctx.response_body,
+        authorized: ctx.authorized,
+        cors_header: header_val
+    };
+}
+
+fn auth_middleware(ctx: Context, expected_token: str, provided_token: str) -> Context {
+    if (expected_token == provided_token) {
+        return Context {
+            method: ctx.method,
+            path: ctx.path,
+            body: ctx.body,
+            status_code: ctx.status_code,
+            response_body: ctx.response_body,
+            authorized: true,
+            cors_header: ctx.cors_header
+        };
+    }
+
+    return Context {
+        method: ctx.method,
+        path: ctx.path,
+        body: ctx.body,
+        status_code: 401,
+        response_body: "{\"error\": \"Unauthorized - Gecersiz Yetkilendirme Belirteci\"}",
+        authorized: false,
+        cors_header: ctx.cors_header
+    };
+}
+
+fn json_response(ctx: Context, status: int, payload: str) -> Context {
+    return Context {
+        method: ctx.method,
+        path: ctx.path,
+        body: ctx.body,
+        status_code: status,
+        response_body: payload,
+        authorized: ctx.authorized,
+        cors_header: ctx.cors_header
+    };
+}
+
+fn html_response(ctx: Context, status: int, html: str) -> Context {
+    return Context {
+        method: ctx.method,
+        path: ctx.path,
+        body: ctx.body,
+        status_code: status,
+        response_body: html,
+        authorized: ctx.authorized,
+        cors_header: ctx.cors_header
+    };
+}

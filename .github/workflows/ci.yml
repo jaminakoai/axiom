@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Python sürümünü kur
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Sistem bağımlılıkları (clang, OpenSSL, zlib, pthread)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang libssl-dev zlib1g-dev
+
+      - name: Python bağımlılıkları
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+
+      - name: Sürüm bilgisi
+        run: |
+          clang --version | head -1
+          python -c "import z3; print('z3', z3.get_version_string())"
+          ./bin/axiom --version
+
+      - name: Test paketi
+        run: python -m pytest -q --no-header
+
+      - name: Dokümantasyon kod blokları
+        run: python -m pytest -q tests/test_tutorial_examples.py tests/test_specification.py tests/test_docs_en.py tests/test_docgen.py
+
+      - name: Bootstrap (self-hosted derleyici)
+        run: make bootstrap
+
+  sanitizers:
+    name: ASan/UBSan + bellek sızıntısı
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Bağımlılıklar
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang libssl-dev zlib1g-dev
+          python -m pip install -e ".[dev]"
+      - name: Bellek güvenliği testleri
+        run: |
+          python -m pytest -q tests/test_memory_leak_deep.py \
+                               tests/test_negative_security.py \
+                               tests/test_security_audit_fixes.py \
+                               tests/test_runtime_ownership_audit.py
+
+  llvm:
+    name: LLVM arka ucu + DWARF
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Bağımlılıklar
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang llvm binutils libssl-dev zlib1g-dev
+          python -m pip install -e ".[dev]"
+      - name: LLVM testleri
+        run: python -m pytest -q tests/test_llvm.py tests/test_llvm_dwarf.py
+      - name: Tüm örnekler LLVM ile derlenmeli
+        run: |
+          set -e
+          for f in examples/*.ax; do
+            echo "→ $f"
+            if [[ "$f" == *"15_redteam_offensive_suite"* ]]; then
+              ./bin/axiom build "$f" --backend=llvm --features offensive -o /tmp/out_llvm
+            else
+              ./bin/axiom build "$f" --backend=llvm -o /tmp/out_llvm
+            fi
+          done
+
+  fmt:
+    name: Biçimlendirme
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: fmt --check
+        run: make fmt-check

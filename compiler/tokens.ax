@@ -1,0 +1,59 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/tokens.ax - Token Modeli ve Sembol Sabitleri
+
+struct Token {
+    kind: str,
+    value: str,
+    line: int,
+    col: int
+}
+
+fn token_new(kind: str, value: str, line: int, col: int) -> Token {
+    return Token {
+        kind: kind,
+        value: value,
+        line: line,
+        col: col
+    }
+}
+
+fn is_keyword(s: str) -> bool {
+    if s == "fn" or s == "let" or s == "mut" or s == "if" or s == "else" {
+        return true
+    }
+    if s == "while" or s == "for" or s == "in" or s == "return" or s == "print" {
+        return true
+    }
+    if s == "verify" or s == "requires" or s == "ensures" or s == "struct" or s == "import" {
+        return true
+    }
+    if s == "true" or s == "false" or s == "and" or s == "or" or s == "not" {
+        return true
+    }
+    if s == "defer" or s == "invariant" or s == "as" or s == "match" or s == "break" or s == "continue" {
+        return true
+    }
+    return false
+}
+
+fn is_type_name(s: str) -> bool {
+    if s == "int" or s == "float" or s == "bool" or s == "str" or s == "void" {
+        return true
+    }
+    if s == "OptionInt" or s == "OptionStr" or s == "OptionBool" {
+        return true
+    }
+    if s == "ResultInt" or s == "ResultStr" {
+        return true
+    }
+    if str_ends_with(s, "[]") {
+        return true
+    }
+    if len(s) > 0 {
+        let c = str_char_code(s, 0)
+        if c >= 65 and c <= 90 {
+            return true
+        }
+    }
+    return false
+}

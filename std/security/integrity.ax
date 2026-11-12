@@ -1,0 +1,16 @@
+// Axiom Standard Library - File Integrity Monitoring (FIM) (std:security:integrity)
+// std/security/integrity.ax
+
+fn fim_calculate_hash(file_path: str) -> str
+    requires len(file_path) > 0
+{
+    return rt_fim_hash_file(file_path)
+}
+
+fn fim_verify_baseline(file_path: str, expected_sha256: str) -> bool
+    requires len(file_path) > 0
+    requires len(expected_sha256) == 64
+{
+    let current_hash = rt_fim_hash_file(file_path)
+    return current_hash == expected_sha256
+}

@@ -1,0 +1,14 @@
+// Axiom Standard Library (std) - Raw Network, Ping & Checksum Engine
+// std:net:raw_socket
+
+fn icmp_ping(host: str, timeout_ms: int) -> int {
+    return rt_icmp_ping(host, timeout_ms)
+}
+
+fn tcp_ping(host: str, port: int, timeout_ms: int) -> int {
+    return rt_tcp_ping(host, port, timeout_ms)
+}
+
+fn raw_checksum(data_hex: str) -> int {
+    return rt_raw_checksum(data_hex)
+}

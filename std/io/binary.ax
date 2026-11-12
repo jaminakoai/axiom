@@ -1,0 +1,86 @@
+// Axiom Standard Library - Binary Buffer & Byte Manipulation
+// std:io:binary
+
+fn buf_create(cap: int) -> int {
+    return rt_buf_create(cap)
+}
+
+fn buf_write_u8(b: int, val: int) -> void {
+    rt_buf_write_u8(b, val)
+}
+
+fn buf_write_u16_be(b: int, val: int) -> void {
+    rt_buf_write_u16_be(b, val)
+}
+
+fn buf_write_u16_le(b: int, val: int) -> void {
+    rt_buf_write_u16_le(b, val)
+}
+
+fn buf_write_u32_be(b: int, val: int) -> void {
+    rt_buf_write_u32_be(b, val)
+}
+
+fn buf_write_u32_le(b: int, val: int) -> void {
+    rt_buf_write_u32_le(b, val)
+}
+
+fn buf_write_u64_be(b: int, val: int) -> void {
+    rt_buf_write_u64_be(b, val)
+}
+
+fn buf_write_u64_le(b: int, val: int) -> void {
+    rt_buf_write_u64_le(b, val)
+}
+
+fn buf_write_str(b: int, s: str) -> void {
+    rt_buf_write_str(b, s)
+}
+
+fn buf_to_hex(b: int) -> str {
+    return rt_buf_to_hex(b)
+}
+
+fn buf_to_str(b: int) -> str {
+    return rt_buf_to_str(b)
+}
+
+fn buf_len(b: int) -> int {
+    return rt_buf_len(b)
+}
+
+fn buf_from_hex(hex_str: str) -> int {
+    return rt_buf_from_hex(hex_str)
+}
+
+fn buf_read_u8(b: int, offset: int) -> int {
+    return rt_buf_read_u8(b, offset)
+}
+
+fn buf_read_u16_be(b: int, offset: int) -> int {
+    return rt_buf_read_u16_be(b, offset)
+}
+
+fn buf_read_u16_le(b: int, offset: int) -> int {
+    return rt_buf_read_u16_le(b, offset)
+}
+
+fn buf_read_u32_be(b: int, offset: int) -> int {
+    return rt_buf_read_u32_be(b, offset)
+}
+
+fn buf_read_u32_le(b: int, offset: int) -> int {
+    return rt_buf_read_u32_le(b, offset)
+}
+
+fn buf_read_u64_be(b: int, offset: int) -> int {
+    return rt_buf_read_u64_be(b, offset)
+}
+
+fn buf_read_u64_le(b: int, offset: int) -> int {
+    return rt_buf_read_u64_le(b, offset)
+}
+
+fn buf_free(b: int) -> void {
+    rt_buf_free(b)
+}

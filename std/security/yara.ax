@@ -1,0 +1,418 @@
+// Axiom Standard Library - Enterprise YARA Signature & Bytecode Scanner (std:security:yara)
+// std/security/yara.ax
+//
+// Özellikler:
+// - Hex wildcard maskeli bayt taraması (örn. "48 89 ?? 55 ?? 8b", "E8 ?? ?? ?? ??")
+// - Boyer-Moore-Horspool / Sunday Quick-Search bayt arama motoru
+// - Bayt kaydırma ve ofset kısıtlamaları (min_offset, max_offset, exact offset)
+// - Çoklu imza koşul mantığı (condition: 'all of them', 'any of them', 'N of them')
+// - YaraRule, YaraMatch, YaraRuleSet veri yapıları
+
+import "std:text:regex"
+import "std:encoding:hex"
+
+// -----------------------------------------------------------------------------
+// Veri Yapıları (YARA Core Data Structures)
+// -----------------------------------------------------------------------------
+
+/// Bir desen eslesmesinin sonucu.
+///
+/// `offset` eslesmenin bayt konumu, `matched_len` uzunlugu;
+/// eslesme yoksa `matched = false` ve `offset = -1`.
+struct YaraMatch {
+    rule_name: str,
+    pattern_id: str,
+    offset: int,
+    matched_len: int,
+    matched: bool
+}
+
+/// Tek bir YARA kurali: desenler, kosul ve ofset sinirlari.
+struct YaraRule {
+    name: str,
+    patterns: str[],
+    pattern_names: str[],
+    condition: str,
+    min_offset: int,
+    max_offset: int
+}
+
+/// Birden cok `YaraRule` barindiran kural seti.
+struct YaraRuleSet {
+    rules: YaraRule[]
+}
+
+// -----------------------------------------------------------------------------
+// Kural ve Kural Seti Oluşturucuları (Rule & RuleSet Builders)
+// -----------------------------------------------------------------------------
+
+/// Yeni bir kural olusturur.
+///
+/// `condition`: `"any of them"`, `"all of them"` veya `"N of them"`.
+fn yara_rule_new(name: str, condition: str) -> YaraRule {
+    let p: str[] = [];
+    let pn: str[] = [];
+    return YaraRule {
+        name: name,
+        patterns: p,
+        pattern_names: pn,
+        condition: condition,
+        min_offset: -1,
+        max_offset: -1
+    };
+}
+
+/// Kurala bir desen ekler.
+///
+/// `pattern_id` (`"$a"`) ve `pattern_str` (`"str:..."`, `"hex:..."`,
+/// `"regex:..."`) birlikte saklanir.
+fn yara_rule_add_pattern(rule: YaraRule, pattern_id: str, pattern_str: str) -> YaraRule {
+    let p = array_push(rule.patterns, pattern_str);
+    let pn = array_push(rule.pattern_names, pattern_id);
+    return YaraRule {
+        name: rule.name,
+        patterns: p,
+        pattern_names: pn,
+        condition: rule.condition,
+        min_offset: rule.min_offset,
+        max_offset: rule.max_offset
+    };
+}
+
+/// Eslesmenin aranacagi ofset araligini sinirlar (dahil).
+fn yara_rule_set_offset_bounds(rule: YaraRule, min_offset: int, max_offset: int) -> YaraRule {
+    return YaraRule {
+        name: rule.name,
+        patterns: rule.patterns,
+        pattern_names: rule.pattern_names,
+        condition: rule.condition,
+        min_offset: min_offset,
+        max_offset: max_offset
+    };
+}
+
+/// Eslesmeyi tek bir kesin ofsete sabitler.
+fn yara_rule_set_at_offset(rule: YaraRule, offset: int) -> YaraRule {
+    return YaraRule {
+        name: rule.name,
+        patterns: rule.patterns,
+        pattern_names: rule.pattern_names,
+        condition: rule.condition,
+        min_offset: offset,
+        max_offset: offset
+    };
+}
+
+/// Bos bir kural seti olusturur.
+fn yara_ruleset_new() -> YaraRuleSet {
+    let r: YaraRule[] = [];
+    return YaraRuleSet { rules: r };
+}
+
+/// Kural setine kural ekler (yeni set dondurur).
+fn yara_ruleset_add_rule(ruleset: YaraRuleSet, rule: YaraRule) -> YaraRuleSet {
+    let r = array_push(ruleset.rules, rule);
+    return YaraRuleSet { rules: r };
+}
+
+// -----------------------------------------------------------------------------
+// Düşük Seviye Hex & Bayt Tarama Fonksiyonları
+// -----------------------------------------------------------------------------
+
+fn yara_find_hex_wildcard(target: str, hex_pattern: str) -> int {
+    let off = rt_yara_find_hex_wildcard(target, hex_pattern, -1, -1);
+    if (off >= 0) {
+        return off;
+    }
+    return rt_yara_find_hex_stream(target, hex_pattern);
+}
+
+fn yara_find_hex_wildcard_at(target: str, hex_pattern: str, min_offset: int, max_offset: int) -> int {
+    let off = rt_yara_find_hex_wildcard(target, hex_pattern, min_offset, max_offset);
+    if (off >= 0) {
+        return off;
+    }
+    let hex_off = rt_yara_find_hex_stream(target, hex_pattern);
+    if (hex_off >= 0) {
+        if (min_offset >= 0 and hex_off < min_offset) { return -1; }
+        if (max_offset >= 0 and hex_off > max_offset) { return -1; }
+        return hex_off;
+    }
+    return -1;
+}
+
+fn yara_match_hex_wildcard(target: str, hex_pattern: str) -> bool {
+    let off = yara_find_hex_wildcard(target, hex_pattern);
+    return off >= 0;
+}
+
+fn yara_find_hex_stream(hex_target: str, hex_pattern: str) -> int {
+    return rt_yara_find_hex_stream(hex_target, hex_pattern);
+}
+
+fn yara_scan_hex_stream(hex_target: str, hex_pattern: str) -> bool {
+    let off = rt_yara_find_hex_stream(hex_target, hex_pattern);
+    return off >= 0;
+}
+
+fn yara_scan_buf(buf_handle: int, hex_pattern: str, min_offset: int, max_offset: int) -> int {
+    return rt_yara_scan_buf_handle(buf_handle, hex_pattern, min_offset, max_offset);
+}
+
+// -----------------------------------------------------------------------------
+// Tekli Desen ve Kural Eşleme Mantığı (Pattern & Rule Scanning Engine)
+// -----------------------------------------------------------------------------
+
+/// Tek bir deseni hedefte tarar.
+///
+/// `min_offset`/`max_offset` `-1` ise sinir yoktur.
+/// Desen turleri: `str:`, `hex:` (`??` joker), `regex:`.
+fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
+    // 1. Regex Deseni
+    if (str_starts_with(pattern_str, "regex:")) {
+        let p = str_sub(pattern_str, 6, str_len(pattern_str) - 6);
+        let ok = rt_regex_is_match(p, target);
+        if (ok) {
+            return YaraMatch {
+                rule_name: "",
+                pattern_id: pattern_id,
+                offset: 0,
+                matched_len: 0,
+                matched: true
+            };
+        }
+        return YaraMatch {
+            rule_name: "",
+            pattern_id: pattern_id,
+            offset: -1,
+            matched_len: 0,
+            matched: false
+        };
+    }
+
+    // 2. Açık Metin Deseni (str:...)
+    if (str_starts_with(pattern_str, "str:")) {
+        let p = str_sub(pattern_str, 4, str_len(pattern_str) - 4);
+        let idx = str_index_of(target, p);
+        if (idx >= 0) {
+            if (min_offset >= 0 and idx < min_offset) {
+                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+            }
+            if (max_offset >= 0 and idx > max_offset) {
+                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+            }
+            return YaraMatch {
+                rule_name: "",
+                pattern_id: pattern_id,
+                offset: idx,
+                matched_len: str_len(p),
+                matched: true
+            };
+        }
+        return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+    }
+
+    // 3. Hex Wildcard Deseni (hex:... veya ?? veya boşluklu hex baytları içerenler)
+    let is_hex_explicit = str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "{");
+    let has_wildcard = str_contains(pattern_str, "??") or str_contains(pattern_str, "?");
+    let has_space = str_contains(pattern_str, " ");
+
+    if (is_hex_explicit or has_wildcard or has_space) {
+        let mut clean_p = pattern_str;
+        if (str_starts_with(clean_p, "hex:")) {
+            clean_p = str_sub(clean_p, 4, str_len(clean_p) - 4);
+        }
+        let mut off = rt_yara_find_hex_wildcard(target, clean_p, min_offset, max_offset);
+        if (off < 0) {
+            let stream_off = rt_yara_find_hex_stream(target, clean_p);
+            if (stream_off >= 0) {
+                let mut valid = true;
+                if (min_offset >= 0 and stream_off < min_offset) { valid = false; }
+                if (max_offset >= 0 and stream_off > max_offset) { valid = false; }
+                if (valid) { off = stream_off; }
+            }
+        }
+        if (off >= 0) {
+            let mlen = rt_yara_pattern_len(clean_p);
+            return YaraMatch {
+                rule_name: "",
+                pattern_id: pattern_id,
+                offset: off,
+                matched_len: mlen,
+                matched: true
+            };
+        }
+        return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+    }
+
+    // 4. Varsayılan Metin ve Hex Fallback
+    let sub_idx = str_index_of(target, pattern_str);
+    if (sub_idx >= 0) {
+        if (min_offset >= 0 and sub_idx < min_offset) {
+            return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+        }
+        if (max_offset >= 0 and sub_idx > max_offset) {
+            return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+        }
+        return YaraMatch {
+            rule_name: "",
+            pattern_id: pattern_id,
+            offset: sub_idx,
+            matched_len: str_len(pattern_str),
+            matched: true
+        };
+    }
+
+    // Düz hex bayt deseni olabilir mi?
+    let mut fallback_off = rt_yara_find_hex_wildcard(target, pattern_str, min_offset, max_offset);
+    if (fallback_off < 0) {
+        let stream_off = rt_yara_find_hex_stream(target, pattern_str);
+        if (stream_off >= 0) {
+            let mut valid = true;
+            if (min_offset >= 0 and stream_off < min_offset) { valid = false; }
+            if (max_offset >= 0 and stream_off > max_offset) { valid = false; }
+            if (valid) { fallback_off = stream_off; }
+        }
+    }
+    if (fallback_off >= 0) {
+        let mlen = rt_yara_pattern_len(pattern_str);
+        return YaraMatch {
+            rule_name: "",
+            pattern_id: pattern_id,
+            offset: fallback_off,
+            matched_len: mlen,
+            matched: true
+        };
+    }
+
+    return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+}
+
+/// Kuralin tum desenlerini tarar ve kosulunu uygular.
+fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
+    let total_patterns = len(rule.patterns);
+    if (total_patterns == 0) {
+        return YaraMatch { rule_name: rule.name, pattern_id: "", offset: -1, matched_len: 0, matched: false };
+    }
+
+    let mut matched_count = 0;
+    let mut first_matched_pid = "";
+    let mut first_offset = -1;
+    let mut first_len = 0;
+
+    let mut i = 0;
+    while (i < total_patterns) {
+        let pid = rule.pattern_names[i];
+        let pstr = rule.patterns[i];
+        let m = yara_scan_single_pattern(target, pid, pstr, rule.min_offset, rule.max_offset);
+        if (m.matched) {
+            matched_count = matched_count + 1;
+            if (first_offset < 0) {
+                first_offset = m.offset;
+                first_matched_pid = pid;
+                first_len = m.matched_len;
+            }
+        }
+        i = i + 1;
+    }
+
+    // Koşul Mantığının Değerlendirilmesi (Condition Evaluation)
+    let cond = rule.condition;
+    let mut is_rule_matched = false;
+
+    if (cond == "all" or cond == "all of them") {
+        is_rule_matched = (matched_count == total_patterns);
+    } else if (cond == "any" or cond == "any of them") {
+        is_rule_matched = (matched_count > 0);
+    } else if (str_ends_with(cond, "of them")) {
+        // Örn: "2 of them"
+        let parts = str_split(cond, " ");
+        let threshold = str_to_int(parts[0]);
+        is_rule_matched = (matched_count >= threshold);
+    } else {
+        is_rule_matched = (matched_count > 0);
+    }
+
+    if (is_rule_matched) {
+        return YaraMatch {
+            rule_name: rule.name,
+            pattern_id: first_matched_pid,
+            offset: first_offset,
+            matched_len: first_len,
+            matched: true
+        };
+    }
+
+    return YaraMatch {
+        rule_name: rule.name,
+        pattern_id: "",
+        offset: -1,
+        matched_len: 0,
+        matched: false
+    };
+}
+
+/// Kural hedefle eslesiyor mu? (kisa yol)
+fn yara_rule_is_match(target: str, rule: YaraRule) -> bool {
+    let m = yara_scan_rule(target, rule);
+    return m.matched;
+}
+
+/// Kural setindeki tum eslesmeleri dondurur.
+fn yara_ruleset_scan(target: str, ruleset: YaraRuleSet) -> YaraMatch[] {
+    let mut matches: YaraMatch[] = [];
+    let num_rules = len(ruleset.rules);
+    let mut i = 0;
+    while (i < num_rules) {
+        let m = yara_scan_rule(target, ruleset.rules[i]);
+        if (m.matched) {
+            matches = array_push(matches, m);
+        }
+        i = i + 1;
+    }
+    return matches;
+}
+
+/// Kural setinde en az bir eslesme var mi?
+fn yara_ruleset_has_match(target: str, ruleset: YaraRuleSet) -> bool {
+    let matches = yara_ruleset_scan(target, ruleset);
+    return len(matches) > 0;
+}
+
+/// Kural setindeki eslesen kural sayisi.
+fn yara_ruleset_count_matches(target: str, ruleset: YaraRuleSet) -> int {
+    let matches = yara_ruleset_scan(target, ruleset);
+    return len(matches);
+}
+
+// -----------------------------------------------------------------------------
+// Geriye Dönük Uyumluluk Fonksiyonları (Legacy Compatibility API)
+// -----------------------------------------------------------------------------
+
+/// Geriye donuk uyumluluk: hedefte anahtar sozcuk arar.
+fn yara_scan_buffer(buf: str, keyword_pattern: str) -> bool
+    requires len(buf) > 0
+    requires len(keyword_pattern) > 0
+{
+    return str_contains(buf, keyword_pattern);
+}
+
+/// Geriye donuk uyumluluk: hedefte regex eslesmesi arar.
+fn yara_scan_regex(buf: str, regex_pattern: str) -> bool
+    requires len(buf) > 0
+    requires len(regex_pattern) > 0
+{
+    return regex_is_match(regex_pattern, buf);
+}
+
+/// Geriye donuk uyumluluk: hex veride hex deseni arar.
+fn yara_scan_hex(hex_data: str, hex_pattern: str) -> bool
+    requires len(hex_data) > 0
+    requires len(hex_pattern) > 0
+{
+    if (str_contains(hex_pattern, "?") or str_contains(hex_pattern, " ")) {
+        let off = rt_yara_find_hex_stream(hex_data, hex_pattern);
+        return off >= 0;
+    }
+    return str_contains(hex_data, hex_pattern);
+}

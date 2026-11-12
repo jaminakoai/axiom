@@ -1,0 +1,80 @@
+// Axiom (λx) - Ornek 08: Yüksek Hızlı Çok İş Parçacıklı Güvenlik Tarayıcısı
+// Native POSIX Pthreads, Eşzamanlılık, Mutex ve Matematiksel Güvenlik Sözleşmeleri
+
+fn scan_single_target(port: int) -> int
+    requires port >= 1 and port <= 65535
+    ensures return >= 0
+{
+    // TCP port kontrolü
+    let fd = tcp_connect("127.0.0.1", port)
+    if fd >= 0 {
+        print("[+] Açık Port Tespit Edildi -> 127.0.0.1:", port)
+        socket_close(fd)
+        return 1
+    } else {
+        return 0
+    }
+}
+
+fn worker_thread_task(port: int) -> int
+    requires port >= 1 and port <= 65535
+{
+    let is_open = scan_single_target(port)
+    return is_open
+}
+
+fn main() -> int {
+    print("==========================================================")
+    print("AXIOM (λx) YÜKSEK HIZLI ÇOK İŞ PARÇACIKLI GÜVENLİK TARAYICISI")
+    print("Hedef: 127.0.0.1 (Eşzamanlı POSIX Pthread Port Taraması)")
+    print("==========================================================")
+
+    let scan_start = time_now_ms()
+    let lock_id = mutex_init()
+    let atomic_counter = atomic_init(0)
+
+    // Eşzamanlı taranacak portlar için yerel iş parçacıkları
+    let t1 = thread_create(worker_thread_task, 80)
+    let t2 = thread_create(worker_thread_task, 443)
+    let t3 = thread_create(worker_thread_task, 22)
+    let t4 = thread_create(worker_thread_task, 8080)
+
+    print("[*] 4 eşzamanlı iş parçacığı başlatıldı. Yanıtlar bekleniyor...")
+
+    let r1 = thread_join(t1)
+    let r2 = thread_join(t2)
+    let r3 = thread_join(t3)
+    let r4 = thread_join(t4)
+
+    // Mutex ile korunan bölgede sonuçları topla
+    mutex_lock(lock_id)
+    let mut total_open = 0
+    if r1 > 0 {
+        total_open = total_open + 1
+    }
+    if r2 > 0 {
+        total_open = total_open + 1
+    }
+    if r3 > 0 {
+        total_open = total_open + 1
+    }
+    if r4 > 0 {
+        total_open = total_open + 1
+    }
+    mutex_unlock(lock_id)
+
+    atomic_add(atomic_counter, total_open)
+
+    let scan_end = time_now_ms()
+    let elapsed = scan_end - scan_start
+
+    print("----------------------------------------------------------")
+    print("[✓] Tarama Tamamlandı!")
+    print("  • Açık Port Sayısı       :", total_open)
+    print("  • Atomik Sayaç Değeri    :", atomic_get(atomic_counter))
+    print("  • Toplam Geçen Süre (ms) :", elapsed)
+    print("==========================================================")
+
+    verify total_open >= 0
+    return 0
+}

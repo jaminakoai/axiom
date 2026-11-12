@@ -1,0 +1,117 @@
+// Axiom Standard Library - Null-Safety & Option<T> Architecture
+// std:core:option
+
+struct OptionInt {
+    has_value: bool,
+    value: int
+}
+
+struct OptionStr {
+    has_value: bool,
+    value: str
+}
+
+struct OptionBool {
+    has_value: bool,
+    value: bool
+}
+
+// Constructors
+fn some_int(val: int) -> OptionInt {
+    return OptionInt { has_value: true, value: val };
+}
+
+fn none_int() -> OptionInt {
+    return OptionInt { has_value: false, value: 0 };
+}
+
+fn some_str(val: str) -> OptionStr {
+    return OptionStr { has_value: true, value: val };
+}
+
+fn none_str() -> OptionStr {
+    return OptionStr { has_value: false, value: "" };
+}
+
+fn some_bool(val: bool) -> OptionBool {
+    return OptionBool { has_value: true, value: val };
+}
+
+fn none_bool() -> OptionBool {
+    return OptionBool { has_value: false, value: false };
+}
+
+fn some(val: int) -> OptionInt {
+    return OptionInt { has_value: true, value: val };
+}
+
+fn some(val: str) -> OptionStr {
+    return OptionStr { has_value: true, value: val };
+}
+
+fn some(val: bool) -> OptionBool {
+    return OptionBool { has_value: true, value: val };
+}
+
+// Query Methods
+fn is_some(opt: OptionInt) -> bool {
+    return opt.has_value;
+}
+
+fn is_some(opt: OptionStr) -> bool {
+    return opt.has_value;
+}
+
+fn is_some(opt: OptionBool) -> bool {
+    return opt.has_value;
+}
+
+fn is_none(opt: OptionInt) -> bool {
+    return not opt.has_value;
+}
+
+fn is_none(opt: OptionStr) -> bool {
+    return not opt.has_value;
+}
+
+fn is_none(opt: OptionBool) -> bool {
+    return not opt.has_value;
+}
+
+// Unwrap Functions
+fn unwrap(opt: OptionInt) -> int {
+    verify opt.has_value, "Called unwrap on None OptionInt";
+    return opt.value;
+}
+
+fn unwrap(opt: OptionStr) -> str {
+    verify opt.has_value, "Called unwrap on None OptionStr";
+    return opt.value;
+}
+
+fn unwrap(opt: OptionBool) -> bool {
+    verify opt.has_value, "Called unwrap on None OptionBool";
+    return opt.value;
+}
+
+// Fallback Unwrapping
+fn unwrap_or(opt: OptionInt, default_val: int) -> int {
+    if opt.has_value {
+        return opt.value;
+    }
+    return default_val;
+}
+
+fn unwrap_or(opt: OptionStr, default_val: str) -> str {
+    if opt.has_value {
+        return opt.value;
+    }
+    return default_val;
+}
+
+fn unwrap_or(opt: OptionBool, default_val: bool) -> bool {
+    if opt.has_value {
+        return opt.value;
+    }
+    return default_val;
+}

@@ -1,0 +1,107 @@
+// Axiom (λx) - Ornek 10: Standart Guvenlik ve Protokol Suiti (Paket 1)
+// Kutuphaneler:
+//   - std:encoding:base64 (Base64 kodlama / cozme)
+//   - std:encoding:hex    (Hexadecimal kodlama / cozme)
+//   - std:crypto:hash     (SHA-256, SHA-1, MD5 kriptografik ozet motoru)
+//   - std:net:url         (RFC 3986 URL ayristirma ve kodlama)
+//   - std:encoding:json   (Yuksek hizli JSON ayristirici ve nesne ureteci)
+
+import "std:encoding:base64"
+import "std:encoding:hex"
+import "std:crypto:hash"
+import "std:net:url"
+import "std:encoding:json"
+
+fn run_security_protocol_suite(target_raw_url: str, client_secret: str) -> int
+    requires len(target_raw_url) > 0
+    requires len(client_secret) > 0
+{
+    print("================================================================")
+    print("         AXIOM (λx) STANDART GUVENLIK PROTOKOL SUITI            ")
+    print("================================================================")
+
+    // 1. URL Ayristirma (RFC 3986)
+    print("\n[ADIM 1] URL ve Hedef Analizi (std:net:url)")
+    let endpoint = url_parse(target_raw_url)
+    print("  -> Ham URL    :", target_raw_url)
+    print("  -> Protokol   :", endpoint.scheme)
+    print("  -> Sunucu     :", endpoint.host)
+    print("  -> Port       :", endpoint.port)
+    print("  -> API Yolu   :", endpoint.path)
+    print("  -> Parametre  :", endpoint.query)
+
+    verify endpoint.port == 8443, "Hedef guvenlik portu 8443 olmalidir!";
+    verify endpoint.scheme == "https", "Protokol https olmalidir!";
+
+    // 2. JSON Guvenlik Konfigurasyonunu Isleme (std:encoding:json)
+    print("\n[ADIM 2] JSON Guvenlik Profili Ayristirma (std:encoding:json)")
+    let config_json = "{\"scanner_id\": \"OMEGA-SEC-01\", \"timeout\": 5000, \"tls_strict\": true, \"algorithm\": \"SHA256\"}"
+    
+    let sid = json_get_str(config_json, "scanner_id")
+    let timeout = json_get_int(config_json, "timeout")
+    let tls = json_get_bool(config_json, "tls_strict")
+    let algo = json_get_str(config_json, "algorithm")
+    let has_sid = json_has_key(config_json, "scanner_id")
+
+    print("  -> Tarayici ID  :", sid)
+    print("  -> Zaman Asimi  :", timeout, "ms")
+    print("  -> TLS Zorunlu  :", tls)
+    print("  -> Algoritma    :", algo)
+
+    verify has_sid == true, "scanner_id anahtari eksik!";
+    verify timeout == 5000, "Zaman asimi degeri eslesmedi!";
+
+    // 3. Kriptografik Guvenlik Ozetleri (std:crypto:hash)
+    print("\n[ADIM 3] Kriptografik Imza & Ozet Uretimi (std:crypto:hash)")
+    let payload_seed = sid + ":" + endpoint.path + ":" + client_secret
+    let signature_sha256 = hash_sha256(payload_seed)
+    let payload_sha1 = hash_sha1(payload_seed)
+    let payload_md5 = hash_md5(payload_seed)
+
+    print("  -> Girdi Verisi :", payload_seed)
+    print("  -> SHA-256 Imza :", signature_sha256)
+    print("  -> SHA-1 Ozeti  :", payload_sha1)
+    print("  -> MD5 Parmakizi:", payload_md5)
+
+    verify len(signature_sha256) == 64, "SHA-256 imza uzunlugu 64 karakter olmalidir!";
+    verify len(payload_sha1) == 40, "SHA-1 ozet uzunlugu 40 karakter olmalidir!";
+    verify len(payload_md5) == 32, "MD5 ozet uzunlugu 32 karakter olmalidir!";
+
+    // 4. Base64 ve Hexadecimal Payload Donusumu (std:encoding:base64, std:encoding:hex)
+    print("\n[ADIM 4] Guvenli Kodlama ve Token Donusumu (Base64 & Hex)")
+    let b64_token = base64_encode(signature_sha256)
+    let hex_auth = hex_encode("AUTHORIZED_SESSION")
+    let decoded_auth = hex_decode(hex_auth)
+
+    print("  -> Base64 Token :", b64_token)
+    print("  -> Hex Baslik   :", hex_auth)
+    print("  -> Hex Cozulmus :", decoded_auth)
+
+    verify decoded_auth == "AUTHORIZED_SESSION", "Hex decode islemi basarisiz!";
+
+    // 5. Nihai JSON Raporunu Olusturma (std:encoding:json)
+    print("\n[ADIM 5] API Yanit Paketi Insasi (json_build_object)")
+    let report_keys = ["target_host", "sig_sha256", "b64_token", "auth_status"]
+    let report_vals = [endpoint.host, signature_sha256, b64_token, decoded_auth]
+    let final_json = json_build_object(report_keys, report_vals)
+
+    print("  -> Uretilen JSON:")
+    print("     ", final_json)
+
+    // Bütünlük Kontrolü
+    let verify_host = json_get_str(final_json, "target_host")
+    let verify_status = json_get_str(final_json, "auth_status")
+    verify verify_host == endpoint.host, "JSON target_host eslesmedi!";
+    verify verify_status == "AUTHORIZED_SESSION", "JSON auth_status eslesmedi!";
+
+    print("\n================================================================")
+    print("✓ PAKET 1 SUITI BASARIYLA TAMAMLANDI VE DOGRULANDI.")
+    print("================================================================")
+    return 0
+}
+
+fn main() -> int {
+    let target = "https://api.omega-security.lab:8443/v1/auth/verify?scope=scanner&role=admin"
+    let secret = "axiom_super_secret_key_2026"
+    return run_security_protocol_suite(target, secret)
+}

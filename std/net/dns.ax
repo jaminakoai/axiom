@@ -1,0 +1,14 @@
+// Axiom Standard Library (std) - Native DNS Resolver
+// std:net:dns
+
+fn dns_resolve_ipv4(host: str) -> str {
+    return rt_dns_resolve_ipv4(host)
+}
+
+fn dns_resolve_ipv6(host: str) -> str {
+    return rt_dns_resolve_ipv6(host)
+}
+
+fn dns_reverse_lookup(ip: str) -> str {
+    return rt_dns_reverse_lookup(ip)
+}

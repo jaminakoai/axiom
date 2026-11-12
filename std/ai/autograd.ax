@@ -1,0 +1,32 @@
+// Axiom Standard Library: std:ai:autograd
+// Otomatik Turev (Computational Graph & Backprop) Destegi
+
+struct GradNode {
+    id: int,
+    grad: float,
+    requires_grad: bool
+}
+
+fn autograd_create_node(id: int, requires_grad: bool) -> GradNode {
+    return GradNode { id: id, grad: 0.0, requires_grad: requires_grad };
+}
+
+fn autograd_accumulate_grad(node: GradNode, incoming: float) -> GradNode {
+    if (not node.requires_grad) {
+        return node;
+    }
+    let new_grad: float = node.grad + incoming;
+    return GradNode { id: node.id, grad: new_grad, requires_grad: node.requires_grad };
+}
+
+fn autograd_backward_relu(grad_output: float, forward_input: float) -> float {
+    if (forward_input > 0.0) {
+        return grad_output;
+    }
+    return 0.0;
+}
+
+fn autograd_backward_sigmoid(grad_output: float, forward_output: float) -> float {
+    let dsig: float = forward_output * (1.0 - forward_output);
+    return grad_output * dsig;
+}

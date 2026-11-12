@@ -1,0 +1,143 @@
+// Axiom (λx) - Ornek 14: Ileri Kriptografi ve Raporlama Suiti (Paket 5)
+// Kutuphaneler:
+//   - std:crypto:aes       (AES-128 ve AES-256 CBC modu simetrik sifreleme / desifreleme)
+//   - std:security:jwt     (JSON Web Token HS256 HMAC imza uretimi, dogrulama ve claim okuma)
+//   - std:encoding:html    (HTML entity encode/decode, XSS sanitization, tag stripping)
+//   - std:log:logger       (Seviyeli ve ANSI renkli kurumsal log motoru)
+//   - std:net:raw_socket   (Ham ag ICMP echo ping, TCP connect ping ve RFC 1071 internet checksum)
+
+import "std:crypto:aes"
+import "std:security:jwt"
+import "std:encoding:html"
+import "std:log:logger"
+import "std:net:raw_socket"
+
+fn main() -> int {
+    print("================================================================================");
+    print("  AXIOM (λx) ILERI KRIPTOGRAFI VE GUVENLIK RAPORLAMA SUITI (PAKET 5)           ");
+    print("================================================================================");
+
+    // -----------------------------------------------------------------
+    // 1. SEVIYELI VE RENKLI LOGLAMA MOTORU (std:log:logger)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 1] Seviyeli Loglama Altyapisi");
+    log_set_level(0); // 0: DEBUG, 1: INFO, 2: WARN, 3: ERROR
+    log_debug("CORE", "Paket 5 Guvenlik Test Ortami Hazirlaniyor...");
+    log_info("INIT", "Kriptografik ve Ag Yardimcilari Yuklendi.");
+
+    // -----------------------------------------------------------------
+    // 2. AES-128 VE AES-256 SIMETRIK SIFRELEME (std:crypto:aes)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 2] AES-128 ve AES-256 Simetrik Sifreleme / Desifreleme (CBC & PKCS#7)");
+    let key256_hex: str = "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f";
+    let key128_hex: str = "000102030405060708090a0b0c0d0e0f";
+    let iv_hex: str = "000102030405060708090a0b0c0d0e0f";
+    let confidential_data: str = "Axiom (λx) Zero-Cost High-Performance Exploit Framework";
+
+    print("  -> Acik Veri (Plaintext) :", confidential_data);
+
+    // AES-256 Testi
+    let cipher256: str = aes256_cbc_encrypt(confidential_data, key256_hex, iv_hex);
+    print("  -> AES-256 Ciphertext    :", cipher256);
+    let decrypted256: str = aes256_cbc_decrypt(cipher256, key256_hex, iv_hex);
+    print("  -> AES-256 Cozulen Veri  :", decrypted256);
+    verify decrypted256 == confidential_data, "AES-256 desifreleme basarisiz!";
+
+    // AES-128 Testi
+    let cipher128: str = aes128_cbc_encrypt(confidential_data, key128_hex, iv_hex);
+    print("  -> AES-128 Ciphertext    :", cipher128);
+    let decrypted128: str = aes128_cbc_decrypt(cipher128, key128_hex, iv_hex);
+    print("  -> AES-128 Cozulen Veri  :", decrypted128);
+    verify decrypted128 == confidential_data, "AES-128 desifreleme basarisiz!";
+
+    log_info("CRYPTO", "AES-128 ve AES-256 dogrulama basariyla tamamlandi.");
+
+    // -----------------------------------------------------------------
+    // 3. JSON WEB TOKEN (RFC 7519 & HS256) (std:security:jwt)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 3] JSON Web Token (JWT) Uretimi, Dogrulama ve Claim Analizi");
+    let jwt_payload: str = "{\"sub\":\"analyst_007\",\"role\":\"security_admin\",\"aud\":\"axiom_scanner\",\"exp\":1798765432}";
+    let jwt_secret: str = "axiom_super_secret_signing_key_2026!";
+
+    let token: str = jwt_create_hs256(jwt_payload, jwt_secret);
+    print("  -> Uretilen JWT Token    :", token);
+
+    let is_valid: bool = jwt_verify_hs256(token, jwt_secret);
+    print("  -> Imza Dogrulamasi      :", is_valid);
+    verify is_valid == true, "Gecerli JWT imzasi basarisiz oldu!";
+
+    let is_tampered_valid: bool = jwt_verify_hs256(token, "wrong_attacker_secret");
+    print("  -> Sahte Imza Gecerli mi :", is_tampered_valid);
+    verify is_tampered_valid == false, "Gecersiz anahtar kabul edilmemeli!";
+
+    let sub_claim: str = jwt_get_claim(token, "sub");
+    let role_claim: str = jwt_get_claim(token, "role");
+    print("  -> Okunan 'sub' Claim    :", sub_claim);
+    print("  -> Okunan 'role' Claim   :", role_claim);
+    verify sub_claim == "analyst_007", "JWT sub claim uyusmuyor!";
+    verify role_claim == "security_admin", "JWT role claim uyusmuyor!";
+
+    let token_hdr: str = jwt_get_header(token);
+    print("  -> Token Header          :", token_hdr);
+
+    log_info("JWT", "JWT token uretimi ve guvenlik denetimleri basarili.");
+
+    // -----------------------------------------------------------------
+    // 4. HTML ENTITY VE XSS SANITIZATION (std:encoding:html)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 4] HTML Entity Donusumu ve XSS Temizleme");
+    let attack_vector: str = "<script>alert('Axiom XSS & \"Bypass\"');</script><h1>Guvenli Baslik</h1>";
+    print("  -> Ham Saldiri Vektoru   :", attack_vector);
+
+    let escaped_html: str = html_escape(attack_vector);
+    print("  -> HTML Escaped          :", escaped_html);
+    verify escaped_html != attack_vector, "HTML ozel karakterleri kacirilmalidir!";
+
+    let unescaped_html: str = html_unescape(escaped_html);
+    print("  -> HTML Unescaped        :", unescaped_html);
+    verify unescaped_html == attack_vector, "HTML unescape sonucu ham metne esit olmali!";
+
+    let stripped_html: str = html_strip_tags(attack_vector);
+    print("  -> Strip Tags (Temiz)    :", stripped_html);
+    verify stripped_html == "alert('Axiom XSS & \"Bypass\"');Guvenli Baslik", "Etiketler temizlenmeli!";
+
+    log_info("XSS", "XSS ve HTML filtreleme motoru calisiyor.");
+
+    // -----------------------------------------------------------------
+    // 5. HAM AG, ICMP/TCP PING & CHECKSUM (std:net:raw_socket)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 5] Ham Ag, Ping ve RFC 1071 Checksum Motoru");
+
+    // ICMP Echo Ping (127.0.0.1 Loopback)
+    let icmp_rtt: int = icmp_ping("127.0.0.1", 500);
+    print("  -> 127.0.0.1 ICMP Ping Gecikmesi :", icmp_rtt, "ms");
+    if icmp_rtt >= 0 {
+        log_info("NET", "ICMP Echo cevabi alindi.");
+    } else {
+        log_warn("NET", "ICMP Echo cevabi zaman asimina ugradi.");
+    }
+
+    // TCP Ping (127.0.0.1, Port 65432 - kapali port veya acik port denemesi)
+    let tcp_rtt: int = tcp_ping("127.0.0.1", 65432, 50);
+    print("  -> 127.0.0.1:65432 TCP Ping       :", tcp_rtt, "ms (Kapali port kontrolu)");
+
+    // RFC 1071 IP Checksum
+    let ip_header_hex: str = "4500003c1c46400040060000ac100a63ac100a0c";
+    let calculated_cksum: int = raw_checksum(ip_header_hex);
+    print("  -> Hesaplanmis IP Checksum       :", calculated_cksum);
+    verify calculated_cksum == 45542, "RFC 1071 Checksum degeri beklenen ile uyusmali!";
+
+    // Checksum dogrulama testi: Checksum yerine konuldugunda toplam 0 olmalidir
+    let verified_hdr_hex: str = "4500003c1c4640004006b1e6ac100a63ac100a0c";
+    let ck_verify: int = raw_checksum(verified_hdr_hex);
+    print("  -> Checksum Dogrulama Sonucu     :", ck_verify, "(Beklenen: 0)");
+    verify ck_verify == 0, "Checksum basarili paket dogrulamasinda 0 donmelidir!";
+
+    log_info("NET", "Ham ag ve internet checksum basariyla dogrulandi.");
+
+    // Final Durum
+    print("\n================================================================================");
+    print("  TUM PAKET 5 MODULLERI (%100) BASARIYLA TEST EDILDI VE TAMAMLANDI!             ");
+    print("================================================================================");
+    return 0;
+}

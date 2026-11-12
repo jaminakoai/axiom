@@ -1,0 +1,22 @@
+// Axiom Standard Library: std:web:template
+// XSS Korumali HTML Sablon Motoru
+
+fn template_escape(raw_str: str) -> str {
+    let s1: str = str_replace(raw_str, "&", "&amp;");
+    let s2: str = str_replace(s1, "<", "&lt;");
+    let s3: str = str_replace(s2, ">", "&gt;");
+    let s4: str = str_replace(s3, "\"", "&quot;");
+    let s5: str = str_replace(s4, "'", "&#x27;");
+    return s5;
+}
+
+fn template_render_var(tpl: str, key: str, val: str) -> str {
+    let safe_val: str = template_escape(val);
+    let placeholder: str = "{{" + key + "}}";
+    return str_replace(tpl, placeholder, safe_val);
+}
+
+fn template_render_raw(tpl: str, key: str, raw_val: str) -> str {
+    let placeholder: str = "{{{" + key + "}}}";
+    return str_replace(tpl, placeholder, raw_val);
+}

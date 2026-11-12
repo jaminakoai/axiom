@@ -1,0 +1,31 @@
+# Axiom (λx) - Ornek 1: Temel Sozdizim ve Donguler
+
+fn greet(name: str) -> void {
+    print("Merhaba, " + name + "! Axiom dunyasina hos geldin.")
+}
+
+fn calculate_sum(limit: int) -> int {
+    let mut total = 0
+    for i in 1..limit {
+        total = total + i
+    }
+    return total
+}
+
+fn main() -> int {
+    greet("Guvenlik Uzmani")
+
+    let max_num = 11
+    let sum = calculate_sum(max_num)
+    
+    print("1'den 10'a kadar olan sayilarin toplami:")
+    print(sum)
+
+    if sum == 55 {
+        print("[DOGRULAMA] Toplam hesabi basarili ve dogru!")
+    } else {
+        print("[HATA] Toplam yanlis!")
+    }
+
+    return 0
+}

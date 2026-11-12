@@ -1,0 +1,50 @@
+# Axiom (λx) - Çoklu Modül ve Dosya I/O Uygulaması (main.ax)
+import "utils.ax"
+
+fn main() -> int {
+    print("==================================================")
+    print("AXIOM ÇOKLU MODÜL VE DOSYA SİSTEMİ ÇALIŞMASI")
+    print("==================================================")
+
+    # 1. utils.ax'ten gelen struct ve fonksiyon kullanımı
+    let report = create_report("Sistem Güvenlik Yapılandırması", 3)
+    print("Rapor Başlığı:", report.title)
+    print("Sürüm:", report.version)
+    print("Geçerli mi:", report.is_valid)
+    verify report.is_valid == true, "Rapor geçerli olmalıdır"
+
+    # 2. Dosya I/O ve Modül Yedekleme Fonksiyonu Testi
+    let original_file = "/tmp/axiom_mod_demo.txt"
+    let backup_dst = "/tmp/axiom_mod_demo.bak"
+
+    let write_ok = file_write(original_file, "AXIOM_MODULE_SYSTEM_V3_ACTIVE")
+    if write_ok {
+        print("✓ Orijinal dosya başarıyla yazıldı:", original_file)
+    }
+
+    let exists = file_exists(original_file)
+    print("Dosya var mı:", exists)
+    verify exists == true, "Dosya mevcut olmalı"
+
+    let bkp_ok = backup_file(original_file, backup_dst)
+    if bkp_ok {
+        print("✓ Modül aracılığıyla yedekleme başarılı:", backup_dst)
+    }
+
+    let backup_content = file_read(backup_dst)
+    print("Yedekten okunan veri:", backup_content)
+    verify backup_content == "AXIOM_MODULE_SYSTEM_V3_ACTIVE", "Yedek içerik eşleşmeli"
+
+    # 3. İşletim Sistemi Çağrısı Testi
+    let user_name = os_getenv("USER")
+    print("Aktif Kullanıcı:", user_name)
+
+    let exec_code = os_exec("echo '[POSIX OS Call: Axiom Modülü Çalıştı]'")
+    print("OS Komut Çıkış Kodu:", exec_code)
+    verify exec_code == 0, "Komut başarıyla dönmeli"
+
+    print("==================================================")
+    print("TÜM MODÜL VE DOSYA SİSTEM ÇAĞRILARI BAŞARILI!")
+    print("==================================================")
+    return 0
+}

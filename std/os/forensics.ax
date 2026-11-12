@@ -1,0 +1,25 @@
+// Axiom Standard Library - Linux Host & Kernel Forensics (std:os:forensics)
+// std/os:forensics.ax
+
+/// Dinlenen TCP portlarini `ip:port` satirlari olarak dondurur.
+fn forensics_list_listening_ports() -> str {
+    return rt_forensics_get_ports()
+}
+
+/// Calisan surecleri `pid:ad` satirlari olarak dondurur (/proc tabanli).
+fn forensics_list_processes() -> str {
+    return rt_forensics_get_processes()
+}
+
+/// Yuklu kernel modullerini virgulle ayrilmis liste olarak dondurur.
+fn forensics_list_kernel_modules() -> str {
+    return rt_forensics_get_modules()
+}
+
+/// Verilen kernel modulu yuklu mu?
+fn forensics_is_module_loaded(module_name: str) -> bool
+    requires len(module_name) > 0
+{
+    let mods = rt_forensics_get_modules()
+    return str_contains(mods, module_name)
+}

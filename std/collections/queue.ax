@@ -1,0 +1,26 @@
+// Axiom Standard Library - Thread-Safe FIFO Queue
+// std:collections:queue
+
+fn queue_create() -> int {
+    return rt_queue_create()
+}
+
+fn queue_push(q: int, item: str) -> void {
+    rt_queue_push(q, item)
+}
+
+fn queue_pop(q: int) -> str {
+    return rt_queue_pop(q)
+}
+
+fn queue_len(q: int) -> int {
+    return rt_queue_len(q)
+}
+
+fn queue_is_empty(q: int) -> bool {
+    return rt_queue_is_empty(q)
+}
+
+fn queue_free(q: int) -> void {
+    rt_queue_free(q)
+}

@@ -1,0 +1,267 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/main.ax - Bağımsız Derleyici CLI Sürücüsü
+
+import "std:cli:args"
+import "tokens.ax"
+import "lexer.ax"
+import "ast.ax"
+import "parser.ax"
+import "codegen.ax"
+
+struct ResolvedUnit {
+    code: str,
+    visited: str
+}
+
+fn get_axiom_root() -> str {
+    let env_home = os_getenv("AXIOM_HOME")
+    if len(env_home) > 0 and file_exists(env_home + "/axiom/runtime.h") {
+        return env_home
+    }
+    let pwd = os_getenv("PWD")
+    if len(pwd) > 0 and file_exists(pwd + "/axiom/runtime.h") {
+        return pwd
+    }
+    if len(pwd) > 0 and file_exists(pwd + "/../axiom/runtime.h") {
+        return pwd + "/.."
+    }
+    return "."
+}
+
+fn get_runtime_path() -> str {
+    let root = get_axiom_root()
+    return root + "/axiom/runtime.h"
+}
+
+fn resolve_file(path: str, visited: str) -> ResolvedUnit {
+    if str_contains(visited, "[" + path + "]") {
+        return ResolvedUnit { code: "", visited: visited }
+    }
+    if not file_exists(path) {
+        return ResolvedUnit { code: "", visited: visited }
+    }
+    let mut cur_visited = visited + "[" + path + "]"
+    let src = file_read(path)
+    let lines = str_split(src, "\n")
+    let mut resolved_body = ""
+    let num_lines = len(lines)
+    for i in 0..num_lines {
+        let line = str_trim(lines[i])
+        if str_starts_with(line, "import \"") {
+            let p1 = str_index_of(line, "\"")
+            let p2 = str_index_of(str_sub(line, p1 + 1, str_byte_len(line) - p1 - 1), "\"")
+            let mod_name = str_sub(line, p1 + 1, p2)
+            let mut resolved_mod_path = ""
+            let root = get_axiom_root()
+            if str_starts_with(mod_name, "std:") {
+                let mod_slashed = str_replace(mod_name, ":", "/")
+                resolved_mod_path = root + "/" + mod_slashed
+                // Uzanti ZATEN varsa tekrar eklenmemeli; aksi halde
+                // "std/net/http.ax.ax" aranir ve dosya SESSIZCE atlanir.
+                if not str_ends_with(resolved_mod_path, ".ax") {
+                    resolved_mod_path = resolved_mod_path + ".ax"
+                }
+            } else if str_starts_with(mod_name, "std/") {
+                resolved_mod_path = root + "/" + mod_name
+                // "std/core/error" gibi UZANTISIZ import'lar ".ax" eklenmeli;
+                // aksi halde dosya bulunamaz ve modul sessizce atlanir.
+                if not str_ends_with(resolved_mod_path, ".ax")
+                and not file_exists(resolved_mod_path) {
+                    resolved_mod_path = resolved_mod_path + ".ax"
+                }
+            } else {
+                let parts = str_split(path, "/")
+                if len(parts) > 1 {
+                    let mut d = ""
+                    for k in 0..(len(parts) - 1) {
+                        if k > 0 or str_starts_with(path, "/") {
+                            d = d + "/" + parts[k]
+                        } else {
+                            d = parts[k]
+                        }
+                    }
+                    resolved_mod_path = d + "/" + mod_name
+                } else {
+                    resolved_mod_path = mod_name
+                }
+            }
+            let child = resolve_file(resolved_mod_path, cur_visited)
+            cur_visited = child.visited
+            if len(child.code) > 0 {
+                resolved_body = resolved_body + child.code + "\n"
+            }
+        } else {
+            resolved_body = resolved_body + lines[i] + "\n"
+        }
+    }
+    return ResolvedUnit { code: resolved_body, visited: cur_visited }
+}
+
+fn print_usage() -> void {
+    print("Axiom Self-Hosted Compiler (λx) v0.5.0-alpha")
+    print("Kullanim:")
+    print("  axiomc build <kaynak.ax> [-o <cikti_binary>]")
+    print("  axiomc run <kaynak.ax>")
+    print("  axiomc emit-c <kaynak.ax>")
+    print("  axiomc --help | -h")
+}
+
+fn is_safe_path(p: str) -> bool {
+    if len(p) == 0 {
+        return false
+    }
+    // Kabuk metakarakterlerini reddet; bosluk ve UTF-8 karakterlere izin ver.
+    let unsafe_chars = ";|&$`<>\"'\n\r"
+    let n = len(p)
+    for i in 0..n {
+        let ch = str_char_at(p, i)
+        if str_contains(unsafe_chars, ch) {
+            return false
+        }
+    }
+    return true
+}
+
+fn main() -> int {
+    let argc = cli_args_count()
+    if argc < 2 {
+        print_usage()
+        return 1
+    }
+
+    let subcmd = cli_args_get(1)
+
+    if subcmd == "--help" or subcmd == "-h" or subcmd == "help" {
+        print_usage()
+        return 0
+    }
+
+    if subcmd == "--version" or subcmd == "-v" {
+        print("Axiom (λx) Self-Hosted Compiler v0.5.0-alpha (x86_64 Linux Native ELF)")
+        return 0
+    }
+
+    // emit-c <input.ax>
+    if subcmd == "emit-c" {
+        if argc < 3 {
+            print("[HATA] Kaynak dosya yolu belirtilmedi: axiomc emit-c <input.ax>")
+            return 1
+        }
+        let input_path = cli_args_get(2)
+        if not is_safe_path(input_path) {
+            print("[HATA] Guvensiz kaynak dosya yolu tespit edildi:", input_path)
+            return 1
+        }
+        if not file_exists(input_path) {
+            print("[HATA] Dosya bulunamadi:", input_path)
+            return 1
+        }
+        let unit = resolve_file(input_path, "")
+        let src = unit.code
+        let toks = lexer_tokenize(src)
+        let prog = parse_program(toks)
+        let runtime_path = get_runtime_path()
+        let c_code = codegen_generate_c(prog, runtime_path)
+        print(c_code)
+        return 0
+    }
+
+    // run <input.ax>
+    if subcmd == "run" {
+        if argc < 3 {
+            print("[HATA] Kaynak dosya yolu belirtilmedi: axiomc run <input.ax>")
+            return 1
+        }
+        let input_path = cli_args_get(2)
+        if not is_safe_path(input_path) {
+            print("[HATA] Guvensiz kaynak dosya yolu tespit edildi:", input_path)
+            return 1
+        }
+        if not file_exists(input_path) {
+            print("[HATA] Dosya bulunamadi:", input_path)
+            return 1
+        }
+        let unit = resolve_file(input_path, "")
+        let src = unit.code
+        let toks = lexer_tokenize(src)
+        let prog = parse_program(toks)
+        let runtime_path = get_runtime_path()
+        let c_code = codegen_generate_c(prog, runtime_path)
+
+        // Sabit yol kullanmak es zamanli axiomc calistirmalarinda dosyalarin
+        // birbirini ezmesine yol acar; PID ile tekillestir.
+        let pid_tag = int_to_str(rt_process_get_pid())
+        let tmp_c = "/tmp/axiom_run_" + pid_tag + ".c"
+        let tmp_bin = "/tmp/axiom_run_" + pid_tag + ".bin"
+        file_write(tmp_c, c_code)
+
+        let status = compile_c(tmp_c, tmp_bin)
+        if status != 0 {
+            print("[HATA] C Derleyicisi (clang) basarisiz oldu! Kod:", status)
+            return status
+        }
+
+        let run_status = os_exec(tmp_bin)
+        return run_status
+    }
+
+    // build <input.ax> [-o output_bin]
+    if subcmd == "build" {
+        if argc < 3 {
+            print("[HATA] Kaynak dosya yolu belirtilmedi: axiomc build <input.ax> [-o output]")
+            return 1
+        }
+        let input_path = cli_args_get(2)
+        if not is_safe_path(input_path) {
+            print("[HATA] Guvensiz kaynak dosya yolu tespit edildi:", input_path)
+            return 1
+        }
+        if not file_exists(input_path) {
+            print("[HATA] Dosya bulunamadi:", input_path)
+            return 1
+        }
+
+        let mut output_bin = "a.out"
+        if argc >= 5 and cli_args_get(3) == "-o" {
+            output_bin = cli_args_get(4)
+        } else if argc == 4 and not str_starts_with(cli_args_get(3), "-") {
+            output_bin = cli_args_get(3)
+        } else {
+            // Varsayılan isim: dosya adının uzantısız hali
+            if str_ends_with(input_path, ".ax") {
+                output_bin = str_sub(input_path, 0, str_byte_len(input_path) - 3)
+            } else {
+                output_bin = input_path + ".bin"
+            }
+        }
+
+        if not is_safe_path(output_bin) {
+            print("[HATA] Guvensiz cikti dosya yolu tespit edildi:", output_bin)
+            return 1
+        }
+
+        let unit = resolve_file(input_path, "")
+        let src = unit.code
+        let toks = lexer_tokenize(src)
+        let prog = parse_program(toks)
+        let runtime_path = get_runtime_path()
+        let c_code = codegen_generate_c(prog, runtime_path)
+
+        let pid_tag = int_to_str(rt_process_get_pid())
+        let tmp_c = "/tmp/axiom_build_" + pid_tag + ".c"
+        file_write(tmp_c, c_code)
+
+        let status = compile_c(tmp_c, output_bin)
+        if status != 0 {
+            print("[HATA] C Derleyicisi (clang) derleme hatasi verdi! Kod:", status)
+            return status
+        }
+
+        print("[axiomc] Basariyla derlendi -> " + output_bin)
+        return 0
+    }
+
+    print("[HATA] Bilinmeyen alt komut:", subcmd)
+    print_usage()
+    return 1
+}

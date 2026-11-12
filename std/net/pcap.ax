@@ -1,0 +1,39 @@
+// Axiom Standard Library - PCAP Sniffer & File Analyzer (std:net:pcap)
+// std/net/pcap.ax
+
+fn pcap_open_writer(file_path: str) -> int
+    requires len(file_path) > 0
+{
+    return rt_pcap_create_writer(file_path)
+}
+
+fn pcap_record_packet(writer_handle: int, packet_hex: str) -> bool
+    requires writer_handle > 0
+    requires len(packet_hex) > 0
+{
+    return rt_pcap_write_packet(writer_handle, packet_hex)
+}
+
+fn pcap_open_reader(file_path: str) -> int
+    requires len(file_path) > 0
+{
+    return rt_pcap_open_file(file_path)
+}
+
+fn pcap_read_next(reader_handle: int) -> str
+    requires reader_handle > 0
+{
+    return rt_pcap_next_packet(reader_handle)
+}
+
+fn pcap_get_packet_count(handle: int) -> int
+    requires handle > 0
+{
+    return rt_pcap_packet_count(handle)
+}
+
+fn pcap_file_close(handle: int) -> void
+    requires handle > 0
+{
+    rt_pcap_close(handle)
+}

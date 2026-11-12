@@ -1,0 +1,10 @@
+// Axiom Standard Library (std) - Hexadecimal Encoding / Decoding
+// std:encoding:hex
+
+fn hex_encode(s: str) -> str {
+    return rt_hex_encode(s)
+}
+
+fn hex_decode(s: str) -> str {
+    return rt_hex_decode(s)
+}

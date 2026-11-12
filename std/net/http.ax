@@ -1,0 +1,236 @@
+// Axiom Standard Library (std) - HTTP/1.1 Client
+// std/net/http.ax
+//
+// Saglam istemci: Content-Length, chunked, yonlendirme, zaman asimi.
+//
+//   let r = http_request("example.com", 80, "GET", "/", 5000)?
+//   print(r.status, r.body)
+//
+// `?` ile akitilabilir; tum hata durumlari Err(mesaj) doner.
+
+import "std/core/error"
+
+// --- Sonuc yapisi ---
+
+struct HttpResponse {
+    status: int,
+    location: str,
+    content_type: str,
+    body: str,
+    redirects: int
+}
+
+// `?` yapisal calisir: is_ok/value/error alanlari yeterli.
+struct FetchResult {
+    is_ok: bool,
+    value: HttpResponse,
+    error: str
+}
+
+// --- Tek istek (yonlendirme takibi yok) ---
+
+// Yaniti okur: Content-Length varsa o kadar, chunked ise decode,
+// yoksa baglanti kapanana kadar.
+fn _read_response(fd: int, max_bytes: int) -> str {
+    let raw = tcp_recv_all(fd, max_bytes)
+    if len(raw) == 0 {
+        return ""
+    }
+
+    // Basliklar ve govde
+    let sep = str_index_of(raw, "\r\n\r\n")
+    if sep < 0 {
+        // Baslik tamamlanmamis; ham veriyi dondur (cagiran karar verir)
+        return raw
+    }
+    let head = str_sub(raw, 0, sep)
+    let body = str_sub(raw, sep + 4, len(raw) - sep - 4)
+
+    let te = http_header_value(raw, "Transfer-Encoding")
+    if str_contains(te, "chunked") {
+        let decoded = http_chunked_decode(body)
+        return str_sub(raw, 0, sep + 4) + decoded
+    }
+
+    let cl = http_header_value(raw, "Content-Length")
+    if len(cl) > 0 {
+        let want = str_to_int(cl)
+        if want >= 0 and len(body) >= want {
+            return str_sub(raw, 0, sep + 4) + str_sub(body, 0, want)
+        }
+    }
+    return raw
+}
+
+// Tek HTTP istegi; yonlendirmeyi TAKIP ETMEZ.
+fn http_once(host: str, port: int, method: str, path: str, timeout_ms: int) -> Result<str, str> {
+    if len(host) == 0 {
+        return result_err_str("bos host")
+    }
+    if port <= 0 or port > 65535 {
+        return result_err_str("gecersiz port: " + int_to_str(port))
+    }
+    let mut norm_path = path
+    if len(norm_path) == 0 {
+        norm_path = "/"
+    }
+    if not str_starts_with(norm_path, "/") {
+        norm_path = "/" + norm_path
+    }
+
+    let fd = tcp_connect(host, port)
+    if fd < 0 {
+        return result_err_str("baglanti kurulamadi: " + host + ":" + int_to_str(port))
+    }
+    if timeout_ms > 0 {
+        tcp_set_timeout(fd, timeout_ms)
+    }
+
+    let req = method + " " + norm_path + " HTTP/1.1\r\n" +
+              "Host: " + host + "\r\n" +
+              "User-Agent: Axiom-HTTP/1.1\r\n" +
+              "Accept: */*\r\n" +
+              "Connection: close\r\n\r\n"
+
+    let sent = tcp_send(fd, req)
+    if sent < 0 {
+        socket_close(fd)
+        return result_err_str("istek gonderilemedi: " + host)
+    }
+
+    let resp = _read_response(fd, 8388608)
+    socket_close(fd)
+
+    if len(resp) == 0 {
+        return result_err_str("bos yanit: " + host)
+    }
+    return result_ok<str>(resp)
+}
+
+// --- Yonlendirme takipli istek ---
+
+fn _is_redirect(status: int) -> bool {
+    return status == 301 or status == 302 or status == 303 or status == 307 or status == 308
+}
+
+// Durum kodunu ayiklar.
+fn http_status(response: str) -> Result<int, str> {
+    if len(response) < 12 {
+        return result_err_int("gecersiz HTTP yaniti")
+    }
+    if not str_starts_with(response, "HTTP/") {
+        return result_err_int("HTTP yaniti degil")
+    }
+    let sp = str_index_of(response, " ")
+    if sp < 0 {
+        return result_err_int("durum kodu bulunamadi")
+    }
+    let rest = str_sub(response, sp + 1, 3)
+    if len(rest) != 3 {
+        return result_err_int("durum kodu eksik")
+    }
+    return result_ok<int>(str_to_int(rest))
+}
+
+// Yanit govdesini basliklardan ayirir.
+fn http_body(response: str) -> Result<str, str> {
+    let sep = str_index_of(response, "\r\n\r\n")
+    if sep < 0 {
+        return result_err_str("govde ayirici bulunamadi")
+    }
+    return result_ok<str>(str_sub(response, sep + 4, len(response) - sep - 4))
+}
+
+// --- Genel istek: yonlendirme takibi + yapisal sonuc ---
+
+// Yonlendirmeleri en fazla `max_redirects` kez takip eder.
+fn http_request(host: str, port: int, method: str, path: str,
+                timeout_ms: int) -> FetchResult {
+    return _http_request_impl(host, port, method, path, timeout_ms, host, port, 0, 5)
+}
+
+fn _http_request_impl(host: str, port: int, method: str, path: str,
+                      timeout_ms: int, start_host: str, start_port: int,
+                      hop: int, max_hops: int) -> FetchResult {
+    if hop > max_hops {
+        return FetchResult { is_ok: false, value: HttpResponse { status: 0, location: "", content_type: "", body: "", redirects: hop }, error: "yonlendirme dongusu: " + start_host  }
+    }
+
+    let raw = http_once(host, port, method, path, timeout_ms)?
+    let status = http_status(raw)?
+    let location = http_header_value(raw, "Location")
+
+    if _is_redirect(status) and len(location) > 0 {
+        // Mutlak veya goreli Location
+        let mut next_host = host
+        let mut next_port = port
+        let mut next_path = location
+
+        if str_starts_with(location, "http://") {
+            // http://host[:port]/path
+            let rest = str_sub(location, 7, len(location) - 7)
+            let slash = str_index_of(rest, "/")
+            let mut authority = rest
+            if slash >= 0 {
+                authority = str_sub(rest, 0, slash)
+                next_path = str_sub(rest, slash, len(rest) - slash)
+            } else {
+                next_path = "/"
+            }
+            let colon = str_index_of(authority, ":")
+            if colon >= 0 {
+                next_host = str_sub(authority, 0, colon)
+                next_port = str_to_int(str_sub(authority, colon + 1, len(authority) - colon - 1))
+            } else {
+                next_host = authority
+                next_port = 80
+            }
+        } else if str_starts_with(location, "https://") {
+            return FetchResult { is_ok: false, value: HttpResponse { status: 0, location: location, content_type: "", body: "", redirects: hop }, error: "https yonlendirmesi desteklenmiyor" }
+        }
+
+        return _http_request_impl(next_host, next_port, method, next_path,
+                                  timeout_ms, start_host, start_port,
+                                  hop + 1, max_hops)
+    }
+
+    let body = http_body(raw)?
+    let ctype = http_header_value(raw, "Content-Type")
+    return FetchResult {
+        is_ok: true,
+        value: HttpResponse {
+            status: status,
+            location: location,
+            content_type: ctype,
+            body: body,
+            redirects: hop
+        },
+        error: ""
+    }
+}
+
+// --- Geriye donuk uyumluluk ---
+
+// Sessiz API: hata durumunda "" doner.
+fn http_get(host: str, port: int, path: str) -> str
+    requires len(host) > 0
+    requires port > 0 and port <= 65535
+{
+    let fd = tcp_connect(host, port)
+    if fd < 0 {
+        return ""
+    }
+    let req = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nUser-Agent: Axiom-HTTP/1.1\r\nConnection: close\r\n\r\n"
+    if tcp_send(fd, req) < 0 {
+        socket_close(fd)
+        return ""
+    }
+    let response = _read_response(fd, 8388608)
+    socket_close(fd)
+    return response
+}
+
+// Result API: tum yaniti doner.
+fn http_get_result(host: str, port: int, path: str) -> Result<str, str> {
+    return http_once(host, port, "GET", path, 5000)
+}

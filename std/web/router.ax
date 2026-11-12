@@ -1,0 +1,79 @@
+// Axiom Standard Library: std:web:router
+// Radix / Pattern Tabanli HTTP Yonlendirici (URL Routing)
+
+struct RouteMatch {
+    matched: bool,
+    handler_id: int,
+    param_key: str,
+    param_val: str
+}
+
+struct Route {
+    method: str,
+    pattern: str,
+    handler_id: int
+}
+
+struct Router {
+    routes: Route[]
+}
+
+fn router_new() -> Router {
+    let r: Route[] = [];
+    return Router { routes: r };
+}
+
+fn router_add(router: Router, method: str, pattern: str, handler_id: int) -> Router {
+    let new_route: Route = Route {
+        method: method,
+        pattern: pattern,
+        handler_id: handler_id
+    };
+    let updated: Route[] = array_push(router.routes, new_route);
+    return Router { routes: updated };
+}
+
+fn router_match(router: Router, method: str, path: str) -> RouteMatch {
+    let num_routes: int = len(router.routes);
+    let mut i: int = 0;
+
+    while (i < num_routes) {
+        let r: Route = router.routes[i];
+        if (r.method == method or r.method == "*") {
+            // Tam eslesme
+            if (r.pattern == path) {
+                return RouteMatch {
+                    matched: true,
+                    handler_id: r.handler_id,
+                    param_key: "",
+                    param_val: ""
+                };
+            }
+
+            // Parametrik desen: ornek /api/users/:id
+            let colon_idx: int = str_index_of(r.pattern, ":");
+            if (colon_idx > 0) {
+                let prefix: str = str_sub(r.pattern, 0, colon_idx);
+                if (str_starts_with(path, prefix)) {
+                    let param_name: str = str_sub(r.pattern, colon_idx + 1, str_len(r.pattern) - colon_idx - 1);
+                    let param_value: str = str_sub(path, colon_idx, str_len(path) - colon_idx);
+                    
+                    return RouteMatch {
+                        matched: true,
+                        handler_id: r.handler_id,
+                        param_key: param_name,
+                        param_val: param_value
+                    };
+                }
+            }
+        }
+        i = i + 1;
+    }
+
+    return RouteMatch {
+        matched: false,
+        handler_id: -1,
+        param_key: "",
+        param_val: ""
+    };
+}

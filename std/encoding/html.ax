@@ -1,0 +1,14 @@
+// Axiom Standard Library (std) - HTML Entity & XSS Security Helpers
+// std:encoding:html
+
+fn html_escape(s: str) -> str {
+    return rt_html_escape(s)
+}
+
+fn html_unescape(s: str) -> str {
+    return rt_html_unescape(s)
+}
+
+fn html_strip_tags(s: str) -> str {
+    return rt_html_strip_tags(s)
+}

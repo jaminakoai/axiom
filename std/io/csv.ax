@@ -1,0 +1,22 @@
+// Axiom Standard Library - CSV and Table Reporting
+// std:io:csv
+
+fn csv_create() -> int {
+    return rt_csv_create()
+}
+
+fn csv_add_row(csv_id: int, cols: str[]) -> void {
+    rt_csv_add_row(csv_id, cols)
+}
+
+fn csv_to_str(csv_id: int) -> str {
+    return rt_csv_to_str(csv_id)
+}
+
+fn csv_save_file(csv_id: int, path: str) -> bool {
+    return rt_csv_save_file(csv_id, path)
+}
+
+fn csv_free(csv_id: int) -> void {
+    rt_csv_free(csv_id)
+}

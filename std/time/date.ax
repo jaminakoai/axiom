@@ -1,0 +1,111 @@
+// Axiom Standard Library - Date, Time & ISO 8601
+// std/time/date
+//
+// KAPSAM SINIRI (durust): IANA tz veritabani ve DST kurallari YOKTUR.
+// Saat dilimi "sabit ofset" olarak dakika cinsinden verilir:
+//   UTC+03:00 -> 180    UTC-05:00 -> -300    UTC -> 0
+// Ofset araligi ±14:00 (840 dk) ile sinirlidir; disi kirpilir.
+//
+// Bu tasarim intranet/sunucu araclarinda deterministik sonuc verir ve
+// harici veritabani bagimliligi getirmez. Yerel makinenin o anki ofseti
+// (DST dahil) `date_local_offset_minutes()` ile alinabilir.
+
+import "std/core/error"
+
+fn date_now_iso() -> str {
+    return rt_date_now_iso()
+}
+
+fn date_now_epoch() -> int {
+    return rt_date_now_epoch()
+}
+
+fn date_format_epoch(epoch: int, fmt: str) -> str {
+    return rt_date_format_epoch(epoch, fmt)
+}
+
+fn date_diff_seconds(t1: int, t2: int) -> int {
+    return rt_date_diff_seconds(t1, t2)
+}
+
+// -----------------------------------------------------------------------------
+// Saat dilimi (sabit ofset)
+// -----------------------------------------------------------------------------
+
+/// epoch'u verilen ofsete gore bicimlendirir (`strftime` deseni).
+fn date_format_tz(epoch: int, fmt: str, offset_minutes: int) -> str {
+    return rt_date_format_tz(epoch, fmt, offset_minutes)
+}
+
+/// epoch'u ISO 8601 olarak verilen ofsetle dondurur (`...Z` veya `...+03:00`).
+fn date_iso_tz(epoch: int, offset_minutes: int) -> str {
+    return rt_date_iso_tz(epoch, offset_minutes)
+}
+
+/// ISO 8601 metnini epoch'a cevirir; ofset varsa UTC'ye indirger.
+fn date_parse_iso(text: str) -> Result < int, str > {
+    let v = rt_date_parse_iso(text)
+    if v == -9223372036854775807 - 1 {
+        return result_err_int("gecersiz ISO 8601: " + text)
+    }
+    return result_ok < int > (v)
+}
+
+/// Sistemin yerel ofsetini dakika cinsinden dondurur (o anki DST dahil).
+fn date_local_offset_minutes() -> int {
+    return rt_date_local_offset_minutes()
+}
+
+/// Ofseti `+03:00` / `-05:30` bicimine cevirir.
+fn date_offset_label(offset_minutes: int) -> str {
+    let mut off = offset_minutes
+    if off > 840 {
+        off = 840
+    }
+    if off < -840 {
+        off = -840
+    }
+    let mut sign = "+"
+    if off < 0 {
+        sign = "-"
+        off = -off
+    }
+    let hh = off / 60
+    let mm = off % 60
+    let mut hh_s = int_to_str(hh)
+    let mut mm_s = int_to_str(mm)
+    if len(hh_s) < 2 {
+        hh_s = "0" + hh_s
+    }
+    if len(mm_s) < 2 {
+        mm_s = "0" + mm_s
+    }
+    return sign + hh_s + ":" + mm_s
+}
+
+/// epoch'u ISO 8601 olarak yerel ofsetle dondurur.
+fn date_iso_local(epoch: int) -> str {
+    return rt_date_iso_tz(epoch, rt_date_local_offset_minutes())
+}
+
+/// Iki epoch arasindaki farki insan-okur bicime cevirir (orn. "2g 03s 04d").
+fn date_duration_label(seconds: int) -> str {
+    let mut s = seconds
+    if s < 0 {
+        s = -s
+    }
+    let days = s / 86400
+    let hours = (s % 86400) / 3600
+    let mins = (s % 3600) / 60
+    let secs = s % 60
+
+    let mut out = ""
+    if days > 0 {
+        out = out + int_to_str(days) + "g "
+    }
+    if hours > 0 or days > 0 {
+        out = out + int_to_str(hours) + "sa "
+    }
+    out = out + int_to_str(mins) + "dk " + int_to_str(secs) + "sn"
+    return out
+}

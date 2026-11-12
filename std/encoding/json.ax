@@ -1,0 +1,206 @@
+// Axiom Standard Library (std) - High-Performance Lightweight JSON
+// std:encoding:json
+//
+// Iki API katmani sunulur:
+//   1. Sessiz: json_get_str / json_get_int / json_get_bool
+//      Hata durumunda "" / 0 / false doner (mevcut davranis, geriye uyumlu).
+//   2. Result tabanli: json_get_str_result / json_get_int_result /
+//      json_get_bool_result
+//      Hata durumunda Err(mesaj) doner; `?` ile akitilabilir.
+//
+// TASARIM KURALI: Result tabanli fonksiyonlar `requires` ile programi
+// DURDURMAZ; bos metin, eksik anahtar ve tip uyusmazligi Err'dir.
+
+import "std/core/error"
+
+fn json_get_str(json: str, key: str) -> str {
+    return rt_json_get_str(json, key)
+}
+
+fn json_get_int(json: str, key: str) -> int {
+    return rt_json_get_int(json, key)
+}
+
+fn json_get_bool(json: str, key: str) -> bool {
+    return rt_json_get_bool(json, key)
+}
+
+fn json_has_key(json: str, key: str) -> bool {
+    return rt_json_has_key(json, key)
+}
+
+fn json_build_object(keys: str[], values: str[]) -> str {
+    return rt_json_build_object(keys, values)
+}
+
+/// JSON string degerini kacis dizileriyle guvenli hale getirir.
+///
+/// `json_build_object` degerleri kacislar; elle JSON kurarken (dizi, ic ice
+/// nesne) bu fonksiyon kullanilmalidir.
+fn json_escape(s: str) -> str {
+    let mut r = str_replace(s, "\\", "\\\\")
+    r = str_replace(r, "\"", "\\\"")
+    r = str_replace(r, "\n", "\\n")
+    r = str_replace(r, "\r", "\\r")
+    r = str_replace(r, "\t", "\\t")
+    return r
+}
+
+// --- Result tabanli API ---
+
+fn _json_precheck(json: str, key: str) -> str {
+    if len(json) == 0 {
+        return "bos json"
+    }
+    if len(key) == 0 {
+        return "bos anahtar"
+    }
+    return ""
+}
+
+// Anahtarin degeri metin olarak okur.
+fn json_get_str_result(json: str, key: str) -> Result < str, str > {
+    let pre = _json_precheck(json, key)
+    if len(pre) > 0 {
+        return result_err_str(pre)
+    }
+    if not json_has_key(json, key) {
+        return result_err_str("anahtar bulunamadi: " + key)
+    }
+    return result_ok < str > (json_get_str(json, key))
+}
+
+// Anahtarin degeri tamsayi olarak okur.
+fn json_get_int_result(json: str, key: str) -> Result < int, str > {
+    let pre = _json_precheck(json, key)
+    if len(pre) > 0 {
+        return result_err_int(pre)
+    }
+    if not json_has_key(json, key) {
+        return result_err_int("anahtar bulunamadi: " + key)
+    }
+    return result_ok < int > (json_get_int(json, key))
+}
+
+// Anahtarin degeri bool olarak okur.
+fn json_get_bool_result(json: str, key: str) -> Result < bool, str > {
+    let pre = _json_precheck(json, key)
+    if len(pre) > 0 {
+        return result_err_bool(pre)
+    }
+    if not json_has_key(json, key) {
+        return result_err_bool("anahtar bulunamadi: " + key)
+    }
+    return result_ok < bool > (json_get_bool(json, key))
+}
+
+// --- Gerçek parser (DOM) API — `Result` tabanlı ---
+//
+// Eski `json_get_*` düz metin arıyordu (iç içe erişim yok, null ayırt edilemez).
+// Bu katman recursive-descent parser kullanır.
+//
+//   let doc = json_parse_result(text)?
+//   let name = json_str_at(doc, "user.name")?
+//   let first = json_int_at(doc, "items[0].id")?
+//   json_doc_free(doc)
+
+fn json_parse_result(text: str) -> Result < int, str > {
+    if len(text) == 0 {
+        return result_err_int("bos JSON")
+    }
+    let h = json_parse(text)
+    if h == 0 {
+        return result_err_int(json_last_error())
+    }
+    return result_ok < int > (h)
+}
+
+fn json_doc_free(h: int) -> void {
+    json_free(h)
+}
+
+fn _json_node_or_err(h: int, path: str) -> str {
+    if h == 0 {
+        return "gecersiz JSON tutamac"
+    }
+    let n = json_path(h, path)
+    if n == 0 {
+        return "yol bulunamadi: " + path
+    }
+    return ""
+}
+
+fn json_str_at(h: int, path: str) -> Result < str, str > {
+    let pre = _json_node_or_err(h, path)
+    if len(pre) > 0 {
+        return result_err_str(pre)
+    }
+    let n = json_path(h, path)
+    if json_type_of(n) != 3 {
+        return result_err_str("metin degil: " + path)
+    }
+    return result_ok < str > (json_node_str(n))
+}
+
+fn json_int_at(h: int, path: str) -> Result < int, str > {
+    let pre = _json_node_or_err(h, path)
+    if len(pre) > 0 {
+        return result_err_int(pre)
+    }
+    let n = json_path(h, path)
+    if json_type_of(n) != 2 {
+        return result_err_int("sayi degil: " + path)
+    }
+    return result_ok < int > (json_node_int(n))
+}
+
+fn json_float_at(h: int, path: str) -> Result < float, str > {
+    let pre = _json_node_or_err(h, path)
+    if len(pre) > 0 {
+        return result_err_with < float > (pre, 0.0)
+    }
+    let n = json_path(h, path)
+    if json_type_of(n) != 2 {
+        return result_err_with < float > ("sayi degil: " + path, 0.0)
+    }
+    return result_ok < float > (json_node_float(n))
+}
+
+fn json_bool_at(h: int, path: str) -> Result < bool, str > {
+    let pre = _json_node_or_err(h, path)
+    if len(pre) > 0 {
+        return result_err_bool(pre)
+    }
+    let n = json_path(h, path)
+    if json_type_of(n) != 1 {
+        return result_err_bool("bool degil: " + path)
+    }
+    return result_ok < bool > (json_node_bool(n))
+}
+
+// Yol var mi (null dahil)? Null ayrimi icin json_is_null_at kullanin.
+fn json_has_path(h: int, path: str) -> bool {
+    if h == 0 {
+        return false
+    }
+    return json_path(h, path) != 0
+}
+
+fn json_is_null_at(h: int, path: str) -> bool {
+    if h == 0 {
+        return false
+    }
+    let n = json_path(h, path)
+    if n == 0 {
+        return false
+    }
+    return json_node_is_null(n)
+}
+
+// Dizi/nesne uzunlugu (yol yoksa 0).
+fn json_len_at(h: int, path: str) -> int {
+    if h == 0 {
+        return 0
+    }
+    return json_len(json_path(h, path))
+}

@@ -1,0 +1,18 @@
+// Axiom Standard Library - Zlib & Gzip Compression
+// std:compress:zlib
+
+fn gzip_compress(s: str) -> str {
+    return rt_gzip_compress(s)
+}
+
+fn gzip_decompress(hex_str: str) -> str {
+    return rt_gzip_decompress(hex_str)
+}
+
+fn zlib_compress_str(s: str) -> str {
+    return rt_zlib_compress_str(s)
+}
+
+fn zlib_decompress_str(hex_str: str) -> str {
+    return rt_zlib_decompress_str(hex_str)
+}

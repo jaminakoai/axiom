@@ -1,0 +1,38 @@
+// examples/19_error_handling.ax
+// Hata modeli: Result<T, E> + `?` operatoru
+//
+// - `?` bir Result ifadesini acar; Err ise hatayi ust fonksiyona iletir.
+// - Erken donuste `defer` bloklari ve kapsam temizligi calisir.
+// - Sozlesme ihlali (requires/ensures/verify) programi durdurur; bunlar
+//   "beklenmeyen" durumlar icindir. `?` ise "beklenen" hata akisidir.
+
+import "std/core/error"
+
+fn parse_port(s: str) -> Result<int, str> {
+    let v = str_to_int(s)
+    if v <= 0 or v > 65535 {
+        return result_err_int("gecersiz port: " + s)
+    }
+    return result_ok<int>(v)
+}
+
+fn resolve_port(host: str, port_str: str) -> Result<int, str> {
+    defer {
+        print("[temizlik] resolve_port cikisi")
+    }
+    let port = parse_port(port_str)?
+    print("[cozumleme] hedef:", host, "port:", port)
+    return result_ok<int>(port)
+}
+
+fn main() -> int {
+    let good = resolve_port("127.0.0.1", "80")
+    if good.is_ok {
+        print("BASARILI, port:", good.value)
+    }
+
+    let bad = resolve_port("127.0.0.1", "99999")
+    print("HATA:", bad.error)
+    print("YEDEK:", result_unwrap_or<int>(bad, -1))
+    return 0
+}

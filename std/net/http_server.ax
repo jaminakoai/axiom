@@ -1,0 +1,18 @@
+// Axiom Standard Library (std) - Lightweight HTTP Server
+// std:net:http_server
+
+fn http_server_create(port: int) -> int {
+    return rt_http_server_create(port)
+}
+
+fn http_server_accept(server_fd: int) -> int {
+    return rt_http_server_accept(server_fd)
+}
+
+fn http_server_send_response(client_fd: int, status: int, content_type: str, body: str) -> void {
+    rt_http_server_send_response(client_fd, status, content_type, body)
+}
+
+fn http_server_close(server_fd: int) -> void {
+    rt_http_server_close(server_fd)
+}

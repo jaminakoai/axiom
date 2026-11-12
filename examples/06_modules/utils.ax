@@ -1,0 +1,30 @@
+# Axiom (λx) - Modül Örneği: Yardımcı Araçlar (utils.ax)
+
+struct ConfigReport {
+    title: str,
+    version: int,
+    is_valid: bool
+}
+
+fn create_report(title: str, version: int) -> ConfigReport
+    requires len(title) > 0 and version >= 1
+    ensures return.version == version
+{
+    let report = ConfigReport {
+        title: title,
+        version: version,
+        is_valid: true
+    }
+    return report
+}
+
+fn backup_file(src_path: str, dst_path: str) -> bool
+    requires len(src_path) > 0 and len(dst_path) > 0
+{
+    if not file_exists(src_path) {
+        return false
+    }
+    let data = file_read(src_path)
+    let ok = file_write(dst_path, data)
+    return ok
+}

@@ -1,0 +1,639 @@
+// Axiom Self-Hosted Compiler (λx)
+// compiler/codegen.ax - C99 Kod Üretici (Code Generator)
+// Defer (LIFO kapsam temizliği) ve ensures/requires sözleşmelerini C99 koduna dönüştürür.
+
+import "ast.ax"
+import "parser.ax"
+
+fn is_codegen_ident_char(c: str) -> bool {
+    let code = str_char_code(c, 0)
+    if code >= 65 and code <= 90 { return true }
+    if code >= 97 and code <= 122 { return true }
+    if code >= 48 and code <= 57 { return true }
+    return code == 95
+}
+
+fn codegen_wrap_ensures(body: str, ensures_expr: str, ret_type: str, fn_name: str) -> str {
+    let ens_check = str_replace(ensures_expr, "return", "__ax_ret")
+    let mut out = ""
+    let mut cur = 0
+    let b_len = str_byte_len(body) # str_sub bayt tabanli
+
+    while cur < b_len {
+        let sub = str_sub(body, cur, b_len - cur)
+        let idx = str_index_of(sub, "return")
+        if idx < 0 {
+            out = out + sub
+            break
+        }
+
+        // Kelime sınırı (word boundary) kontrolü:
+        let mut is_keyword = true
+        if idx > 0 {
+            let prev_ch = str_sub(sub, idx - 1, 1)
+            if is_codegen_ident_char(prev_ch) {
+                is_keyword = false
+            }
+        }
+        if is_keyword and idx + 6 < len(sub) {
+            let next_ch = str_sub(sub, idx + 6, 1)
+            if is_codegen_ident_char(next_ch) {
+                is_keyword = false
+            }
+        }
+
+        if not is_keyword {
+            out = out + str_sub(sub, 0, idx + 6)
+            cur = cur + idx + 6
+            continue
+        }
+
+        out = out + str_sub(sub, 0, idx)
+        let r_pos = cur + idx + 6
+
+        let rem = str_sub(body, r_pos, b_len - r_pos)
+        let semi_idx = str_index_of(rem, ";")
+        if semi_idx < 0 {
+            out = out + "return"
+            cur = r_pos
+        } else {
+            let ret_val = str_trim(str_sub(rem, 0, semi_idx))
+            cur = r_pos + semi_idx + 1
+
+            if len(ret_val) > 0 {
+                out = out + "{ " + ret_type + " __ax_ret = " + ret_val + "; if (!(" + ens_check + ")) { axiom_contract_fail(\"ENSURES\", \"" + ensures_expr + "\", \"" + fn_name + "\", 1, NULL); } return __ax_ret; }"
+            } else {
+                out = out + "{ if (!(" + ens_check + ")) { axiom_contract_fail(\"ENSURES\", \"" + ensures_expr + "\", \"" + fn_name + "\", 1, NULL); } return; }"
+            }
+        }
+    }
+    return out
+}
+
+fn fn_count_in_program(prog: ASTProgram, name: str) -> int {
+    let mut cnt = 0
+    let n = len(prog.functions)
+    for i in 0..n {
+        if prog.functions[i].name == name {
+            cnt = cnt + 1
+        }
+    }
+    return cnt
+}
+
+fn get_codegen_fn_name(f: ASTFunction, is_ovl: bool) -> str {
+    if is_ovl {
+        let mut sig = ""
+        let n = len(f.params)
+        for i in 0..n {
+            if i > 0 { sig = sig + "_" }
+            let mut p_type = str_replace(f.params[i].type_name, "[]", "_array")
+            p_type = str_replace(p_type, "<", "_")
+            p_type = str_replace(p_type, ">", "")
+            sig = sig + p_type
+        }
+        if len(sig) > 0 {
+            return "ax_ovl_" + f.name + "__" + sig
+        }
+    }
+    return "ax_" + f.name
+}
+
+fn codegen_known_names(code: str) -> bool {
+    if code == "typeof" { return true }
+    if code == "main" { return true }
+    if str_starts_with(code, "ovl_") { return true }
+    return false
+}
+
+// Kullanici fonksiyonu olmayan ve runtime'da `axiom_<ad>` olarak yasayan
+// cagrilari duzeltir. Stdlib bazi yerlesikleri `rt_` oneki olmadan cagirir
+// (json_parse, tcp_ping, cli_set_args...); parser bunlari `ax_` sanar.
+fn rewrite_unknown_calls(code: str, known: str) -> str {
+    let mut out = ""
+    let mut i = 0
+    let n = str_byte_len(code)
+    while i < n {
+        // Iki onek de taranir: `ax_` (kullanici) ve `axiom_` (runtime).
+        let rest = str_sub(code, i, n - i)
+        let i_ax = str_index_of(rest, "ax_")
+        let i_axm = str_index_of(rest, "axiom_")
+        let mut idx = -1
+        let mut plen = 0
+        if i_axm >= 0 and (i_ax < 0 or i_axm <= i_ax) {
+            // "axiom_" icindeki "ax_" onekini atlamak icin once kontrol.
+            idx = i_axm
+            plen = 6
+        } else if i_ax >= 0 {
+            idx = i_ax
+            plen = 3
+        }
+        if idx < 0 {
+            out = out + rest
+            break
+        }
+        let at = i + idx
+        out = out + str_sub(code, i, at - i)
+        let mut j = at + plen
+        while j < n and is_codegen_ident_char(str_sub(code, j, 1)) {
+            j = j + 1
+        }
+        let name = str_sub(code, at + plen, j - at - plen)
+        let mut is_call = false
+        if j < n and str_sub(code, j, 1) == "(" {
+            is_call = true
+        }
+        let is_user = str_contains(known, "|" + name + "|")
+        if is_call and name == "json_parse" {
+            out = out + "axiom_json_parse_wrap"
+        } else if is_call and not is_user and not codegen_known_names(name) and plen == 3 {
+            out = out + "axiom_" + name
+        } else {
+            out = out + str_sub(code, at, j - at)
+        }
+        i = j
+    }
+    return out
+}
+
+// --- Tip yayilimi (self-hosted derleyicide tip ortami yok) ---
+fn codegen_str_contains(list: str, name: str) -> bool {
+    return str_contains(list, "|" + name + "|")
+}
+
+fn codegen_is_str_rhs(rhs: str, strset: str) -> bool {
+    if str_starts_with(rhs, "axiom_str_split(") { return false }
+    if str_starts_with(rhs, "axiom_str_len(") { return false }
+    if str_starts_with(rhs, "axiom_str_byte_len(") { return false }
+    if str_starts_with(rhs, "axiom_str_index_of(") { return false }
+    if str_starts_with(rhs, "axiom_str_to_int(") { return false }
+    if str_starts_with(rhs, "axiom_str_char_code(") { return false }
+    if str_starts_with(rhs, "axiom_str_contains(") { return false }
+    if str_starts_with(rhs, "axiom_str_starts_with(") { return false }
+    if str_starts_with(rhs, "axiom_str_ends_with(") { return false }
+    if str_starts_with(rhs, "axiom_str_eq(") { return false }
+    if str_starts_with(rhs, "axiom_str_neq(") { return false }
+    if str_starts_with(rhs, "axiom_slen_auto(") { return false }
+
+    if str_starts_with(rhs, "axiom_str_") { return true }
+    if str_starts_with(rhs, "axiom_file_read(") { return true }
+    if str_starts_with(rhs, "axiom_os_getenv(") { return true }
+    if str_starts_with(rhs, "axiom_int_to_str(") { return true }
+    if str_starts_with(rhs, "axiom_str_concat(") { return true }
+    if str_starts_with(rhs, "axiom_date_format") { return true }
+    if str_starts_with(rhs, "axiom_date_now_iso(") { return true }
+    if str_starts_with(rhs, "axiom_date_iso") { return true }
+    if str_starts_with(rhs, "axiom_base64_") { return true }
+    if str_starts_with(rhs, "axiom_hex_") { return true }
+    if str_starts_with(rhs, "axiom_hash_") { return true }
+    if str_starts_with(rhs, "axiom_hmac_sha256(") { return true }
+    if str_starts_with(rhs, "axiom_json_get_str(") { return true }
+    if str_starts_with(rhs, "axiom_json_escape(") { return true }
+    if str_starts_with(rhs, "axiom_tcp_recv") { return true }
+    if str_starts_with(rhs, "axiom_fd_read(") { return true }
+    if str_starts_with(rhs, "axiom_list_dir(") { return true }
+    if str_starts_with(rhs, "axiom_forensics_get") { return true }
+    if str_starts_with(rhs, "axiom_pcap_next_packet(") { return true }
+    if str_starts_with(rhs, "axiom_tls_recv(") { return true }
+    if str_starts_with(rhs, "axiom_dns_resolve") { return true }
+    if str_starts_with(rhs, "axiom_regex_find(") { return true }
+    if str_starts_with(rhs, "axiom_regex_replace(") { return true }
+    if str_starts_with(rhs, "axiom_regex_validate(") { return true }
+    if str_starts_with(rhs, "axiom_cli_args_get(") { return true }
+    if str_starts_with(rhs, "axiom_cli_get_option(") { return true }
+    if str_starts_with(rhs, "axiom_unicode_") { return true }
+    if str_starts_with(rhs, "axiom_csv_get") { return true }
+    if str_starts_with(rhs, "axiom_http_get(") { return true }
+    if str_starts_with(rhs, "axiom_http_body(") { return true }
+    if str_starts_with(rhs, "axiom_tensor_to_str(") { return true }
+    if str_starts_with(rhs, "axiom_fim_hash_file(") { return true }
+    if str_starts_with(rhs, "axiom_sigma_event_get(") { return true }
+    if str_starts_with(rhs, "axiom_map_get(") { return true }
+
+    // Struct alan erisimi: `(x).<str_alan>`
+    if str_contains(rhs, ").") {
+        let parts = str_split(strset, "|")
+        let np = len(parts)
+        for pi in 0..np {
+            let fname = parts[pi]
+            if len(fname) == 0 { continue }
+            if str_contains(rhs, ")." + fname + ")") { return true }
+            if str_contains(rhs, ")." + fname + ";") { return true }
+            if str_contains(rhs, ")." + fname + ".") { return true }
+            if str_contains(rhs, ")." + fname + "[") { return true }
+        }
+    }
+
+    if str_ends_with(rhs, ";") {
+        let name = str_trim(str_sub(rhs, 0, str_byte_len(rhs) - 1))
+        if str_contains(name, " ") or str_contains(name, "(") or str_contains(name, ".")
+        or str_contains(name, "+") or str_contains(name, ",") {
+            return false
+        }
+        if len(name) > 0 and codegen_str_contains(strset, name) { return true }
+    }
+    return false
+}
+
+fn codegen_learn_pass(body: str, strset: str) -> str {
+    let mut extra = ""
+    let lines = str_split(body, "\n")
+    let n = len(lines)
+    for i in 0..n {
+        let line = str_trim(lines[i])
+        if str_starts_with(line, "ax_str ") {
+            let r = str_sub(line, 7, str_byte_len(line) - 7)
+            let e = str_index_of(r, " = ")
+            if e > 0 {
+                let nm = str_trim(str_sub(r, 0, e))
+                if len(nm) > 0 and not codegen_str_contains(strset, nm) {
+                    extra = extra + "|" + nm + "|"
+                }
+            }
+            continue
+        }
+        if str_starts_with(line, "ax_array_str ") {
+            let r = str_sub(line, 13, str_byte_len(line) - 13)
+            let e = str_index_of(r, " = ")
+            if e > 0 {
+                let nm = str_trim(str_sub(r, 0, e))
+                if len(nm) > 0 and not codegen_str_contains(strset, nm) {
+                    extra = extra + "|" + nm + "|"
+                }
+            }
+            continue
+        }
+        if not str_starts_with(line, "ax_int ") { continue }
+        let rest = str_sub(line, 7, str_byte_len(line) - 7)
+        let eq = str_index_of(rest, " = ")
+        if eq <= 0 { continue }
+        let name = str_trim(str_sub(rest, 0, eq))
+        if len(name) == 0 { continue }
+        if codegen_str_contains(strset, name) { continue }
+        let rhs = str_trim(str_sub(rest, eq + 3, str_byte_len(rest) - eq - 3))
+        if codegen_is_str_rhs(rhs, strset) {
+            extra = extra + "|" + name + "|"
+        }
+    }
+    return strset + extra
+}
+
+fn codegen_lookup_arrmap(arrmap: str, field: str) -> str {
+    let key = "|" + field + "="
+    let idx = str_index_of(arrmap, key)
+    if idx < 0 { return "" }
+    let rest = str_sub(arrmap, idx + str_byte_len(key), str_byte_len(arrmap) - idx - str_byte_len(key))
+    let endp = str_index_of(rest, "|")
+    if endp <= 0 { return "" }
+    return str_sub(rest, 0, endp)
+}
+
+fn codegen_fix_decls(body: str, strset: str, arrmap: str, fnret: str) -> str {
+    let mut out = ""
+    let lines = str_split(body, "\n")
+    let n = len(lines)
+    // `__auto_type X = <f>(...)` ve f `T[]` donduruyorsa X bir T dizisidir.
+    let mut localmap = arrmap
+    for ai in 0..n {
+        let al = str_trim(lines[ai])
+        if not str_starts_with(al, "__auto_type ") { continue }
+        let r0 = str_sub(al, 12, str_byte_len(al) - 12)
+        let e0 = str_index_of(r0, " = ")
+        if e0 <= 0 { continue }
+        let nm0 = str_trim(str_sub(r0, 0, e0))
+        let rh0 = str_trim(str_sub(r0, e0 + 3, str_byte_len(r0) - e0 - 3))
+        let po = str_index_of(rh0, "(")
+        if po <= 2 { continue }
+        let mut callee = str_sub(rh0, 0, po)
+        if str_starts_with(callee, "axiom_") {
+            callee = str_sub(callee, 6, str_byte_len(callee) - 6)
+        } else if str_starts_with(callee, "ax_") {
+            callee = str_sub(callee, 3, str_byte_len(callee) - 3)
+        }
+        let key2 = "|" + callee + "="
+        let fi2 = str_index_of(fnret, key2)
+        if fi2 >= 0 {
+            let rr = str_sub(fnret, fi2 + str_byte_len(key2),
+            str_byte_len(fnret) - fi2 - str_byte_len(key2))
+            let ei2 = str_index_of(rr, "|")
+            if ei2 > 0 {
+                let et = str_sub(rr, 0, ei2)
+                localmap = localmap + "|" + nm0 + "=" + et + "|"
+            }
+        }
+    }
+
+    // `__auto_type X = axiom_str_split(...)` -> X bir metin dizisidir.
+    let mut strarrs = ""
+    for si in 0..n {
+        let sl = str_trim(lines[si])
+        if str_starts_with(sl, "__auto_type ") {
+            let r0 = str_sub(sl, 12, str_byte_len(sl) - 12)
+            let e0 = str_index_of(r0, " = ")
+            if e0 > 0 {
+                let nm0 = str_trim(str_sub(r0, 0, e0))
+                let rh0 = str_trim(str_sub(r0, e0 + 3, str_byte_len(r0) - e0 - 3))
+                if str_starts_with(rh0, "axiom_str_split(") or str_starts_with(rh0, "axiom_list_dir(") {
+                    strarrs = strarrs + "|" + nm0 + "|"
+                }
+            }
+        }
+    }
+    for i in 0..n {
+        let mut line = lines[i]
+        let t = str_trim(line)
+        if str_starts_with(t, "ax_int ") or str_starts_with(t, "ax_array_int ") {
+            let is_arr = str_starts_with(t, "ax_array_int ")
+            let prefix_len = 7
+            let rest = str_sub(t, prefix_len, str_byte_len(t) - prefix_len)
+            let eq = str_index_of(rest, " = ")
+            if eq > 0 {
+                let name = str_trim(str_sub(rest, 0, eq))
+                let rhs = str_trim(str_sub(rest, eq + 3, str_byte_len(rest) - eq - 3))
+                if not is_arr and str_contains(rhs, ").data[") {
+                    let parts2 = str_split(localmap, "|")
+                    let np2 = len(parts2)
+                    let mut elem_t = ""
+                    for pi2 in 0..np2 {
+                        let ent = parts2[pi2]
+                        if len(ent) == 0 { continue }
+                        let eqi = str_index_of(ent, "=")
+                        if eqi <= 0 { continue }
+                        let fld = str_sub(ent, 0, eqi)
+                        // Iki bicim: `((alerts).data[` ve `((rule).field).data[`
+                        if str_contains(rhs, "(" + fld + ")") or str_contains(rhs, ")." + fld + ")") {
+                            elem_t = str_sub(ent, eqi + 1, str_byte_len(ent) - eqi - 1)
+                            break
+                        }
+                    }
+                    if len(elem_t) > 0 {
+                        line = str_replace(line, "ax_int ", "ax_" + elem_t + " ")
+                    } else {
+                        // Dizi taban adini cikar: ((BASE).data[...]
+                        let mut base = ""
+                        let bi = str_index_of(rhs, "((")
+                        let di = str_index_of(rhs, ").data[")
+                        if bi >= 0 and di > bi + 2 {
+                            base = str_sub(rhs, bi + 2, di - bi - 2)
+                        }
+                        if codegen_str_contains(strset, name)
+                        or (len(base) > 0 and codegen_str_contains(strarrs, base))
+                        or (len(base) > 0 and codegen_str_contains(strset, base)) {
+                            line = str_replace(line, "ax_int ", "ax_str ")
+                        }
+                    }
+                } else if codegen_str_contains(strset, name) {
+                    if is_arr {
+                        line = str_replace(line, "ax_array_int ", "ax_array_str ")
+                    } else {
+                        line = str_replace(line, "ax_int ", "ax_str ")
+                    }
+                } else if is_arr and str_starts_with(rhs, "((ax_array_str)") {
+                    line = str_replace(line, "ax_array_int ", "ax_array_str ")
+                } else if is_arr and str_starts_with(rhs, "((ax_array_int)") {
+                    let names = str_split(strset, "|")
+                    let nn = len(names)
+                    let mut hit = false
+                    for ni in 0..nn {
+                        let cand = names[ni]
+                        if len(cand) == 0 { continue }
+                        if str_contains(rhs, "(" + cand + ")") { hit = true }
+                        if str_contains(rhs, ")." + cand) { hit = true }
+                        if hit { break }
+                    }
+                    if hit {
+                        line = str_replace(line, "ax_array_int ", "ax_array_str ")
+                        line = str_replace(line, "((ax_array_int)", "((ax_array_str)")
+                        line = str_replace(line, "(ax_int[])", "(ax_str[])")
+                    }
+                }
+            }
+        }
+        if i > 0 { out = out + "\n" }
+        out = out + line
+    }
+    return out
+}
+
+fn codegen_generate_c(prog: ASTProgram, runtime_header_path: str) -> str {
+    let mut out = "/* Otomatik Uretilmis Axiom (λx) Self-Hosted C99 Kodu */\n"
+    out = out + "#include \"" + runtime_header_path + "\"\n\n"
+
+    // 1. Struct Tanımları
+    let num_structs = len(prog.structs)
+    if num_structs > 0 {
+        out = out + "/* --- Veri Yapilari (Structs) --- */\n"
+        for i in 0..num_structs {
+            let s = prog.structs[i]
+            // Generic şablonlar (type_params > 0) C struct'ı olarak basılmaz;
+            // yalnızca monomorflaştırılmış somut struct'lar (type_params == 0) basılır!
+            if len(s.type_params) == 0 {
+                let s_name = str_replace(s.name, "[]", "_array")
+                out = out + "typedef struct ax_" + s_name + " ax_" + s_name + ";\n"
+                out = out + "struct ax_" + s_name + " {\n"
+                let num_fields = len(s.fields)
+                for j in 0..num_fields {
+                    let f = s.fields[j]
+                    out = out + "    " + to_c_type(f.type_name) + " " + f.name + ";\n"
+                }
+                out = out + "};\n"
+                // `capacity` ZORUNLU: axiom_array_push makrosu onu kullanir.
+                out = out + "typedef struct {\n    ax_int length;\n    ax_int capacity;\n    ax_" + s_name + "* data;\n} ax_array_" + s_name + ";\n\n"
+            }
+        }
+    }
+
+    // 2. Fonksiyon Prototipleri
+    let num_funcs = len(prog.functions)
+    if num_funcs > 0 {
+        out = out + "/* --- Fonksiyon Prototipleri --- */\n"
+        for i in 0..num_funcs {
+            let f = prog.functions[i]
+            let is_ovl = fn_count_in_program(prog, f.name) > 1
+            let c_fn_id = get_codegen_fn_name(f, is_ovl)
+            let ret_c = to_c_type(f.return_type)
+            let mut params_str = ""
+            let num_params = len(f.params)
+            for j in 0..num_params {
+                let p = f.params[j]
+                if j > 0 {
+                    params_str = params_str + ", "
+                }
+                params_str = params_str + to_c_type(p.type_name) + " " + p.name
+            }
+            if num_params == 0 {
+                params_str = "void"
+            }
+            out = out + ret_c + " " + c_fn_id + "(" + params_str + ");\n"
+        }
+        out = out + "\n"
+    }
+
+    // Bilinen kullanici fonksiyonlari: "|ad|" biciminde (hizli arama icin).
+    let mut known = ""
+    for i in 0..num_funcs {
+        known = known + "|" + prog.functions[i].name + "|"
+    }
+
+    // Tip yayilimi icin tohum: tum metin parametreleri.
+    let mut strset = ""
+    for i in 0..num_funcs {
+        let params_i = prog.functions[i].params
+        let np = len(params_i)
+        for j in 0..np {
+            // `str` ve `str[]` parametreleri: eleman erisimi de metindir.
+            if params_i[j].type_name == "str" or params_i[j].type_name == "str[]" {
+                let pn = params_i[j].name
+                if not codegen_str_contains(strset, pn) {
+                    strset = strset + "|" + pn + "|"
+                }
+            }
+        }
+    }
+    // Struct alanlari: metin alanlari da adaydir (`(x).field`).
+    let nstructs = len(prog.structs)
+    for si in 0..nstructs {
+        let flds = prog.structs[si].fields
+        let nf = len(flds)
+        for fi in 0..nf {
+            let ft = flds[fi].type_name
+            if ft == "str" or ft == "str[]" {
+                let fn2 = flds[fi].name
+                if not codegen_str_contains(strset, fn2) {
+                    strset = strset + "|" + fn2 + "|"
+                }
+            }
+        }
+    }
+
+    // Struct dizi alanlari: alan adi -> eleman struct adi.
+    // `(rule).selections` -> ax_SigmaFieldMatch  (ax_int yerine)
+    let mut arrmap = ""
+    for si in 0..nstructs {
+        let flds2 = prog.structs[si].fields
+        let nf2 = len(flds2)
+        for fi in 0..nf2 {
+            let ft2 = flds2[fi].type_name
+            if str_ends_with(ft2, "[]") and ft2 != "str[]" and ft2 != "int[]"
+            and ft2 != "bool[]" and ft2 != "float[]" {
+                let elem = str_sub(ft2, 0, str_byte_len(ft2) - 2)
+                arrmap = arrmap + "|" + flds2[fi].name + "=" + elem + "|"
+            }
+        }
+    }
+
+    // Parametre struct dizileri de ayni haritaya: `alerts: SigmaAlert[]`
+    for i in 0..num_funcs {
+        let pp = prog.functions[i].params
+        let npp = len(pp)
+        for j in 0..npp {
+            let pt = pp[j].type_name
+            if str_ends_with(pt, "[]") and pt != "str[]" and pt != "int[]"
+            and pt != "bool[]" and pt != "float[]" {
+                let elem = str_sub(pt, 0, str_byte_len(pt) - 2)
+                arrmap = arrmap + "|" + pp[j].name + "=" + elem + "|"
+            }
+        }
+    }
+
+    // Fonksiyon donus tipleri: `T[]` -> "|fname=T|"
+    let mut fnret = ""
+    for i in 0..num_funcs {
+        let rt = prog.functions[i].return_type
+        if str_ends_with(rt, "[]") and rt != "str[]" and rt != "int[]"
+        and rt != "bool[]" and rt != "float[]" {
+            let elem = str_sub(rt, 0, str_byte_len(rt) - 2)
+            fnret = fnret + "|" + prog.functions[i].name + "=" + elem + "|"
+        }
+    }
+
+    // Sabit nokta: 4 gecis yeterli (zincirler kisa).
+    for _pass in 0..4 {
+        let mut next = strset
+        for i in 0..num_funcs {
+            next = codegen_learn_pass(prog.functions[i].body_code, next)
+        }
+        if next == strset { break }
+        strset = next
+    }
+
+    // 3. Fonksiyon Gövdeleri
+    let mut has_main = false
+    let mut main_ret_is_void = false
+    let mut main_ret_is_result = false
+    for i in 0..num_funcs {
+        let f = prog.functions[i]
+        if f.name == "main" {
+            has_main = true
+            if f.return_type == "void" {
+                main_ret_is_void = true
+            }
+            if str_starts_with(f.return_type, "Result") {
+                main_ret_is_result = true
+            }
+        }
+        let is_ovl = fn_count_in_program(prog, f.name) > 1
+        let c_fn_id = get_codegen_fn_name(f, is_ovl)
+        let ret_c = to_c_type(f.return_type)
+        let mut params_str = ""
+        let num_params = len(f.params)
+        for j in 0..num_params {
+            let p = f.params[j]
+            if j > 0 {
+                params_str = params_str + ", "
+            }
+            params_str = params_str + to_c_type(p.type_name) + " " + p.name
+        }
+        if num_params == 0 {
+            params_str = "void"
+        }
+
+        out = out + ret_c + " " + c_fn_id + "(" + params_str + ") "
+        let mut body = rewrite_unknown_calls(f.body_code, known)
+        body = codegen_fix_decls(body, strset, arrmap, fnret)
+        // Donus tipi `str[]` ise parser'in varsayilan `int[]` literalleri
+        // metin dizisine cevrilir (ayni fonksiyon kapsaminda guvenli).
+        if f.return_type == "str[]" {
+            let needs = str_contains(body, "ax_array_int") or str_contains(body, "(ax_int[])")
+            if needs {
+                body = str_replace(body, "ax_array_int", "ax_array_str")
+                body = str_replace(body, "(ax_int[])", "(ax_str[])")
+            }
+        }
+        if len(f.ensures_expr) > 0 {
+            body = codegen_wrap_ensures(body, f.ensures_expr, ret_c, f.name)
+        }
+        if len(f.requires_expr) > 0 {
+            out = out + "{\n    if (!(" + f.requires_expr + ")) { axiom_contract_fail(\"REQUIRES\", \"" + f.requires_expr + "\", \"" + f.name + "\", 1, NULL); }\n"
+            // Gövdenin başındaki { işaretini atlayıp ekle
+            let body_sub = str_sub(body, 1, str_byte_len(body) - 1)
+            out = out + body_sub + "\n\n"
+        } else {
+            out = out + body + "\n\n"
+        }
+    }
+
+    // 4. Standart C Giriş Noktası (Bridge)
+    out = out + "/* --- C Standart Giris Noktasi (Bridge) --- */\n"
+    out = out + "int main(int argc, char** argv) {\n"
+    out = out + "    axiom_cli_init_args(argc, argv);\n"
+    if has_main and main_ret_is_result {
+        // `main() -> Result<int,str>`: Ok -> exit 0, Err -> stderr + exit 1.
+        out = out + "    __auto_type __ax_main_r = ax_main();\n"
+        out = out + "    if (!(__ax_main_r.is_ok)) {\n"
+        out = out + "        fprintf(stderr, \"[AXIOM HATA] %s\\n\", (__ax_main_r).error);\n"
+        out = out + "        return 1;\n    }\n"
+        out = out + "    return (int)(__ax_main_r).value;\n"
+    } else if has_main and main_ret_is_void {
+        out = out + "    ax_main();\n    return 0;\n"
+    } else if has_main {
+        out = out + "    return (int)ax_main();\n"
+    } else if len(prog.top_level_code) > 0 {
+        out = out + rewrite_unknown_calls(prog.top_level_code, known) + "\n    return 0;\n"
+    } else {
+        out = out + "    return 0;\n"
+    }
+    out = out + "}\n"
+
+    return out
+}

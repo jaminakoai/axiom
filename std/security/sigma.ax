@@ -1,0 +1,629 @@
+// Axiom Standard Library - Enterprise Sigma SIEM & Telemetry Rule Engine (std:security:sigma)
+// std/security/sigma.ax
+//
+// Özellikler:
+// - Kural alan eşlemesi (selection, condition, detection logic: 'contains', 'startswith', 'endswith', 'regex', 'equals')
+// - Çoklu telemetri log türleri (web, auth, syslog, network, generic)
+// - Yanlış pozitif (False Positive) filtreleme ve beyaz liste denetimi
+// - Risk şiddet derecelendirmesi ve puanlaması (Low=25, Medium=50, High=75, Critical=100)
+// - SigmaRule, SigmaEvent, SigmaAlert, SigmaRuleEngine veri yapıları
+// - Geriye dönük %100 tam uyumlu legacy tespit arayüzü
+
+import "std:text:regex"
+
+// -----------------------------------------------------------------------------
+// Veri Yapıları (Sigma Core Data Structures)
+// -----------------------------------------------------------------------------
+
+/// Tek bir alan/operator/deger uclusu (selection veya filter).
+struct SigmaFieldMatch {
+    field: str,
+    operator: str,
+    value: str
+}
+
+/// Sigma kurali: log turu, secimler, filtreler ve kosul.
+struct SigmaRule {
+    id: str,
+    title: str,
+    log_type: str,
+    level: str,
+    selections: SigmaFieldMatch[],
+    filters: SigmaFieldMatch[],
+    condition: str
+}
+
+/// Ayristirilmis log olayi (`keys`/`values` anahtar-deger ciftleri).
+struct SigmaEvent {
+    log_type: str,
+    raw: str,
+    keys: str[],
+    values: str[]
+}
+
+/// Kural eslesmesinden uretilen uyari.
+struct SigmaAlert {
+    rule_id: str,
+    rule_title: str,
+    log_type: str,
+    level: str,
+    risk_score: int,
+    matched: bool,
+    matched_reason: str
+}
+
+/// Kurallari toplayip olaylara uygulayan motor.
+struct SigmaRuleEngine {
+    rules: SigmaRule[]
+}
+
+// -----------------------------------------------------------------------------
+// Kural Oluşturucuları (Rule Builders)
+// -----------------------------------------------------------------------------
+
+/// Yeni Sigma kurali olusturur.
+///
+/// `log_type` ornegin `"auth"`, `"web"`, `"syslog"` veya `"*"`.
+fn sigma_rule_new(id: str, title: str, log_type: str, level: str) -> SigmaRule {
+    let sel: SigmaFieldMatch[] = [];
+    let fil: SigmaFieldMatch[] = [];
+    return SigmaRule {
+        id: id,
+        title: title,
+        log_type: log_type,
+        level: level,
+        selections: sel,
+        filters: fil,
+        condition: "selection and not filter"
+    };
+}
+
+/// Kurala secim (selection) kosulu ekler.
+fn sigma_rule_add_selection(rule: SigmaRule, field: str, operator: str, value: str) -> SigmaRule {
+    let m = SigmaFieldMatch { field: field, operator: operator, value: value };
+    let updated = array_push(rule.selections, m);
+    return SigmaRule {
+        id: rule.id,
+        title: rule.title,
+        log_type: rule.log_type,
+        level: rule.level,
+        selections: updated,
+        filters: rule.filters,
+        condition: rule.condition
+    };
+}
+
+/// Kurala yanlis-pozitif filtresi ekler (eslesirse uyari bastirilir).
+fn sigma_rule_add_filter(rule: SigmaRule, field: str, operator: str, value: str) -> SigmaRule {
+    let m = SigmaFieldMatch { field: field, operator: operator, value: value };
+    let updated = array_push(rule.filters, m);
+    return SigmaRule {
+        id: rule.id,
+        title: rule.title,
+        log_type: rule.log_type,
+        level: rule.level,
+        selections: rule.selections,
+        filters: updated,
+        condition: rule.condition
+    };
+}
+
+/// Kural kosulunu degistirir (varsayilan `"selection"`).
+fn sigma_rule_set_condition(rule: SigmaRule, condition: str) -> SigmaRule {
+    return SigmaRule {
+        id: rule.id,
+        title: rule.title,
+        log_type: rule.log_type,
+        level: rule.level,
+        selections: rule.selections,
+        filters: rule.filters,
+        condition: condition
+    };
+}
+
+// -----------------------------------------------------------------------------
+// Telemetri Olay Yapılandırması ve Ayrıştırıcılar (Event Parsers)
+// -----------------------------------------------------------------------------
+
+/// Ham satirdan olay olusturur; `message` ve `raw` alanlari doldurulur.
+fn sigma_event_new(log_type: str, raw: str) -> SigmaEvent {
+    let k: str[] = [];
+    let v: str[] = [];
+    let mut ev = SigmaEvent {
+        log_type: log_type,
+        raw: raw,
+        keys: k,
+        values: v
+    };
+    ev = sigma_event_set(ev, "message", raw);
+    ev = sigma_event_set(ev, "raw", raw);
+    return ev;
+}
+
+/// Olayda alan atar/degistirir.
+fn sigma_event_set(event: SigmaEvent, key: str, val: str) -> SigmaEvent {
+    let k = array_push(event.keys, key);
+    let v = array_push(event.values, val);
+    return SigmaEvent {
+        log_type: event.log_type,
+        raw: event.raw,
+        keys: k,
+        values: v
+    };
+}
+
+/// Olaydan alan okur; yoksa bos string.
+///
+/// `message`/`raw` her zaman ham satira duser.
+fn sigma_event_get(event: SigmaEvent, key: str) -> str {
+    let num = len(event.keys);
+    let mut i = 0;
+    while (i < num) {
+        if (event.keys[i] == key) {
+            return event.values[i];
+        }
+        i = i + 1;
+    }
+    if (key == "message" or key == "raw") {
+        return event.raw;
+    }
+    return "";
+}
+
+/// HTTP erisim logunu ayristirir (method, uri, status, ip).
+fn sigma_parse_web_log(line: str) -> SigmaEvent {
+    let mut ev = sigma_event_new("web", line);
+
+    // HTTP Metodu Ayrıştırma
+    if (str_contains(line, "GET ")) {
+        ev = sigma_event_set(ev, "method", "GET");
+    } else if (str_contains(line, "POST ")) {
+        ev = sigma_event_set(ev, "method", "POST");
+    } else if (str_contains(line, "PUT ")) {
+        ev = sigma_event_set(ev, "method", "PUT");
+    } else if (str_contains(line, "DELETE ")) {
+        ev = sigma_event_set(ev, "method", "DELETE");
+    } else if (str_contains(line, "PATCH ")) {
+        ev = sigma_event_set(ev, "method", "PATCH");
+    } else if (str_contains(line, "HEAD ")) {
+        ev = sigma_event_set(ev, "method", "HEAD");
+    }
+
+    // URI Ayrıştırma
+    let method = sigma_event_get(ev, "method");
+    if (str_len(method) > 0) {
+        let tag = method + " ";
+        let m_idx = str_index_of(line, tag);
+        if (m_idx >= 0) {
+            let start_uri = m_idx + str_len(tag);
+            let rest = str_sub(line, start_uri, str_len(line) - start_uri);
+            let sp_idx = str_index_of(rest, " ");
+            let mut uri = rest;
+            if (sp_idx > 0) {
+                uri = str_sub(rest, 0, sp_idx);
+            }
+            ev = sigma_event_set(ev, "uri", uri);
+        }
+    }
+
+    // IP Adresi Tespiti
+    if (str_contains(line, " from ")) {
+        let from_idx = str_index_of(line, " from ") + 6;
+        let rest_from = str_sub(line, from_idx, str_len(line) - from_idx);
+        let sp_from = str_index_of(rest_from, " ");
+        let mut ip = rest_from;
+        if (sp_from > 0) {
+            ip = str_sub(rest_from, 0, sp_from);
+        }
+        ev = sigma_event_set(ev, "ip", ip);
+        ev = sigma_event_set(ev, "src_ip", ip);
+    } else {
+        // Common Log Format: Satır başındaki IP
+        let first_sp = str_index_of(line, " ");
+        if (first_sp > 0) {
+            let candidate_ip = str_sub(line, 0, first_sp);
+            if (str_contains(candidate_ip, ".") or str_contains(candidate_ip, ":")) {
+                ev = sigma_event_set(ev, "ip", candidate_ip);
+                ev = sigma_event_set(ev, "src_ip", candidate_ip);
+            }
+        }
+    }
+
+    return ev;
+}
+
+/// sshd/PAM kimlik dogrulama logunu ayristirir (user, ip, action).
+fn sigma_parse_auth_log(line: str) -> SigmaEvent {
+    let mut ev = sigma_event_new("auth", line);
+
+    if (str_contains(line, "Failed password")) {
+        ev = sigma_event_set(ev, "action", "failed_login");
+        ev = sigma_event_set(ev, "service", "sshd");
+
+        if (str_contains(line, " for ")) {
+            let for_idx = str_index_of(line, " for ") + 5;
+            let mut rest = str_sub(line, for_idx, str_len(line) - for_idx);
+            if (str_starts_with(rest, "invalid user ")) {
+                rest = str_sub(rest, 13, str_len(rest) - 13);
+            }
+            let sp_idx = str_index_of(rest, " ");
+            let mut user = rest;
+            if (sp_idx > 0) {
+                user = str_sub(rest, 0, sp_idx);
+            }
+            ev = sigma_event_set(ev, "user", user);
+        }
+
+        if (str_contains(line, " from ")) {
+            let from_idx = str_index_of(line, " from ") + 6;
+            let rest_ip = str_sub(line, from_idx, str_len(line) - from_idx);
+            let sp_idx = str_index_of(rest_ip, " ");
+            let mut ip = rest_ip;
+            if (sp_idx > 0) {
+                ip = str_sub(rest_ip, 0, sp_idx);
+            }
+            ev = sigma_event_set(ev, "ip", ip);
+            ev = sigma_event_set(ev, "src_ip", ip);
+        }
+    } else if (str_contains(line, "Accepted password") or str_contains(line, "Accepted publickey")) {
+        ev = sigma_event_set(ev, "action", "successful_login");
+        ev = sigma_event_set(ev, "service", "sshd");
+    } else if (str_contains(line, "sudo:")) {
+        ev = sigma_event_set(ev, "service", "sudo");
+        ev = sigma_event_set(ev, "action", "privilege_escalation");
+    }
+
+    return ev;
+}
+
+// Son gorulme indeksi (str_index_of ilk bulur; burada son gerekir).
+fn _sigma_last_index_of(s: str, ch: str) -> int {
+    let mut i = str_len(s) - 1;
+    while i >= 0 {
+        if str_sub(s, i, 1) == ch {
+            return i;
+        }
+        i = i - 1;
+    }
+    return -1;
+}
+
+/// Genel syslog satirini ayristirir; `service` alanini cikarir.
+fn sigma_parse_syslog(line: str) -> SigmaEvent {
+    let mut ev = sigma_event_new("syslog", line);
+    if (str_contains(line, ": ")) {
+        let colon_idx = str_index_of(line, ": ");
+        let header = str_sub(line, 0, colon_idx);
+        let last_sp = _sigma_last_index_of(header, " ");
+        let mut service = header;
+        if (last_sp > 0) {
+            service = str_sub(header, last_sp + 1, str_len(header) - last_sp - 1);
+        }
+        ev = sigma_event_set(ev, "service", service);
+    }
+    return ev;
+}
+
+// -----------------------------------------------------------------------------
+// Değerlendirme ve Eşleme Fonksiyonları (Detection & Evaluation Engine)
+// -----------------------------------------------------------------------------
+
+/// Seviyeyi risk puanina cevirir (Low=25 ... Critical=100).
+fn sigma_level_to_score(level: str) -> int {
+    if (level == "Critical") { return 100; }
+    if (level == "High") { return 75; }
+    if (level == "Medium") { return 50; }
+    if (level == "Low") { return 25; }
+    return 10;
+}
+
+/// Alan degerini operatorle karsilastirir.
+///
+/// Operatorler: `contains`, `startswith`, `endswith`, `equals`, `regex`.
+/// Bilinmeyen operator **fail-closed** (`false`) doner.
+fn sigma_eval_op(field_val: str, operator: str, expected: str) -> bool {
+    if (operator == "contains") {
+        return str_contains(field_val, expected);
+    }
+    if (operator == "startswith") {
+        return str_starts_with(field_val, expected);
+    }
+    if (operator == "endswith") {
+        return str_ends_with(field_val, expected);
+    }
+    if (operator == "equals") {
+        return field_val == expected;
+    }
+    if (operator == "regex") {
+        return rt_regex_is_match(expected, field_val);
+    }
+    // Bilinmeyen operator: FAIL-CLOSED. Guvenlik motorunda yazim hatasi
+    // ("contians") sessizce eslesmeye yol acmamali.
+    return false;
+}
+
+/// Kurali tek bir olaya uygular ve uyari dondurur.
+fn sigma_rule_eval(rule: SigmaRule, event: SigmaEvent) -> SigmaAlert {
+    // 1. Log Türü Uyumluluğu
+    if (rule.log_type != "*" and rule.log_type != event.log_type) {
+        return SigmaAlert {
+            rule_id: rule.id,
+            rule_title: rule.title,
+            log_type: rule.log_type,
+            level: rule.level,
+            risk_score: 0,
+            matched: false,
+            matched_reason: "LOG_TYPE_MISMATCH"
+        };
+    }
+
+    // 2. Kural Seçim Koşulları (Selections)
+    let num_sel = len(rule.selections);
+    if (num_sel == 0) {
+        return SigmaAlert {
+            rule_id: rule.id,
+            rule_title: rule.title,
+            log_type: rule.log_type,
+            level: rule.level,
+            risk_score: 0,
+            matched: false,
+            matched_reason: "NO_SELECTIONS"
+        };
+    }
+
+    let mut sel_matches = 0;
+    let mut i = 0;
+    while (i < num_sel) {
+        let sel = rule.selections[i];
+        let val = sigma_event_get(event, sel.field);
+        let mut target = event.raw;
+        if (str_len(val) > 0) {
+            target = val;
+        }
+        if (sigma_eval_op(target, sel.operator, sel.value)) {
+            sel_matches = sel_matches + 1;
+        }
+        i = i + 1;
+    }
+
+    let cond = rule.condition;
+    let mut sel_ok = false;
+    if (cond == "any") {
+        sel_ok = (sel_matches > 0);
+    } else {
+        // "all", "selection", "selection and not filter"
+        sel_ok = (sel_matches == num_sel);
+    }
+
+    if (sel_ok == false) {
+        return SigmaAlert {
+            rule_id: rule.id,
+            rule_title: rule.title,
+            log_type: rule.log_type,
+            level: rule.level,
+            risk_score: 0,
+            matched: false,
+            matched_reason: "SELECTION_NOT_MET"
+        };
+    }
+
+    // 3. Yanlış Pozitif Filtreleme (False Positive Filters)
+    let num_fil = len(rule.filters);
+    let mut f_idx = 0;
+    while (f_idx < num_fil) {
+        let fil = rule.filters[f_idx];
+        let f_val = sigma_event_get(event, fil.field);
+        let mut f_target = event.raw;
+        if (str_len(f_val) > 0) {
+            f_target = f_val;
+        }
+        if (sigma_eval_op(f_target, fil.operator, fil.value)) {
+            return SigmaAlert {
+                rule_id: rule.id,
+                rule_title: rule.title,
+                log_type: rule.log_type,
+                level: rule.level,
+                risk_score: 0,
+                matched: false,
+                matched_reason: "FALSE_POSITIVE_FILTERED"
+            };
+        }
+        f_idx = f_idx + 1;
+    }
+
+    // 4. Kural Başarıyla Eşleşti!
+    let score = sigma_level_to_score(rule.level);
+    return SigmaAlert {
+        rule_id: rule.id,
+        rule_title: rule.title,
+        log_type: rule.log_type,
+        level: rule.level,
+        risk_score: score,
+        matched: true,
+        matched_reason: "SELECTION_MATCHED"
+    };
+}
+
+// -----------------------------------------------------------------------------
+// Kural Motoru Yönetimi (Rule Engine API)
+// -----------------------------------------------------------------------------
+
+/// Bos kural motoru olusturur.
+fn sigma_engine_new() -> SigmaRuleEngine {
+    let r: SigmaRule[] = [];
+    return SigmaRuleEngine { rules: r };
+}
+
+/// Motora kural ekler.
+fn sigma_engine_add_rule(engine: SigmaRuleEngine, rule: SigmaRule) -> SigmaRuleEngine {
+    let r = array_push(engine.rules, rule);
+    return SigmaRuleEngine { rules: r };
+}
+
+/// Tum kurallari bir olaya uygular; eslesen uyarilari dondurur.
+fn sigma_engine_eval(engine: SigmaRuleEngine, event: SigmaEvent) -> SigmaAlert[] {
+    let mut alerts: SigmaAlert[] = [];
+    let num = len(engine.rules);
+    let mut i = 0;
+    while (i < num) {
+        let alert = sigma_rule_eval(engine.rules[i], event);
+        if (alert.matched) {
+            alerts = array_push(alerts, alert);
+        }
+        i = i + 1;
+    }
+    return alerts;
+}
+
+/// Ham log satirini ayristirip motoru uygular.
+///
+/// `log_type` ayristiriciyi secer; kuralin `log_type`'i ile eslesmelidir.
+fn sigma_engine_eval_raw(engine: SigmaRuleEngine, log_line: str, log_type: str) -> SigmaAlert[] {
+    let mut ev = sigma_event_new(log_type, log_line);
+    if (log_type == "web") {
+        ev = sigma_parse_web_log(log_line);
+    } else if (log_type == "auth") {
+        ev = sigma_parse_auth_log(log_line);
+    } else if (log_type == "syslog") {
+        ev = sigma_parse_syslog(log_line);
+    }
+    return sigma_engine_eval(engine, ev);
+}
+
+/// Olayda en az bir kural eslesiyor mu?
+fn sigma_engine_has_alert(engine: SigmaRuleEngine, event: SigmaEvent) -> bool {
+    let alerts = sigma_engine_eval(engine, event);
+    return len(alerts) > 0;
+}
+
+/// Uyarilar arasindaki en yuksek risk puanini dondurur.
+fn sigma_engine_highest_risk_score(alerts: SigmaAlert[]) -> int {
+    let mut max_score = 0;
+    let num = len(alerts);
+    let mut i = 0;
+    while (i < num) {
+        if (alerts[i].risk_score > max_score) {
+            max_score = alerts[i].risk_score;
+        }
+        i = i + 1;
+    }
+    return max_score;
+}
+
+/// Uyarilar arasindaki en yuksek seviyeyi dondurur.
+fn sigma_engine_highest_severity(alerts: SigmaAlert[]) -> str {
+    let score = sigma_engine_highest_risk_score(alerts);
+    if (score >= 100) { return "Critical"; }
+    if (score >= 75) { return "High"; }
+    if (score >= 50) { return "Medium"; }
+    if (score >= 25) { return "Low"; }
+    return "None";
+}
+
+// -----------------------------------------------------------------------------
+// Hazır Standart Sigma Kural Seti (Production Baseline Ruleset)
+// -----------------------------------------------------------------------------
+
+/// Hazir gelen varsayilan kural setini dondurur (SSH, SQLi, XSS, traversal).
+fn sigma_get_default_ruleset() -> SigmaRuleEngine {
+    let mut engine = sigma_engine_new();
+
+    // 1. SSH Brute Force Girişimi (Auth, Critical)
+    let mut r1 = sigma_rule_new("SSH_BRUTE_FORCE", "SSH Brute-Force Password Guessing", "auth", "Critical");
+    r1 = sigma_rule_add_selection(r1, "message", "contains", "Failed password");
+    // Yanlış pozitif filtresi: 127.0.0.1 yerel sağlık denetimleri hariç
+    r1 = sigma_rule_add_filter(r1, "ip", "equals", "127.0.0.1");
+    engine = sigma_engine_add_rule(engine, r1);
+
+    // 2. SQL Enjeksiyonu (Web, Critical)
+    let mut r2 = sigma_rule_new("SQL_INJECTION", "SQL Injection Pattern Detected in Web Request", "web", "Critical");
+    r2 = sigma_rule_add_selection(r2, "message", "regex", "(?i)(union.*select|union%20select|1=1|drop%20table)");
+    // Yanlış pozitif filtresi: /doc/sql_tutorial hariç
+    r2 = sigma_rule_add_filter(r2, "uri", "contains", "/doc/sql_tutorial");
+    engine = sigma_engine_add_rule(engine, r2);
+
+    // 3. Cross-Site Scripting (XSS) (Web, High)
+    let mut r3 = sigma_rule_new("XSS_ATTACK", "Cross-Site Scripting Pattern Detected", "web", "High");
+    r3 = sigma_rule_add_selection(r3, "message", "regex", "(?i)(<script>|alert\\(|onerror=|onload=)");
+    engine = sigma_engine_add_rule(engine, r3);
+
+    // 4. Dizin Geçişi / Path Traversal (Web, High)
+    let mut r4 = sigma_rule_new("PATH_TRAVERSAL", "Path Traversal Directory Escape Attempt", "web", "High");
+    r4 = sigma_rule_add_selection(r4, "message", "regex", "(\\.\\./|\\.\\.\\\\|/etc/passwd|win\\.ini)");
+    engine = sigma_engine_add_rule(engine, r4);
+
+    // 5. Yetki Yükseltme / Sudo Kullanımı (Auth, Medium)
+    let mut r5 = sigma_rule_new("PRIVILEGE_ESCALATION", "Privileged Command Execution via Sudo", "auth", "Medium");
+    r5 = sigma_rule_add_selection(r5, "service", "equals", "sudo");
+    // Yanlış pozitif filtresi: otomatik yedekleme kullanıcısı hariç
+    r5 = sigma_rule_add_filter(r5, "user", "equals", "backup_bot");
+    engine = sigma_engine_add_rule(engine, r5);
+
+    return engine;
+}
+
+// -----------------------------------------------------------------------------
+// Geriye Dönük Uyumluluk Fonksiyonları (Legacy Compatibility API)
+// -----------------------------------------------------------------------------
+
+/// Geriye donuk uyumluluk: satirda desen var mi?
+fn sigma_match_rule(log_line: str, pattern: str) -> bool
+    requires len(log_line) > 0
+    requires len(pattern) > 0
+{
+    return str_contains(log_line, pattern);
+}
+
+/// Geriye donuk uyumluluk: desenle eslesen log sayisi.
+fn sigma_count_matches(logs: str[], pattern: str) -> int
+    requires len(pattern) > 0
+{
+    let mut count = 0;
+    let total = len(logs);
+    let mut i = 0;
+    while (i < total) {
+        if (str_contains(logs[i], pattern)) {
+            count = count + 1;
+        }
+        i = i + 1;
+    }
+    return count;
+}
+
+/// Satirda saldiri imzasi varsa turunu (`"sqli"`, `"xss"`, ...) dondurur.
+fn sigma_detect_attack(log_line: str) -> str {
+    // 1. Web İstekleri Analizi
+    if (str_starts_with(log_line, "GET ") or str_starts_with(log_line, "POST ") or str_contains(log_line, " HTTP/")) {
+        let ev = sigma_parse_web_log(log_line);
+        let default_engine = sigma_get_default_ruleset();
+        let alerts = sigma_engine_eval(default_engine, ev);
+        let num = len(alerts);
+        if (num > 0) {
+            return alerts[0].rule_id;
+        }
+    }
+
+    // 2. Auth ve SSH Analizi
+    if (str_contains(log_line, "Failed password")) {
+        let ev = sigma_parse_auth_log(log_line);
+        let default_engine = sigma_get_default_ruleset();
+        let alerts = sigma_engine_eval(default_engine, ev);
+        if (len(alerts) > 0) {
+            return alerts[0].rule_id;
+        }
+        return "SSH_BRUTE_FORCE";
+    }
+
+    // 3. Fallback Doğrudan Desen Denetimleri
+    if (str_contains(log_line, "UNION SELECT") or str_contains(log_line, "union select") or str_contains(log_line, "UNION%20SELECT") or str_contains(log_line, "union%20select")) {
+        return "SQL_INJECTION";
+    }
+    if (str_contains(log_line, "<script>") or str_contains(log_line, "alert(")) {
+        return "XSS_ATTACK";
+    }
+    if (str_contains(log_line, "../..") or str_contains(log_line, "/etc/passwd")) {
+        return "PATH_TRAVERSAL";
+    }
+
+    return "BENIGN";
+}

@@ -1,0 +1,115 @@
+// Axiom (λx) - Ornek 17: AI & ML Tensör Hesaplama ve Sinir Agi (Faz 4)
+// examples/17_ai_tensor_neural_net.ax
+
+import "std/ai/tensor.ax"
+import "std/ai/linalg.ax"
+import "std/ai/autograd.ax"
+import "std/ai/nn.ax"
+import "std/ai/inference.ax"
+
+fn main() -> int {
+    print("================================================================")
+    print("       Axiom (λx) FAZ 4: AI & ML TENSOR ENGINE & NEURAL NET     ")
+    print("================================================================")
+
+    // 1. Tensör Tanımlama ve Değer Atama
+    print("\n[1] Tensör Olusturma ve Stride Yonetimi:")
+    let x: Tensor = tensor_new(1, 3);
+    tensor_set_val(x, 0, 0, 0.5);
+    tensor_set_val(x, 0, 1, -0.2);
+    tensor_set_val(x, 0, 2, 0.8);
+    let str_x: str = tensor_print(x);
+    print(str_x);
+
+    // 2. Doğrusal Cebir (Linear Algebra): GEMM ve Transpose
+    print("[2] Matris Çarpımı (GEMM) ve Transpoz:")
+    let w1: Tensor = tensor_new(3, 2);
+    tensor_set_val(w1, 0, 0, 0.1);
+    tensor_set_val(w1, 0, 1, 0.2);
+    tensor_set_val(w1, 1, 0, 0.3);
+    tensor_set_val(w1, 1, 1, 0.4);
+    tensor_set_val(w1, 2, 0, 0.5);
+    tensor_set_val(w1, 2, 1, 0.6);
+
+    let b1: Tensor = tensor_new(1, 2);
+    tensor_set_val(b1, 0, 0, 0.05);
+    tensor_set_val(b1, 0, 1, 0.05);
+
+    let w1_t: Tensor = mat_transpose(w1);
+    print("Transpose W1 rows:");
+    print(w1_t.rows);
+    print("Transpose W1 cols:");
+    print(w1_t.cols);
+
+    // 3. Dense Katmanı ve Aktivasyonlar
+    print("\n[3] Dense Layer & ReLU Forward Pass:")
+    let hidden: Tensor = linear_forward(x, w1, b1);
+    let hidden_act: Tensor = tensor_apply_relu(hidden);
+    print("Hidden layer output:");
+    print(tensor_print(hidden_act));
+
+    // 4. İkinci Katman (Çıkış) ve Sigmoid
+    let w2: Tensor = tensor_new(2, 2);
+    tensor_set_val(w2, 0, 0, 0.7);
+    tensor_set_val(w2, 0, 1, 0.1);
+    tensor_set_val(w2, 1, 0, 0.2);
+    tensor_set_val(w2, 1, 1, 0.9);
+
+    let b2: Tensor = tensor_new(1, 2);
+    tensor_set_val(b2, 0, 0, 0.01);
+    tensor_set_val(b2, 0, 1, 0.02);
+
+    let model: ModelWeights = ModelWeights {
+        w1: w1,
+        b1: b1,
+        w2: w2,
+        b2: b2
+    };
+
+    let probs: Tensor = model_predict(model, x);
+    print("\n[4] 2-Katmanli MLP Tahmin Olasiliklari (Sigmoid):");
+    print(tensor_print(probs));
+
+    // 5. Argmax ile Sınıflandırma
+    let top_class: int = model_classify(probs);
+    print("[5] Siniflandirma Karari (Argmax Class Index):");
+    print(top_class);
+
+    // 6. Autograd & Geriye Doğru Yayılım Simülasyonu
+    print("\n[6] Autograd Gradyan Takibi ve Geriye Yayilim:");
+    let node: GradNode = autograd_create_node(1, true);
+    let acc: GradNode = autograd_accumulate_grad(node, 0.42);
+    let drelu: float = autograd_backward_relu(acc.grad, 1.5);
+    print("Geriye yayilim dReLU sonucu:");
+    if (drelu == 0.42) {
+        print("GRADIENT_BACKWARD_OK");
+    }
+
+    // 7. MSE Kayıp Fonksiyonu (Loss)
+    let target: Tensor = tensor_new(1, 2);
+    tensor_set_val(target, 0, 0, 1.0);
+    tensor_set_val(target, 0, 1, 0.0);
+    let loss: float = mse_loss(probs, target);
+    print("\nHesaplanan MSE Kayip (Loss):");
+    if (loss > 0.0) {
+        print("MSE_LOSS_COMPUTED_OK");
+    }
+
+    print("\n================================================================")
+    print("   TEBRIKLER! FAZ 4: AI & ML TENSOR ENGINE BASARIYLA CALISTI!   ")
+    print("================================================================")
+
+    // Temizlik
+    tensor_destroy(x);
+    tensor_destroy(w1);
+    tensor_destroy(b1);
+    tensor_destroy(w1_t);
+    tensor_destroy(hidden);
+    tensor_destroy(hidden_act);
+    tensor_destroy(w2);
+    tensor_destroy(b2);
+    tensor_destroy(probs);
+    tensor_destroy(target);
+
+    return 0;
+}

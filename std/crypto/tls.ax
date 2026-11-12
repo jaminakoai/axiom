@@ -1,0 +1,64 @@
+// Axiom Standard Library (std) - TLS / SSL Secure Client
+// std:crypto:tls
+
+import "std/core/error"
+
+fn tls_connect(host: str, port: int) -> int {
+    return rt_tls_connect(host, port)
+}
+
+fn tls_send(tls_id: int, data: str) -> int {
+    return rt_tls_send(tls_id, data)
+}
+
+fn tls_recv(tls_id: int, max_bytes: int) -> str {
+    return rt_tls_recv(tls_id, max_bytes)
+}
+
+fn tls_close(tls_id: int) -> void {
+    rt_tls_close(tls_id)
+}
+
+fn https_get(host: str, port: int, path: str) -> str {
+    let tls_id = tls_connect(host, port)
+    if tls_id < 0 {
+        return ""
+    }
+    let req = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\nUser-Agent: Axiom-TLS/1.0\r\n\r\n"
+    tls_send(tls_id, req)
+    let resp = tls_recv(tls_id, 32768)
+    tls_close(tls_id)
+    return resp
+}
+
+// --- Result tabanli API ---
+
+// HTTPS GET istegi. Basarisizlikta Err(mesaj) doner.
+fn https_get_result(host: str, port: int, path: str) -> Result<str, str> {
+    if len(host) == 0 {
+        return result_err_str("bos host")
+    }
+    if port <= 0 or port > 65535 {
+        return result_err_str("gecersiz port: " + int_to_str(port))
+    }
+
+    let tls_id = tls_connect(host, port)
+    if tls_id < 0 {
+        return result_err_str("TLS baglantisi kurulamadi: " + host + ":" + int_to_str(port))
+    }
+
+    let req = "GET " + path + " HTTP/1.1\r\nHost: " + host + "\r\nConnection: close\r\nUser-Agent: Axiom-TLS/1.0\r\n\r\n"
+    let sent = tls_send(tls_id, req)
+    if sent < 0 {
+        tls_close(tls_id)
+        return result_err_str("istek gonderilemedi: " + host)
+    }
+
+    let resp = tls_recv(tls_id, 32768)
+    tls_close(tls_id)
+
+    if len(resp) == 0 {
+        return result_err_str("bos yanit: " + host)
+    }
+    return result_ok<str>(resp)
+}

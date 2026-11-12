@@ -1,0 +1,152 @@
+// Axiom Standard Library: std:net:event_loop
+// Linux Epoll Tabanli Yuksek Performansli Asenkron Ag Reaktoru (Async Reactor / Event Loop)
+
+struct EpollEventLoop {
+    epfd: int,
+    max_events: int
+}
+
+struct EventKind {
+    epoll_in: int,
+    epoll_out: int,
+    epoll_err: int,
+    epoll_hup: int
+}
+
+struct EpollEvent {
+    fd: int,
+    events: int
+}
+
+fn event_kind_new() -> EventKind {
+    return EventKind {
+        epoll_in: 1,
+        epoll_out: 4,
+        epoll_err: 8,
+        epoll_hup: 16
+    };
+}
+
+fn event_loop_new() -> EpollEventLoop {
+    let fd: int = rt_epoll_create(1024);
+    return EpollEventLoop {
+        epfd: fd,
+        max_events: 1024
+    };
+}
+
+fn event_loop_new_with_capacity(capacity: int) -> EpollEventLoop {
+    let fd: int = rt_epoll_create(capacity);
+    return EpollEventLoop {
+        epfd: fd,
+        max_events: capacity
+    };
+}
+
+fn event_loop_add(loop: EpollEventLoop, fd: int, events: int) -> int {
+    return rt_epoll_add(loop.epfd, fd, events);
+}
+
+fn event_loop_mod(loop: EpollEventLoop, fd: int, events: int) -> int {
+    return rt_epoll_mod(loop.epfd, fd, events);
+}
+
+fn event_loop_del(loop: EpollEventLoop, fd: int) -> int {
+    return rt_epoll_del(loop.epfd, fd);
+}
+
+fn event_loop_poll(loop: EpollEventLoop, timeout_ms: int) -> int {
+    return rt_epoll_wait(loop.epfd, timeout_ms);
+}
+
+fn event_loop_get_event(loop: EpollEventLoop, index: int) -> EpollEvent {
+    let e_fd: int = rt_epoll_event_fd(loop.epfd, index);
+    let e_ev: int = rt_epoll_event_events(loop.epfd, index);
+    return EpollEvent {
+        fd: e_fd,
+        events: e_ev
+    };
+}
+
+fn event_loop_event_fd(loop: EpollEventLoop, index: int) -> int {
+    return rt_epoll_event_fd(loop.epfd, index);
+}
+
+fn event_loop_event_events(loop: EpollEventLoop, index: int) -> int {
+    return rt_epoll_event_events(loop.epfd, index);
+}
+
+fn event_loop_close(loop: EpollEventLoop) -> void {
+    rt_epoll_close(loop.epfd);
+}
+
+// Olay Tipi Sorgulama Yardimcilari
+fn event_is_readable(events: int) -> bool {
+    return rt_epoll_is_readable(events);
+}
+
+fn event_is_writable(events: int) -> bool {
+    return rt_epoll_is_writable(events);
+}
+
+fn event_is_error(events: int) -> bool {
+    return rt_epoll_is_error(events);
+}
+
+fn event_is_hangup(events: int) -> bool {
+    return rt_epoll_is_hangup(events);
+}
+
+// Non-blocking Ag ve Dosya Tanimlayici Fonksiyonlari
+fn net_set_nonblocking(fd: int) -> int {
+    return rt_net_set_nonblocking(fd);
+}
+
+fn tcp_server_nonblocking(port: int) -> int {
+    return rt_tcp_server_nonblocking(port);
+}
+
+fn tcp_accept_nonblocking(server_fd: int) -> int {
+    return rt_tcp_accept_nonblocking(server_fd);
+}
+
+fn fd_write(fd: int, data: str) -> int {
+    return rt_fd_write(fd, data);
+}
+
+fn fd_read(fd: int, max_len: int) -> str {
+    return rt_fd_read(fd, max_len);
+}
+
+// IPC Yardimcilari (Pipe ve Socketpair)
+fn pipe_create() -> int {
+    return rt_pipe_create();
+}
+
+fn pipe_read_fd(handle: int) -> int {
+    return rt_pipe_read_fd(handle);
+}
+
+fn pipe_write_fd(handle: int) -> int {
+    return rt_pipe_write_fd(handle);
+}
+
+fn pipe_close(handle: int) -> void {
+    rt_pipe_close(handle);
+}
+
+fn socketpair_create() -> int {
+    return rt_socketpair_create();
+}
+
+fn socketpair_fd1(handle: int) -> int {
+    return rt_socketpair_fd1(handle);
+}
+
+fn socketpair_fd2(handle: int) -> int {
+    return rt_socketpair_fd2(handle);
+}
+
+fn socketpair_close(handle: int) -> void {
+    rt_socketpair_close(handle);
+}

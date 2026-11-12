@@ -1,0 +1,14 @@
+// Axiom Standard Library (std) - Cryptographic Hashes (MD5, SHA-1, SHA-256)
+// std:crypto:hash
+
+fn hash_md5(s: str) -> str {
+    return rt_hash_md5(s)
+}
+
+fn hash_sha1(s: str) -> str {
+    return rt_hash_sha1(s)
+}
+
+fn hash_sha256(s: str) -> str {
+    return rt_hash_sha256(s)
+}

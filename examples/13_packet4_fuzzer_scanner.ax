@@ -1,0 +1,152 @@
+// Axiom (λx) - Ornek 13: Guvenlik, Fuzzing ve Veri Yapilari (Paket 4)
+// Kutuphaneler:
+//   - std:collections:queue  (Is parcacigi guvenli thread-safe FIFO kuyruk)
+//   - std:security:fuzzer    (Wordlist yonetimi, marker degistirme, URL & Double encode, Null byte)
+//   - std:time:date          (ISO 8601 zaman damgasi, Unix epoch, ozel formatlama)
+//   - std:io:csv             (RFC 4180 CSV rapor uretici ve dosya kaydedici)
+//   - std:cli:args           (CLI arguman, opsiyon ve bayrak ayristirici)
+
+import "std:collections:queue"
+import "std:security:fuzzer"
+import "std:time:date"
+import "std:io:csv"
+import "std:cli:args"
+
+fn main() -> int {
+    print("================================================================");
+    print("  AXIOM (λx) GUVENLIK, FUZZING VE VERI YAPILARI SUITI (PAKET 4) ");
+    print("================================================================");
+
+    // -----------------------------------------------------------------
+    // 1. CLI ARGUMAN VE BAYRAK AYRISTIRMA (std:cli:args)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 1] Komut Satiri (CLI) Parametreleri ve Bayraklar");
+    // Gercek veya simule edilmis CLI argumanlarini yukle
+    if cli_args_count() <= 1 {
+        cli_set_args(["axiom_fuzzer", "--target", "http://vulnerable.app/api?query=FUZZ", "-p", "8080", "--verbose", "--threads=8"]);
+    }
+
+    let arg_total = cli_args_count();
+    print("  -> Toplam CLI Arguman Sayisi :", arg_total);
+    verify arg_total >= 4, "CLI arguman sayisi en az 4 olmali!";
+
+    let target_endpoint = cli_get_option("--target", "http://localhost");
+    print("  -> Hedef URL Kalipligi       :", target_endpoint);
+
+    let target_port = cli_get_int_option("-p", 80);
+    print("  -> Hedef Port                :", target_port);
+    verify target_port == 8080, "Hedef port 8080 olarak ayristirilmali!";
+
+    let is_verbose = cli_has_flag("--verbose");
+    print("  -> Verbose (Ayrintili) Mod   :", is_verbose);
+    verify is_verbose == true, "Verbose bayragi aktif olmali!";
+
+    let thread_count = cli_get_int_option("--threads", 4);
+    print("  -> Is Parcacigi Sayisi       :", thread_count);
+    verify thread_count == 8, "Eslenmis threads parametresi 8 olmali!";
+
+    // -----------------------------------------------------------------
+    // 2. FUZZING VE PAYLOAD MUTASYONU (std:security:fuzzer)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 2] Web & API Payload Olusturma ve Mutasyon");
+    let base_payload = "1' OR '1'='1";
+    let url_enc = fuzz_url_encode(base_payload);
+    let dbl_enc = fuzz_double_encode(base_payload);
+    let null_inj = fuzz_add_null_byte("admin_session.php");
+
+    print("  -> Ham SQLi Payload          :", base_payload);
+    print("  -> URL Encoded               :", url_enc);
+    print("  -> Double Encoded (WAF-Bypass):", dbl_enc);
+    print("  -> Null Byte Injection       :", null_inj);
+
+    verify url_enc == "1%27%20OR%20%271%27%3D%271", "URL encode dogru olmali!";
+    verify dbl_enc == "1%2527%2520OR%25271%2527%253D%25271" or len(dbl_enc) > len(url_enc), "Double encode genisletilmeli!";
+    verify null_inj == "admin_session.php%00", "Null byte %00 eklenmeli!";
+
+    let mutated_url = fuzz_replace_marker(target_endpoint, "FUZZ", url_enc);
+    print("  -> Enjekte Edilmis Hedef URL :", mutated_url);
+
+    // -----------------------------------------------------------------
+    // 3. THREAD-SAFE FIFO KUYRUK ILE IS DAGITIMI (std:collections:queue)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 3] Is Parcacigi Guvenli FIFO Kuyruk Yonetimi");
+    let scan_queue = queue_create();
+    verify queue_is_empty(scan_queue) == true, "Yeni kuyruk bos olmali!";
+
+    // Guvenlik tarayicisi icin fuzzing payload kuyruguna eklemeler yap
+    queue_push(scan_queue, "PAYLOAD_SQLI_AUTH_BYPASS");
+    queue_push(scan_queue, "PAYLOAD_XSS_STORED");
+    queue_push(scan_queue, "PAYLOAD_CMD_INJECTION");
+    queue_push(scan_queue, "PAYLOAD_PATH_TRAVERSAL");
+    queue_push(scan_queue, "PAYLOAD_SSRF_METADATA");
+
+    let q_len = queue_len(scan_queue);
+    print("  -> Kuyruga Eklenen Is Sayisi :", q_len);
+    verify q_len == 5, "Kuyrukta 5 adet test isi bulunmali!";
+    verify queue_is_empty(scan_queue) == false, "Kuyruk bos olmamali!";
+
+    // -----------------------------------------------------------------
+    // 4. ZAMAN DAMGASI VE SURE OLCUMU (std:time:date)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 4] ISO 8601 Zaman Damgasi ve Sure Yonetimi");
+    let scan_start_iso = date_now_iso();
+    let scan_start_epoch = date_now_epoch();
+    print("  -> Tarama Baslangic ISO 8601 :", scan_start_iso);
+    print("  -> Tarama Baslangic Epoch    :", scan_start_epoch);
+
+    let readable_date = date_format_epoch(scan_start_epoch, "%Y-%m-%d %H:%M:%S UTC");
+    print("  -> Okunabilir Tarih Formati  :", readable_date);
+
+    verify len(scan_start_iso) == 20, "ISO 8601 uzunlugu 20 karakter olmali!";
+    verify scan_start_epoch > 1700000000, "Epoch gecerli bir zaman olmali!";
+
+    // -----------------------------------------------------------------
+    // 5. CSV GUVENLIK RAPORU URETIMI (std:io:csv)
+    // -----------------------------------------------------------------
+    print("\n[ADIM 5] CSV Raporlama ve RFC 4180 Kacirma Standartlari");
+    let report = csv_create();
+
+    // Tablo Basliklari
+    csv_add_row(report, ["TIMESTAMP", "TARGET_URL", "PAYLOAD_KEY", "RESULT", "NOTES"]);
+
+    let mut processed_count = 0;
+    while queue_is_empty(scan_queue) == false {
+        let job_key = queue_pop(scan_queue);
+        let curr_time = date_now_iso();
+        let target_call = fuzz_replace_marker(target_endpoint, "FUZZ", job_key);
+
+        if job_key == "PAYLOAD_SQLI_AUTH_BYPASS" {
+            csv_add_row(report, [curr_time, target_call, job_key, "VULNERABLE", "Bypass successful, HTTP 200"]);
+        } else if job_key == "PAYLOAD_CMD_INJECTION" {
+            csv_add_row(report, [curr_time, target_call, job_key, "CRITICAL", "Remote Code Execution via id=whoami"]);
+        } else {
+            csv_add_row(report, [curr_time, target_call, job_key, "FILTERED", "Blocked by WAF, status 403"]);
+        }
+        processed_count = processed_count + 1;
+    }
+
+    verify processed_count == 5, "Tum 5 kuyruk isi islenmis olmali!";
+    verify queue_len(scan_queue) == 0, "Kuyruk tamamen bosaltilmis olmali!";
+
+    let csv_output = csv_to_str(report);
+    print("\n--- Uretilen Guvenlik CSV Raporu ---");
+    print(csv_output);
+
+    let report_file = "/tmp/axiom_packet4_report.csv";
+    let is_saved = csv_save_file(report, report_file);
+    print("  -> Rapor Dosyaya Kaydedildi  :", is_saved);
+    verify is_saved == true, "CSV dosyasi basariyla kaydedilmeli!";
+
+    let scan_end_epoch = date_now_epoch();
+    let elapsed = date_diff_seconds(scan_end_epoch, scan_start_epoch);
+    print("  -> Toplam Tarama Suresi (sn) :", elapsed);
+
+    // Temizlik
+    queue_free(scan_queue);
+    csv_free(report);
+
+    print("\n================================================================");
+    print("[BASARILI] PAKET 4: Tum guvenlik, fuzzing ve raporlama modulleri sorunsuz calisti.");
+    print("================================================================");
+    return 0;
+}

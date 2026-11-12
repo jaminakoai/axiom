@@ -1,0 +1,38 @@
+// Axiom Standard Library: std:ai:tensor
+// Cok Boyutlu Tensors ve Bellek Yonetimi
+
+struct Tensor {
+    handle: int,
+    rows: int,
+    cols: int
+}
+
+fn tensor_new(rows: int, cols: int) -> Tensor
+    requires rows > 0 and cols > 0
+    ensures return.rows == rows and return.cols == cols
+{
+    let h: int = tensor_create_2d(rows, cols);
+    let r: int = tensor_rows(h);
+    let c: int = tensor_cols(h);
+    return Tensor { handle: h, rows: r, cols: c };
+}
+
+fn tensor_set_val(t: Tensor, r: int, c: int, val: float) -> void
+    requires r >= 0 and r < t.rows and c >= 0 and c < t.cols
+{
+    tensor_set(t.handle, r, c, val);
+}
+
+fn tensor_get_val(t: Tensor, r: int, c: int) -> float
+    requires r >= 0 and r < t.rows and c >= 0 and c < t.cols
+{
+    return tensor_get(t.handle, r, c);
+}
+
+fn tensor_destroy(t: Tensor) -> void {
+    tensor_free(t.handle);
+}
+
+fn tensor_print(t: Tensor) -> str {
+    return tensor_to_str(t.handle);
+}

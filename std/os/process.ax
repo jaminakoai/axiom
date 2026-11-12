@@ -1,0 +1,42 @@
+// Axiom Standard Library - OS Process Management
+// std:os:process
+
+import "std/core/error"
+
+fn process_exec_output(cmd: str) -> str {
+    return rt_process_exec_output(cmd)
+}
+
+fn process_get_pid() -> int {
+    return rt_process_get_pid()
+}
+
+fn process_kill(pid: int, sig: int) -> int {
+    return rt_process_kill(pid, sig)
+}
+
+fn process_spawn_bg(cmd: str) -> int {
+    return rt_process_spawn_bg(cmd)
+}
+
+fn process_exec_argv(args: str[]) -> int {
+    return os_exec_argv(args)
+}
+
+// --- Result tabanli API ---
+
+// Komutu calistirir ve ciktisini dondurur.
+//
+// Bilinen sinir: yerlesik `process_exec_output` bos cikti ile hatayi ayirt
+// edemez. Bu sarmalayici bos komutu ve bos ciktiyi Err sayar; basarili ama
+// cikti uretmeyen komutlar da Err donecektir.
+fn exec_output_result(cmd: str) -> Result<str, str> {
+    if len(cmd) == 0 {
+        return result_err_str("bos komut")
+    }
+    let out = process_exec_output(cmd)
+    if len(out) == 0 {
+        return result_err_str("komut cikti uretmedi veya basarisiz: " + cmd)
+    }
+    return result_ok<str>(out)
+}
