@@ -68,9 +68,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   desteklenir. Koşul olarak `any of them`, `all of them` ve `N of them`
   kabul edilir; bilinmeyen koşullar, desteklenmeyen modifier'lar ve hex jump /
   alternation yapıları açık ayrıştırma hatasıyla reddedilir.
-- Metin kalıplarında YARA kaçış dizileri henüz desteklenmez ve hata verir.
-  `//` yorumları metin kalıbının içinde korunur; `#` YARA yorum işareti
-  olmadığından olduğu gibi değerlendirilir.
+- Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
+  desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
+  reddedilir. `//` kalıp içinde korunur; `#` YARA yorum işareti değildir.
 - `scan` metin tabanlıdır: NUL baytı içeren dosya **ilk NUL'da kesilir**.
   `target_sha256` yine tüm dosyayı kapsar; `scanned_bytes` yalnız okunabilen
   öneki gösterir.

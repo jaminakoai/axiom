@@ -70,8 +70,9 @@ in their own language.
   it accepts `any of them`, `all of them`, and `N of them` conditions.
   Unknown conditions, unsupported modifiers, and hex jump/alternation
   constructs are rejected with a parse error.
-- YARA escape sequences in text patterns are not supported yet and are rejected.
-  `//` inside a text pattern is preserved; `#` is not treated as a YARA comment.
+- Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
+  `\x00` is rejected because Axiom represents strings as NUL-terminated text.
+  `//` inside a pattern is preserved; `#` is not a YARA comment marker.
 - `scan` is text-based: a file containing a NUL byte **is truncated at the
   first NUL**. `target_sha256` still covers the whole file; `scanned_bytes`
   shows only the readable prefix.

@@ -16,13 +16,14 @@
 // Kosullar: `any of them`, `all of them`, `N of them` (N tamsayi).
 //
 // Desteklenmeyen YARA ozellikleri: meta/tags, birlesik condition ifadeleri,
-// at/in, modifier'lar, string kacislari ve gelismis hex operatorleri.
+// at/in, modifier'lar, NUL metin kacisi ve gelismis hex operatorleri.
 // Desteklenmeyen ifadeler sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
 import "std/core/error"
 import "std/text/unicode"
 import "std/security/yara"
 import "std/text/regex"
+import "std/encoding/hex"
 
 // --- Yardimcilar ---
 
@@ -66,6 +67,89 @@ fn _parse_rule_name(line: str) -> str {
     return name
 }
 
+fn _find_unescaped_quote(s: str) -> int {
+    let mut escaped = false
+    let mut i = 0
+    while i < len(s) {
+        let ch = str_char_at(s, i)
+        if escaped {
+            escaped = false
+        } else if ch == "\\" {
+            escaped = true
+        } else if ch == "\"" {
+            return i
+        }
+        i = i + 1
+    }
+    return -1
+}
+
+// Runtime str degerleri NUL ile sonlandigi icin \x00 guvenli sekilde temsil
+// edilemez. Diger temel YARA kacislari burada dogrulanip cozulur.
+fn _yara_escape_error(s: str) -> str {
+    let mut i = 0
+    while i < len(s) {
+        if str_char_at(s, i) == "\\" {
+            if i + 1 >= len(s) {
+                return "ters bolu sonda; gecersiz YARA kacisi"
+            }
+            let esc = str_char_at(s, i + 1)
+            if esc == "\\" or esc == "\"" or esc == "n" or esc == "r" or esc == "t" {
+                i = i + 2
+            } else if esc == "x" {
+                if i + 3 >= len(s) {
+                    return "\\x kacisi iki hex basamagi gerektirir"
+                }
+                let hi = str_char_at(s, i + 2)
+                let lo = str_char_at(s, i + 3)
+                if not str_contains("0123456789abcdefABCDEF", hi) or not str_contains("0123456789abcdefABCDEF", lo) {
+                    return "\\x kacisi gecersiz hex basamagi iceriyor"
+                }
+                if to_lower_tr(hi + lo) == "00" {
+                    return "\\x00 desteklenmiyor: tarayici metni NUL'da sonlandiriyor"
+                }
+                i = i + 4
+            } else {
+                return "desteklenmeyen YARA kacisi: \\" + esc
+            }
+        } else {
+            i = i + 1
+        }
+    }
+    return ""
+}
+
+fn _decode_yara_text(s: str) -> str {
+    let mut out = ""
+    let mut i = 0
+    while i < len(s) {
+        let ch = str_char_at(s, i)
+        if ch != "\\" {
+            out = out + ch
+            i = i + 1
+        } else {
+            let esc = str_char_at(s, i + 1)
+            if esc == "\\" or esc == "\"" {
+                out = out + esc
+                i = i + 2
+            } else if esc == "n" {
+                out = out + "\n"
+                i = i + 2
+            } else if esc == "r" {
+                out = out + "\r"
+                i = i + 2
+            } else if esc == "t" {
+                out = out + "\t"
+                i = i + 2
+            } else {
+                out = out + hex_decode(str_sub(s, i + 2, 2))
+                i = i + 4
+            }
+        }
+    }
+    return out
+}
+
 // strings: bolumundeki "$id = ..." satirini ayristirir.
 // Donus: ilk '=' isaretinden bolunebilen "$id=pattern" veya bos metin.
 // Dinamik dizi dondurmemek LLVM erken-donus temizligiyle ilgili bir backend
@@ -87,7 +171,7 @@ fn _parse_string_def(line: str) -> str {
 
     // Metin: "..." (sondaki modifikatorleri at)
     if str_starts_with(raw, "\"") {
-        let close = str_index_of(str_sub(raw, 1, len(raw) - 1), "\"")
+        let close = _find_unescaped_quote(str_sub(raw, 1, len(raw) - 1))
         if close < 0 {
             return ""
         }
@@ -96,12 +180,11 @@ fn _parse_string_def(line: str) -> str {
             return ""
         }
         let text = str_sub(raw, 1, close)
-        // Escape semantics are not implemented yet. Reject them explicitly
-        // instead of searching for the backslash sequence literally.
-        if str_contains(text, "\\") {
+        let escape_error = _yara_escape_error(text)
+        if len(escape_error) > 0 {
             return ""
         }
-        return id + "=str:" + text
+        return id + "=str:" + _decode_yara_text(text)
     }
 
     // Hex: { 48 89 ?? 55 }

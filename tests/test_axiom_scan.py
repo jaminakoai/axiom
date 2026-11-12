@@ -109,9 +109,43 @@ def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):
     assert data["match_count"] == 1
 
 
+@pytest.mark.parametrize(("literal", "target"), [
+    (r'"path\\to"', b"path\\to"),
+    (r'"quote\"yes"', b'quote"yes'),
+    (r'"line\n"', b"line\n"),
+    (r'"return\r"', b"return\r"),
+    (r'"tab\t"', b"tab\t"),
+    (r'"\x41"', b"A"),
+])
+def test_yara_text_escapes_decode_as_expected(scanner, tmp_path, literal, target):
+    rules = tmp_path / "escaped.yar"
+    rules.write_text(
+        "rule Escaped {\n strings:\n  $a = " + literal
+        + "\n condition:\n  any of them\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "sample.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == 1
+
+
+@pytest.mark.parametrize("literal", [r'"\x00"', r'"\q"', r'"\xG1"'])
+def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path, literal):
+    rules = tmp_path / "bad-escape.yar"
+    rules.write_text(
+        "rule BadEscape {\n strings:\n  $a = " + literal
+        + "\n condition:\n  any of them\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert json.loads(res.stdout)["ok"] is False
+
+
 @pytest.mark.parametrize("pattern", [
     '"needle" nocase',
-    '"needle\\\\x41"',
     '{ 4D 5A [2-4] 50 45 }',
     '/[/',
 ])
