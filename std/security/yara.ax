@@ -314,6 +314,10 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 
 /// Kuralin tum desenlerini tarar ve kosulunu uygular.
 fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
+    return yara_scan_rule_with_filesize(target, rule, str_byte_len(target))
+}
+
+fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -> YaraMatch {
     let total_patterns = len(rule.patterns);
     let mut matched_count = 0;
     let mut pattern_values: bool[] = [];
@@ -354,7 +358,7 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
         let threshold = str_to_int(parts[0]);
         is_rule_matched = (matched_count >= threshold);
     } else {
-        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values);
+        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values, target_size);
     }
 
     if (is_rule_matched) {
@@ -384,11 +388,15 @@ fn yara_rule_is_match(target: str, rule: YaraRule) -> bool {
 
 /// Kural setindeki tum eslesmeleri dondurur.
 fn yara_ruleset_scan(target: str, ruleset: YaraRuleSet) -> YaraMatch[] {
+    return yara_ruleset_scan_with_filesize(target, ruleset, str_byte_len(target))
+}
+
+fn yara_ruleset_scan_with_filesize(target: str, ruleset: YaraRuleSet, target_size: int) -> YaraMatch[] {
     let mut matches: YaraMatch[] = [];
     let num_rules = len(ruleset.rules);
     let mut i = 0;
     while (i < num_rules) {
-        let m = yara_scan_rule(target, ruleset.rules[i]);
+        let m = yara_scan_rule_with_filesize(target, ruleset.rules[i], target_size);
         if (m.matched) {
             matches = array_push(matches, m);
         }

@@ -66,7 +66,7 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 
 - `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve koşullar
   desteklenir. Koşul olarak `any/all/none of them`, `N of them`, `$a` desen
-  başvuruları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
+  başvuruları, `filesize` karşılaştırmaları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
   (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,

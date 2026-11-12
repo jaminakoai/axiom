@@ -74,7 +74,6 @@ def test_rules_command_counts(scanner, tmp_path):
 @pytest.mark.parametrize("condition", [
     "$a at 0",
     "#a == 2",
-    "filesize < 10",
 ])
 def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanner, tmp_path, condition):
     rules = tmp_path / "unsupported.yar"
@@ -154,6 +153,45 @@ def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, con
     res = _run(scanner, "scan", str(sample), "--rules", str(rules))
     assert res.returncode == 0, res.stdout + res.stderr
     assert json.loads(res.stdout)["match_count"] == expected
+
+
+@pytest.mark.parametrize(("expression", "expected"), [
+    ("filesize < 4", 1),
+    ("filesize <= 3", 1),
+    ("filesize > 2", 1),
+    ("filesize >= 3", 1),
+    ("filesize == 3", 1),
+    ("filesize != 3", 0),
+    ("filesize < 3", 0),
+    ("$a and filesize == 3", 1),
+])
+def test_filesize_comparisons(scanner, tmp_path, expression, expected):
+    rules = tmp_path / "filesize.yar"
+    rules.write_text(
+        'rule FileSize {\n strings:\n  $a = "abc"\n condition:\n  '
+        + expression + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "three-bytes.bin"
+    sample.write_bytes(b"abc")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
+def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, tmp_path):
+    rules = tmp_path / "filesize-nul.yar"
+    rules.write_text(
+        'rule FullLength {\n condition:\n  filesize == 5\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "nul.bin"
+    sample.write_bytes(b"a\x00bcd")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    report = json.loads(res.stdout)
+    assert report["match_count"] == 1
+    assert report["scanned_bytes"] == 1
 
 
 def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):

@@ -126,8 +126,9 @@ fn cmd_rules(rule_path: str) -> Result<int, str> {
 fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
     let sets = _load_rules(rule_path)?
     let content = read_file(target)?
+    let target_size = file_size_result(target)?
 
-    let matches = yara_ruleset_scan(content, sets)
+    let matches = yara_ruleset_scan_with_filesize(content, sets, target_size)
 
     // Kanit butunlugu: TUM dosyanin SHA-256'si (metin kesilse bile).
     let target_hash = fim_calculate_hash(target)
