@@ -13,7 +13,7 @@
 //           any of them
 //   }
 //
-// Kosullar: `any of them`, `all of them`, `N of them` (N tamsayi).
+// Kosullar: `any/all/none of them` ve `N of them` (N tamsayi).
 //
 // Desteklenmeyen YARA ozellikleri: meta/tags, birlesik condition ifadeleri,
 // at/in, wide ve gelismis hex operatorleri.
@@ -287,7 +287,7 @@ fn _parse_condition(line: str) -> str {
 // Bu parser yalnizca bu condition alt kumesini dogru degerlendirir.
 // Diger ifadeler scanner tarafinda varsayilan `any` gibi ele alinmasin.
 fn _supported_condition(condition: str) -> bool {
-    if condition == "any" or condition == "all" or condition == "any of them" or condition == "all of them" {
+    if condition == "any" or condition == "all" or condition == "any of them" or condition == "all of them" or condition == "none of them" {
         return true
     }
     if not str_ends_with(condition, " of them") {

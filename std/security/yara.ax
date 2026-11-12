@@ -347,6 +347,8 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
         is_rule_matched = (matched_count == total_patterns);
     } else if (cond == "any" or cond == "any of them") {
         is_rule_matched = (matched_count > 0);
+    } else if (cond == "none of them") {
+        is_rule_matched = (matched_count == 0);
     } else if (str_ends_with(cond, "of them")) {
         // Örn: "2 of them"
         let parts = str_split(cond, " ");

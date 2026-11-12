@@ -72,7 +72,6 @@ def test_rules_command_counts(scanner, tmp_path):
 
 
 @pytest.mark.parametrize("condition", [
-    "none of them",
     "$a and not $b",
     "$a at 0",
     "#a == 2",
@@ -274,6 +273,26 @@ def test_scan_all_of_them_requires_every_pattern(scanner, tmp_path):
     res2 = _run(scanner, "scan", str(both), "--rules", str(r))
     data2 = json.loads(res2.stdout)
     assert "Both_Required" in [m["rule"] for m in data2["matches"]]
+
+
+def test_none_of_them_matches_only_when_no_pattern_is_present(scanner, tmp_path):
+    rules = tmp_path / "none.yar"
+    rules.write_text(
+        'rule NoNeedle {\n strings:\n  $a = "needle"\n'
+        ' condition:\n  none of them\n}\n',
+        encoding="utf-8",
+    )
+    clean = tmp_path / "clean.txt"
+    clean.write_bytes(b"ordinary content")
+    dirty = tmp_path / "dirty.txt"
+    dirty.write_bytes(b"contains needle")
+
+    clean_result = _run(scanner, "scan", str(clean), "--rules", str(rules))
+    dirty_result = _run(scanner, "scan", str(dirty), "--rules", str(rules))
+    assert clean_result.returncode == 0
+    assert [m["rule"] for m in json.loads(clean_result.stdout)["matches"]] == ["NoNeedle"]
+    assert dirty_result.returncode == 0
+    assert json.loads(dirty_result.stdout)["matches"] == []
 
 
 def test_scan_no_match_is_empty_list(scanner, tmp_path):

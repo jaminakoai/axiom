@@ -67,7 +67,7 @@ in their own language.
 **Honest limits (v0.2):**
 
 - `axiom-scan` is **not all of YARA**: subset patterns and simple conditions;
-  it accepts `any of them`, `all of them`, and `N of them` conditions.
+  it accepts `any of them`, `all of them`, `none of them`, and `N of them` conditions.
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
