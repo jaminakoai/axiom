@@ -7,10 +7,10 @@
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
-> Rozetler hakkında: **CI** rozeti GitHub Actions'a canlı bağlıdır — kırmızıysa
-> son koşu başarısızdır. **Tests** rozeti sabittir ve yalnızca aşağıda tarih,
-> komut ve sonucu belgelenen **yerel** koşuyu gösterir; CI sonucu değildir.
-> Güncel CI durumu ve bilinen hatalar: aşağıdaki "Testleri çalıştırma" bölümü.
+> Rozetler hakkında: **CI** rozeti GitHub Actions'a canlı bağlıdır (şu an
+> yeşil). **Tests** rozeti sabittir ve yalnızca aşağıda tarih, komut ve sonucu
+> belgelenen **yerel** koşuyu gösterir; CI sonucu değildir — ikisi ayrı
+> kanıtlardır.
 
 > **Axiom (λx): sözleşmeli, native derlenen bir sistem programlama dili.**
 > Ölçülen kıyas (bu depodaki benchmarklar, tek makine): Axiom C `-O3`'ün
@@ -564,27 +564,34 @@ mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
 atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
 (aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
 
-### CI durumu (dürüst)
+### CI durumu
 
-**GitHub Actions, son gözlenen koşuda kırmızıydı** (`43212627639`,
-`43219236120`): 20 başarısız / 919 geçti / 83 atlandı. Rozet gerçek workflow'a
-bağlıdır ve durumu olduğu gibi gösterir.
+**GitHub Actions yeşil.** Rozet gerçek workflow'a bağlıdır
+(`.github/workflows/ci.yml`, `master`); 7 işin tamamı geçiyor:
 
-Beş kök neden 12 Kasım'da giderildi (ayrıntı: rapor §10):
+| İş | Durum |
+|---|---|
+| Test (Python 3.10 / 3.11 / 3.12 / 3.13) | ✅ |
+| ASan/UBSan + bellek sızıntısı | ✅ |
+| LLVM arka ucu + DWARF | ✅ |
+| Biçimlendirme (`make fmt-check`) | ✅ |
+
+Son doğrulanan koşu: `43266408601` (12 Kasım 2026, `master`).
+
+Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
 | # | Kök neden | Düzeltme |
 |---|---|---|
-| 1 | `bin/axiomc` testlerden **sonra** derleniyordu (13 test) | CI'da `make bootstrap` artık pytest'ten önce |
-| 2 | **LLVM `main() -> Result` köprüsü** `call void @ax_main()` üretiyordu (2 test) | Köprü `Result`'ı değer olarak çağırır; Err → stderr + exit 1. **Gerçek ürün hatasıydı:** clang 21 Err'i sessizce düşürüp `exit 0` veriyordu |
-| 3 | Unicode testi yorumlayıcı sürümüne bağlıydı (2 test) | Tablo sürümü `PINNED_UCD_VERSION` ile sabit; beklenen değerler altın dosyada |
-| 4 | `readelf` uyarıları `exit 1` döndürüyordu (2 test) | Test içeriğe bakar + pyelftools ile **bağımsız yapısal** doğrulama |
-| 5 | Python 3.10'da `tomllib` yok → paket bağımlılıkları sessizce çözülmüyordu (1 test) | `parse_toml` (tomli yedeği) kullanılıyor; inline tablo desteği |
+| 1 | `bin/axiomc` testlerden sonra derleniyordu (13 test) | CI'da `make bootstrap` pytest'ten önce |
+| 2 | **LLVM `main() -> Result` köprüsü** `call void @ax_main()` üretiyordu (2 test) | `Result` değer olarak çağrılır; Err → stderr + exit 1. **Gerçek hata:** clang 21 Err'i sessizce düşürüp `exit 0` veriyordu |
+| 3 | Unicode testi yorumlayıcı sürümüne bağlıydı (2 test) | Sürüm `PINNED_UCD_VERSION` ile sabit; beklenen değerler altın dosyada |
+| 4 | `readelf` uyarıları `exit 1` döndürüyordu (2 test) | İçerik doğrulaması + pyelftools ile bağımsız yapısal kontrol |
+| 5 | Python 3.10'da `tomllib` yok → paket bağımlılıkları sessizce çözülmüyordu (1 test) | `parse_toml` (tomli yedeği) + inline tablo desteği |
+| 6 | **`gethostbyname` yarışı** → aralıklı SIGSEGV (1 test) | `axiom_internal_resolve_ipv4()` — `inet_pton`/`getaddrinfo`. Ölçüm: eski 18/25 segfault, yeni 0/25 |
 
-Ek olarak `fmt` işine eksik `z3` bağımlılığı eklendi. **Yeni CI koşusu
-bekleniyor**; rozet yeşile dönene kadar "CI yeşil" denmez. Yerel koşu
-(1034/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
-(`951 geçti, 57 başarısız, 2 hata`):
-[docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
+**Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
+Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
+çıkmasını sağladı. Yerel koşu (1034/0/0) ile CI artık aynı fikirde.
 
 ---
 
@@ -612,9 +619,9 @@ bekleniyor**; rozet yeşile dönene kadar "CI yeşil" denmez. Yerel koşu
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **CI doğrulaması bekleniyor:** son gözlenen CI koşusu kırmızıydı (20 test);
-  4 kök neden giderildi (LLVM `main()` köprüsü gerçek ürün hatasıydı). Yerel
-  koşu yeşil, yeni CI koşusunun sonucu bekleniyor; ayrıntı "CI durumu" bölümünde.
+- **CI:** yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
+  (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
+  Ayrıntı "CI durumu" bölümünde.
 - **Windows:** çapraz derleme + `wine` ile çalıştırma doğrulandı; gerçek Windows
   makinede CI koşusu yok.
 - **macOS:** runner/doğrulama yok.

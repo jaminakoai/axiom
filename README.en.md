@@ -7,10 +7,10 @@
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
-> About the badges: the **CI** badge is live from GitHub Actions — red means the
-> last run failed. The **Tests** badge is static and shows only the **local** run
-> documented below with its date, command and result; it is not a CI result.
-> Current CI state and known failures: see "Running the tests" below.
+> About the badges: the **CI** badge is live from GitHub Actions (currently
+> green). The **Tests** badge is static and shows only the **local** run
+> documented below with its date, command and result; it is not a CI result —
+> they are two separate pieces of evidence.
 
 > **Axiom (λx): a contract-driven, natively compiled systems programming language.**
 > Measured comparison (benchmarks in this repo, single machine): Axiom is
@@ -570,27 +570,34 @@ present locally, the wine/Windows tests really run and nothing is skipped. The
 same suite in an environment missing those components starts **skipping**
 (see below) — same count, different outcome.
 
-### CI status (honest)
+### CI status
 
-**GitHub Actions was red in the last observed runs** (`43212627639`,
-`43219236120`): 20 failed / 919 passed / 83 skipped. The badge is wired to the
-real workflow and reports exactly that.
+**GitHub Actions is green.** The badge is wired to the real workflow
+(`.github/workflows/ci.yml`, `master`); all 7 jobs pass:
 
-Five root causes were fixed on 12 November (details: report §10):
+| Job | Status |
+|---|---|
+| Test (Python 3.10 / 3.11 / 3.12 / 3.13) | ✅ |
+| ASan/UBSan + memory leaks | ✅ |
+| LLVM backend + DWARF | ✅ |
+| Formatting (`make fmt-check`) | ✅ |
+
+Last verified run: `43266408601` (12 November 2026, `master`).
+
+Six root causes fixed on the way here (details: report §9–§12):
 
 | # | Root cause | Fix |
 |---|---|---|
-| 1 | `bin/axiomc` was built **after** the tests (13 tests) | CI now runs `make bootstrap` before pytest |
-| 2 | **LLVM `main() -> Result` bridge** emitted `call void @ax_main()` (2 tests) | Bridge calls `Result` by value; Err → stderr + exit 1. **Real product bug:** clang 21 silently dropped the Err and returned `exit 0` |
-| 3 | Unicode test depended on the interpreter version (2 tests) | Table version pinned via `PINNED_UCD_VERSION`; expected values in a golden file |
-| 4 | `readelf` warnings returned `exit 1` (2 tests) | Test asserts on content + **independent structural** check via pyelftools |
-| 5 | No `tomllib` on Python 3.10 → package deps silently unresolved (1 test) | Uses `parse_toml` (tomli fallback); inline tables supported |
+| 1 | `bin/axiomc` was built after the tests (13 tests) | CI runs `make bootstrap` before pytest |
+| 2 | **LLVM `main() -> Result` bridge** emitted `call void @ax_main()` (2 tests) | Calls `Result` by value; Err → stderr + exit 1. **Real bug:** clang 21 silently dropped the Err and returned `exit 0` |
+| 3 | Unicode test depended on the interpreter version (2 tests) | Version pinned via `PINNED_UCD_VERSION`; expected values in a golden file |
+| 4 | `readelf` warnings returned `exit 1` (2 tests) | Content assertions + independent structural check via pyelftools |
+| 5 | No `tomllib` on Python 3.10 → deps silently unresolved (1 test) | `parse_toml` (tomli fallback) + inline table support |
+| 6 | **`gethostbyname` race** → intermittent SIGSEGV (1 test) | `axiom_internal_resolve_ipv4()` — `inet_pton`/`getaddrinfo`. Measured: old 18/25 segfault, new 0/25 |
 
-The `fmt` job also gained its missing `z3` dependency. **A new CI run is
-pending**; CI is not called green until the badge turns green. The local run
-(1034/0/0) does not substitute for it. A separate sandbox run
-(`951 passed, 57 failed, 2 errors`):
-[docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
+**Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
+badge to the real workflow instead of a fake "success" is what surfaced them.
+The local run (1034/0/0) and CI now agree.
 
 ---
 
@@ -619,9 +626,9 @@ pending**; CI is not called green until the badge turns green. The local run
 
 ### 🟡 In progress / partial
 
-- **CI verification pending:** the last observed CI run was red (20 tests);
-  4 root causes were fixed (the LLVM `main()` bridge was a real product bug).
-  Local run is green; the new CI run is pending. Details in "CI status" above.
+- **CI:** green (7/7 jobs); six root causes fixed, three of them real product
+  bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
+  race). Details in "CI status" above.
 - **Windows:** cross-compilation + execution under `wine` verified; no CI run on
   a real Windows machine.
 - **macOS:** no runner/verification.

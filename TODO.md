@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-12 |
 | Aşama | **Faz 1 — Güvenlik araçları odaklı olgunlaşma** |
 | Test (yerel) | 1034 geçiyor / 1034 (12 Kasım 2026, `pytest -q`) |
-| CI (GitHub Actions) | 4 kök neden giderildi; **doğrulama koşusu bekleniyor** (ayrıntı: `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` §9–§10) |
+| CI (GitHub Actions) | **yeşil** — 7/7 iş geçiyor (koşu `43266408601`); 6 kök neden giderildi (§9–§12) |
 
 ---
 

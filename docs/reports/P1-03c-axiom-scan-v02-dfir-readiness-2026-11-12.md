@@ -481,3 +481,36 @@ alındığında **3 testin 3'ü de kırmızı** ve hata `-11` olarak raporlanıy
 > Not: Bu hata ilk iki CI turunda görünmedi; ancak CI runner'ının CPU/glibc
 > farkı yarışı ortaya çıkardı. Yani **CI, yerel testlerin kaçırdığı gerçek bir
 > hatayı buldu** — rozeti gerçeğe bağlamanın somut getirisi.
+
+---
+
+## 13. Sonuç: CI yeşil
+
+```
+$ gh run view 43266408601
+success   (13m23s, master, push)
+
+ASan/UBSan + bellek sızıntısı     success
+LLVM arka ucu + DWARF             success
+Biçimlendirme                     success
+Test (Python 3.10)                success
+Test (Python 3.11)                success
+Test (Python 3.12)                success
+Test (Python 3.13)                success
+```
+
+CI rozeti artık `passing`. Toplam 6 kök neden giderildi; **üçü gerçek ürün
+hatasıydı**:
+
+| # | Hata | Etki |
+|---|---|---|
+| 2 | LLVM `main() -> Result` köprüsü | Hata durumunda `exit 0` (Err sessizce yutuluyordu) |
+| 5 | Python 3.10'da paket bağımlılıkları çözülmüyordu | Desteklenen sürümde `import "paket"` çalışmıyordu |
+| 6 | `gethostbyname` yarışı | Çok iş parçacıklı `tcp_connect` aralıklı SIGSEGV |
+
+Diğer üçü test altyapısı/araç zinciri sorunuydu (bootstrap sırası, Unicode
+sürüm bağımlılığı, readelf/binutils uyarıları) ve hiçbiri "testi yeşile
+boyama" yöntemiyle kapatılmadı — her biri ya sürümden bağımsız hâle getirildi
+ya da bağımsız bir doğrulama ile desteklendi.
+
+**Nihai yerel koşu:** `1034 passed in 946.62s` (0 failed, 0 skipped).

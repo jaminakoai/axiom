@@ -24,6 +24,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - **Wine prefix sızıntısı:** oturum başına tek prefix + `conftest.pytest_sessionfinish`
   ile silme (hook test modülündeydi, pytest yok sayıyordu) + bayat prefix temizliği.
 
+### Değişen (12 Kasım — CI yeşil)
+- GitHub Actions **7/7 iş yeşil** (koşu `43266408601`); CI rozeti `passing`.
+  Toplam 6 kök neden giderildi, üçü gerçek ürün hatasıydı (LLVM `main()`
+  köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
+- Yerel tam paket: **1034 geçti, 0 başarısız, 0 atlandı**.
+
 ### Düzeltilen (12 Kasım — üçüncü CI turu: thread-safety)
 - **`gethostbyname` yarış hatası (gerçek ürün hatası):** `axiom_tcp_connect`
   (ve `udp_sendto`, `icmp_ping`, `tcp_ping`) IPv4 çözümlemesinde POSIX'te
