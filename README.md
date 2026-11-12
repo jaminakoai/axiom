@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1029-blue.svg)](#son-doğrulanmış-koşu)
+[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1031-blue.svg)](#son-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -556,10 +556,10 @@ Test altyapısı notları:
 |---|---|
 | Tarih | 12 Kasım 2026 |
 | Komut | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Sonuç | **1029 geçti, 0 başarısız, 0 atlandı** (947,48 s) |
+| Sonuç | **1031 geçti, 0 başarısız, 0 atlandı** (949,39 s) |
 | Ortam | Linux x86_64, clang 21.1.8, wine kurulu, `bin/axiomc` yerelde derlenmiş |
 
-Buradaki **1029**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
+Buradaki **1031**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
 mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
 atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
 (aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
@@ -570,18 +570,19 @@ atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başl
 `43219236120`): 20 başarısız / 919 geçti / 83 atlandı. Rozet gerçek workflow'a
 bağlıdır ve durumu olduğu gibi gösterir.
 
-Dört kök neden 12 Kasım'da giderildi (ayrıntı: rapor §10):
+Beş kök neden 12 Kasım'da giderildi (ayrıntı: rapor §10):
 
 | # | Kök neden | Düzeltme |
 |---|---|---|
 | 1 | `bin/axiomc` testlerden **sonra** derleniyordu (13 test) | CI'da `make bootstrap` artık pytest'ten önce |
 | 2 | **LLVM `main() -> Result` köprüsü** `call void @ax_main()` üretiyordu (2 test) | Köprü `Result`'ı değer olarak çağırır; Err → stderr + exit 1. **Gerçek ürün hatasıydı:** clang 21 Err'i sessizce düşürüp `exit 0` veriyordu |
 | 3 | Unicode testi yorumlayıcı sürümüne bağlıydı (2 test) | Tablo sürümü `PINNED_UCD_VERSION` ile sabit; beklenen değerler altın dosyada |
-| 4 | `readelf` uyarıları `exit 1` döndürüyordu (2 test) | Test içeriğe bakar; yalnızca bilinen araç-zinciri uyarıları tolere edilir |
+| 4 | `readelf` uyarıları `exit 1` döndürüyordu (2 test) | Test içeriğe bakar + pyelftools ile **bağımsız yapısal** doğrulama |
+| 5 | Python 3.10'da `tomllib` yok → paket bağımlılıkları sessizce çözülmüyordu (1 test) | `parse_toml` (tomli yedeği) kullanılıyor; inline tablo desteği |
 
 Ek olarak `fmt` işine eksik `z3` bağımlılığı eklendi. **Yeni CI koşusu
 bekleniyor**; rozet yeşile dönene kadar "CI yeşil" denmez. Yerel koşu
-(1029/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
+(1031/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
 (`951 geçti, 57 başarısız, 2 hata`):
 [docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 

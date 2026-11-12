@@ -330,3 +330,81 @@ başka bir hata hâlâ testi düşürür. Yani gevşetme değil, doğru sözleş
 
 `fmt` işi `z3` kurmuyordu; `bin/axiom` → `cli.py` → `import z3` düşüyordu.
 `pip install -e ".[dev]"` eklendi.
+
+---
+
+## 11. İkinci CI koşusu ve kalan iki gerçek hata
+
+İlk düzeltme turundan sonra CI (`43249869041`): `fmt` ✅, `sanitizers` ✅,
+test işlerinde 2–3 başarısız kaldı. İki yeni gerçek hata ortaya çıktı.
+
+### 11.1 Python 3.10'da paket bağımlılıkları sessizce çözülmüyordu
+
+**Belirti (CI, Python 3.10):**
+
+```
+axiom.resolver.ModuleError: İçe aktarılacak modül dosyası bulunamadı: 'str_tools'
+  (Aranan konum: .../app_consumer/src/str_tools)
+```
+
+**Kök neden:** `axiom/resolver.py` içinde
+
+```python
+try:
+    import tomllib                      # Python 3.10'da YOK
+    toml_data = tomllib.loads(...)
+except Exception:
+    pass                                # <-- sessiz yutma
+```
+
+Python 3.10'da `tomllib` stdlib'de yoktur; istisna yutulunca `dependencies`
+hiç okunmuyor, dolayısıyla **path/git bağımlılıkları çözümlenmiyordu**.
+`pyproject.toml` ise `requires-python = ">=3.10"` diyor — yani desteklenen bir
+sürümde paket sistemi sessizce çalışmıyordu.
+
+**Düzeltme:**
+- `resolver.py` artık `axiom.package_manager.parse_toml` kullanır (tomli yedeği var).
+- `pyproject.toml`: `tomli>=2.0; python_version < '3.11'` bağımlılığı eklendi.
+- `parse_toml` yedek ayrıştırıcısı **inline tabloları** (`{ path = "..." }`)
+  artık dict olarak ayrıştırır; tomli kurulu olmasa bile path/git bağımlılıkları
+  okunur.
+- Regresyon: `test_parse_toml_handles_inline_tables_without_tomllib`.
+
+### 11.2 DWARF: `Bogus end-of-siblings` — araç hatası mı, bizim hatamız mı?
+
+İlk turda `_readelf_dump` yalnızca **bilinen** uyarıları tolere ediyordu; CI'da
+`Bogus end-of-siblings marker detected` çıktı ve test düştü. Bunu körü körüne
+tolere listesine eklemek "testi yeşile boyamak" olurdu, o yüzden araştırıldı.
+
+**Kanıtlar (sırayla):**
+
+1. IR'de metadata **ID çakışması yok**, tanımsız referans yok:
+   `toplam metadata: 41, çakışan id: {}, tanımsız referans: []`.
+2. Aynı ikili **pyelftools** ile bağımsız ayrıştırıldı: 2 CU, `DW_TAG_subprogram`
+   ve `DW_TAG_variable` DIE'leri (`product`, `result`) doğru okunuyor.
+3. Yerel binutils **2.46** aynı ikilide **hiç uyarı vermiyor** (exit 0, stderr boş).
+4. Arama sonucu: bu uyarı **binutils bug 28981** olarak kayıtlı; readelf'in
+   clang ürettiği DWARF'ı okuyuşundaki bir kusur. Buildroot, host-rustc
+   ikililerinde aynı uyarıları görüp readelf stderr'ini `/dev/null`'a yönlendiriyor.
+
+**Karar:** testi readelf'in **çıkış koduna** bağlamak yanlıştı (araç sürümüne
+bağlı). Yeni sözleşme:
+
+1. `.debug_line` çıktısında kaynak dosya adı **bulunmalı**.
+2. `.debug_info` çıktısında `DW_TAG_variable` + değişken adları **bulunmalı**.
+3. **Bağımsız yapısal doğrulama:** `tests/test_llvm_dwarf.py::test_dwarf_structure_is_valid_via_independent_parser`
+   pyelftools ile DIE ağacını gezer; subprogram, yerel değişkenler ve `.ax`
+   kaynak adı doğrulanır (`pyelftools` dev bağımlılığına eklendi).
+4. readelf hiç çıktı üretemezse test yine düşer.
+
+Yani gevşetme değil: **doğru aracı doğru iş için** kullanmak + bağımsız kanıt.
+
+### 11.3 Doğrulama
+
+```
+$ python3 -m pytest -q tests/test_package_manager.py tests/test_llvm_dwarf.py \
+                        tests/test_llvm_main_bridge.py -p no:cacheprovider
+25 passed
+$ make fmt-check
+✓ Biçimlendirme geçerli
+```

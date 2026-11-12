@@ -100,8 +100,18 @@ def parse_toml(content: str) -> Dict[str, Any]:
         elif "=" in line:
             k, v = line.split("=", 1)
             k = k.strip()
-            v = v.strip().strip('"').strip("'")
-            current_section[k] = v
+            v = v.strip()
+            if v.startswith("{") and v.endswith("}"):
+                # Inline table: { path = "/x", rev = "main" }
+                table = {}
+                for part in v[1:-1].split(","):
+                    if "=" not in part:
+                        continue
+                    ik, iv = part.split("=", 1)
+                    table[ik.strip()] = iv.strip().strip('"').strip("'")
+                current_section[k] = table
+            else:
+                current_section[k] = v.strip('"').strip("'")
     return result
 
 

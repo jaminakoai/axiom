@@ -24,6 +24,20 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - **Wine prefix sızıntısı:** oturum başına tek prefix + `conftest.pytest_sessionfinish`
   ile silme (hook test modülündeydi, pytest yok sayıyordu) + bayat prefix temizliği.
 
+### Düzeltilen (12 Kasım — ikinci CI turu)
+- **Python 3.10'da paket bağımlılıkları sessizce çözülmüyordu (gerçek hata):**
+  `axiom/resolver.py` doğrudan `import tomllib` yapıyordu; 3.10'da stdlib'de
+  olmadığı için istisna yutuluyor ve `dependencies` hiç okunmuyordu
+  (`import "paket"` → "modül bulunamadı"). `pyproject.toml` ise `>=3.10`
+  diyor. Artık `axiom.package_manager.parse_toml` kullanılıyor; `tomli`
+  (3.11 altı) bağımlılığı eklendi ve yedek ayrıştırıcı inline tabloları
+  destekliyor. Regresyon: `test_parse_toml_handles_inline_tables_without_tomllib`.
+- **DWARF testi araç sürümüne bağlıydı:** `readelf` çıkış kodu yerine içerik
+  doğrulanıyor; `Bogus end-of-siblings` uyarısının **binutils bug 28981**
+  olduğu kanıtlandı (ID çakışması yok, pyelftools temiz okuyor, binutils 2.46
+  uyarısız). Bağımsız yapısal doğrulama eklendi
+  (`test_dwarf_structure_is_valid_via_independent_parser`, pyelftools).
+
 ### Düzeltilen (12 Kasım — CI kök nedenleri)
 - **LLVM `main() -> Result` köprüsü (gerçek ürün hatası):** köprü
   `call void @ax_main()` üretiyordu; `@ax_main` struct döndürüyor. clang 14

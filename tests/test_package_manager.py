@@ -394,3 +394,23 @@ def test_package_update_rejects_non_git_dependency(tmp_path):
     pm.init_package(target_dir=app, name="upd_bad", is_lib=False)
     with pytest.raises(KeyError):
         pm.update("missing_dep")
+
+
+def test_parse_toml_handles_inline_tables_without_tomllib(monkeypatch):
+    """Python 3.10 yedeği: `tomllib` yokken de bağımlılık tabloları ayrıştırılmalı.
+
+    Gerçek hata (CI, Python 3.10): resolver `tomllib`'i doğrudan import ediyordu.
+    3.10'da modül olmadığı için istisna yutuluyor, `dependencies` hiç
+    okunmuyor ve `import "paket"` "modül bulunamadı" ile düşüyordu.
+    """
+    import axiom.package_manager as pm
+
+    monkeypatch.setattr(pm, "tomllib", None)
+    data = pm.parse_toml(
+        '[package]\nname = "app"\n\n[dependencies]\n'
+        'str_tools = { path = "/tmp/x/str_tools" }\n'
+        'yaml = { git = "https://example/x.git", rev = "v1" }\n'
+    )
+    deps = data["dependencies"]
+    assert deps["str_tools"] == {"path": "/tmp/x/str_tools"}
+    assert deps["yaml"] == {"git": "https://example/x.git", "rev": "v1"}

@@ -94,8 +94,13 @@ class ModuleResolver:
                     if candidate.exists() and candidate not in self.search_paths:
                         self.search_paths.append(candidate)
                 try:
-                    import tomllib
-                    toml_data = tomllib.loads(toml_file.read_text(encoding="utf-8"))
+                    # Python 3.10'da stdlib'de `tomllib` YOK. Burada dogrudan
+                    # `tomllib` import etmek, 3.10'da istisnayi yutup **tum
+                    # paket bagimliliklarini sessizce cozumsuz** birakiyordu
+                    # (`import "paket"` -> "modul bulunamadi"). Ortak parser
+                    # tomli yedegiyle gelir.
+                    from axiom.package_manager import parse_toml
+                    toml_data = parse_toml(toml_file.read_text(encoding="utf-8"))
                     for dep_k, dep_v in toml_data.get("dependencies", {}).items():
                         if isinstance(dep_v, dict) and "path" in dep_v:
                             dp = (parent / dep_v["path"]).resolve()
