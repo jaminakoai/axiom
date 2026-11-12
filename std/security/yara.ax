@@ -211,13 +211,8 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         }
         let mut idx = -1;
         let mut match_len = str_byte_len(p);
-        if nocase {
-            idx = rt_ascii_case_find(target, p);
-        } else if flagged {
-            idx = rt_yara_find_text(target, p, flags, min_offset, max_offset);
-        } else {
-            idx = str_index_of(target, p);
-        }
+        if nocase { flags = 1 }
+        idx = rt_yara_find_text(target, p, flags, min_offset, max_offset);
         if (idx >= 0) {
             if (min_offset >= 0 and idx < min_offset) {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
@@ -312,6 +307,28 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
 }
 
+// Counts text-pattern hits in one runtime pass, including overlaps. Parser
+// rejects #a for hex and regex patterns because their counters are not exposed.
+fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
+    if str_starts_with(pattern_str, "regex:") { return -1 }
+    if str_starts_with(pattern_str, "str:") {
+        let mut p = str_sub(pattern_str, 4, str_len(pattern_str) - 4)
+        let mut flags = 0
+        if str_starts_with(pattern_str, "str:nocase:") {
+            p = str_sub(pattern_str, len("str:nocase:"), str_len(pattern_str) - len("str:nocase:"))
+            flags = 1
+        } else if str_starts_with(pattern_str, "str:flags:") {
+            let rest = str_sub(pattern_str, len("str:flags:"), str_len(pattern_str) - len("str:flags:"))
+            let sep = str_index_of(rest, ":")
+            if sep < 0 { return -1 }
+            flags = str_to_int(str_sub(rest, 0, sep))
+            p = str_sub(rest, sep + 1, str_len(rest) - sep - 1)
+        }
+        return rt_yara_count_text(target, p, flags)
+    }
+    return -1
+}
+
 /// Kuralin tum desenlerini tarar ve kosulunu uygular.
 fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
     return yara_scan_rule_with_filesize(target, rule, str_byte_len(target))
@@ -319,8 +336,10 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
 
 fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -> YaraMatch {
     let total_patterns = len(rule.patterns);
+    let cond = rule.condition;
     let mut matched_count = 0;
     let mut pattern_values: bool[] = [];
+    let mut pattern_counts: int[] = [];
     let mut first_matched_pid = "";
     let mut first_offset = -1;
     let mut first_len = 0;
@@ -331,6 +350,11 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
         let pstr = rule.patterns[i];
         let m = yara_scan_single_pattern(target, pid, pstr, rule.min_offset, rule.max_offset);
         pattern_values = array_push(pattern_values, m.matched);
+        let mut occurrence_count = -1
+        if str_contains(cond, "#") {
+            occurrence_count = yara_count_single_pattern(target, pstr)
+        }
+        pattern_counts = array_push(pattern_counts, occurrence_count);
         if (m.matched) {
             matched_count = matched_count + 1;
             if (first_offset < 0) {
@@ -343,7 +367,6 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
     }
 
     // Koşul Mantığının Değerlendirilmesi (Condition Evaluation)
-    let cond = rule.condition;
     let mut is_rule_matched = false;
 
     if (cond == "all" or cond == "all of them") {
@@ -358,7 +381,7 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
         let threshold = str_to_int(parts[0]);
         is_rule_matched = (matched_count >= threshold);
     } else {
-        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values, target_size);
+        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values, pattern_counts, target_size);
     }
 
     if (is_rule_matched) {

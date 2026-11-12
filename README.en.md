@@ -68,13 +68,13 @@ in their own language.
 
 - `axiom-scan` is **not all of YARA**: subset patterns and conditions. It
   accepts `any/all/none of them`, `N of them`, `$a` pattern references,
-  `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`
+  `#a` occurrence counts, `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`
   (`not` > `and` > `or` precedence).
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
   other unsupported modifiers, and hex jump/alternation constructs are also
-  rejected with a parse error.
+  rejected with a parse error. `#a` counts currently support text patterns only.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.
   `//` inside a pattern is preserved; `#` is not a YARA comment marker.

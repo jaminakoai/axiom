@@ -438,6 +438,17 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                         yara_ruleset_new())
                 }
             }
+            if str_contains(condition, "#") {
+                let mut pattern_index = 0
+                while pattern_index < len(rule.patterns) {
+                    if str_starts_with(rule.patterns[pattern_index], "regex:") or str_starts_with(rule.patterns[pattern_index], "hex:") {
+                        return result_err_with<YaraRuleSet>(
+                            "satir " + int_to_str(condition_line) + ": # desen sayimi yalniz metin desenlerinde destekleniyor",
+                            yara_ruleset_new())
+                    }
+                    pattern_index = pattern_index + 1
+                }
+            }
             // Toplanan pattern'lari KORU, yalnizca kosulu guncelle.
             let final_rule = YaraRule {
                 name: rule_name,

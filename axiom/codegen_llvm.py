@@ -575,6 +575,7 @@ class LLVMCodeGenerator:
             # Phase 4.3: Real YARA Byte & Wildcard Mask Pattern Engine
             'declare i64 @axiom_ascii_case_find(i8*, i8*)',
             'declare i64 @axiom_yara_find_text(i8*, i8*, i64, i64, i64)',
+            'declare i64 @axiom_yara_count_text(i8*, i8*, i64)',
             'declare i64 @axiom_yara_find_hex_wildcard(i8*, i8*, i64, i64)',
             'declare i64 @axiom_yara_find_hex_wildcard_raw(i8*, i64, i8*, i64, i64)',
             'declare i64 @axiom_yara_find_hex_stream(i8*, i8*)',
@@ -2126,6 +2127,7 @@ class LLVMCodeGenerator:
                 # Phase 4.3: Real YARA Byte & Wildcard Mask Pattern Engine
                 'rt_ascii_case_find': ('i64', '@axiom_ascii_case_find'),
                 'rt_yara_find_text': ('i64', '@axiom_yara_find_text'),
+                'rt_yara_count_text': ('i64', '@axiom_yara_count_text'),
                 'rt_yara_find_hex_wildcard': ('i64', '@axiom_yara_find_hex_wildcard'),
                 'rt_yara_find_hex_wildcard_raw': ('i64', '@axiom_yara_find_hex_wildcard_raw'),
                 'rt_yara_find_hex_stream': ('i64', '@axiom_yara_find_hex_stream'),

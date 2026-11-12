@@ -1640,6 +1640,36 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_text(const char* s, const char* needle,
     return ascii_best;
 }
 
+/* Count text hits in one pass; overlapping occurrences are included.
+ * Flags: 1=nocase, 8=fullword. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle, ax_int flags) {
+    if (!s || !needle) return 0;
+    const unsigned char* hay = (const unsigned char*)s;
+    const unsigned char* pat = (const unsigned char*)needle;
+    size_t hay_len = strlen(s);
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0 || pat_len > hay_len) return 0;
+    int nocase = (flags & 1) != 0;
+    int fullword = (flags & 8) != 0;
+    ax_int count = 0;
+    size_t last = hay_len - pat_len;
+    for (size_t i = 0; i <= last; i++) {
+        size_t j = 0;
+        while (j < pat_len) {
+            unsigned char a = hay[i + j];
+            unsigned char b = pat[j];
+            if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
+            if (a != b) break;
+            j++;
+        }
+        if (j != pat_len) continue;
+        if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
+                         (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
+        count++;
+    }
+    return count;
+}
+
 AXIOM_RUNTIME_FN ax_str axiom_str_replace(const char* s, const char* old_s, const char* new_s) {
     if (!s) return axiom_owned_str_wrap("");
     if (!old_s || old_s[0] == '\0') return axiom_safe_strdup(s);

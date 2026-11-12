@@ -73,7 +73,6 @@ def test_rules_command_counts(scanner, tmp_path):
 
 @pytest.mark.parametrize("condition", [
     "$a at 0",
-    "#a == 2",
 ])
 def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanner, tmp_path, condition):
     rules = tmp_path / "unsupported.yar"
@@ -140,6 +139,17 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     assert c_result.returncode == llvm_result.returncode == 0
     assert json.loads(c_result.stdout) == json.loads(llvm_result.stdout)
 
+    count_rules = tmp_path / "count-parity.yar"
+    count_rules.write_text(
+        'rule CountParity {\n strings:\n  $a = "aa"\n condition:\n  #a == 3\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"aaaa")
+    c_count = _run(scanner, "scan", str(sample), "--rules", str(count_rules))
+    llvm_count = _run(scanner_llvm, "scan", str(sample), "--rules", str(count_rules))
+    assert c_count.returncode == llvm_count.returncode == 0
+    assert json.loads(c_count.stdout) == json.loads(llvm_count.stdout)
+
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
 def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, condition, expected):
@@ -192,6 +202,41 @@ def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, 
     report = json.loads(res.stdout)
     assert report["match_count"] == 1
     assert report["scanned_bytes"] == 1
+
+
+@pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
+    ('"aa"', b"aaaa", "#a == 3", 1),
+    ('"aa"', b"aaaa", "#a == 2", 0),
+    ('"needle" nocase', b"NEEDLE needle", "#a == 2", 1),
+    ('"aa"', b"aaaa", "#a >= 3 and filesize == 4", 1),
+])
+def test_pattern_occurrence_count_conditions(scanner, tmp_path, pattern, target, condition, expected):
+    rules = tmp_path / "count.yar"
+    rules.write_text(
+        'rule CountHits {\n strings:\n  $a = ' + pattern + '\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "count-target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
+@pytest.mark.parametrize(("pattern", "filename"), [
+    ("/a+/", "regex-count.yar"),
+    ("{ 41 ?? }", "hex-count.yar"),
+])
+def test_pattern_occurrence_count_rejects_unsupported_types(scanner, tmp_path, pattern, filename):
+    rules = tmp_path / filename
+    rules.write_text(
+        'rule UnsupportedCount {\n strings:\n  $a = ' + pattern + '\n condition:\n  #a > 0\n}\n',
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "metin desenlerinde" in json.loads(res.stdout)["error"]
 
 
 def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):
