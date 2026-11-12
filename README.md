@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1031-blue.svg)](#son-doğrulanmış-koşu)
+[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1034-blue.svg)](#son-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -556,10 +556,10 @@ Test altyapısı notları:
 |---|---|
 | Tarih | 12 Kasım 2026 |
 | Komut | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Sonuç | **1031 geçti, 0 başarısız, 0 atlandı** (949,39 s) |
+| Sonuç | **1034 geçti, 0 başarısız, 0 atlandı** (946,62 s) |
 | Ortam | Linux x86_64, clang 21.1.8, wine kurulu, `bin/axiomc` yerelde derlenmiş |
 
-Buradaki **1031**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
+Buradaki **1034**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
 mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
 atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
 (aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
@@ -582,7 +582,7 @@ Beş kök neden 12 Kasım'da giderildi (ayrıntı: rapor §10):
 
 Ek olarak `fmt` işine eksik `z3` bağımlılığı eklendi. **Yeni CI koşusu
 bekleniyor**; rozet yeşile dönene kadar "CI yeşil" denmez. Yerel koşu
-(1031/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
+(1034/0/0) bunun yerine geçmez. Sandbox ortamındaki ayrı koşu
 (`951 geçti, 57 başarısız, 2 hata`):
 [docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 

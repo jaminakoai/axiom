@@ -1821,6 +1821,30 @@ AXIOM_RUNTIME_FN void axiom_eprint_error(const char* msg) {
  * Belirtilen host ve port'a TCP soketi ile bağlanır.
  * Başarılıysa socket fd döner, aksi halde -1 döner.
  */
+/* --- Thread-safe IPv4 cozumleme -------------------------------------------
+ * `gethostbyname` **statik bir tampon** dondurur; POSIX'te MT-Unsafe'tir.
+ * Ayni anda birden fazla is parcacigi cagirinca (orn. examples/08 dort
+ * thread ile tcp_connect) veri yarisi olusur: `hostent` yapisi baska bir
+ * thread tarafindan ezilir, `h_length` bozulur ve memcpy tasabilir.
+ * Belirti: aralikli SIGSEGV (exit -11 / 245).
+ * `getaddrinfo` thread-safe'tir; sayisal adreslerde DNS'e hic gidilmez. */
+AXIOM_RUNTIME_FN ax_int axiom_internal_resolve_ipv4(const char* host, struct in_addr* out) {
+    if (!host || !out) return 0;
+    if (inet_pton(AF_INET, host, out) == 1) return 1;
+
+    struct addrinfo hints;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    struct addrinfo* res = NULL;
+    if (getaddrinfo(host, NULL, &hints, &res) != 0 || !res) {
+        return 0;
+    }
+    *out = ((struct sockaddr_in*)res->ai_addr)->sin_addr;
+    freeaddrinfo(res);
+    return 1;
+}
+
 AXIOM_RUNTIME_FN ax_int axiom_tcp_connect(const char* host, ax_int port) {
     if (!host || port <= 0 || port > 65535) return -1;
 
@@ -1830,8 +1854,8 @@ AXIOM_RUNTIME_FN ax_int axiom_tcp_connect(const char* host, ax_int port) {
     /* 2 saniyelik zaman aşımı (timeout) */
     ax_os_sock_set_timeout(ax_os_int_to_sock(sock), 2000);
 
-    struct hostent* server = gethostbyname(host);
-    if (!server) {
+    struct in_addr resolved;
+    if (!axiom_internal_resolve_ipv4(host, &resolved)) {
         close(sock);
         return -1;
     }
@@ -1839,7 +1863,7 @@ AXIOM_RUNTIME_FN ax_int axiom_tcp_connect(const char* host, ax_int port) {
     struct sockaddr_in serv_addr;
     memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+    serv_addr.sin_addr = resolved;
     serv_addr.sin_port = htons((uint16_t)port);
 
     if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0) {
@@ -4061,10 +4085,8 @@ AXIOM_RUNTIME_FN ax_int axiom_udp_sendto(ax_int fd, const char* host, ax_int por
     dest.sin_family = AF_INET;
     dest.sin_port = htons((uint16_t)port);
 
-    if (inet_pton(AF_INET, host, &dest.sin_addr) <= 0) {
-        struct hostent* he = gethostbyname(host);
-        if (!he) return -1;
-        memcpy(&dest.sin_addr, he->h_addr_list[0], he->h_length);
+    if (!axiom_internal_resolve_ipv4(host, &dest.sin_addr)) {
+        return -1;
     }
 
     size_t len = strlen(data);
@@ -7007,8 +7029,8 @@ AXIOM_RUNTIME_FN uint16_t axiom_internal_in_cksum(uint16_t *addr, int len) {
 
 AXIOM_RUNTIME_FN ax_int axiom_icmp_ping(const char* host, ax_int timeout_ms) {
     if (!host || strlen(host) == 0) return -1;
-    struct hostent *he = gethostbyname(host);
-    if (!he) return -1;
+    struct in_addr resolved;
+    if (!axiom_internal_resolve_ipv4(host, &resolved)) return -1;
 
     int s = ax_os_socket(AF_INET, SOCK_DGRAM, IPPROTO_ICMP);
     if (s < 0) {
@@ -7019,7 +7041,7 @@ AXIOM_RUNTIME_FN ax_int axiom_icmp_ping(const char* host, ax_int timeout_ms) {
     struct sockaddr_in dest;
     memset(&dest, 0, sizeof(dest));
     dest.sin_family = AF_INET;
-    memcpy(&dest.sin_addr, he->h_addr_list[0], he->h_length);
+    dest.sin_addr = resolved;
 
     struct axiom_icmp_echo_hdr pkt;
     memset(&pkt, 0, sizeof(pkt));
@@ -7056,8 +7078,8 @@ AXIOM_RUNTIME_FN ax_int axiom_icmp_ping(const char* host, ax_int timeout_ms) {
 
 AXIOM_RUNTIME_FN ax_int axiom_tcp_ping(const char* host, ax_int port, ax_int timeout_ms) {
     if (!host || port <= 0) return -1;
-    struct hostent *he = gethostbyname(host);
-    if (!he) return -1;
+    struct in_addr resolved;
+    if (!axiom_internal_resolve_ipv4(host, &resolved)) return -1;
 
     int s = ax_os_socket(AF_INET, SOCK_STREAM, 0);
     if (s < 0) return -1;
@@ -7068,7 +7090,7 @@ AXIOM_RUNTIME_FN ax_int axiom_tcp_ping(const char* host, ax_int port, ax_int tim
     memset(&dest, 0, sizeof(dest));
     dest.sin_family = AF_INET;
     dest.sin_port = htons((uint16_t)port);
-    memcpy(&dest.sin_addr, he->h_addr_list[0], he->h_length);
+    dest.sin_addr = resolved;
 
     long long t1_ms = ax_os_time_ms();
 

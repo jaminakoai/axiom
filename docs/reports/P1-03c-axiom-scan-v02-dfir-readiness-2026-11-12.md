@@ -408,3 +408,76 @@ $ python3 -m pytest -q tests/test_package_manager.py tests/test_llvm_dwarf.py \
 $ make fmt-check
 ✓ Biçimlendirme geçerli
 ```
+
+---
+
+## 12. Üçüncü CI turu: kalan tek hata ve kök nedeni
+
+CI (`43258516041`) sonucu: **7 işten 5'i yeşil** — `LLVM + DWARF` ✅,
+`ASan/UBSan` ✅, `Biçimlendirme` ✅, `Python 3.10` ✅, `Python 3.13` ✅.
+Kalan iki işte tek bir test düştü (3.11 ve 3.12).
+
+### 12.1 Belirti
+
+```
+test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]
+  cikis kodu farki -11 vs 0      (selfhosted segfault)
+  cikis kodu farki 0 vs 245      (python driver)
+```
+
+`245 = 256 - 11`, yani `axiom run` süreci `sys.exit(-11)` ile çıktı — **iki
+durum da aynı şey: SIGSEGV**. Yerelde tekrarlanmıyordu (10/10 temiz), yani
+klasik bir yarış hatası.
+
+### 12.2 Kök neden (gerçek ürün hatası)
+
+`examples/08_multithreaded_scanner.ax` dört iş parçacığı başlatıp her birinde
+`tcp_connect("127.0.0.1", port)` çağırıyor. Runtime'daki `axiom_tcp_connect`
+IPv4 çözümlemesi için **`gethostbyname`** kullanıyordu:
+
+```c
+struct hostent* server = gethostbyname(host);      /* MT-Unsafe! */
+...
+memcpy(&serv_addr.sin_addr.s_addr, server->h_addr, server->h_length);
+```
+
+POSIX'te `gethostbyname` sonucu **statik bir tamponda** döndürür. Dört thread
+aynı anda çağırınca `struct hostent` başka bir thread tarafından ezilir;
+`h_length` bozulur ve `memcpy` taşar → segfault. Tek thread'de sorun
+görünmediği için yerel testler ve `examples/08`'in normal koşusu temiz
+geçiyordu.
+
+Aynı kusur üç yerde daha vardı: `udp_sendto`, `icmp_ping`, `tcp_ping`.
+
+### 12.3 Düzeltme
+
+`axiom/runtime.h`:
+
+```c
+AXIOM_RUNTIME_FN ax_int axiom_internal_resolve_ipv4(const char* host,
+                                                    struct in_addr* out) {
+    if (inet_pton(AF_INET, host, out) == 1) return 1;   /* sayısal: DNS yok */
+    struct addrinfo hints; ...                          /* getaddrinfo: thread-safe */
+    ...
+}
+```
+
+Dört çağrı yeri bu yardımcıya geçirildi. `gethostbyname` runtime'dan tamamen
+kaldırıldı (0 kullanım).
+
+### 12.4 Kanıt: düzeltme öncesi/sonrası
+
+8 thread × 40 eşzamanlı `tcp_connect`, 25 koşu:
+
+| Runtime | Sonuç |
+|---|---|
+| **Eski** (`gethostbyname`) | **18/25 koşu segfault** |
+| **Yeni** (`getaddrinfo`) | **0/25 hata** |
+
+Regresyon testi: `tests/test_thread_safe_resolve.py` (3 test: C, LLVM,
+runtime'da çıplak `gethostbyname` yasağı). Runtime geçici olarak eski hâline
+alındığında **3 testin 3'ü de kırmızı** ve hata `-11` olarak raporlanıyor.
+
+> Not: Bu hata ilk iki CI turunda görünmedi; ancak CI runner'ının CPU/glibc
+> farkı yarışı ortaya çıkardı. Yani **CI, yerel testlerin kaçırdığı gerçek bir
+> hatayı buldu** — rozeti gerçeğe bağlamanın somut getirisi.

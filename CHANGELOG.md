@@ -24,6 +24,21 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - **Wine prefix sızıntısı:** oturum başına tek prefix + `conftest.pytest_sessionfinish`
   ile silme (hook test modülündeydi, pytest yok sayıyordu) + bayat prefix temizliği.
 
+### Düzeltilen (12 Kasım — üçüncü CI turu: thread-safety)
+- **`gethostbyname` yarış hatası (gerçek ürün hatası):** `axiom_tcp_connect`
+  (ve `udp_sendto`, `icmp_ping`, `tcp_ping`) IPv4 çözümlemesinde POSIX'te
+  **MT-Unsafe** olan `gethostbyname`'i kullanıyordu. Dört thread aynı anda
+  çağırınca statik `hostent` tamponu eziliyor, `h_length` bozuluyor ve `memcpy`
+  taşarak **SIGSEGV** veriyordu. CI'da `examples/08_multithreaded_scanner.ax`
+  aralıklı olarak `-11` / `245` ile düştü; yerelde 10/10 temizdi.
+- **Düzeltme:** `axiom_internal_resolve_ipv4()` — sayısal adreslerde
+  `inet_pton` (DNS yok), aksi hâlde thread-safe `getaddrinfo`. Dört çağrı yeri
+  geçirildi; runtime'da `gethostbyname` kalmadı.
+- **Ölçüm:** 8 thread × 40 bağlantı, 25 koşu → eski runtime **18/25 segfault**,
+  yeni runtime **0/25**.
+- **Regresyon:** `tests/test_thread_safe_resolve.py` (C + LLVM + kaynak yasağı);
+  eski runtime'da 3/3 kırmızı (`-11`).
+
 ### Düzeltilen (12 Kasım — ikinci CI turu)
 - **Python 3.10'da paket bağımlılıkları sessizce çözülmüyordu (gerçek hata):**
   `axiom/resolver.py` doğrudan `import tomllib` yapıyordu; 3.10'da stdlib'de

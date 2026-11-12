@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1031-blue.svg)](#last-verified-run)
+[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1034-blue.svg)](#last-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -562,10 +562,10 @@ Test-infrastructure notes:
 |---|---|
 | Date | 12 November 2026 |
 | Command | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Result | **1031 passed, 0 failed, 0 skipped** (949.39 s) |
+| Result | **1034 passed, 0 failed, 0 skipped** (946.62 s) |
 | Environment | Linux x86_64, clang 21.1.8, wine installed, `bin/axiomc` built locally |
 
-**1031** is the total number of collected tests. Because wine, clang and z3 are
+**1034** is the total number of collected tests. Because wine, clang and z3 are
 present locally, the wine/Windows tests really run and nothing is skipped. The
 same suite in an environment missing those components starts **skipping**
 (see below) — same count, different outcome.
@@ -588,7 +588,7 @@ Five root causes were fixed on 12 November (details: report §10):
 
 The `fmt` job also gained its missing `z3` dependency. **A new CI run is
 pending**; CI is not called green until the badge turns green. The local run
-(1031/0/0) does not substitute for it. A separate sandbox run
+(1034/0/0) does not substitute for it. A separate sandbox run
 (`951 passed, 57 failed, 2 errors`):
 [docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 

@@ -12,7 +12,7 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-12 |
 | Aşama | **Faz 1 — Güvenlik araçları odaklı olgunlaşma** |
-| Test (yerel) | 1031 geçiyor / 1031 (12 Kasım 2026, `pytest -q`) |
+| Test (yerel) | 1034 geçiyor / 1034 (12 Kasım 2026, `pytest -q`) |
 | CI (GitHub Actions) | 4 kök neden giderildi; **doğrulama koşusu bekleniyor** (ayrıntı: `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` §9–§10) |
 
 ---
@@ -50,7 +50,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Test (yerel) | 1031 geçiyor (skip yok) | `python3 -m pytest -q` |
+| Test (yerel) | 1034 geçiyor (skip yok) | `python3 -m pytest -q` |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -288,6 +288,21 @@ tek statik binary, sıfır runtime bağımlılığı, ölçülebilir hız.
   - [x] DWARF: `readelf` içerik sözleşmesi (2 test)
   - [x] CI `fmt` işine `z3` bağımlılığı eklendi
 - **Rapor:** aynı dosya, §10
+
+#### P1-03e — Eşzamanlı `tcp_connect` yarışı (SIGSEGV) `[x]`
+- **Belirti:** CI'da `examples/08_multithreaded_scanner.ax` aralıklı olarak
+  `exit -11` / `245` (segfault) ile düştü; yerelde 10/10 temizdi.
+- **Kök neden:** `axiom_tcp_connect` (ve `udp_sendto`, `icmp_ping`, `tcp_ping`)
+  IPv4 çözümlemesinde POSIX'te **MT-Unsafe** `gethostbyname` kullanıyordu.
+  Dört thread aynı anda çağırınca statik `hostent` eziliyor, `h_length`
+  bozuluyor, `memcpy` taşıyor → SIGSEGV.
+- **Düzeltme:** `axiom_internal_resolve_ipv4()` — `inet_pton` (sayısal) /
+  `getaddrinfo` (thread-safe). Runtime'da `gethostbyname` kalmadı.
+- **Kabul:** ✅
+  - [x] 8 thread × 40 bağlantı, 25 koşu: eski **18/25 segfault**, yeni **0/25**
+  - [x] `tests/test_thread_safe_resolve.py` (3 test); eski runtime'da 3/3 kırmızı
+  - [x] C ve LLVM arka uçlarında aynı davranış
+- **Rapor:** aynı dosya, §12
 
 #### P1-03b — LLVM'de `axiom-scan` yanlış sonucu `[x]`
 - **Belirti:** LLVM ile derlenen tarayıcı kural adlarını `strings:` gibi üretiyordu.
@@ -878,7 +893,7 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Test | 1031 ✅ | 900 | 2000 |
+| Test | 1034 ✅ | 900 | 2000 |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |
