@@ -71,6 +71,63 @@ def test_rules_command_counts(scanner, tmp_path):
     assert data["rules"] == 3
 
 
+@pytest.mark.parametrize("condition", [
+    "none of them",
+    "$a and not $b",
+    "$a at 0",
+    "#a == 2",
+    "filesize < 10",
+])
+def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanner, tmp_path, condition):
+    rules = tmp_path / "unsupported.yar"
+    rules.write_text(
+        'rule Unsupported {\n strings:\n  $a = "needle"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    data = json.loads(res.stdout)
+    assert data["ok"] is False
+    assert "condition" in data["error"]
+
+
+def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):
+    rules = tmp_path / "comment-markers.yar"
+    rules.write_text(
+        'rule UrlAndHash {\n strings:\n'
+        '  $url = "http://evil.example/gate"\n'
+        '  $hash = "#malware"\n'
+        ' condition:\n  any of them\n}\n',
+        encoding="utf-8",
+    )
+    target = tmp_path / "sample.txt"
+    target.write_text("#malware http://evil.example/gate", encoding="utf-8")
+    res = _run(scanner, "scan", str(target), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    data = json.loads(res.stdout)
+    assert data["match_count"] == 1
+
+
+@pytest.mark.parametrize("pattern", [
+    '"needle" nocase',
+    '"needle\\\\x41"',
+    '{ 4D 5A [2-4] 50 45 }',
+    '/[/',
+])
+def test_unsupported_or_invalid_patterns_are_rejected(scanner, tmp_path, pattern):
+    rules = tmp_path / "unsupported-pattern.yar"
+    rules.write_text(
+        "rule UnsupportedPattern {\n strings:\n  $a = " + pattern
+        + "\n condition:\n  any of them\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    data = json.loads(res.stdout)
+    assert data["ok"] is False
+
+
 def test_scan_text_pattern(scanner, tmp_path):
     r = tmp_path / "rules.yar"
     r.write_text(RULES, encoding="utf-8")

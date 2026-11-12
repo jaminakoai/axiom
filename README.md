@@ -65,7 +65,12 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 **Dürüst sınırlar (v0.2):**
 
 - `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve basit koşullar
-  desteklenir; gelişmiş YARA modülleri/koşulları yoktur.
+  desteklenir. Koşul olarak `any of them`, `all of them` ve `N of them`
+  kabul edilir; bilinmeyen koşullar, desteklenmeyen modifier'lar ve hex jump /
+  alternation yapıları açık ayrıştırma hatasıyla reddedilir.
+- Metin kalıplarında YARA kaçış dizileri henüz desteklenmez ve hata verir.
+  `//` yorumları metin kalıbının içinde korunur; `#` YARA yorum işareti
+  olmadığından olduğu gibi değerlendirilir.
 - `scan` metin tabanlıdır: NUL baytı içeren dosya **ilk NUL'da kesilir**.
   `target_sha256` yine tüm dosyayı kapsar; `scanned_bytes` yalnız okunabilen
   öneki gösterir.

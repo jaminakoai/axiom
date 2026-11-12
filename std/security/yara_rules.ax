@@ -15,13 +15,14 @@
 //
 // Kosullar: `any of them`, `all of them`, `N of them` (N tamsayi).
 //
-// Desteklenmeyen YARA ozellikleri (v0.1): meta:, tags, `and/or/not` ile
-// birlesik kosullar, `at`, `in (a..b)`, modifikatorler (nocase, wide, ascii).
-// Bilinmeyen satirlar yok sayilir; hata verilmez.
+// Desteklenmeyen YARA ozellikleri: meta/tags, birlesik condition ifadeleri,
+// at/in, modifier'lar, string kacislari ve gelismis hex operatorleri.
+// Desteklenmeyen ifadeler sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
 import "std/core/error"
 import "std/text/unicode"
 import "std/security/yara"
+import "std/text/regex"
 
 // --- Yardimcilar ---
 
@@ -65,60 +66,81 @@ fn _parse_rule_name(line: str) -> str {
     return name
 }
 
-fn _empty_parts() -> str[] {
-    let e: str[] = []
-    return e
-}
-
 // strings: bolumundeki "$id = ..." satirini ayristirir.
-// Donus: [id, pattern] veya bos dizi.
-fn _parse_string_def(line: str) -> str[] {
+// Donus: ilk '=' isaretinden bolunebilen "$id=pattern" veya bos metin.
+// Dinamik dizi dondurmemek LLVM erken-donus temizligiyle ilgili bir backend
+// hatasini tetiklemeyi onler.
+fn _parse_string_def(line: str) -> str {
     let t = str_trim(line)
     if not str_starts_with(t, "$") {
-        return _empty_parts()
+        return ""
     }
     let eq = str_index_of(t, "=")
     if eq < 0 {
-        return _empty_parts()
+        return ""
     }
     let id = str_trim(str_sub(t, 0, eq))
     let mut raw = str_trim(str_sub(t, eq + 1, len(t) - eq - 1))
     if len(id) == 0 or len(raw) == 0 {
-        return _empty_parts()
+        return ""
     }
 
     // Metin: "..." (sondaki modifikatorleri at)
     if str_starts_with(raw, "\"") {
         let close = str_index_of(str_sub(raw, 1, len(raw) - 1), "\"")
         if close < 0 {
-            return _empty_parts()
+            return ""
+        }
+        let tail = str_trim(str_sub(raw, close + 2, len(raw) - close - 2))
+        if len(tail) > 0 {
+            return ""
         }
         let text = str_sub(raw, 1, close)
-        return [id, "str:" + text]
+        // Escape semantics are not implemented yet. Reject them explicitly
+        // instead of searching for the backslash sequence literally.
+        if str_contains(text, "\\") {
+            return ""
+        }
+        return id + "=str:" + text
     }
 
     // Hex: { 48 89 ?? 55 }
     if str_starts_with(raw, "{") {
         let close = str_index_of(raw, "}")
         if close < 0 {
-            return _empty_parts()
+            return ""
         }
         let hex = str_trim(str_sub(raw, 1, close - 1))
         if len(hex) == 0 {
-            return _empty_parts()
+            return ""
         }
-        return [id, "hex:" + hex]
+        if str_contains(hex, "[") or str_contains(hex, "]") or str_contains(hex, "(") or str_contains(hex, ")") or str_contains(hex, "|") or str_contains(hex, "~") {
+            return ""
+        }
+        let tail = str_trim(str_sub(raw, close + 1, len(raw) - close - 1))
+        if len(tail) > 0 {
+            return ""
+        }
+        return id + "=hex:" + hex
     }
 
     // Regex: /.../  — v0.1: desen olarak kullan
     if str_starts_with(raw, "/") {
         let close = str_index_of(str_sub(raw, 1, len(raw) - 1), "/")
         if close < 0 {
-            return _empty_parts()
+            return ""
         }
-        return [id, "regex:" + str_sub(raw, 1, close)]
+        let tail = str_trim(str_sub(raw, close + 2, len(raw) - close - 2))
+        if len(tail) > 0 {
+            return ""
+        }
+        let regex = str_sub(raw, 1, close)
+        if len(regex_validate(regex)) > 0 {
+            return ""
+        }
+        return id + "=regex:" + regex
     }
-    return _empty_parts()
+    return ""
 }
 
 // condition: satirini tek satira indirger.
@@ -132,6 +154,47 @@ fn _parse_condition(line: str) -> str {
         return ""
     }
     return str_trim(str_sub(t, colon + 1, len(t) - colon - 1))
+}
+
+// Bu parser yalnizca bu condition alt kumesini dogru degerlendirir.
+// Diger ifadeler scanner tarafinda varsayilan `any` gibi ele alinmasin.
+fn _supported_condition(condition: str) -> bool {
+    if condition == "any" or condition == "all" or condition == "any of them" or condition == "all of them" {
+        return true
+    }
+    if not str_ends_with(condition, " of them") {
+        return false
+    }
+    let number = str_trim(str_sub(condition, 0, len(condition) - len(" of them")))
+    if len(number) == 0 { return false }
+    let mut i = 0
+    while i < len(number) {
+        if not str_contains("0123456789", str_char_at(number, i)) { return false }
+        i = i + 1
+    }
+    return true
+}
+
+// YARA'daki // yorumlarini string icinde kesme. # yorum imi degildir:
+// kosulda #a, string'de #malware gibi kullanimi koru.
+fn _strip_line_comment(line: str) -> str {
+    let mut in_string = false
+    let mut escaped = false
+    let mut i = 0
+    while i < len(line) {
+        let ch = str_char_at(line, i)
+        if escaped {
+            escaped = false
+        } else if in_string and ch == "\\" {
+            escaped = true
+        } else if ch == "\"" {
+            in_string = not in_string
+        } else if not in_string and ch == "/" and i + 1 < len(line) and str_char_at(line, i + 1) == "/" {
+            return str_sub(line, 0, i)
+        }
+        i = i + 1
+    }
+    return line
 }
 
 // --- Ana ayristirici ---
@@ -149,27 +212,25 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
     let mut in_condition = false
     let mut rule_name = ""
     let mut condition = "any of them"
+    let mut condition_seen = false
+    let mut condition_line = 0
     let mut rule = yara_rule_new("", "any of them")
     let mut rule_count = 0
 
     let mut i = 0
     while i < len(lines) {
         let raw_line = lines[i]
-        // yorumlari at (#, //)
-        let mut line = raw_line
-        let hash = str_index_of(line, "#")
-        if hash >= 0 {
-            line = str_sub(line, 0, hash)
-        }
-        let slashes = str_index_of(line, "//")
-        if slashes >= 0 {
-            line = str_sub(line, 0, slashes)
-        }
+        let line = _strip_line_comment(raw_line)
 
         let trimmed = str_trim(line)
 
         if not in_rule {
             if _starts_with_ci(trimmed, "rule") {
+                if str_contains(trimmed, ":") {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": etiketler bu YARA alt kumesinde desteklenmiyor",
+                        yara_ruleset_new())
+                }
                 let name = _parse_rule_name(trimmed)
                 if len(name) == 0 {
                     return result_err_with<YaraRuleSet>(
@@ -181,8 +242,14 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                 in_condition = false
                 rule_name = name
                 condition = "any of them"
+                condition_seen = false
+                condition_line = 0
                 rule = yara_rule_new(name, "any of them")
                 rule_count = rule_count + 1
+            } else if not _is_blank(trimmed) {
+                return result_err_with<YaraRuleSet>(
+                    "satir " + int_to_str(i + 1) + ": desteklenmeyen ust-duzey YARA yapisi: " + trimmed,
+                    yara_ruleset_new())
             }
             i = i + 1
             continue
@@ -197,6 +264,9 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
         }
         if _starts_with_ci(trimmed, "condition") {
             in_strings = false
+            condition_seen = true
+            condition_line = i + 1
+            condition = ""
             let c = _parse_condition(trimmed)
             if len(c) > 0 {
                 condition = c
@@ -226,6 +296,16 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                     "satir " + int_to_str(i + 1) + ": kural adi bos",
                     yara_ruleset_new())
             }
+            if not condition_seen {
+                return result_err_with<YaraRuleSet>(
+                    "satir " + int_to_str(i + 1) + ": condition bolumu eksik",
+                    yara_ruleset_new())
+            }
+            if not _supported_condition(condition) {
+                return result_err_with<YaraRuleSet>(
+                    "satir " + int_to_str(condition_line) + ": eksik veya desteklenmeyen condition: " + condition,
+                    yara_ruleset_new())
+            }
             // Toplanan pattern'lari KORU, yalnizca kosulu guncelle.
             let final_rule = YaraRule {
                 name: rule_name,
@@ -243,11 +323,43 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
             continue
         }
 
-        if in_strings {
-            let parts = _parse_string_def(trimmed)
-            if len(parts) >= 2 {
-                rule = yara_rule_add_pattern(rule, parts[0], parts[1])
+        if condition_seen {
+            if not _is_blank(trimmed) {
+                return result_err_with<YaraRuleSet>(
+                    "satir " + int_to_str(i + 1) + ": cok satirli veya ek condition ifadesi desteklenmiyor",
+                    yara_ruleset_new())
             }
+            i = i + 1
+            continue
+        }
+
+        if in_strings {
+            let parsed = _parse_string_def(trimmed)
+            if not _is_blank(trimmed) {
+                if not str_starts_with(trimmed, "$") {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": desteklenmeyen strings girdisi",
+                        yara_ruleset_new())
+                }
+                if len(parsed) == 0 {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": hatali veya desteklenmeyen string tanimi",
+                        yara_ruleset_new())
+                }
+                let sep = str_index_of(parsed, "=")
+                if sep < 0 {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": hatali string tanimi",
+                        yara_ruleset_new())
+                }
+                rule = yara_rule_add_pattern(rule,
+                    str_sub(parsed, 0, sep),
+                    str_sub(parsed, sep + 1, len(parsed) - sep - 1))
+            }
+        } else if not _is_blank(trimmed) and not str_starts_with(trimmed, "{") {
+            return result_err_with<YaraRuleSet>(
+                "satir " + int_to_str(i + 1) + ": desteklenmeyen kural yapisi: " + trimmed,
+                yara_ruleset_new())
         }
 
         i = i + 1
