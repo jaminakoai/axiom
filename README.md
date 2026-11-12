@@ -66,8 +66,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 
 - `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve basit koşullar
   desteklenir. Koşul olarak `any of them`, `all of them` ve `N of them`
-  kabul edilir; bilinmeyen koşullar, desteklenmeyen modifier'lar ve hex jump /
-  alternation yapıları açık ayrıştırma hatasıyla reddedilir.
+  kabul edilir; metin kalıplarında `nocase` desteklenir. Bilinmeyen koşullar,
+  diğer desteklenmeyen modifier'lar ve hex jump/alternation yapıları açık
+  ayrıştırma hatasıyla reddedilir.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
   reddedilir. `//` kalıp içinde korunur; `#` YARA yorum işareti değildir.

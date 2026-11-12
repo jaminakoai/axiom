@@ -190,10 +190,19 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         };
     }
 
-    // 2. Açık Metin Deseni (str:...)
+    // 2. Açık metin deseni. Parser, nocase'i özel bir prefix ile kodlar.
     if (str_starts_with(pattern_str, "str:")) {
-        let p = str_sub(pattern_str, 4, str_len(pattern_str) - 4);
-        let idx = str_index_of(target, p);
+        let nocase = str_starts_with(pattern_str, "str:nocase:");
+        let mut p = str_sub(pattern_str, 4, str_len(pattern_str) - 4);
+        if nocase {
+            p = str_sub(pattern_str, len("str:nocase:"), str_len(pattern_str) - len("str:nocase:"));
+        }
+        let mut idx = -1;
+        if nocase {
+            idx = rt_ascii_case_find(target, p);
+        } else {
+            idx = str_index_of(target, p);
+        }
         if (idx >= 0) {
             if (min_offset >= 0 and idx < min_offset) {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };

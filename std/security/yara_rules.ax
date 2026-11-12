@@ -16,7 +16,7 @@
 // Kosullar: `any of them`, `all of them`, `N of them` (N tamsayi).
 //
 // Desteklenmeyen YARA ozellikleri: meta/tags, birlesik condition ifadeleri,
-// at/in, modifier'lar, NUL metin kacisi ve gelismis hex operatorleri.
+// at/in, wide/ascii/fullword ve gelismis hex operatorleri.
 // Desteklenmeyen ifadeler sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
 import "std/core/error"
@@ -169,20 +169,23 @@ fn _parse_string_def(line: str) -> str {
         return ""
     }
 
-    // Metin: "..." (sondaki modifikatorleri at)
+    // Metin: temel kacislar ve nocase.
     if str_starts_with(raw, "\"") {
         let close = _find_unescaped_quote(str_sub(raw, 1, len(raw) - 1))
         if close < 0 {
             return ""
         }
         let tail = str_trim(str_sub(raw, close + 2, len(raw) - close - 2))
-        if len(tail) > 0 {
+        if len(tail) > 0 and tail != "nocase" {
             return ""
         }
         let text = str_sub(raw, 1, close)
         let escape_error = _yara_escape_error(text)
         if len(escape_error) > 0 {
             return ""
+        }
+        if tail == "nocase" {
+            return id + "=str:nocase:" + _decode_yara_text(text)
         }
         return id + "=str:" + _decode_yara_text(text)
     }

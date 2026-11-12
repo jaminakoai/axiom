@@ -131,6 +131,36 @@ def test_yara_text_escapes_decode_as_expected(scanner, tmp_path, literal, target
     assert json.loads(res.stdout)["match_count"] == 1
 
 
+def test_nocase_text_modifier_matches_ascii_without_changing_offsets(scanner, tmp_path):
+    rules = tmp_path / "nocase.yar"
+    rules.write_text(
+        'rule IgnoreCase {\n strings:\n  $a = "needle" nocase\n'
+        ' condition:\n  any of them\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "sample.txt"
+    sample.write_bytes(b"xxNeEdLeYY")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    match = json.loads(res.stdout)["matches"][0]
+    assert match["offset"] == 2
+    assert match["length"] == 6
+
+
+def test_nocase_text_modifier_llvm_backend(scanner_llvm, tmp_path):
+    rules = tmp_path / "nocase-llvm.yar"
+    rules.write_text(
+        'rule IgnoreCase {\n strings:\n  $a = "needle" nocase\n'
+        ' condition:\n  any of them\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "sample.txt"
+    sample.write_bytes(b"xxNeEdLeYY")
+    res = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["matches"][0]["offset"] == 2
+
+
 @pytest.mark.parametrize("literal", [r'"\x00"', r'"\q"', r'"\xG1"'])
 def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path, literal):
     rules = tmp_path / "bad-escape.yar"
@@ -145,7 +175,8 @@ def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path,
 
 
 @pytest.mark.parametrize("pattern", [
-    '"needle" nocase',
+    '"needle" wide',
+    '"needle" fullword',
     '{ 4D 5A [2-4] 50 45 }',
     '/[/',
 ])

@@ -1568,6 +1568,30 @@ AXIOM_RUNTIME_FN ax_int axiom_str_index_of(const char* s, const char* needle) {
     return (ax_int)(p - s);
 }
 
+/* YARA text `nocase`: locale-independent ASCII-only case folding. */
+AXIOM_RUNTIME_FN ax_int axiom_ascii_case_find(const char* s, const char* needle) {
+    if (!s || !needle) return -1;
+    const unsigned char* hay = (const unsigned char*)s;
+    const unsigned char* pat = (const unsigned char*)needle;
+    size_t hay_len = strlen(s);
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0) return 0;
+    if (pat_len > hay_len) return -1;
+    for (size_t i = 0; i <= hay_len - pat_len; i++) {
+        size_t j = 0;
+        while (j < pat_len) {
+            unsigned char a = hay[i + j];
+            unsigned char b = pat[j];
+            if (a >= 'A' && a <= 'Z') a = (unsigned char)(a + ('a' - 'A'));
+            if (b >= 'A' && b <= 'Z') b = (unsigned char)(b + ('a' - 'A'));
+            if (a != b) break;
+            j++;
+        }
+        if (j == pat_len) return (ax_int)i;
+    }
+    return -1;
+}
+
 AXIOM_RUNTIME_FN ax_str axiom_str_replace(const char* s, const char* old_s, const char* new_s) {
     if (!s) return axiom_owned_str_wrap("");
     if (!old_s || old_s[0] == '\0') return axiom_safe_strdup(s);

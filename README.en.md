@@ -68,8 +68,9 @@ in their own language.
 
 - `axiom-scan` is **not all of YARA**: subset patterns and simple conditions;
   it accepts `any of them`, `all of them`, and `N of them` conditions.
-  Unknown conditions, unsupported modifiers, and hex jump/alternation
-  constructs are rejected with a parse error.
+  Text patterns support `nocase`. Unknown conditions, other unsupported
+  modifiers, and hex jump/alternation constructs are rejected with a parse
+  error.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.
   `//` inside a pattern is preserved; `#` is not a YARA comment marker.
