@@ -161,6 +161,44 @@ def test_nocase_text_modifier_llvm_backend(scanner_llvm, tmp_path):
     assert json.loads(res.stdout)["matches"][0]["offset"] == 2
 
 
+@pytest.mark.parametrize(("literal", "target", "matched", "offset"), [
+    (r'"needle" ascii', b"xxneedleYY", True, 2),
+    (r'"domain" fullword', b"www.mydomain.com", False, -1),
+    (r'"domain" fullword', b"www.my-domain.com", True, 7),
+    (r'"domain" fullword', b"_domain_", True, 1),
+    (r'"needle" ascii nocase fullword', b"!!NEEDLE!YY", True, 2),
+])
+def test_ascii_and_fullword_modifiers(scanner, tmp_path, literal, target, matched, offset):
+    rules = tmp_path / "text-modifiers.yar"
+    rules.write_text(
+        "rule TextModifier {\n strings:\n  $a = " + literal
+        + "\n condition:\n  any of them\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "sample.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    matches = json.loads(res.stdout)["matches"]
+    assert (len(matches) == 1) is matched
+    if matched:
+        assert matches[0]["offset"] == offset
+
+
+def test_ascii_and_fullword_modifiers_llvm_backend(scanner_llvm, tmp_path):
+    rules = tmp_path / "text-modifiers-llvm.yar"
+    rules.write_text(
+        'rule TextModifier {\n strings:\n  $a = "domain" fullword\n'
+        ' condition:\n  any of them\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "sample.txt"
+    sample.write_bytes(b"www.my-domain.com")
+    res = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["matches"][0]["offset"] == 7
+
+
 @pytest.mark.parametrize("literal", [r'"\x00"', r'"\q"', r'"\xG1"'])
 def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path, literal):
     rules = tmp_path / "bad-escape.yar"
@@ -176,7 +214,6 @@ def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path,
 
 @pytest.mark.parametrize("pattern", [
     '"needle" wide',
-    '"needle" fullword',
     '{ 4D 5A [2-4] 50 45 }',
     '/[/',
 ])

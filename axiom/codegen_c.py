@@ -388,6 +388,7 @@ BUILTIN_MAP = {
     'rt_epoll_is_hangup': 'axiom_epoll_is_hangup',
     # Phase 4.3: Real YARA Byte & Wildcard Mask Pattern Engine
     'rt_ascii_case_find': 'axiom_ascii_case_find',
+    'rt_yara_find_text': 'axiom_yara_find_text',
     'rt_yara_find_hex_wildcard': 'axiom_yara_find_hex_wildcard',
     'rt_yara_find_hex_wildcard_raw': 'axiom_yara_find_hex_wildcard_raw',
     'rt_yara_find_hex_stream': 'axiom_yara_find_hex_stream',

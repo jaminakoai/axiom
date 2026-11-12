@@ -190,16 +190,30 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         };
     }
 
-    // 2. Açık metin deseni. Parser, nocase'i özel bir prefix ile kodlar.
+    // 2. Açık metin deseni. Modifier'lar flags prefix'iyle kodlanır.
     if (str_starts_with(pattern_str, "str:")) {
         let nocase = str_starts_with(pattern_str, "str:nocase:");
+        let flagged = str_starts_with(pattern_str, "str:flags:");
         let mut p = str_sub(pattern_str, 4, str_len(pattern_str) - 4);
+        let mut flags = 0;
         if nocase {
             p = str_sub(pattern_str, len("str:nocase:"), str_len(pattern_str) - len("str:nocase:"));
         }
+        if flagged {
+            let rest = str_sub(pattern_str, len("str:flags:"), str_len(pattern_str) - len("str:flags:"));
+            let sep = str_index_of(rest, ":");
+            if sep < 0 {
+                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
+            }
+            flags = str_to_int(str_sub(rest, 0, sep));
+            p = str_sub(rest, sep + 1, str_len(rest) - sep - 1);
+        }
         let mut idx = -1;
+        let mut match_len = str_byte_len(p);
         if nocase {
             idx = rt_ascii_case_find(target, p);
+        } else if flagged {
+            idx = rt_yara_find_text(target, p, flags, min_offset, max_offset);
         } else {
             idx = str_index_of(target, p);
         }
@@ -214,7 +228,7 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
                 rule_name: "",
                 pattern_id: pattern_id,
                 offset: idx,
-                matched_len: str_len(p),
+                matched_len: match_len,
                 matched: true
             };
         }

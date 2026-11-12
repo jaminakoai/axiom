@@ -1592,6 +1592,54 @@ AXIOM_RUNTIME_FN ax_int axiom_ascii_case_find(const char* s, const char* needle)
     return -1;
 }
 
+static inline unsigned char axiom_yara_fold_ascii(unsigned char c) {
+    if (c >= 'A' && c <= 'Z') return (unsigned char)(c + ('a' - 'A'));
+    return c;
+}
+
+static inline int axiom_yara_is_alnum_ascii(unsigned char c) {
+    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
+}
+
+/* Flags: 1=nocase, 2=ascii, 8=fullword. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_text(const char* s, const char* needle,
+                                              ax_int flags, ax_int min_offset,
+                                              ax_int max_offset) {
+    if (!s || !needle) return -1;
+    const unsigned char* hay = (const unsigned char*)s;
+    const unsigned char* pat = (const unsigned char*)needle;
+    size_t hay_len = strlen(s);
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0) return -1;
+    int nocase = (flags & 1) != 0;
+    int ascii = 1; /* ASCII is YARA's default; the modifier is explicit but optional. */
+    int fullword = (flags & 8) != 0;
+    ax_int ascii_best = -1;
+
+    if (ascii && pat_len <= hay_len) {
+        size_t last = hay_len - pat_len;
+        if (max_offset >= 0 && (size_t)max_offset < last) last = (size_t)max_offset;
+        size_t first = min_offset > 0 ? (size_t)min_offset : 0;
+        for (size_t i = first; i <= last; i++) {
+            size_t j = 0;
+            while (j < pat_len) {
+                unsigned char a = hay[i + j];
+                unsigned char b = pat[j];
+                if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
+                if (a != b) break;
+                j++;
+            }
+            if (j != pat_len) continue;
+            if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
+                             (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
+            ascii_best = (ax_int)i;
+            break;
+        }
+    }
+
+    return ascii_best;
+}
+
 AXIOM_RUNTIME_FN ax_str axiom_str_replace(const char* s, const char* old_s, const char* new_s) {
     if (!s) return axiom_owned_str_wrap("");
     if (!old_s || old_s[0] == '\0') return axiom_safe_strdup(s);
