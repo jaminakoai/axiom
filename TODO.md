@@ -10,9 +10,10 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-08 |
+| Son güncelleme | 2026-11-12 |
 | Aşama | **Faz 1 — Güvenlik araçları odaklı olgunlaşma** |
-| Test | 1022 geçiyor / 1022 |
+| Test (yerel) | 1022 geçiyor / 1022 (12 Kasım 2026, `pytest -q`) |
+| CI (GitHub Actions) | **kırmızı** — 20 başarısız / 919 geçti / 83 atlandı (kök nedenler: `docs/reports/P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` §9) |
 
 ---
 
@@ -49,7 +50,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Test | 1022 geçiyor (skip yok) | `python3 -m pytest -q` |
+| Test (yerel) | 1022 geçiyor (skip yok) | `python3 -m pytest -q` |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |

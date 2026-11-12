@@ -24,6 +24,28 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - **Wine prefix sızıntısı:** oturum başına tek prefix + `conftest.pytest_sessionfinish`
   ile silme (hook test modülündeydi, pytest yok sayıyordu) + bayat prefix temizliği.
 
+### Düzeltilen (12 Kasım — yayın öncesi inceleme: rozet/iddia/numaralandırma)
+- **Rozetler:** sahte "CI — GitHub Actions success" ve "1022 Passed" rozetleri
+  kaldırıldı. CI rozeti **gerçek workflow'a** bağlandı
+  (`github.com/jaminakoai/axiom/actions/workflows/ci.yml`); test rozeti
+  "yerel koşu" olarak etiketlendi ve tarih/komut/sonuç belgelenen bölüme bağlandı.
+- **Ürün anlatımı:** "Axiom nedir?" bölümü eklendi — ana ürün dildir; `axiom-scan`
+  ve DFIR triyajı bu dilin **amiral gemisi uygulamalarıdır**. DFIR bölümü
+  "Bu dille yazılmış araçlar" olarak yeniden adlandırıldı.
+- **İddialar:** slogan ölçüme dayalı hâle getirildi. Yeni "İddialar ve kanıtlar"
+  tablosu 6 iddiayı gerçek durum + kanıtla eşler. "Sıfır bilişsel yük" ve
+  "Python kadar zarif" kaldırıldı; karşılaştırma tablosunun yıldızlarının ölçüm
+  olmadığı yazıldı.
+- **Test/CI şeffaflığı:** "Son doğrulanmış koşu" (tarih, komut, 1022/0/0) ve
+  "CI durumu (dürüst)" (20 başarısız / 919 geçti / 83 atlandı + 4 kök neden)
+  bölümleri eklendi. Sandbox koşusu (951/57/2) rapora linklendi.
+- **Numaralandırma:** README örnek başlıkları 1–14 sıralı; kırık `#13` bağlantısı
+  (`taraması`/`taramasi`) düzeltildi. TR ve EN'de kırık bağlantı **0**.
+- **Bulunan gerçek hata (açık):** LLVM `main() -> Result<int,str>` köprüsü
+  `call void @ax_main()` üretiyor; `@ax_main` struct döndürüyor. clang 21 kabul
+  edip Err'i sessizce düşürüyor, clang 14 reddediyor. C arka ucunda doğru.
+  CI'daki 2 test hatasının kök nedeni; rapor §9'da kayıtlı.
+
 ### Eklenen / Düzeltilen (P1-03c — axiom-scan v0.2, DFIR rapor sözleşmesi)
 - **`axiom-scan` v0.2:** rapor artık `schema_version=1`, `tool`, `tool_version`,
   `rules_count` taşır. `scan` çıktısına **`target_sha256`** (tüm dosya,

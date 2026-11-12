@@ -1,22 +1,46 @@
 # Axiom Programming Language (λx)
 
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#)
-[![Tests](https://img.shields.io/badge/Tests-1022%20Passed-brightgreen.svg)](#)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
+[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1022-blue.svg)](#last-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
-[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success.svg)](.github/workflows/ci.yml)
-[![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64%20experimental-orange.svg)](#)
+[![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
-> **"A next-generation systems programming language that is as elegant and fast to write as Python, runs as fast as C/Rust, and stops logic errors at compile time with mathematical contracts."**
+> About the badges: the **CI** badge is live from GitHub Actions — red means the
+> last run failed. The **Tests** badge is static and shows only the **local** run
+> documented below with its date, command and result; it is not a CI result.
+> Current CI state and known failures: see "Running the tests" below.
+
+> **Axiom (λx): a contract-driven, natively compiled systems programming language.**
+> Measured comparison (benchmarks in this repo, single machine): Axiom is
+> **1.5–6.3×** slower than C `-O3` and **6.6–29.7×** faster than Python
+> ([benchmarks/RESULTS.md](benchmarks/RESULTS.md)). Contract checking runs at
+> compile time, but reports "could not prove" for functions with loops — it does
+> not claim to catch every error.
 
 > 🌍 **Türkçe:** [README.md](README.md)
 
 ---
 
-## 🔎 What is Axiom good for today? — Offline DFIR and security-evidence triage
+## 🧭 What is Axiom?
 
-Axiom is a language and a compiler. Two tools written in it can already be used
-for **offline** security triage (no live service or network required):
+**The language is the main product.** Axiom (λx) is a systems programming
+language with contracts (`requires`/`ensures`/`verify`), a `Result<T,E>` + `?`
+error model, no garbage collector, and **two backends** (C99 and LLVM) that
+produce native binaries.
+
+The security tools below are **not a separate product**: they are flagship
+**applications written in the language** with its own standard library, showing
+what the language can do on a real job. For the language itself see "Why Axiom?"
+and "Architecture Overview"; the table below is enough to try the tools.
+
+---
+
+## 🔎 Tools written in this language: offline DFIR and security-evidence triage
+
+The two tools below can already be used for **offline** security triage (no live
+service or network required):
 
 | Tool | Input | Analysis | Output |
 |---|---|---|---|
@@ -55,7 +79,7 @@ in their own language.
   by tests and examples.
 
 Detailed usage: [axiom-scan v0.2](#13-axiom-scan-v02--security-evidence-scanning)
-and [DFIR triage](#11-dfir-triage-single-json-report-phase-1-closing-tool).
+and [DFIR triage](#12-dfir-triage-single-json-report-phase-1-closing-tool).
 
 ---
 
@@ -65,8 +89,12 @@ Today's languages sit at two extremes:
 * **Python:** Incredibly ergonomic to learn and develop in; but slow at runtime, with huge memory consumption, and it only surfaces type/logic errors in production.
 * **Rust:** Enormous memory safety and bare-metal speed; but the borrow checker rules, `'a` lifetime accounting, and long compile times impose a high cognitive load.
 
-**Axiom closes the gap between these two poles:**
-1. **Zero Cognitive Load:** No borrow checker fights. `defer`-based scope cleanup, ownership-tracked string concatenation, and bounds-checked arrays.
+**Axiom sits between these two poles.** The items below are the *intended
+design*; measurements and caveats are in "Claims and evidence" below:
+1. **No borrow checker, but ownership still exists:** no lifetime/`'a`
+   accounting; `defer`-based scope cleanup, refcount-based string ownership, and
+   bounds-checked arrays. (This is not "zero cognitive load": string ownership
+   and `let` scope rules still have to be learned.)
 2. **Garbage-Collector-Free (Zero-GC):** No pauses. Predictable micro-second latency for real-time systems and security tooling.
 3. **Contract-Driven Logic Safety:** With `requires`, `ensures`, and `verify` blocks, logic errors and bounds overflows are caught at compile time.
 4. **`Result<T, E>` + `?` for Expected Errors:** *Expected* conditions such as a missing file, a closed port, or a network error flow through `Result`; the `?` operator propagates the error to the caller while `defer` cleanup runs. `main` can also return `Result<int, str>` (Err → stderr + exit 1). The stdlib's `Result` layer is ready: `std/io/file`, `std/encoding/json`, `std/net/http`, `std/crypto/tls`, `std/os/process`. Contract violations (`requires`/`ensures`/`verify`) are treated as *programming errors* and halt the program.
@@ -278,7 +306,7 @@ Running the mathematical proof engine:
 axiom prove examples/08_multithreaded_scanner.ax
 ```
 
-### 6. Heterogeneous SIMD Vector Acceleration and Z3 SMT Theorem Proving
+### 7. Heterogeneous SIMD Vector Acceleration and Z3 SMT Theorem Proving
 ```axiom
 # examples/09_simd_vector_scan.ax
 @simd
@@ -304,7 +332,7 @@ axiom emit-llvm examples/09_simd_vector_scan.ax
 axiom build examples/09_simd_vector_scan.ax --backend=llvm -o simd_scan
 ```
 
-### 7. Red Team & Offensive Cybersecurity Suite (Phase 2)
+### 8. Red Team & Offensive Cybersecurity Suite (Phase 2)
 ```axiom
 # examples/15_redteam_offensive_suite.ax
 import "std/security/shellcode.ax"
@@ -318,7 +346,7 @@ import "std/security/memdump.ax"
 
 > **Note:** Offensive modules are rejected in the default build. Use `--features offensive` (or `AXIOM_FEATURES=offensive`) to compile them.
 
-### 8. Blue Team & DFIR Defensive Security Suite (Phase 3)
+### 9. Blue Team & DFIR Defensive Security Suite (Phase 3)
 ```axiom
 # examples/16_blueteam_defensive_suite.ax
 import "std/security/yara.ax"
@@ -330,7 +358,7 @@ import "std/security/integrity.ax"
 // Live PCAP capture, Sigma rule engine, YARA pattern scanning, FIM integrity checking
 ```
 
-### 9. Artificial Intelligence (AI/ML) Tensor & Deep Learning Engine (Phase 4)
+### 10. Artificial Intelligence (AI/ML) Tensor & Deep Learning Engine (Phase 4)
 ```axiom
 # examples/17_ai_tensor_neural_net.ax
 import "std/ai/tensor.ax"
@@ -342,7 +370,7 @@ import "std/ai/inference.ax"
 // AVX2 SIMD GEMM matrix multiplication, ReLU & Sigmoid forward pass, Argmax classification, Autograd backpropagation
 ```
 
-### 10. Modern Web Framework & WASM Target (Phase 5)
+### 11. Modern Web Framework & WASM Target (Phase 5)
 ```axiom
 # examples/18_web_api_framework.ax
 import "std/web/router.ax"
@@ -353,7 +381,7 @@ import "std/target/wasm.ax"
 // Radix pattern router, CORS & Auth Guard middleware, XSS-safe templating, WebAssembly binary module
 ```
 
-### 11. DFIR Triage: Single JSON Report (Phase 1 closing tool)
+### 12. DFIR Triage: Single JSON Report (Phase 1 closing tool)
 ```axiom
 # examples/22_dfir_triage.ax
 import "std/os/forensics"
@@ -401,7 +429,7 @@ Real output (finding present, no `--fail-on-match` → `exit 0`):
 Exit codes: `0` report produced (no finding, or flag not given) · `10`
 `--fail-on-match` given and a finding exists · `1` error (file/rule/usage).
 
-### 12. Error Model: `Result<T, E>` and the `?` Operator
+### 14. Error Model: `Result<T, E>` and the `?` Operator
 
 ```axiom
 # examples/19_error_handling.ax
@@ -433,6 +461,21 @@ fn main() -> int {
 > `defer` blocks and ownership cleanup run. Contract violations (`requires`,
 > `ensures`, `verify`) do not go through this path — they are programming
 > errors and halt the program.
+
+---
+
+## 📏 Claims and evidence
+
+Not marketing copy — measurement and scope:
+
+| Claim | Actual state | Evidence |
+|---|---|---|
+| "As fast as C/Rust" | **Overclaim.** Measured: 1.5–6.3× slower than C `-O3` | [benchmarks/RESULTS.md](benchmarks/RESULTS.md) |
+| "Faster than Python" | Measured: 6.6–29.7× faster (5 selected workloads) | same file |
+| "Garbage-collector free" | True: no GC at runtime; refcount overhead exists | `axiom/runtime.h`, P2-17b report |
+| "Stops logic errors at compile time" | **Partial:** `requires`/`ensures`/`verify` are checked symbolically/Z3; loop-containing functions report "Unknown" instead of silently passing | `axiom check` output, `tests/test_prover*.py` |
+| "Standalone binary" | Dynamic: glibc, libssl, libcrypto, libz, libpthread | `ldd`, README limits §2 |
+| "As elegant as Python" | **Unmeasurable claim; removed.** Replaced by readable syntax + `docs/en/TUTORIAL.md` | — |
 
 ---
 
@@ -481,9 +524,13 @@ std/                # 52 Standard Library Modules / 385 functions
 | **Writing Speed & Ergonomics** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ |
 | **Raw Machine Speed** | ⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐☆ (1.5–6× slower than C; see benchmarks/RESULTS.md) |
 | **No Garbage Collector (No GC)** | ❌ | ✅ | ✅ |
-| **Borrow Checker Burden** | None | High | **None (Automatic)** |
+| **Borrow Checker Burden** | None | High | **None** (no lifetime accounting; ownership via refcount) |
 | **Logic Verification (`requires`/`ensures`)** | ❌ | Partial/External | **Built-in** |
 | **Distribution** | Cumbersome (venv/pip) | Static Binary | **Standalone ELF Binary (OpenSSL/glibc dynamically linked)** |
+
+> The stars in this table are **not measurements** (except the speed row); the
+> ergonomics score is subjective. The only measured comparison is in
+> `benchmarks/RESULTS.md`.
 
 ---
 
@@ -508,8 +555,52 @@ Test-infrastructure notes:
 - Windows-target tests really execute under `wine`; if wine is missing those
   tests are skipped for environment reasons. Wine prefixes are removed at the
   end of the session.
-- Last verified full run: **1022 passed, 0 failed, 0 skipped**
-  (12 November 2026, Linux x86_64).
+
+### Last verified run
+
+| Field | Value |
+|---|---|
+| Date | 12 November 2026 |
+| Command | `python3 -m pytest -q --no-header -p no:cacheprovider` |
+| Result | **1022 passed, 0 failed, 0 skipped** (921.59 s) |
+| Environment | Linux x86_64, clang 21.1.8, wine installed, `bin/axiomc` built locally |
+
+**1022** is the total number of collected tests. Because wine, clang and z3 are
+present locally, the wine/Windows tests really run and nothing is skipped. The
+same suite in an environment missing those components starts **skipping**
+(see below) — same count, different outcome.
+
+### CI status (honest)
+
+**GitHub Actions is currently red.** The badge is wired to the real workflow, so
+it does not show "success". Last two runs (`43212627639`, `43219236120`):
+
+| | |
+|---|---|
+| Test job (Python 3.11) | **20 failed, 919 passed, 83 skipped** |
+| Formatting job | `ModuleNotFoundError: No module named 'z3'` |
+| ASan/UBSan job | failed (details in the run log) |
+| LLVM + DWARF job | failed (details in the run log) |
+
+Root causes (from CI logs):
+
+1. **`bin/axiomc` missing (13 tests):** CI runs `pytest` **before**
+   `make bootstrap`; the binary is not committed, so `test_self_hosted.py` and
+   `negative_security` cannot find it.
+2. **LLVM `main()` bridge (real product bug, 2 tests):** for `main() -> Result`
+   the codegen emits `call void @ax_main()` while `@ax_main` returns a struct.
+   clang 21 accepts it (silently dropping the Err), clang 14 rejects it. The same
+   IR is produced locally — the fault is in codegen, not the environment.
+3. **Unicode test (2 tests):** the test compares the table version with the
+   environment's `unicodedata.unidata_version`; Python 3.10–3.12 (Unicode
+   14.0.0) does not match the generated table (15.1.0).
+4. **`readelf` warnings (2 tests):** newer binutils exits 1 on warnings; the
+   test expects `returncode == 0`.
+
+Until these are fixed the CI badge stays red. The local run is green, but that
+does not mean CI is green. A separate run in the sandbox
+(`951 passed, 57 failed, 2 errors`) and its triage:
+[docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 
 ---
 
@@ -538,6 +629,9 @@ Test-infrastructure notes:
 
 ### 🟡 In progress / partial
 
+- **GitHub Actions red:** the last run had 20 failing tests (4 root causes:
+  `bin/axiomc` ordering, LLVM `main()` bridge, Unicode version test, `readelf`
+  warnings). Local run is green; details in "CI status" above.
 - **Windows:** cross-compilation + execution under `wine` verified; no CI run on
   a real Windows machine.
 - **macOS:** no runner/verification.

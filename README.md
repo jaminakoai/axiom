@@ -1,23 +1,46 @@
 # Axiom Programming Language (λx)
 
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](#)
-[![Tests](https://img.shields.io/badge/Tests-1022%20Passed-brightgreen.svg)](#)
-[![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuclar-blue.svg)](benchmarks/RESULTS.md)
-[![CI](https://img.shields.io/badge/CI-GitHub%20Actions-success.svg)](.github/workflows/ci.yml)
-[![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64%20deneysel-orange.svg)](#)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
+[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1022-blue.svg)](#son-doğrulanmış-koşu)
+[![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
+[![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
-> **"Python kadar zarif ve hızlı yazılan, C/Rust kadar hızlı koşan ve matematiksel sözleşmelerle mantık hatalarını derleme anında durduran yeni nesil sistem programlama dili."**
+> Rozetler hakkında: **CI** rozeti GitHub Actions'a canlı bağlıdır — kırmızıysa
+> son koşu başarısızdır. **Tests** rozeti sabittir ve yalnızca aşağıda tarih,
+> komut ve sonucu belgelenen **yerel** koşuyu gösterir; CI sonucu değildir.
+> Güncel CI durumu ve bilinen hatalar: aşağıdaki "Testleri çalıştırma" bölümü.
+
+> **Axiom (λx): sözleşmeli, native derlenen bir sistem programlama dili.**
+> Ölçülen kıyas (bu depodaki benchmarklar, tek makine): Axiom C `-O3`'ün
+> **1,5–6,3×** yavaşı, Python'un **6,6–29,7×** hızlısı
+> ([benchmarks/RESULTS.md](benchmarks/RESULTS.md)). Sözleşme denetimi
+> derleme anında çalışır, ancak döngülü fonksiyonlarda "kanıtlanamadı" diye
+> raporlanır — her hatayı yakaladığı iddia edilmez.
 
 > 🌍 **English:** [README.en.md](README.en.md)
 
 ---
 
-## 🔎 Axiom bugün ne işe yarar? — Çevrimdışı DFIR ve güvenlik kanıtı triyajı
+## 🧭 Axiom nedir?
 
-Axiom bir dil ve derleyicidir. Bu dilin üzerine yazılmış iki araç bugün
-**çevrimdışı** (canlı servise/ağa ihtiyaç duymayan) güvenlik triyajı için
-kullanılabilir:
+**Ana ürün dildir.** Axiom (λx); sözleşmeli (`requires`/`ensures`/`verify`),
+`Result<T,E>` + `?` hata modelli, çöp toplayıcısı olmayan ve C99 ile LLVM olmak
+üzere **iki arka uçtan native ikili** üreten bir sistem programlama dilidir.
+
+Aşağıdaki güvenlik araçları **ayrı bir ürün değil**, bu dilin kendi standart
+kütüphanesiyle yazılmış **amiral gemisi uygulamalarıdır**: dilin ne yapabildiğini
+gerçek bir iş üzerinden gösterirler. Dilin kendisi hakkında bilgi için
+"Neden Axiom?" ve "Mimari Genel Bakış" bölümlerine
+bakın; araçları denemek için aşağıdaki tablo yeterlidir.
+
+---
+
+## 🔎 Bu dille yazılmış araçlar: çevrimdışı DFIR ve güvenlik kanıtı triyajı
+
+Aşağıdaki iki araç bugün **çevrimdışı** (canlı servise/ağa ihtiyaç duymayan)
+güvenlik triyajı için kullanılabilir:
 
 | Araç | Girdi | Yaptığı analiz | Çıktı |
 |---|---|---|---|
@@ -53,8 +76,8 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 - Araçlar henüz "üretimde kanıtlanmış" değildir; testler ve örneklerle
   doğrulanmış alfa prototiplerdir.
 
-Ayrıntılı kullanım: [axiom-scan v0.2](#13-axiom-scan-v02--güvenlik-kanıtı-taramasi)
-ve [DFIR triyajı](#11-dfir-triyajı-tek-json-rapor-faz-1-kapanış-aracı).
+Ayrıntılı kullanım: [axiom-scan v0.2](#13-axiom-scan-v02--güvenlik-kanıtı-taraması)
+ve [DFIR triyajı](#12-dfir-triyajı-tek-json-rapor-faz-1-kapanış-aracı).
 
 ---
 
@@ -64,8 +87,10 @@ Günümüz dillerinde iki aşırı uç vardır:
 * **Python:** Öğrenmesi ve geliştirmesi inanılmaz ergonomik; ancak çalışma zamanında yavaş, devasa bellek tüketimine sahip ve tip/mantık hatalarını ancak üretimde fırlatır.
 * **Rust:** Muazzam bellek güvenliği ve çıplak metal hızı; fakat borrow checker kuralları, `'a` ömür muhasebesi ve uzun derleme süreleri nedeniyle yüksek bilişsel yük getirir.
 
-**Axiom bu iki kutup arasındaki boşluğu kapatır:**
-1. **Sıfır Bilişsel Yük:** Borrow checker savaşı yok. `defer` tabanlı kapsam temizliği, sahiplik takipli string birleştirme ve sınır denetimli diziler.
+**Axiom bu iki kutup arasında konumlanır.** Aşağıdaki maddeler *hedef
+tasarım*dır; ölçüm ve daraltmalar aşağıdaki "İddialar ve kanıtlar" bölümündedir
+bölümündedir:
+1. **Borrow checker yok, sahiplik yine var:** Ömür/`'a` muhasebesi yok; `defer` tabanlı kapsam temizliği, refcount tabanlı string sahipliği ve sınır denetimli diziler. (Bu "sıfır bilişsel yük" değildir: string sahipliği ve `let` kapsam kuralları öğrenilmelidir.)
 2. **Çöp Toplayıcısız (Zero-GC):** Duraksama yok. Gerçek zamanlı sistemler ve güvenlik araçları için öngörülebilir mikro-saniye gecikme.
 3. **Sözleşmeli Doğrulama (Contract-Driven Logic Safety):** `requires`, `ensures` ve `verify` blokları ile mantık hataları ve sınır taşmaları daha derleme anında tespit edilir.
 4. **Beklenen Hatalar İçin `Result<T, E>` + `?`:** Dosya yok, port kapalı, ağ hatası gibi *beklenen* durumlar `Result` ile akar; `?` operatörü hatayı üst katmana iletir, `defer` temizliği çalışır. `main` de `Result<int, str>` dönebilir (Err → stderr + exit 1). Stdlib'in `Result` katmanı hazırdır: `std/io/file`, `std/encoding/json`, `std/net/http`, `std/crypto/tls`, `std/os/process`. Sözleşme ihlalleri (`requires`/`ensures`/`verify`) ise *programlama hatası* sayılır ve programı durdurur.
@@ -277,7 +302,7 @@ Matematiksel ispat motorunu çalıştırmak:
 axiom prove examples/08_multithreaded_scanner.ax
 ```
 
-### 6. Heterojen SIMD Vektör Hızlandırma ve Z3 SMT Teorem İspatı
+### 7. Heterojen SIMD Vektör Hızlandırma ve Z3 SMT Teorem İspatı
 ```axiom
 # examples/09_simd_vector_scan.ax
 @simd
@@ -303,7 +328,7 @@ axiom emit-llvm examples/09_simd_vector_scan.ax
 axiom build examples/09_simd_vector_scan.ax --backend=llvm -o simd_scan
 ```
 
-### 7. Red Team & Ofansif Siber Güvenlik Suiti (Faz 2)
+### 8. Red Team & Ofansif Siber Güvenlik Suiti (Faz 2)
 ```axiom
 # examples/15_redteam_offensive_suite.ax
 import "std/security/shellcode.ax"
@@ -317,7 +342,7 @@ import "std/security/memdump.ax"
 
 > **Not:** Ofansif modüller varsayılan derlemede reddedilir. Derlemek için `--features offensive` (veya `AXIOM_FEATURES=offensive`) kullanın.
 
-### 8. Blue Team & DFIR Defansif Güvenlik Suiti (Faz 3)
+### 9. Blue Team & DFIR Defansif Güvenlik Suiti (Faz 3)
 ```axiom
 # examples/16_blueteam_defensive_suite.ax
 import "std/security/yara.ax"
@@ -329,7 +354,7 @@ import "std/security/integrity.ax"
 // Canlı PCAP yakalama, Sigma kural motoru, YARA desen tarama, FIM bütünlük denetimi
 ```
 
-### 9. Yapay Zeka (AI/ML) Tensör & Derin Öğrenme Motoru (Faz 4)
+### 10. Yapay Zeka (AI/ML) Tensör & Derin Öğrenme Motoru (Faz 4)
 ```axiom
 # examples/17_ai_tensor_neural_net.ax
 import "std/ai/tensor.ax"
@@ -341,7 +366,7 @@ import "std/ai/inference.ax"
 // AVX2 SIMD GEMM matris çarpımı, ReLU & Sigmoid forward pass, Argmax sınıflandırma, Autograd geriye yayılım
 ```
 
-### 10. Modern Web Framework & WASM Hedefi (Faz 5)
+### 11. Modern Web Framework & WASM Hedefi (Faz 5)
 ```axiom
 # examples/18_web_api_framework.ax
 import "std/web/router.ax"
@@ -352,7 +377,7 @@ import "std/target/wasm.ax"
 // Radix pattern yönlendirici, CORS & Auth Guard middleware, XSS korumalı şablonlama, WebAssembly ikili modülü
 ```
 
-### 11. DFIR Triyajı: Tek JSON Rapor (Faz 1 kapanış aracı)
+### 12. DFIR Triyajı: Tek JSON Rapor (Faz 1 kapanış aracı)
 ```axiom
 # examples/22_dfir_triage.ax
 import "std/os/forensics"
@@ -400,7 +425,7 @@ Gerçek çıktı (bulgu var, `--fail-on-match` yok → `exit 0`):
 Çıkış kodları: `0` rapor üretildi (bulgu yok veya bayrak verilmedi) · `10`
 `--fail-on-match` verildi ve bulgu var · `1` hata (dosya/kural/kullanım).
 
-### 12. Hata Modeli: `Result<T, E>` ve `?` Operatörü
+### 14. Hata Modeli: `Result<T, E>` ve `?` Operatörü
 
 ```axiom
 # examples/19_error_handling.ax
@@ -431,6 +456,21 @@ fn main() -> int {
 > `?` yalnızca `Result` döndüren fonksiyonlarda kullanılabilir; erken dönüşte
 > `defer` blokları ve sahiplik temizliği çalışır. Sözleşme ihlalleri (`requires`,
 > `ensures`, `verify`) bu yoldan geçmez — onlar programlama hatasıdır ve durdurur.
+
+---
+
+## 📏 İddialar ve kanıtlar
+
+Pazarlama cümlesi değil, ölçüm ve kapsam:
+
+| İddia | Gerçek durum | Kanıt |
+|---|---|---|
+| "C/Rust kadar hızlı" | **Aşırı iddia.** Ölçülen: C `-O3`'ün 1,5–6,3× yavaşı | [benchmarks/RESULTS.md](benchmarks/RESULTS.md) |
+| "Python'dan hızlı" | Ölçüldü: 6,6–29,7× hızlı (seçilen 5 iş) | aynı dosya |
+| "Çöp toplayıcısız" | Doğru: runtime'da GC yok; refcount maliyeti var | `axiom/runtime.h`, P2-17b raporu |
+| "Derleme anında mantık hatasını durdurur" | **Kısmi:** `requires`/`ensures`/`verify` sembolik/Z3 ile denetlenir; döngülü fonksiyonlarda sonuç "Unknown" olarak raporlanır, sessizce "doğru" denmez | `axiom check` çıktısı, `tests/test_prover*.py` |
+| "Bağımsız ikili" | Dinamik: glibc, libssl, libcrypto, libz, libpthread | `ldd`, README sınırlar §2 |
+| "Python kadar zarif" | **Ölçülemez iddia; kaldırıldı.** Yerine okunabilir sözdizimi + `docs/TUTORIAL.md` | — |
 
 ---
 
@@ -476,12 +516,15 @@ std/                # 52 Standart Kütüphane Modülü / 385 fonksiyon
 
 | Özellik | Python | Rust | Axiom (λx) |
 | :--- | :---: | :---: | :---: |
-| **Yazım Hızı & Ergonomi** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐⭐ |
-| **Saf Makine Hızı** | ⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐☆ (C'nin 1,5–6× yavaşı; bkz. benchmarks/RESULTS.md) |
+| **Yazım Hızı & Ergonomi** (öznel) | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ |
+| **Saf Makine Hızı** | ⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐☆ (ölçüldü: C'nin 1,5–6,3× yavaşı; bkz. benchmarks/RESULTS.md) |
 | **Çöp Toplayıcısız (No GC)** | ❌ | ✅ | ✅ |
-| **Borrow Checker Zorluğu** | Yok | Yüksek | **Yok (Otomatik)** |
+| **Borrow Checker Zorluğu** | Yok | Yüksek | **Yok** (ömür muhasebesi yok; sahiplik refcount ile) |
 | **Mantık Doğrulama (`requires`/`ensures`)** | ❌ | Kısmi/Harici | **Yerleşik (Built-in)** |
 | **Dağıtım** | Hantal (venv/pip) | Statik Binary | **Bağımsız ELF İkili Dosyası (OpenSSL/glibc dinamik bağlı)** |
+
+> Tablodaki yıldızlar **ölçüm değildir** (hız satırı hariç); ergonomi puanı
+> özneldir. Ölçülen tek karşılaştırma `benchmarks/RESULTS.md`'dedir.
 
 ---
 
@@ -506,8 +549,52 @@ Test altyapısı notları:
   çalışmaz.
 - Windows hedefi testleri `wine` üzerinde gerçek çalıştırma yapar; wine yoksa
   ilgili testler ortam nedeniyle atlanır. Oturum sonunda wine prefix'leri silinir.
-- Son doğrulanmış tam koşu: **1022 passed, 0 failed, 0 skipped**
-  (12 Kasım 2026, Linux x86_64).
+
+### Son doğrulanmış koşu
+
+| Alan | Değer |
+|---|---|
+| Tarih | 12 Kasım 2026 |
+| Komut | `python3 -m pytest -q --no-header -p no:cacheprovider` |
+| Sonuç | **1022 geçti, 0 başarısız, 0 atlandı** (921,59 s) |
+| Ortam | Linux x86_64, clang 21.1.8, wine kurulu, `bin/axiomc` yerelde derlenmiş |
+
+Buradaki **1022**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
+mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
+atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
+(aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
+
+### CI durumu (dürüst)
+
+**GitHub Actions şu anda kırmızı.** Rozet gerçek workflow'a bağlıdır, bu yüzden
+"success" göstermez. Son iki koşu (`43212627639`, `43219236120`) sonucu:
+
+| | |
+|---|---|
+| Test işi (Python 3.11) | **20 başarısız, 919 geçti, 83 atlandı** |
+| Biçimlendirme işi | `ModuleNotFoundError: No module named 'z3'` |
+| ASan/UBSan işi | başarısız (ayrıntı: run logu) |
+| LLVM + DWARF işi | başarısız (ayrıntı: run logu) |
+
+Kök nedenler (CI loglarından):
+
+1. **`bin/axiomc` yok (13 test):** CI, `pytest`'i `make bootstrap`'tan **önce**
+   çalıştırıyor; ikili depoda tutulmadığı için `test_self_hosted.py` ve
+   `negative_security` testleri dosyayı bulamıyor.
+2. **LLVM `main()` köprüsü (gerçek ürün hatası, 2 test):** `main() -> Result`
+   için `call void @ax_main()` üretiliyor ama `@ax_main` struct döndürüyor.
+   clang 21 bunu kabul ediyor (sessizce Err'ü düşürüyor), clang 14 reddediyor.
+   Yerelde de aynı IR üretiliyor — yani hata ortamda değil, kod üretiminde.
+3. **Unicode testi (2 test):** test, tablo sürümünü ortamdaki
+   `unicodedata.unidata_version` ile karşılaştırıyor; Python 3.10–3.12
+   (Unicode 14.0.0) ile üretilen tablo (15.1.0) uyuşmuyor.
+4. **`readelf` uyarıları (2 test):** yeni binutils, uyarıda `exit 1` döndürüyor;
+   test `returncode == 0` bekliyor.
+
+Bunlar düzeltilene kadar CI rozeti kırmızı kalır. Yerel koşu yeşildir ama bu,
+CI'nın yeşil olduğu anlamına gelmez. Sandbox ortamındaki ayrı koşu
+(`951 geçti, 57 başarısız, 2 hata`) ve sınıflandırması:
+[docs/reports/sandbox-test-triage-2026-11-12.md](docs/reports/sandbox-test-triage-2026-11-12.md).
 
 ---
 
@@ -535,6 +622,9 @@ Test altyapısı notları:
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
+- **GitHub Actions kırmızı:** son koşuda 20 test başarısız (4 kök neden:
+  `bin/axiomc` sırası, LLVM `main()` köprüsü, Unicode sürüm testi, `readelf`
+  uyarıları). Yerel koşu yeşil; ayrıntı "CI durumu" bölümünde.
 - **Windows:** çapraz derleme + `wine` ile çalıştırma doğrulandı; gerçek Windows
   makinede CI koşusu yok.
 - **macOS:** runner/doğrulama yok.

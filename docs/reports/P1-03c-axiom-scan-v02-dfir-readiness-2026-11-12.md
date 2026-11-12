@@ -198,3 +198,51 @@ EXIT=0
 - Önceki tam koşu 1017 → **+5** (yeni `axiom-scan` regresyonları).
 - Ortam: Linux x86_64, clang, wine mevcut, `/tmp` 608 MB / 3.9 GB.
 - Koşu sonrası: `/tmp/axiom-wine-*` kalıntısı **0**, yüksek CPU'lu süreç **0**.
+
+---
+
+## 9. Yayın öncesi inceleme düzeltmeleri (aynı gün)
+
+Dış inceleme 5 noktayı işaret etti; hepsi düzeltildi:
+
+| # | Bulgu | Yapılan |
+|---|---|---|
+| 1 | Rozetler sabit metin ("CI success", "1022 Passed") | **CI rozeti gerçek workflow'a bağlandı** (`.../actions/workflows/ci.yml/badge.svg`). **Tests rozeti** "yerel koşu" olarak etiketlendi ve tarih/komut/sonuç belgelenen bölüme bağlandı. Sahte "success" rozeti kaldırıldı. |
+| 2 | Dil ile DFIR araçları iki ayrı yön gibi yarışıyor | **"Axiom nedir?"** bölümü eklendi: ana ürün dildir, güvenlik araçları bu dilin **amiral gemisi uygulamalarıdır**. DFIR bölümü "Bu dille yazılmış araçlar" olarak yeniden adlandırıldı. |
+| 3 | Pazarlama iddiaları kanıtsız | Slogan ölçüme dayalı hâle getirildi (C `-O3`'ün 1,5–6,3× yavaşı, Python'un 6,6–29,7× hızlısı). **"İddialar ve kanıtlar"** tablosu eklendi: 6 iddia, gerçek durum, kanıt. "Sıfır bilişsel yük" → "borrow checker yok, sahiplik var". "Python kadar zarif" kaldırıldı. Karşılaştırma tablosundaki yıldızların ölçüm olmadığı yazıldı. |
+| 4 | Test sayısı hangi koşudan, hangi hata durumuyla? | **"Son doğrulanmış koşu"**: 12 Kasım 2026, `python3 -m pytest -q --no-header -p no:cacheprovider`, 1022 geçti / 0 başarısız / 0 atlandı (921,59 s), ortam. Ayrıca **"CI durumu (dürüst)"**: 20 başarısız / 919 geçti / 83 atlandı, 4 kök neden. Sandbox koşusu (951/57/2) raporda linklendi. |
+| 5 | Örnek numaraları atlıyor (11 → 13 → 12), iki kez "6." | 1–14 **sıralı** yeniden numaralandırıldı; kırık `#13` bağlantısı (`taraması`/`taramasi` harf hatası) düzeltildi. Doğrulama: TR ve EN'de **kırık bağlantı 0**. |
+
+### Bu sırada bulunan gerçek hata (ürün)
+
+**LLVM `main() -> Result<int,str>` köprüsü bozuk.** Üretilen IR:
+
+```llvm
+define %struct.ax_Result_int_str @ax_main() { ... }
+define i32 @main(i32 %argc, i8** %argv) {
+  call void @axiom_cli_init_args(i32 %argc, i8** %argv)
+  call void @ax_main()        ; <-- struct dönen fonksiyon void çağrılıyor
+  ret i32 0
+}
+```
+
+- clang 21 (yerel) kabul ediyor ve **Err bilgisini sessizce düşürüyor** →
+  `main() -> Result` ile yazılmış programlar LLVM'de hatada **exit 0** verebilir.
+- clang 14 (ubuntu-22.04 CI) bunu **sert hata** olarak reddediyor:
+  `'@ax_main' defined with type '%struct.ax_Result_int_str ()*' but expected 'void ()*'`.
+- C arka ucunda aynı senaryo doğru çalışıyor (Err → stderr + exit 1).
+
+Bu, "iki arka uç eşit" ilkesinin ihlalidir ve **bu turda düzeltilmedi**;
+CI'daki 2 test hatasının kök nedenidir. Düzeltme önerisi: `main` köprüsünü
+`Result` yapısını `sret` ile çağırıp `is_ok` kontrolü yapacak şekilde üret,
+Err'de `error` alanını stderr'e yaz ve 1 döndür.
+
+### Doğrulama
+
+```
+$ python3 -m pytest -q --no-header -p no:cacheprovider
+1022 passed in 921.59s (0:15:21)      # yerel, 12 Kasım 2026
+```
+
+CI (gerçek, son iki koşu): `20 failed / 919 passed / 83 skipped`
+(run 43212627639, 43219236120).
