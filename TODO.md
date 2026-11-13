@@ -142,8 +142,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   witness ve tüm desteklenen türlerde ilk/son start sınırları test edildi.
   Kalan sınırlara dair açık durum raporda; eksik koşul birleşimleri ve dahili
   runtime limitleri tamamlanmalı.
-- [ ] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
-  kodlamayı doğrudan C runtime testleriyle doğrula.
+- [~] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
+  kodlamayı doğrudan C runtime testleriyle doğrula. Mevcut legacy hex kodlamaları
+  için malformed range/alternation/negation, 8 KiB pattern limiti, signed offset
+  sınırı ve occurrence indeks taşması doğrudan test ediliyor. `hexast:v1`
+  bytecode henüz mevcut olmadığından AST program doğrulama/overflow testleri ve
+  AST geçişi sonrası hedef-boyutu stres kanıtı açık kalıyor.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
   diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
   atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.

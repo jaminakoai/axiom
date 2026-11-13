@@ -5,6 +5,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Testler
+- YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
+  taşan/bozuk bounded-range ile alternation kodlamalarını kapsıyor; geçersiz
+  girdiler eşleşme üretmeden reddedilmeli.
+
 ### Düzeltilen (13 Kasım — bounded YARA occurrence maliyeti)
 - `#a` bounded-jump sayımında tekrarlanan prefix ve uzun, neredeyse eşleşen
   suffix'lerin her olası jump'ta tekrar taranması önlendi. Hedefe göre nadir

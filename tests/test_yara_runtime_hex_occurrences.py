@@ -83,6 +83,11 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
         CHECK(axiom_yara_nth_hex_pattern_offset("ABC", "hex:41", 4) == -1);
         CHECK(axiom_yara_nth_hex_pattern_length("ABC", "hex:41", 4) == -1);
 
+        // The public occurrence index is signed 64-bit. Extreme indices must
+        // fail closed without wrapping into an earlier occurrence.
+        CHECK(axiom_yara_nth_hex_pattern_offset("ABC", "hex:41", INT64_MAX) == -1);
+        CHECK(axiom_yara_nth_hex_pattern_length("ABC", "hex:41", INT64_MAX) == -1);
+
         const char overlapping[] = {(char)0xAA, (char)0xAB, (char)0xAC, '\0'};
         const char* masked = "hex:A? A?";
         CHECK(axiom_yara_count_hex_pattern(overlapping, masked) == 2);
@@ -91,7 +96,12 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
         CHECK(axiom_yara_nth_hex_pattern_length(overlapping, masked, 2) == 2);
 
         const char* malformed[] = {
-            "", "hex:", "hexrange:bad", "hexalt:41|42 43", "hexnot:|??|", "unknown:41"
+            "", "hex:", "hexrange:bad", "hexalt:41|42 43", "hexnot:|??|", "unknown:41",
+            // Numeric overflow, malformed separators, excess branches, and
+            // ambiguous nested/combined constructs are rejected at runtime.
+            "hexrange:41|999999999999999999999999|999999999999999999999999|42",
+            "hexrange:41|0|1||42", "hexalt:41|42|43|44|45",
+            "hexalt:41 (42|43)|44", "hexnot:41|42|43|44"
         };
         for (int i = 0; i < (int)(sizeof(malformed) / sizeof(malformed[0])); i++) {
             CHECK(axiom_yara_count_hex_pattern("ABC", malformed[i]) == -1);
