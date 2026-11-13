@@ -75,8 +75,8 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
   diğer desteklenmeyen modifier'lar ve hex jump/alternation yapıları da
   ayrıştırma hatasıyla reddedilir. `#a` sayımı yalnız metin desenlerinde desteklenir.
-  `$a at/in` metin ve hex desenlerinde; `@a[i]` / `!a[i]` yalnız metin
-  desenlerinde desteklenir. Regex desenlerinde ofset ve indeks kontrolleri reddedilir.
+  `$a at/in` ve `@a[i]` / `!a[i]` metin ve hex desenlerinde desteklenir.
+  Regex desenlerinde ofset ve indeks kontrolleri reddedilir.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
   reddedilir. `//` kalıp içinde korunur; `#` YARA yorum işareti değildir.

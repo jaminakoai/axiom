@@ -8614,9 +8614,12 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_pattern_len(const char* hex_pattern) {
     return (ax_int)len;
 }
 
-/* Boyer-Moore-Horspool / Sunday Quick-Search algorithm with wildcard byte masks */
-AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_len, const AxiomYaraCompiledPattern* pat, ax_int min_offset, ax_int max_offset) {
-    if (!data || !pat || pat->len <= 0) return -1;
+/* Boyer-Moore-Horspool / Sunday Quick-Search, returning an indexed hit. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t data_len,
+                                                   const AxiomYaraCompiledPattern* pat,
+                                                   ax_int min_offset, ax_int max_offset,
+                                                   ax_int occurrence) {
+    if (!data || !pat || pat->len <= 0 || occurrence <= 0) return -1;
     int m = pat->len;
     if ((size_t)m > data_len) return -1;
 
@@ -8626,6 +8629,7 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_l
 
     // Fast-path for exact offset check
     if (min_offset >= 0 && min_offset == max_offset) {
+        if (occurrence != 1) return -1;
         if (min_offset + m > (int64_t)data_len) return -1;
         for (int j = 0; j < m; j++) {
             if ((data[min_offset + j] & pat->masks[j]) != pat->vals[j]) {
@@ -8657,6 +8661,7 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_l
 
     // Search window loop
     int64_t i = start;
+    ax_int seen = 0;
     while (i <= end) {
         int match = 1;
         for (int j = 0; j < m; j++) {
@@ -8666,7 +8671,10 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_l
             }
         }
         if (match) {
-            return (ax_int)i;
+            seen++;
+            if (seen == occurrence) return (ax_int)i;
+            i++;
+            continue;
         }
 
         if (i + m < (int64_t)data_len) {
@@ -8680,6 +8688,12 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_l
     }
 
     return -1;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_len,
+                                               const AxiomYaraCompiledPattern* pat,
+                                               ax_int min_offset, ax_int max_offset) {
+    return axiom_yara_find_nth_bytes(data, data_len, pat, min_offset, max_offset, 1);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_wildcard_raw(const char* target, ax_int target_len, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {
@@ -8697,6 +8711,18 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_wildcard_raw(const char* target, ax_
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_wildcard(const char* target, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {
     return axiom_yara_find_hex_wildcard_raw(target, -1, hex_pattern, min_offset, max_offset);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_wildcard(const char* target, const char* hex_pattern, ax_int occurrence) {
+    if (!target || !hex_pattern || occurrence <= 0) return -1;
+    AxiomYaraCompiledPattern pat;
+    if (axiom_yara_parse_hex_pattern_internal(hex_pattern, &pat) <= 0) {
+        axiom_yara_pattern_free(&pat);
+        return -1;
+    }
+    ax_int res = axiom_yara_find_nth_bytes((const uint8_t*)target, strlen(target), &pat, -1, -1, occurrence);
+    axiom_yara_pattern_free(&pat);
+    return res;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_stream(const char* hex_target, const char* hex_pattern) {

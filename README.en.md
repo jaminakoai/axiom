@@ -78,8 +78,8 @@ in their own language.
   path cannot represent target bytes containing NUL. Unknown conditions,
   other unsupported modifiers, and hex jump/alternation constructs are also
   rejected with a parse error. `#a` currently supports text patterns only;
-  `at/in` checks support text and hex patterns; `@a[i]` and `!a[i]` support
-  text patterns only. Offset and index checks reject regex patterns.
+  `at/in`, `@a[i]`, and `!a[i]` checks support text and hex patterns.
+  Offset and index checks reject regex patterns.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.
   `//` inside a pattern is preserved; `#` is not a YARA comment marker.

@@ -182,8 +182,18 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
         if found < 0 or found >= len(pattern_patterns) {
             return YaraConditionParse { value: false, position: i, valid: false }
         }
-        let pattern = _yc_text_pattern_parts(pattern_patterns[found])
-        if not pattern.valid { return YaraConditionParse { value: false, position: i, valid: false } }
+        let pattern_source = pattern_patterns[found]
+        let is_text = str_starts_with(pattern_source, "str:")
+        let is_hex = str_starts_with(pattern_source, "hex:")
+        if not is_text and not is_hex {
+            return YaraConditionParse { value: false, position: i, valid: false }
+        }
+        let text_pattern = _yc_text_pattern_parts(pattern_source)
+        let mut hex_pattern = ""
+        if is_hex { hex_pattern = str_sub(pattern_source, 4, str_len(pattern_source) - 4) }
+        if is_text and not text_pattern.valid {
+            return YaraConditionParse { value: false, position: i, valid: false }
+        }
         let open = _yc_skip_space(source, name_end)
         if open >= n or str_char_at(source, open) != "[" {
             return YaraConditionParse { value: false, position: open, valid: false }
@@ -218,10 +228,18 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
         if not expected.valid { return YaraConditionParse { value: false, position: expected.position, valid: false } }
         let mut actual = -1
         if target_size >= 0 {
-            let offset = rt_yara_nth_text_offset(target, pattern.text, pattern.flags, occurrence.value)
+            let mut offset = -1
+            if is_text {
+                offset = rt_yara_nth_text_offset(target, text_pattern.text, text_pattern.flags, occurrence.value)
+            } else {
+                offset = rt_yara_nth_hex_wildcard(target, hex_pattern, occurrence.value)
+            }
             if offset >= 0 {
                 actual = offset
-                if get_length { actual = str_byte_len(pattern.text) }
+                if get_length {
+                    if is_text { actual = str_byte_len(text_pattern.text) }
+                    else { actual = rt_yara_pattern_len(hex_pattern) }
+                }
             }
         }
         let matched = actual >= 0 and _yc_compare_int(actual, op, expected.value)

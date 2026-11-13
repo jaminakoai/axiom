@@ -175,6 +175,18 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     assert c_indexed.returncode == llvm_indexed.returncode == 0
     assert json.loads(c_indexed.stdout) == json.loads(llvm_indexed.stdout)
 
+    indexed_hex_rules = tmp_path / "indexed-hex-parity.yar"
+    indexed_hex_rules.write_text(
+        'rule IndexedHexParity {\n strings:\n  $a = { 41 42 }\n'
+        ' condition:\n  @a[2] == 2 and !a[1] == 2\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"ABAB")
+    c_hex_indexed = _run(scanner, "scan", str(sample), "--rules", str(indexed_hex_rules))
+    llvm_hex_indexed = _run(scanner_llvm, "scan", str(sample), "--rules", str(indexed_hex_rules))
+    assert c_hex_indexed.returncode == llvm_hex_indexed.returncode == 0
+    assert json.loads(c_hex_indexed.stdout) == json.loads(llvm_hex_indexed.stdout)
+
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
 def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, condition, expected):
@@ -342,6 +354,27 @@ def test_pattern_occurrence_offset_and_length_conditions(scanner, tmp_path, patt
     assert json.loads(res.stdout)["match_count"] == expected
 
 
+@pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
+    ("{ 41 42 }", b"ABAB", "@a[1] == 0", 1),
+    ("{ 41 42 }", b"ABAB", "@a[2] == 2", 1),
+    ("{ 41 42 }", b"ABAB", "!a[1] == 2", 1),
+    ("{ 4? 42 }", b"ABAB", "@a[2] == 2 and !a[2] == 2", 1),
+    ("{ 41 42 }", b"ABAB", "@a[3] == 4", 0),
+])
+def test_hex_occurrence_offset_and_length_conditions(scanner, tmp_path, pattern, target, condition, expected):
+    rules = tmp_path / "hex-occurrence-index.yar"
+    rules.write_text(
+        'rule HexOccurrenceIndex {\n strings:\n  $a = ' + pattern + '\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "hex-occurrence-target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
 @pytest.mark.parametrize("condition", ["@a[0] == 0", "!a[0] > 0", "@a[1]", "!a[1] =="])
 def test_malformed_occurrence_index_conditions_are_rejected(scanner, tmp_path, condition):
     rules = tmp_path / "bad-occurrence-index.yar"
@@ -355,7 +388,7 @@ def test_malformed_occurrence_index_conditions_are_rejected(scanner, tmp_path, c
     assert "condition" in json.loads(res.stdout)["error"]
 
 
-@pytest.mark.parametrize("pattern", ["{ 4D 5A }", "/needle/"])
+@pytest.mark.parametrize("pattern", ["/needle/"])
 def test_occurrence_index_conditions_reject_non_text_patterns(scanner, tmp_path, pattern):
     rules = tmp_path / "unsupported-occurrence-index.yar"
     rules.write_text(
