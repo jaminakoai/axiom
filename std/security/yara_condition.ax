@@ -165,7 +165,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
         cursor = cursor + 4
     } else {
         let amount = _yc_parse_number(source, cursor)
-        if not amount.valid or amount.value <= 0 {
+        if not amount.valid {
             return YaraConditionParse { value: false, position: cursor, valid: false }
         }
         mode = "count"
@@ -182,33 +182,102 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
         return YaraConditionParse { value: false, position: cursor, valid: false }
     }
     let selector_start = _yc_skip_space(source, cursor + 1)
-    if selector_start >= n or str_char_at(source, selector_start) != "$" {
-        return YaraConditionParse { value: false, position: selector_start, valid: false }
+    let mut close = selector_start
+    let mut selector_valid = true
+    let mut selectors = 0
+    while selector_valid {
+        close = _yc_skip_space(source, close)
+        if close >= n or str_char_at(source, close) != "$" {
+            selector_valid = false
+            break
+        }
+        let name_start = close
+        close = close + 1
+        while close < n and _yc_is_word_char(str_char_at(source, close)) {
+            close = close + 1
+        }
+        if close == name_start + 1 {
+            selector_valid = false
+            break
+        }
+        if close < n and str_char_at(source, close) == "*" { close = close + 1 }
+        selectors = selectors + 1
+        close = _yc_skip_space(source, close)
+        if close < n and str_char_at(source, close) == "," {
+            close = close + 1
+        } else {
+            if close >= n or str_char_at(source, close) != ")" { selector_valid = false }
+            break
+        }
     }
-    let mut selector_end = selector_start + 1
-    while selector_end < n and _yc_is_word_char(str_char_at(source, selector_end)) {
-        selector_end = selector_end + 1
-    }
-    if selector_end == selector_start + 1 {
-        return YaraConditionParse { value: false, position: selector_start, valid: false }
-    }
-    let selector = str_sub(source, selector_start, selector_end - selector_start)
-    let mut has_wildcard = false
-    if selector_end < n and str_char_at(source, selector_end) == "*" {
-        has_wildcard = true
-        selector_end = selector_end + 1
-    }
-    let close = _yc_skip_space(source, selector_end)
-    if close >= n or str_char_at(source, close) != ")" {
+    if not selector_valid or selectors == 0 {
         return YaraConditionParse { value: false, position: close, valid: false }
+    }
+
+    // Every selector must resolve to at least one declared pattern. The
+    // second pass computes the union, so overlapping wildcard selectors never
+    // count the same pattern twice.
+    let mut selector_cursor = selector_start
+    let mut resolved_selectors = 0
+    while resolved_selectors < selectors {
+        selector_cursor = _yc_skip_space(source, selector_cursor)
+        let selector_begin = selector_cursor
+        selector_cursor = selector_cursor + 1
+        while selector_cursor < n and _yc_is_word_char(str_char_at(source, selector_cursor)) {
+            selector_cursor = selector_cursor + 1
+        }
+        let selector = str_sub(source, selector_begin, selector_cursor - selector_begin)
+        let mut has_wildcard = false
+        if selector_cursor < n and str_char_at(source, selector_cursor) == "*" {
+            has_wildcard = true
+            selector_cursor = selector_cursor + 1
+        }
+        let mut found_selector = false
+        let mut q = 0
+        while q < len(pattern_names) {
+            let matches_selector = pattern_names[q] == selector
+            let mut matches = matches_selector
+            if has_wildcard { matches = str_starts_with(pattern_names[q], selector) }
+            if matches { found_selector = true }
+            q = q + 1
+        }
+        if not found_selector {
+            return YaraConditionParse { value: false, position: selector_begin, valid: false }
+        }
+        selector_cursor = _yc_skip_space(source, selector_cursor)
+        if selector_cursor < n and str_char_at(source, selector_cursor) == "," {
+            selector_cursor = selector_cursor + 1
+        }
+        resolved_selectors = resolved_selectors + 1
     }
 
     let mut selected = 0
     let mut matched = 0
     let mut p = 0
     while p < len(pattern_names) {
-        let mut included = pattern_names[p] == selector
-        if has_wildcard { included = str_starts_with(pattern_names[p], selector) }
+        let mut included = false
+        selector_cursor = selector_start
+        let mut selector_index = 0
+        while selector_index < selectors {
+            selector_cursor = _yc_skip_space(source, selector_cursor)
+            let selector_begin = selector_cursor
+            selector_cursor = selector_cursor + 1
+            while selector_cursor < n and _yc_is_word_char(str_char_at(source, selector_cursor)) {
+                selector_cursor = selector_cursor + 1
+            }
+            let selector = str_sub(source, selector_begin, selector_cursor - selector_begin)
+            let mut matches = pattern_names[p] == selector
+            if selector_cursor < n and str_char_at(source, selector_cursor) == "*" {
+                matches = str_starts_with(pattern_names[p], selector)
+                selector_cursor = selector_cursor + 1
+            }
+            if matches { included = true }
+            selector_cursor = _yc_skip_space(source, selector_cursor)
+            if selector_cursor < n and str_char_at(source, selector_cursor) == "," {
+                selector_cursor = selector_cursor + 1
+            }
+            selector_index = selector_index + 1
+        }
         if included {
             selected = selected + 1
             // Keep the bounds check separate: the LLVM backend may evaluate
@@ -226,7 +295,10 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
     if mode == "any" { value = matched > 0 }
     else if mode == "all" { value = matched == selected }
     else if mode == "none" { value = matched == 0 }
-    else if mode == "count" { value = matched >= threshold }
+    else if mode == "count" {
+        if threshold == 0 { value = matched == 0 }
+        else { value = matched >= threshold }
+    }
     return YaraConditionParse { value: value, position: close + 1, valid: true }
 }
 

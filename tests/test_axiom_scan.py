@@ -118,7 +118,13 @@ def test_boolean_condition_subset(scanner, tmp_path, condition, target, expected
     ("none of ($a*)", b"gamma", 1),
     ("2 of ($a*)", b"alpha beta", 1),
     ("2 of ($a*)", b"alpha", 0),
+    ("0 of ($a*)", b"gamma", 1),
+    ("0 of ($a*)", b"alpha", 0),
     ("any of ($b)", b"gamma", 1),
+    ("any of ($a1, $b)", b"gamma", 1),
+    ("2 of ($a1, $b)", b"alpha gamma", 1),
+    ("all of ($a*, $b)", b"alpha beta gamma", 1),
+    ("3 of ($a*, $a1, $b)", b"alpha beta gamma", 1),
     ("any of ($a*) or $b", b"gamma", 1),
 ])
 def test_pattern_group_conditions(scanner, tmp_path, condition, target, expected):
@@ -136,8 +142,8 @@ def test_pattern_group_conditions(scanner, tmp_path, condition, target, expected
 
 
 @pytest.mark.parametrize("condition", [
-    "any of ($missing*)", "any of ($a*", "any of (a*)",
-    "0 of ($a*)", "any of ($a?)",
+    "any of ($missing*)", "any of ($a*, $missing)", "any of ($a*", "any of (a*)",
+    "any of ($a?)",
 ])
 def test_invalid_pattern_group_conditions_are_rejected(scanner, tmp_path, condition):
     rules = tmp_path / "invalid-pattern-group.yar"
@@ -242,10 +248,10 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     group_rules = tmp_path / "group-parity.yar"
     group_rules.write_text(
         'rule GroupParity {\n strings:\n  $a1 = "alpha"\n  $a2 = "beta"\n'
-        ' condition:\n  2 of ($a*) and filesize == 10\n}\n',
+        '  $b = "gamma"\n condition:\n  3 of ($a*, $a1, $b) and filesize == 16\n}\n',
         encoding="utf-8",
     )
-    sample.write_bytes(b"alpha beta")
+    sample.write_bytes(b"alpha beta gamma")
     c_group = _run(scanner, "scan", str(sample), "--rules", str(group_rules))
     llvm_group = _run(scanner_llvm, "scan", str(sample), "--rules", str(group_rules))
     assert c_group.returncode == llvm_group.returncode == 0

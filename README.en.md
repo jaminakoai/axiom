@@ -68,7 +68,7 @@ in their own language.
 
 - `axiom-scan` is **not all of YARA**: subset patterns and conditions. It
   accepts `any/all/none of them`, `N of them`, `any/all/none/N of ($a*)`
-  pattern groups, `$a` pattern references,
+  and explicit pattern sets such as `any of ($a,$b)`, `$a` pattern references,
   `$a at N` / `$a in (N..M)` offset checks, `@a[i]` offsets, `!a[i]` match
   lengths, and `#a` occurrence counts,
   `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`

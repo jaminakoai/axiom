@@ -66,7 +66,8 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 
 - `axiom-scan` **YARA'nın tamamı değildir**: alt küme desenler ve koşullar
   desteklenir. Koşul olarak `any/all/none of them`, `N of them`,
-  `any/all/none/N of ($a*)` desen grupları, `$a` desen
+  `any/all/none/N of ($a*)` ve açık desen kümeleri (`any of ($a,$b)`) gibi
+  desen grupları, `$a` desen
   başvuruları, `$a at N` / `$a in (N..M)` ofset kontrolleri, `@a[i]` ofseti,
   `!a[i]` eşleşme uzunluğu, `#a` desen sayımı,
   `filesize` karşılaştırmaları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
