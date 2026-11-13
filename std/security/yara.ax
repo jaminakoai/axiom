@@ -261,7 +261,7 @@ fn yara_validate_pattern(pattern_str: str) -> str {
 /// Tek bir deseni hedefte tarar.
 ///
 /// `min_offset`/`max_offset` `-1` ise sinir yoktur.
-/// Desen turleri: `str:`, `hex:` (`??` joker), `hexrange:`, `hexalt:`, `hexnot:`, `regex:`.
+/// Desen turleri: `str:`, `hex:` (wildcard/jump/alternation/negation), `regex:`.
 fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
     // 1. Regex Deseni
     if (str_starts_with(pattern_str, "regex:")) {
@@ -288,37 +288,12 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         };
     }
 
-    // Variable-width bounded hex jump. Runtime returns the earliest start;
-    // for equal starts it reports the shortest matching range.
-    if str_starts_with(pattern_str, "hexrange:") {
-        let off = rt_yara_find_hex_range(target, pattern_str, min_offset, max_offset)
+    // All supported hex forms share one occurrence matcher. This keeps
+    // bounded jumps, alternation, negation and fixed bytes on the same path.
+    if str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+        let off = rt_yara_find_hex_pattern(target, pattern_str, min_offset, max_offset)
         if off >= 0 {
-            let match_len = rt_yara_find_hex_range_length(target, pattern_str, off)
-            if match_len >= 0 {
-                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
-            }
-        }
-        return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false }
-    }
-
-    // Equal-length fixed branches have an unambiguous instance length.
-    if str_starts_with(pattern_str, "hexalt:") {
-        let off = rt_yara_find_hex_alternation(target, pattern_str, min_offset, max_offset)
-        if off >= 0 {
-            let match_len = rt_yara_hex_alternation_len(pattern_str)
-            if match_len > 0 {
-                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
-            }
-        }
-        return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false }
-    }
-
-    // A single negated byte keeps the pattern length fixed; runtime handles
-    // ordinary prefix/suffix bytes and the excluded full/nibble mask.
-    if str_starts_with(pattern_str, "hexnot:") {
-        let off = rt_yara_find_hex_negation(target, pattern_str, min_offset, max_offset)
-        if off >= 0 {
-            let match_len = rt_yara_hex_negation_len(pattern_str)
+            let match_len = rt_yara_hex_pattern_length_at(target, pattern_str, off)
             if match_len > 0 {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
             }
@@ -449,7 +424,7 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 // Regex counts remain unsupported because the regex API exposes no instances.
 fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
     if str_starts_with(pattern_str, "regex:") { return -1 }
-    if str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+    if str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
         return rt_yara_count_hex_pattern(target, pattern_str)
     }
     if str_starts_with(pattern_str, "str:") {
@@ -467,10 +442,6 @@ fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
         }
         if flags < 0 or not _yara_text_flags_supported(flags) { return -1 }
         return rt_yara_count_text(target, p, flags)
-    }
-    if str_starts_with(pattern_str, "hex:") {
-        let p = str_sub(pattern_str, 4, str_len(pattern_str) - 4)
-        return rt_yara_count_hex_wildcard(target, p)
     }
     return -1
 }

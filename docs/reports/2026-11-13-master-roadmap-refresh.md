@@ -275,3 +275,19 @@ G1'in sıradaki işi özel `hex*:` kodlamalarını typed pattern AST'ye geçirme
 bozuk bytecode/overflow sınırlarını doğrudan runtime testleriyle kapatmak ve
 adversarial maliyet kanıtını CI'ya eklemektir. Sonra gerçek kural örnekleri
 üzerinde G2 uyumluluk kapısı gelir.
+
+## G1 artımlı uygulama — ortak hex occurrence API'si
+
+AST geçişinden önce tüm hex biçimlerinin arama yolundaki dispatch ayrışmasını
+azaltmak için `rt_yara_find_hex_pattern(target, pattern, min, max)` ve seçili
+offset için `rt_yara_hex_pattern_length_at(...)` eklendi. Sabit hex, bounded
+jump, alternation ve negation artık parser koşul araması ile YaraMatch raporunda
+aynı C runtime occurrence yürütücüsünden geçiyor; C/LLVM binding'leri eklendi.
+Alternation için offset sınır testi bu geçişte kapsam genişletilince bir hata
+yakaladı ve düzeltildi. Parser'ın `hexrange:`/`hexalt:`/`hexnot:` etiketleri
+henüz kaldırılmadı; bu adım typed AST'nin yerine geçmiyor.
+
+Doğrulama: tam `python -m pytest -q -rs` **1361 geçti** (1287,09 sn), hedefli
+YARA/scanner paketi **373 geçti**; son runtime/alternation/parity tekrar koşusu
+**22 geçti**. `make fmt-check` ve `git diff --check` temiz. Bu commit henüz push
+edilmedi; CI doğrulaması push sonrası yapılacak.

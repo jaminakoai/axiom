@@ -52,6 +52,14 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
     } } while (0)
 
     int main(void) {
+        CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", -1, -1) == 0);
+        CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", 1, -1) == 2);
+        CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", 0, 0) == 0);
+        CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", 1, 1) == -1);
+        CHECK(axiom_yara_find_hex_pattern("A1B2B", "hexrange:41|1|3|42", 1, -1) == -1);
+        CHECK(axiom_yara_find_hex_pattern("A1B2B", "hexrange:41|1|3|42", 0, 0) == 0);
+        CHECK(axiom_yara_find_hex_pattern("ABC", "hex:41", 2, 1) == -1);
+
         CHECK(axiom_yara_count_hex_pattern("", "hex:41") == 0);
         CHECK(axiom_yara_nth_hex_pattern_offset("", "hex:41", 1) == -1);
         CHECK(axiom_yara_nth_hex_pattern_length("", "hex:41", 1) == -1);

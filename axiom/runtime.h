@@ -9363,8 +9363,11 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_next_compiled(const uint8_t* target, siz
 AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* target,
                                                                     const char* encoded,
                                                                     ax_int occurrence,
-                                                                    int return_length) {
-    if (!target || !encoded || occurrence < 0) return -1;
+                                                                    int return_length,
+                                                                    ax_int min_offset,
+                                                                    ax_int max_offset) {
+    if (!target || !encoded || occurrence < 0 || min_offset < -1 || max_offset < -1 ||
+        (min_offset >= 0 && max_offset >= 0 && min_offset > max_offset)) return -1;
     size_t target_len = strlen(target);
     if (target_len > (size_t)INT64_MAX) return -1;
     const uint8_t* bytes = (const uint8_t*)target;
@@ -9405,26 +9408,38 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
 
     ax_int seen = 0;
     int64_t selected_length = -1;
-    int64_t cursor = 0;
+    int64_t cursor = min_offset > 0 ? (int64_t)min_offset : 0;
     while (cursor < (int64_t)target_len) {
         int64_t start = cursor;
         if (kind == 0) {
             int64_t last_start = (int64_t)target_len - fixed.len;
+            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
             start = axiom_yara_find_next_compiled(bytes, target_len, &fixed, cursor, last_start);
         } else if (kind == 1) {
             int64_t last_start = (int64_t)target_len - range.prefix.len - range.min_gap - range.suffix.len;
+            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
             start = axiom_yara_find_next_compiled(bytes, target_len, &range.prefix, cursor, last_start);
+        } else if (kind == 2) {
+            int64_t last_start = (int64_t)target_len - alt.common_len;
+            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
+            start = cursor <= last_start ? cursor : -1;
         } else if (kind == 3 && negation.prefix.len > 0) {
             int64_t last_start = (int64_t)target_len - negation.prefix.len - 1 - negation.suffix.len;
+            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
             start = axiom_yara_find_next_compiled(bytes, target_len, &negation.prefix, cursor, last_start);
         } else if (kind == 3 && negation.suffix.len > 0) {
-            int64_t suffix_start = cursor + negation.prefix.len + 1;
             int64_t last_start = (int64_t)target_len - negation.prefix.len - 1 - negation.suffix.len;
-            int64_t found_suffix = axiom_yara_find_next_compiled(bytes, target_len, &negation.suffix,
-                                                                  suffix_start,
-                                                                  last_start + negation.prefix.len + 1);
-            start = found_suffix < 0 ? -1 : found_suffix - negation.prefix.len - 1;
-            if (start >= 0 && start < cursor) start = -1;
+            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
+            if (cursor > (int64_t)target_len - negation.prefix.len - 1) {
+                start = -1;
+            } else {
+                int64_t suffix_start = cursor + negation.prefix.len + 1;
+                int64_t found_suffix = axiom_yara_find_next_compiled(bytes, target_len, &negation.suffix,
+                                                                      suffix_start,
+                                                                      last_start + negation.prefix.len + 1);
+                start = found_suffix < 0 ? -1 : found_suffix - negation.prefix.len - 1;
+                if (start >= 0 && start < cursor) start = -1;
+            }
         }
         if (start < 0) break;
         int matched = 0;
@@ -9480,19 +9495,30 @@ invalid_pattern:
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_count_hex_pattern(const char* target, const char* pattern) {
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 0, 0);
+    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 0, 0, -1, -1);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_pattern(const char* target, const char* pattern,
+                                                     ax_int min_offset, ax_int max_offset) {
+    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 1, 0, min_offset, max_offset);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_length_at(const char* target, const char* pattern,
+                                                          ax_int offset) {
+    if (offset < 0) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 1, 1, offset, offset);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_offset(const char* target, const char* pattern,
                                                             ax_int occurrence) {
     if (occurrence <= 0) return -1;
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 0);
+    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 0, -1, -1);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_length(const char* target, const char* pattern,
                                                             ax_int occurrence) {
     if (occurrence <= 0) return -1;
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 1);
+    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 1, -1, -1);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_scan_buf_handle(ax_int handle, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {

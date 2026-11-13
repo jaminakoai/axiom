@@ -5,6 +5,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Değiştirilen
+- YARA sabit ve özel hex biçimlerinin arama, sayım ve seçili occurrence
+  uzunluğu tek runtime occurrence yürütücüsünü kullanıyor. C ve LLVM için yeni
+  ortak find API'si offset sınırlarını aynı yerde uyguluyor.
+
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
   taşan/bozuk bounded-range ile alternation kodlamalarını kapsıyor; geçersiz

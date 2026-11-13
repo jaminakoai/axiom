@@ -441,6 +441,8 @@ BUILTIN_FUNCTIONS = {
     'rt_yara_find_hex_negation': (['str', 'str', 'int', 'int'], 'int'),
     'rt_yara_hex_negation_len': (['str'], 'int'),
     'rt_yara_count_hex_pattern': (['str', 'str'], 'int'),
+    'rt_yara_find_hex_pattern': (['str', 'str', 'int', 'int'], 'int'),
+    'rt_yara_hex_pattern_length_at': (['str', 'str', 'int'], 'int'),
     'rt_yara_nth_hex_pattern_offset': (['str', 'str', 'int'], 'int'),
     'rt_yara_nth_hex_pattern_length': (['str', 'str', 'int'], 'int'),
     'rt_yara_find_hex_wildcard_raw': (['str', 'int', 'str', 'int', 'int'], 'int'),

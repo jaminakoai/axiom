@@ -88,6 +88,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
   Bu davranış YARA 4.5.4 ile diferansiyel test edilir; regex için occurrence
   metadata'sı bulunmadığından ilgili koşullar fail-closed olarak reddedilir.
+- [x] Sabit hex, bounded jump, alternation ve negation için find/count/nth
+  çağrılarını aynı runtime occurrence yürütücüsüne bağla; offset sınırlarını
+  tek API'de uygula ve seçilen offset'in canonical uzunluğunu ortak API'den al.
+  Eski `hexrange:`/`hexalt:`/`hexnot:` etiketleri AST geçişi bitene kadar parser
+  ile runtime arasındaki geçici uyumluluk kodlamalarıdır.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle.

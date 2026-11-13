@@ -401,6 +401,8 @@ BUILTIN_MAP = {
     'rt_yara_find_hex_negation': 'axiom_yara_find_hex_negation',
     'rt_yara_hex_negation_len': 'axiom_yara_hex_negation_len',
     'rt_yara_count_hex_pattern': 'axiom_yara_count_hex_pattern',
+    'rt_yara_find_hex_pattern': 'axiom_yara_find_hex_pattern',
+    'rt_yara_hex_pattern_length_at': 'axiom_yara_hex_pattern_length_at',
     'rt_yara_nth_hex_pattern_offset': 'axiom_yara_nth_hex_pattern_offset',
     'rt_yara_nth_hex_pattern_length': 'axiom_yara_nth_hex_pattern_length',
     'rt_yara_find_hex_wildcard_raw': 'axiom_yara_find_hex_wildcard_raw',
