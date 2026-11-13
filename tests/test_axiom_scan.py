@@ -208,6 +208,8 @@ def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, 
     ('"aa"', b"aaaa", "#a == 3", 1),
     ('"aa"', b"aaaa", "#a == 2", 0),
     ('"needle" nocase', b"NEEDLE needle", "#a == 2", 1),
+    ('"domain" fullword', b"www.my-domain.com", "#a == 1", 1),
+    ('"domain" fullword', b"www.mydomain.com", "#a == 0", 1),
     ('"aa"', b"aaaa", "#a >= 3 and filesize == 4", 1),
 ])
 def test_pattern_occurrence_count_conditions(scanner, tmp_path, pattern, target, condition, expected):
