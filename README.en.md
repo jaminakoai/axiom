@@ -81,15 +81,18 @@ in their own language.
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
-  other unsupported modifiers, unbounded/out-of-subset hex jumps, alternation,
-  and negation are also rejected with a parse error. Hex patterns support nibble
+  other unsupported modifiers, unbounded/out-of-subset hex jumps, and negation
+  are also rejected with a parse error. Hex patterns support nibble
   wildcards, fixed `[N]` jumps (N=1..64), and one bounded `[N-M]` jump per
   pattern (`0<=N<=M<=64`, `M-N<=16`, with at least one byte on both sides).
-  All-wildcard patterns are rejected and the
-  encoded pattern is limited to 8 KiB. `#a` supports text and fixed-length hex
-  patterns; counts for regex and variable-length patterns are rejected.
-  `$a at/in` checks support text, hex, and bounded hex patterns; `@a[i]` / `!a[i]`
-  checks reject variable-length patterns.
+  They also support one flat alternation group with 2–4 equal-length branches
+  of 1–16 bytes; branches contain only byte/nibble-wildcard tokens. Fixed `[N]` jumps can be
+  outside the group, but `[N-M]` cannot be combined with alternation. Nested or
+  multiple groups are rejected. All-wildcard patterns are rejected and the
+  encoded pattern is limited to 8 KiB. `#a` supports text and ordinary fixed-length
+  hex patterns; counts for regex, bounded-jump, and alternation patterns are
+  rejected. `$a at/in` supports text and hex patterns; `@a[i]` / `!a[i]` reject
+  bounded-jump and alternation patterns.
   Offset and index checks reject regex patterns.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.

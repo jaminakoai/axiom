@@ -79,15 +79,20 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
-  diğer desteklenmeyen modifier'lar, sınırsız ve destek dışı hex jump'ları,
-  alternation ve negation da ayrıştırma hatasıyla reddedilir. Hex kalıpları
+  diğer desteklenmeyen modifier'lar, sınırsız ve destek dışı hex jump'ları
+  ve negation da ayrıştırma hatasıyla reddedilir. Hex kalıpları
   nibble jokerlerini, sabit `[N]` atlamalarını (N=1..64) ve her desende tek
   sınırlı `[N-M]` atlamasını destekler (`0<=N<=M<=64`, `M-N<=16`, iki yanında
-  en az bir bayt bulunmalı). Tümüyle joker desenler reddedilir ve kodlanmış
-  kalıp 8 KiB'ı aşamaz. `#a` sayımı metin ve sabit uzunluklu hex desenlerinde
-  desteklenir; regex ve değişken uzunluklu desenlerde reddedilir.
-  `$a at/in` metin, hex ve sınırlı hex desenlerinde desteklenir; `@a[i]` / `!a[i]`
-  değişken uzunluklu desenlerde reddedilir.
+  en az bir bayt bulunmalı) ve tek düz alternation grubunu destekler. Alternation
+  2–4 eşit uzunlukta daldan oluşur (dal başına 1–16 bayt); dallarda yalnızca
+  bayt/nibble wildcard bulunur.
+  Sabit `[N]` jump'ları alternation grubunun dışında kullanılabilir; `[N-M]` ile
+  aynı desende birleştirilemez. İç içe veya birden fazla grup reddedilir. Tümüyle
+  joker desenler reddedilir ve kodlanmış kalıp 8 KiB'ı aşamaz. `#a` sayımı metin
+  ve normal sabit uzunluklu hex desenlerinde desteklenir; regex, bounded jump ve
+  alternation desenlerinde reddedilir.
+  `$a at/in` metin ve hex desenlerinde desteklenir; `@a[i]` / `!a[i]` bounded
+  jump ve alternation desenlerinde reddedilir.
   Regex desenlerinde ofset ve indeks kontrolleri reddedilir.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle

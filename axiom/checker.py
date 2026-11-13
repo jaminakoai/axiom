@@ -436,6 +436,8 @@ BUILTIN_FUNCTIONS = {
     'rt_yara_find_hex_wildcard': (['str', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_range': (['str', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_range_length': (['str', 'str', 'int'], 'int'),
+    'rt_yara_find_hex_alternation': (['str', 'str', 'int', 'int'], 'int'),
+    'rt_yara_hex_alternation_len': (['str'], 'int'),
     'rt_yara_find_hex_wildcard_raw': (['str', 'int', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_stream': (['str', 'str'], 'int'),
     'rt_yara_pattern_len': (['str'], 'int'),

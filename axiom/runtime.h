@@ -8975,6 +8975,96 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_range_length(const char* target, con
     return matched ? (ax_int)match_len : -1;
 }
 
+typedef struct {
+    AxiomYaraCompiledPattern branches[4];
+    int branch_count;
+    int common_len;
+} AxiomYaraHexAlternation;
+
+AXIOM_RUNTIME_FN void axiom_yara_hex_alternation_free(AxiomYaraHexAlternation* alt) {
+    if (!alt) return;
+    for (int i = 0; i < 4; i++) axiom_yara_pattern_free(&alt->branches[i]);
+    alt->branch_count = 0;
+    alt->common_len = 0;
+}
+
+// Internal form: hexalt:<fixed-branch>|<fixed-branch>[|<branch>...]
+AXIOM_RUNTIME_FN int axiom_yara_parse_hex_alternation_internal(const char* encoded,
+                                                                AxiomYaraHexAlternation* alt) {
+    if (!alt) return 0;
+    memset(alt, 0, sizeof(*alt));
+    if (!encoded) return 0;
+    size_t encoded_len = strlen(encoded);
+    static const char tag[] = "hexalt:";
+    const size_t tag_len = sizeof(tag) - 1;
+    if (encoded_len <= tag_len || encoded_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT ||
+        memcmp(encoded, tag, tag_len) != 0) return 0;
+
+    const char* branch_start = encoded + tag_len;
+    const char* cursor = branch_start;
+    int has_constrained_byte = 0;
+    while (1) {
+        if (*cursor == '|' || *cursor == '\0') {
+            size_t branch_len = (size_t)(cursor - branch_start);
+            if (branch_len == 0 || alt->branch_count >= 4) goto invalid_alt;
+            char* branch_text = (char*)malloc(branch_len + 1);
+            if (!branch_text) goto invalid_alt;
+            memcpy(branch_text, branch_start, branch_len);
+            branch_text[branch_len] = '\0';
+            for (size_t i = 0; i < branch_len; i++) {
+                if (branch_text[i] == '{' || branch_text[i] == '}') {
+                    free(branch_text);
+                    goto invalid_alt;
+                }
+            }
+            AxiomYaraCompiledPattern* branch = &alt->branches[alt->branch_count];
+            int parsed_len = axiom_yara_parse_hex_pattern_internal(branch_text, branch);
+            free(branch_text);
+            if (parsed_len <= 0 || parsed_len > 16) goto invalid_alt;
+            if (alt->branch_count == 0) alt->common_len = parsed_len;
+            else if (parsed_len != alt->common_len) goto invalid_alt;
+            for (int i = 0; i < parsed_len; i++) {
+                if (branch->masks[i] != 0) has_constrained_byte = 1;
+            }
+            alt->branch_count++;
+            if (*cursor == '\0') break;
+            branch_start = cursor + 1;
+        }
+        cursor++;
+    }
+    if (alt->branch_count < 2 || !has_constrained_byte) goto invalid_alt;
+    return 1;
+
+invalid_alt:
+    axiom_yara_hex_alternation_free(alt);
+    return 0;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_alternation(const char* target, const char* encoded,
+                                                         ax_int min_offset, ax_int max_offset) {
+    if (!target || !encoded) return -1;
+    AxiomYaraHexAlternation alt;
+    if (!axiom_yara_parse_hex_alternation_internal(encoded, &alt)) return -1;
+    size_t target_len = strlen(target);
+    ax_int earliest = -1;
+    for (int i = 0; i < alt.branch_count; i++) {
+        ax_int offset = axiom_yara_find_bytes((const uint8_t*)target, target_len,
+                                               &alt.branches[i], min_offset, max_offset);
+        if (offset >= 0 && (earliest < 0 || offset < earliest)) earliest = offset;
+    }
+    axiom_yara_hex_alternation_free(&alt);
+    return earliest;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_alternation_len(const char* encoded) {
+    if (!encoded) return -1;
+    AxiomYaraHexAlternation alt;
+    if (!axiom_yara_parse_hex_alternation_internal(encoded, &alt)) return -1;
+    int result = alt.common_len;
+    axiom_yara_hex_alternation_free(&alt);
+    return (ax_int)result;
+}
+
 AXIOM_RUNTIME_FN ax_int axiom_yara_scan_buf_handle(ax_int handle, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {
     if (handle <= 0 || !hex_pattern) return -1;
     AxiomByteBuffer* b = (AxiomByteBuffer*)(uintptr_t)handle;

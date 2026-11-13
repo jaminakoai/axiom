@@ -5,6 +5,17 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Eklenen (13 Kasım — sınırlı YARA hex alternation)
+- Hex kalıpları artık bir düz alternation grubunda 2–4 eşit uzunluklu (1–16
+  bayt) dalı destekliyor. Dallar yalnızca tam bayt veya nibble wildcard token'larından
+  oluşabilir; sabit `[N]` jump grup dışında kullanılabilir. İç içe/çoklu grup,
+  `[N-M]` ile birleşim ve değişken dal uzunlukları reddedilir.
+- `$a at/in` kontrolleri alternation desenlerinde çalışır; `#a`, `@a[i]` ve
+  `!a[i]` için occurrence desteği olmadığından bu operatörler açıkça reddedilir.
+- Alternation branch runtime'ı her dalı katı biçimde doğrular, en erken ofseti
+  döndürür ve eşit uzunluk nedeniyle eşleşme uzunluğunu tek anlamlı tutar.
+- Parser, runtime ve YARA diferansiyel regresyon testleri eklendi.
+
 ### Eklenen (13 Kasım — sınırlı değişken genişlikli YARA hex jump)
 - Hex kuralları artık her desende tek bir sınırlı `[N-M]` jump'ını kabul ediyor:
   `0<=N<=M<=64`, aralık genişliği en fazla 16 bayt ve jump'ın iki yanında da

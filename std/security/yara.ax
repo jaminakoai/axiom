@@ -261,7 +261,7 @@ fn yara_validate_pattern(pattern_str: str) -> str {
 /// Tek bir deseni hedefte tarar.
 ///
 /// `min_offset`/`max_offset` `-1` ise sinir yoktur.
-/// Desen turleri: `str:`, `hex:` (`??` joker), `hexrange:`, `regex:`.
+/// Desen turleri: `str:`, `hex:` (`??` joker), `hexrange:`, `hexalt:`, `regex:`.
 fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
     // 1. Regex Deseni
     if (str_starts_with(pattern_str, "regex:")) {
@@ -295,6 +295,18 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         if off >= 0 {
             let match_len = rt_yara_find_hex_range_length(target, pattern_str, off)
             if match_len >= 0 {
+                return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
+            }
+        }
+        return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false }
+    }
+
+    // Equal-length fixed branches have an unambiguous instance length.
+    if str_starts_with(pattern_str, "hexalt:") {
+        let off = rt_yara_find_hex_alternation(target, pattern_str, min_offset, max_offset)
+        if off >= 0 {
+            let match_len = rt_yara_hex_alternation_len(pattern_str)
+            if match_len > 0 {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
             }
         }
@@ -423,7 +435,7 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 // Counts text and hex-pattern hits in one runtime pass, including overlaps.
 // Parser rejects #a for regex patterns because their counter is not exposed.
 fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
-    if str_starts_with(pattern_str, "regex:") or str_starts_with(pattern_str, "hexrange:") { return -1 }
+    if str_starts_with(pattern_str, "regex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") { return -1 }
     if str_starts_with(pattern_str, "str:") {
         let mut p = str_sub(pattern_str, 4, str_len(pattern_str) - 4)
         let mut flags = 0
