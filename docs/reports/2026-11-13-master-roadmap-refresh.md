@@ -114,7 +114,7 @@ ise koşuldan bağımsız ilk instance'ı raporluyordu.
 
 Bu düzeltme kural başına tek witness modelini korur. `#`, `@`, `!` ve birden
 fazla koşulun ayrı ayrı ihtiyaç duyduğu instance listesini raporlama işi bu
-değişikliğin kapsamında değildir; G1'de karara bağlanmalıdır.
+değişikliğin kapsamında değildir.
 
 ## G1 diferansiyel semantik matrisi
 
@@ -149,10 +149,29 @@ Parser/regresyon testlerinin tarif ettiği alt küme:
 Bu sınırlar destek matrisidir; yeni birleşim eklemek için değil, AST geçişinde
 regresyonları korumak için kaydedildi.
 
+Bounded jump için koşul aralığı alt/üst sınırlarını da diferansiyel olarak
+kontrol ettim: son geçerli dosya başlangıç ofseti kabul ediliyor; `$a in (4..4)`
+eşleşmesi ofset 4'te başlatıyor ve eşleşme bitişi 4'ü geçse bile doğru.
+Alt/üst dışındaki ofsetler false dönüyor.
+
 Bu matrisin kapsamı genel YARA uyumluluk iddiası değildir. YARA özel hex
 pattern'lerinde occurrence operatörlerini desteklerken Axiom henüz tüm
 instance'ları aynı sonuç modelinde temsil etmiyor; bu nedenle sessiz yaklaşık
 hesap yerine parse hatası veriyor.
+
+### `axiom-scan` schema v1 için rapor sözleşmesi
+
+- `match_count` eşleşen **kural sayısıdır**, pattern occurrence sayısı değildir.
+- Her matching rule için `matches` dizisi bir kayıt taşır; kayıt tek bir
+  temsilî pattern witness'ı (`pattern`, `offset`, `length`) içerir.
+- `$a at N` / `$a in (...)` koşulu varsa witness o koşulu sağlayan
+  occurrence'tır. Diğer boolean koşullarda mevcut deterministic seçim korunur.
+- Witness alanları tam YARA instance listesi veya bütün condition AST'sinin
+  proof trace'i anlamına gelmez. `none of them` gibi pozitif occurrence
+  üretmeyen doğru koşullarda offset `-1` olabilir.
+- Tüm instance'ları JSON'a eklemek schema v2 tasarımıdır; G3 dış kullanıcı
+  doğrulaması kullanım ihtiyacını kanıtlamadan v1'e ek alan/sayı semantiği
+  eklenmeyecek.
 
 ### Doğrulama
 
@@ -164,7 +183,7 @@ negation için 8 idi.
 |---|---|
 | `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
 | Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
-| G1 occurrence differential grubu | **110 passed**: fixed jumps, bounded ranges, alternation, negation ve C/LLVM positional witness |
+| G1 occurrence differential grubu | **114 passed**: fixed jumps, bounded ranges, alternation, negation, target start bounds ve C/LLVM positional witness |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions | run `43433833667` (`e00c56d`) — **7/7 success** |

@@ -226,6 +226,38 @@ def test_range_jump_at_and_in_conditions(condition, target, expected_matches, sc
 
 
 @pytest.mark.parametrize(
+    ("condition", "target", "expected"),
+    [
+        ("$a at 1", b"xA12B", (1, 4)),  # final possible start in the target
+        ("$a at 2", b"xA12B", None),
+        ("$a in (4..4)", b"xxxxA12B", (4, 4)),  # inclusive upper start; match ends later
+        ("$a in (0..3)", b"xxxxA12B", None),
+    ],
+)
+def test_range_condition_bounds_are_inclusive_start_offsets(
+    scanner, tmp_path, condition, target, expected
+):
+    pattern = "41 [2-4] 42"
+    source = _rule(pattern, condition)
+    if yara is not None:
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is (expected is not None)
+        if expected is not None:
+            offsets = [
+                instance.offset
+                for string_match in reference[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert expected[0] in offsets
+    result = _scan(scanner, tmp_path, pattern, target, condition)
+    if expected is None:
+        assert result["match_count"] == 0
+    else:
+        assert result["match_count"] == 1
+        assert (result["matches"][0]["offset"], result["matches"][0]["length"]) == expected
+
+
+@pytest.mark.parametrize(
     ("pattern", "target", "condition", "expected"),
     [
         ("41 [1-3] 42", b"A1B A12B", "$a at 4", (4, 4)),

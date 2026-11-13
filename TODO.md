@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son G1 hedefli doğrulama | YARA/scanner testleri ve C/LLVM witness regresyonları geçti; `make fmt-check` geçti |
+| Son G1 hedefli doğrulama | 114 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
 | Son CI | `e00c56d` SHA `43433833667` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
@@ -67,8 +67,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   range/alternation/negation ve C/LLVM için regresyon ekle.
 - [ ] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
   semantiğini kesinleştir; nottaki açık kararları kapat.
-- [ ] Tek bir koşul birden fazla pozitif occurrence gerektirdiğinde raporun
-  kanıt modelini belirle; mevcut çıktı kural başına tek bir witness taşır.
+- [x] `axiom-scan` schema v1 kanıt kapsamını belirle: `matches` ve
+  `match_count` kural başına kalır; her eşleşen kural için tek bir temsilî
+  witness döner. `at/in` varsa koşulun seçtiği occurrence raporlanır. Bu alanlar
+  tam YARA instance listesi veya koşulun tüm mantıksal kanıt ağacı değildir;
+  tam instance listesi ancak schema v2 tasarımı ve dış kullanıcı doğrulamasında
+  ihtiyaç kanıtlanırsa eklenir.
 - [x] YARA 4.5.4'e göre destek matrisini belirle ve özel hex türlerinde
   `#/@/!` reddinin hem YARA'da geçerli bir eşleşme ürettiğini hem Axiom'un açık
   hata verdiğini test et:
@@ -106,9 +110,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   geçerli, Axiom'da açık hata olduğunu karşılaştırmalı test et. Matris yukarıda.
 - [~] Testleri YARA 4.5.4'e sabitlenmiş diferansiyel karşılaştırmayla genişlet:
   bounded jump uzunluk seçimi, çoklu/örtüşen fixed pattern'ler, aynı başlangıçta
-  eşleşen alternation dalları, özel hex occurrence fail-closed kararı ve
-  positional witness test edildi. Kalan sınırlara dair açık durum raporda;
-  eksik koşul birleşimleri ve target sınır matrisi tamamlanmalı.
+  eşleşen alternation dalları, özel hex occurrence fail-closed kararı, positional
+  witness ve bounded jump alt/üst start sınırları test edildi. Kalan sınırlara
+  dair açık durum raporda; diğer pattern türlerinin target sınır matrisi ve
+  eksik koşul birleşimleri tamamlanmalı.
 - [ ] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
   kodlamayı doğrudan C runtime testleriyle doğrula.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
