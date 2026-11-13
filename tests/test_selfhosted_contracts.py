@@ -130,6 +130,71 @@ fn main() -> int {
             os.remove(out)
 
 
+def test_selfhosted_local_string_inference_is_function_scoped():
+    """A function's string locals must not retype same-named int/bool locals elsewhere."""
+    if not AXIOMC.exists():
+        pytest.skip("bin/axiomc bulunamadi")
+    src = """
+struct TextValue {
+    value: str
+}
+
+struct NumberValue {
+    value: int
+}
+
+fn indexed_string_and_numeric_field(patterns: str[], index: int, size: int, number: NumberValue) -> int {
+    let pattern_source = patterns[index]
+    let expected = number.value
+    let matched = size >= 0 and str_starts_with(pattern_source, "str:")
+    if matched { return expected + len(pattern_source) }
+    return 0
+}
+
+fn string_locals(p: str) -> int {
+    let expected = p + "x"
+    let matched = expected + "y"
+    return len(matched)
+}
+
+fn integer_locals() -> int {
+    let mut p = 0
+    while p < 2 { p = p + 1 }
+    let expected = p + 1
+    let limit = 4
+    let matched = expected < limit
+    if matched { return expected + limit }
+    return 0
+}
+
+fn main() -> int {
+    let patterns: str[] = ["str:abc"]
+    let number = NumberValue { value: 5 }
+    print(indexed_string_and_numeric_field(patterns, 0, 1, number))
+    print(string_locals("a"))
+    print(integer_locals())
+    return 0
+}
+"""
+    with tempfile.NamedTemporaryFile("w", suffix=".ax", delete=False, encoding="utf-8") as f:
+        f.write(src)
+        path = f.name
+    out = path + ".bin"
+    try:
+        env = os.environ.copy()
+        env["PYTHONPATH"] = str(ROOT)
+        build = subprocess.run([str(AXIOMC), "build", path, "-o", out],
+                               capture_output=True, text=True, timeout=300, env=env)
+        assert build.returncode == 0, build.stdout + build.stderr
+        run = subprocess.run([out], capture_output=True, text=True, timeout=120)
+        assert run.returncode == 0, run.stdout + run.stderr
+        assert run.stdout.splitlines() == ["12", "3", "7"]
+    finally:
+        os.remove(path)
+        if os.path.exists(out):
+            os.remove(out)
+
+
 def test_selfhosted_ensures_violation_is_caught():
     """`ensures` ihlali çalışma anında exit 101 ile durmalı."""
     if not AXIOMC.exists():

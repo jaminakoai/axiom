@@ -161,7 +161,7 @@ fn codegen_str_contains(list: str, name: str) -> bool {
     return str_contains(list, "|" + name + "|")
 }
 
-fn codegen_is_str_rhs(rhs: str, strset: str) -> bool {
+fn codegen_is_str_rhs(rhs: str, strset: str, fieldset: str) -> bool {
     if str_starts_with(rhs, "axiom_str_split(") { return false }
     if str_starts_with(rhs, "axiom_str_len(") { return false }
     if str_starts_with(rhs, "axiom_str_byte_len(") { return false }
@@ -205,22 +205,26 @@ fn codegen_is_str_rhs(rhs: str, strset: str) -> bool {
     if str_starts_with(rhs, "axiom_csv_get") { return true }
     if str_starts_with(rhs, "axiom_http_get(") { return true }
     if str_starts_with(rhs, "axiom_http_body(") { return true }
+    if str_starts_with(rhs, "axiom_http_header_value(") { return true }
+    if str_starts_with(rhs, "http_header_value(") { return true }
+    if str_starts_with(rhs, "ax_http_header_value(") { return true }
     if str_starts_with(rhs, "axiom_tensor_to_str(") { return true }
     if str_starts_with(rhs, "axiom_fim_hash_file(") { return true }
     if str_starts_with(rhs, "axiom_sigma_event_get(") { return true }
     if str_starts_with(rhs, "axiom_map_get(") { return true }
 
     // Struct alan erisimi: `(x).<str_alan>`
+    // A field name can identify a string only when the RHS ends in a bare
+    // field access. Expressions that merely contain `.value` must not taint
+    // the inferred type of the enclosing boolean/integer expression.
     if str_contains(rhs, ").") {
-        let parts = str_split(strset, "|")
+        let parts = str_split(fieldset, "|")
         let np = len(parts)
         for pi in 0..np {
             let fname = parts[pi]
             if len(fname) == 0 { continue }
-            if str_contains(rhs, ")." + fname + ")") { return true }
-            if str_contains(rhs, ")." + fname + ";") { return true }
-            if str_contains(rhs, ")." + fname + ".") { return true }
-            if str_contains(rhs, ")." + fname + "[") { return true }
+            if str_ends_with(rhs, ")." + fname + ";") { return true }
+            if str_ends_with(rhs, ")." + fname + ".") { return true }
         }
     }
 
@@ -235,7 +239,7 @@ fn codegen_is_str_rhs(rhs: str, strset: str) -> bool {
     return false
 }
 
-fn codegen_learn_pass(body: str, strset: str) -> str {
+fn codegen_learn_pass(body: str, strset: str, fieldset: str) -> str {
     let mut extra = ""
     let lines = str_split(body, "\n")
     let n = len(lines)
@@ -263,6 +267,19 @@ fn codegen_learn_pass(body: str, strset: str) -> str {
             }
             continue
         }
+        if str_starts_with(line, "__auto_type ") {
+            let r = str_sub(line, 12, str_byte_len(line) - 12)
+            let e = str_index_of(r, " = ")
+            if e > 0 {
+                let nm = str_trim(str_sub(r, 0, e))
+                let rhs = str_trim(str_sub(r, e + 3, str_byte_len(r) - e - 3))
+                if len(nm) > 0 and codegen_is_str_rhs(rhs, strset, fieldset)
+                and not codegen_str_contains(strset, nm) {
+                    extra = extra + "|" + nm + "|"
+                }
+            }
+            continue
+        }
         if not str_starts_with(line, "ax_int ") { continue }
         let rest = str_sub(line, 7, str_byte_len(line) - 7)
         let eq = str_index_of(rest, " = ")
@@ -271,7 +288,7 @@ fn codegen_learn_pass(body: str, strset: str) -> str {
         if len(name) == 0 { continue }
         if codegen_str_contains(strset, name) { continue }
         let rhs = str_trim(str_sub(rest, eq + 3, str_byte_len(rest) - eq - 3))
-        if codegen_is_str_rhs(rhs, strset) {
+        if codegen_is_str_rhs(rhs, strset, fieldset) {
             extra = extra + "|" + name + "|"
         }
     }
@@ -288,7 +305,7 @@ fn codegen_lookup_arrmap(arrmap: str, field: str) -> str {
     return str_sub(rest, 0, endp)
 }
 
-fn codegen_fix_decls(body: str, strset: str, arrmap: str, fnret: str) -> str {
+fn codegen_fix_decls(body: str, strset: str, fieldset: str, arrmap: str, fnret: str) -> str {
     let mut out = ""
     let lines = str_split(body, "\n")
     let n = len(lines)
@@ -324,7 +341,21 @@ fn codegen_fix_decls(body: str, strset: str, arrmap: str, fnret: str) -> str {
     }
 
     // `__auto_type X = axiom_str_split(...)` -> X bir metin dizisidir.
+    // Include str[] parameters and struct fields from the element-type map.
+    // The former local-only list missed indexed values such as param[i].
     let mut strarrs = ""
+    let arrparts = str_split(arrmap, "|")
+    let arrpart_count = len(arrparts)
+    for ai in 0..arrpart_count {
+        let entry = arrparts[ai]
+        let sep = str_index_of(entry, "=")
+        if sep <= 0 { continue }
+        let elem_type = str_sub(entry, sep + 1, str_byte_len(entry) - sep - 1)
+        if elem_type == "str" {
+            let arrname = str_sub(entry, 0, sep)
+            strarrs = strarrs + "|" + arrname + "|"
+        }
+    }
     for si in 0..n {
         let sl = str_trim(lines[si])
         if str_starts_with(sl, "__auto_type ") {
@@ -366,23 +397,36 @@ fn codegen_fix_decls(body: str, strset: str, arrmap: str, fnret: str) -> str {
                             break
                         }
                     }
-                    if len(elem_t) > 0 {
+                    if len(elem_t) > 0 and not str_contains(rhs, " and ")
+                    and not str_contains(rhs, " or ")
+                    and not str_contains(rhs, "&&") and not str_contains(rhs, "||") {
                         line = str_replace(line, "ax_int ", "ax_" + elem_t + " ")
                     } else {
-                        // Dizi taban adini cikar: ((BASE).data[...]
-                        let mut base = ""
-                        let bi = str_index_of(rhs, "((")
-                        let di = str_index_of(rhs, ").data[")
-                        if bi >= 0 and di > bi + 2 {
-                            base = str_sub(rhs, bi + 2, di - bi - 2)
+                        // Expressions may index an array inside a larger
+                        // boolean expression, so do not infer the base from
+                        // the first `((` in the whole RHS. Match known arrays.
+                        let arrnames = str_split(strarrs, "|")
+                        let narr = len(arrnames)
+                        let mut is_str_element = false
+                        for ari in 0..narr {
+                            let arrname = arrnames[ari]
+                            if len(arrname) > 0 and str_contains(rhs, "(" + arrname + ").data[") {
+                                is_str_element = true
+                                break
+                            }
                         }
-                        if codegen_str_contains(strset, name)
-                        or (len(base) > 0 and codegen_str_contains(strarrs, base))
-                        or (len(base) > 0 and codegen_str_contains(strset, base)) {
+                        if is_str_element and not str_contains(rhs, "&&")
+                        and not str_contains(rhs, "||")
+                        and not str_contains(rhs, " and ")
+                        and not str_contains(rhs, " or ") {
                             line = str_replace(line, "ax_int ", "ax_str ")
                         }
                     }
-                } else if codegen_str_contains(strset, name) {
+                } else if codegen_str_contains(strset, name)
+                and not str_contains(rhs, "&&") and not str_contains(rhs, "||")
+                and not str_contains(rhs, " and ") and not str_contains(rhs, " or ")
+                and not str_contains(rhs, " == ") and not str_contains(rhs, " != ")
+                and not str_contains(rhs, " < ") and not str_contains(rhs, " > ") {
                     if is_arr {
                         line = str_replace(line, "ax_array_int ", "ax_array_str ")
                     } else {
@@ -391,7 +435,7 @@ fn codegen_fix_decls(body: str, strset: str, arrmap: str, fnret: str) -> str {
                 } else if is_arr and str_starts_with(rhs, "((ax_array_str)") {
                     line = str_replace(line, "ax_array_int ", "ax_array_str ")
                 } else if is_arr and str_starts_with(rhs, "((ax_array_int)") {
-                    let names = str_split(strset, "|")
+                    let names = str_split(strset + fieldset, "|")
                     let nn = len(names)
                     let mut hit = false
                     for ni in 0..nn {
@@ -475,22 +519,9 @@ fn codegen_generate_c(prog: ASTProgram, runtime_header_path: str) -> str {
         known = known + "|" + prog.functions[i].name + "|"
     }
 
-    // Tip yayilimi icin tohum: tum metin parametreleri.
-    let mut strset = ""
-    for i in 0..num_funcs {
-        let params_i = prog.functions[i].params
-        let np = len(params_i)
-        for j in 0..np {
-            // `str` ve `str[]` parametreleri: eleman erisimi de metindir.
-            if params_i[j].type_name == "str" or params_i[j].type_name == "str[]" {
-                let pn = params_i[j].name
-                if not codegen_str_contains(strset, pn) {
-                    strset = strset + "|" + pn + "|"
-                }
-            }
-        }
-    }
-    // Struct alanlari: metin alanlari da adaydir (`(x).field`).
+    // Struct alan adlari, yerel isimlerle karistirilmadan ayri tutulur.
+    // Ayni ada sahip alanlardan biri metin degilse ad tek basina tip belirtmez.
+    let mut fieldset = ""
     let nstructs = len(prog.structs)
     for si in 0..nstructs {
         let flds = prog.structs[si].fields
@@ -499,39 +530,34 @@ fn codegen_generate_c(prog: ASTProgram, runtime_header_path: str) -> str {
             let ft = flds[fi].type_name
             if ft == "str" or ft == "str[]" {
                 let fn2 = flds[fi].name
-                if not codegen_str_contains(strset, fn2) {
-                    strset = strset + "|" + fn2 + "|"
+                if not codegen_str_contains(fieldset, fn2) {
+                    fieldset = fieldset + "|" + fn2 + "|"
                 }
+            }
+        }
+    }
+    for si in 0..nstructs {
+        let flds = prog.structs[si].fields
+        let nf = len(flds)
+        for fi in 0..nf {
+            let ft = flds[fi].type_name
+            if ft != "str" and ft != "str[]" {
+                fieldset = str_replace(fieldset, "|" + flds[fi].name + "|", "|")
             }
         }
     }
 
     // Struct dizi alanlari: alan adi -> eleman struct adi.
     // `(rule).selections` -> ax_SigmaFieldMatch  (ax_int yerine)
-    let mut arrmap = ""
+    let mut field_arrmap = ""
     for si in 0..nstructs {
         let flds2 = prog.structs[si].fields
         let nf2 = len(flds2)
         for fi in 0..nf2 {
             let ft2 = flds2[fi].type_name
-            if str_ends_with(ft2, "[]") and ft2 != "str[]" and ft2 != "int[]"
-            and ft2 != "bool[]" and ft2 != "float[]" {
+            if str_ends_with(ft2, "[]") {
                 let elem = str_sub(ft2, 0, str_byte_len(ft2) - 2)
-                arrmap = arrmap + "|" + flds2[fi].name + "=" + elem + "|"
-            }
-        }
-    }
-
-    // Parametre struct dizileri de ayni haritaya: `alerts: SigmaAlert[]`
-    for i in 0..num_funcs {
-        let pp = prog.functions[i].params
-        let npp = len(pp)
-        for j in 0..npp {
-            let pt = pp[j].type_name
-            if str_ends_with(pt, "[]") and pt != "str[]" and pt != "int[]"
-            and pt != "bool[]" and pt != "float[]" {
-                let elem = str_sub(pt, 0, str_byte_len(pt) - 2)
-                arrmap = arrmap + "|" + pp[j].name + "=" + elem + "|"
+                field_arrmap = field_arrmap + "|" + flds2[fi].name + "=" + elem + "|"
             }
         }
     }
@@ -545,16 +571,6 @@ fn codegen_generate_c(prog: ASTProgram, runtime_header_path: str) -> str {
             let elem = str_sub(rt, 0, str_byte_len(rt) - 2)
             fnret = fnret + "|" + prog.functions[i].name + "=" + elem + "|"
         }
-    }
-
-    // Sabit nokta: 4 gecis yeterli (zincirler kisa).
-    for _pass in 0..4 {
-        let mut next = strset
-        for i in 0..num_funcs {
-            next = codegen_learn_pass(prog.functions[i].body_code, next)
-        }
-        if next == strset { break }
-        strset = next
     }
 
     // 3. Fonksiyon Gövdeleri
@@ -589,8 +605,33 @@ fn codegen_generate_c(prog: ASTProgram, runtime_header_path: str) -> str {
         }
 
         out = out + ret_c + " " + c_fn_id + "(" + params_str + ") "
+        // Names in the lightweight type map are function-local. A string
+        // parameter/local in another function must not rewrite this function's
+        // integer or boolean declaration with the same identifier.
+        let mut strset = ""
+        let mut arrmap = field_arrmap
+        for j in 0..num_params {
+            let param = f.params[j]
+            if param.type_name == "str" or param.type_name == "str[]" {
+                if not codegen_str_contains(strset, param.name) {
+                    strset = strset + "|" + param.name + "|"
+                }
+            }
+            let pt = param.type_name
+            if str_ends_with(pt, "[]") {
+                let elem = str_sub(pt, 0, str_byte_len(pt) - 2)
+                arrmap = arrmap + "|" + param.name + "=" + elem + "|"
+            }
+        }
+        // Fixed point is limited to this function; struct fields remain a
+        // separate namespace used only while recognizing field expressions.
+        for _pass in 0..4 {
+            let next = codegen_learn_pass(f.body_code, strset, fieldset)
+            if next == strset { break }
+            strset = next
+        }
         let mut body = rewrite_unknown_calls(f.body_code, known)
-        body = codegen_fix_decls(body, strset, arrmap, fnret)
+        body = codegen_fix_decls(body, strset, fieldset, arrmap, fnret)
         // Donus tipi `str[]` ise parser'in varsayilan `int[]` literalleri
         // metin dizisine cevrilir (ayni fonksiyon kapsaminda guvenli).
         if f.return_type == "str[]" {
