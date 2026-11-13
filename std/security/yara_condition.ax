@@ -149,6 +149,87 @@ fn _yc_compare_int(left: int, op: str, right: int) -> bool {
     return false
 }
 
+fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+    let n = str_byte_len(source)
+    let mut mode = ""
+    let mut threshold = 0
+    let mut cursor = position
+    if _yc_keyword_at(source, cursor, "any") {
+        mode = "any"
+        cursor = cursor + 3
+    } else if _yc_keyword_at(source, cursor, "all") {
+        mode = "all"
+        cursor = cursor + 3
+    } else if _yc_keyword_at(source, cursor, "none") {
+        mode = "none"
+        cursor = cursor + 4
+    } else {
+        let amount = _yc_parse_number(source, cursor)
+        if not amount.valid or amount.value <= 0 {
+            return YaraConditionParse { value: false, position: cursor, valid: false }
+        }
+        mode = "count"
+        threshold = amount.value
+        cursor = amount.position
+    }
+
+    cursor = _yc_skip_space(source, cursor)
+    if not _yc_keyword_at(source, cursor, "of") {
+        return YaraConditionParse { value: false, position: cursor, valid: false }
+    }
+    cursor = _yc_skip_space(source, cursor + 2)
+    if cursor >= n or str_char_at(source, cursor) != "(" {
+        return YaraConditionParse { value: false, position: cursor, valid: false }
+    }
+    let selector_start = _yc_skip_space(source, cursor + 1)
+    if selector_start >= n or str_char_at(source, selector_start) != "$" {
+        return YaraConditionParse { value: false, position: selector_start, valid: false }
+    }
+    let mut selector_end = selector_start + 1
+    while selector_end < n and _yc_is_word_char(str_char_at(source, selector_end)) {
+        selector_end = selector_end + 1
+    }
+    if selector_end == selector_start + 1 {
+        return YaraConditionParse { value: false, position: selector_start, valid: false }
+    }
+    let selector = str_sub(source, selector_start, selector_end - selector_start)
+    let mut has_wildcard = false
+    if selector_end < n and str_char_at(source, selector_end) == "*" {
+        has_wildcard = true
+        selector_end = selector_end + 1
+    }
+    let close = _yc_skip_space(source, selector_end)
+    if close >= n or str_char_at(source, close) != ")" {
+        return YaraConditionParse { value: false, position: close, valid: false }
+    }
+
+    let mut selected = 0
+    let mut matched = 0
+    let mut p = 0
+    while p < len(pattern_names) {
+        let mut included = pattern_names[p] == selector
+        if has_wildcard { included = str_starts_with(pattern_names[p], selector) }
+        if included {
+            selected = selected + 1
+            // Keep the bounds check separate: the LLVM backend may evaluate
+            // both sides of `and`, which would index an empty/short array.
+            if p < len(pattern_values) {
+                if pattern_values[p] { matched = matched + 1 }
+            }
+        }
+        p = p + 1
+    }
+    if selected == 0 {
+        return YaraConditionParse { value: false, position: selector_start, valid: false }
+    }
+    let mut value = false
+    if mode == "any" { value = matched > 0 }
+    else if mode == "all" { value = matched == selected }
+    else if mode == "none" { value = matched == 0 }
+    else if mode == "count" { value = matched >= threshold }
+    return YaraConditionParse { value: value, position: close + 1, valid: true }
+}
+
 fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
     let i = _yc_skip_space(source, position)
     let n = str_byte_len(source)
@@ -165,6 +246,10 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
             return YaraConditionParse { value: false, position: close, valid: false }
         }
         return YaraConditionParse { value: inner.value, position: close + 1, valid: true }
+    }
+
+    if _yc_keyword_at(source, i, "any") or _yc_keyword_at(source, i, "all") or _yc_keyword_at(source, i, "none") or str_contains("0123456789", ch) {
+        return _yc_parse_group(source, i, pattern_names, pattern_values)
     }
 
     if ch == "@" or ch == "!" {

@@ -111,6 +111,46 @@ def test_boolean_condition_subset(scanner, tmp_path, condition, target, expected
     assert json.loads(res.stdout)["match_count"] == int(expected)
 
 
+@pytest.mark.parametrize(("condition", "target", "expected"), [
+    ("any of ($a*)", b"beta", 1),
+    ("all of ($a*)", b"alpha beta", 1),
+    ("all of ($a*)", b"alpha", 0),
+    ("none of ($a*)", b"gamma", 1),
+    ("2 of ($a*)", b"alpha beta", 1),
+    ("2 of ($a*)", b"alpha", 0),
+    ("any of ($b)", b"gamma", 1),
+    ("any of ($a*) or $b", b"gamma", 1),
+])
+def test_pattern_group_conditions(scanner, tmp_path, condition, target, expected):
+    rules = tmp_path / "pattern-groups.yar"
+    rules.write_text(
+        'rule PatternGroups {\n strings:\n  $a1 = "alpha"\n  $a2 = "beta"\n'
+        '  $b = "gamma"\n condition:\n  ' + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "group-target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
+@pytest.mark.parametrize("condition", [
+    "any of ($missing*)", "any of ($a*", "any of (a*)",
+    "0 of ($a*)", "any of ($a?)",
+])
+def test_invalid_pattern_group_conditions_are_rejected(scanner, tmp_path, condition):
+    rules = tmp_path / "invalid-pattern-group.yar"
+    rules.write_text(
+        'rule InvalidGroup {\n strings:\n  $a1 = "alpha"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
+
+
 @pytest.mark.parametrize("condition", ["$missing", "$a and", "($a or $b", "$a $b"])
 def test_invalid_boolean_conditions_are_rejected(scanner, tmp_path, condition):
     rules = tmp_path / "invalid-condition.yar"
@@ -198,6 +238,18 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     llvm_hex_count = _run(scanner_llvm, "scan", str(sample), "--rules", str(count_hex_rules))
     assert c_hex_count.returncode == llvm_hex_count.returncode == 0
     assert json.loads(c_hex_count.stdout) == json.loads(llvm_hex_count.stdout)
+
+    group_rules = tmp_path / "group-parity.yar"
+    group_rules.write_text(
+        'rule GroupParity {\n strings:\n  $a1 = "alpha"\n  $a2 = "beta"\n'
+        ' condition:\n  2 of ($a*) and filesize == 10\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"alpha beta")
+    c_group = _run(scanner, "scan", str(sample), "--rules", str(group_rules))
+    llvm_group = _run(scanner_llvm, "scan", str(sample), "--rules", str(group_rules))
+    assert c_group.returncode == llvm_group.returncode == 0
+    assert json.loads(c_group.stdout) == json.loads(llvm_group.stdout)
 
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
