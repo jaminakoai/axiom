@@ -5,6 +5,20 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Düzeltilen (13 Kasım — self-hosted codegen tür çıkarımı)
+- **Fonksiyon kapsamı:** self-hosted C codegen artık yerel string türlerini
+  fonksiyonlar arasında taşımıyor; aynı isimli string, integer ve boolean
+  değişkenleri birbirinin türünü bozmuyor.
+- **Dizi ve alan türleri:** `str[]` parametrelerinden alınan elemanların türü
+  doğru belirleniyor. Daha büyük boolean ifadelerdeki dizi erişimleri yanlış
+  biçimde string sayılmıyor; aynı isimli fakat farklı tipli struct alanları
+  tür çıkarımını kirletmiyor.
+- **`__auto_type` string sonuçları:** HTTP başlık değerleri gibi string
+  döndüren runtime çağrılarının türü yerel değişkenlere aktarılıyor.
+- **Regresyon kapsamı:** self-hosted tip çakışması testi eklendi; YARA ve
+  self-hosted test paketi 221 geçti, 0 atlandı; codegen uçtan uca testleri
+  17 geçti.
+
 ### Eklenen (P2-19 — platform taşınabilirliği: Linux + Windows)
 ### Eklenen (P2-19 devamı — Windows doğrulaması)
 ### Düzeltilen (12 Kasım — atanmamış dizi serbest bırakma / sonsuz döngü)
