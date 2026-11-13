@@ -122,6 +122,35 @@ def test_hex_alternation_nonmatches_agree_with_yara(scanner, tmp_path, pattern, 
 
 
 @pytest.mark.parametrize(
+    ("condition", "expected"),
+    [
+        ("$a at 4", (4, 3)),
+        ("$a in (4..6)", (4, 3)),
+        ("$a at 0 or $a at 4", (0, 3)),
+        ("$a at 1 or $a at 4", (4, 3)),
+        ("($a at 1) or ($a in (4..6))", (4, 3)),
+    ],
+)
+def test_alternation_position_condition_reports_its_witness(scanner, tmp_path, condition, expected):
+    source = _rule("41 ( 42 | 44 ) 43", condition)
+    target = b"ABC ADC"
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        assert matches
+        offsets = [
+            instance.offset
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert expected[0] in offsets
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
+
+
+@pytest.mark.parametrize(
     "pattern",
     [
         "41 ( | 42 ) 43",  # empty branch

@@ -5,6 +5,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Düzeltilen (13 Kasım — YARA koşul kanıtı)
+- `$a at N` veya `$a in (...)` daha sonraki bir occurrence ile doğru olduğunda
+  `axiom-scan` artık kanıt offset/uzunluğu olarak ilk, ilgisiz occurrence'ı
+  raporlamıyor; koşulu sağlayan occurrence'ı raporluyor. C ve LLVM parity
+  regresyonları eklendi.
+
 ### Eklenen (13 Kasım — sınırlı YARA negated byte)
 - Hex desenlerinde her kalıp için tek bir `~HH`, `~?H` veya `~H?` byte
   negation'ı destekleniyor. Sabit `[N]` jump'larıyla kullanılabilir; ikinci

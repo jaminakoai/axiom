@@ -594,11 +594,12 @@ Test altyapısı notları:
 | Sonuç | **1297 geçti, 0 başarısız, 0 atlandı** |
 | Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
-Bu tam koşu güncel HEAD `a5a0018` üzerindedir. YARA/runtime/self-hosted odaklı
-304 test ve LLVM/codegen paketindeki 58 test de daha önce hedefli olarak
-doğrulanmıştı. Rozet bu güncel tam koşudaki test sayısını gösterir. G1'in
-sıradaki işi, tasarım notunda açık kalan eşleşme semantiklerini referans
-YARA'ya karşı test ederek kesinleştirmektir ([TODO.md](TODO.md)).
+Bu tam yerel koşu `a5a0018` commit'indeydi; sonradan G1 kapsamında koşulun
+seçtiği occurrence'ı doğru raporlayan bir düzeltme eklendi. Güncel çalışma
+ağacında YARA/scanner ile ilgili 315 test ve ek witness/parity regresyonları
+geçti; tam yerel paket ile yeni commit'in CI sonucu henüz alınmadı. G1'in
+sıradaki işi açık occurrence/alternation semantiklerini referans YARA'ya karşı
+kesinleştirmektir ([TODO.md](TODO.md)).
 
 ### CI durumu
 

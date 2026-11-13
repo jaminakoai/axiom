@@ -598,10 +598,12 @@ Test-infrastructure notes:
 | Result | **1297 passed, 0 failed, 0 skipped** |
 | Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
-This full run is on current HEAD `a5a0018`. Earlier focused runs also passed
-**304 YARA/runtime/self-hosted tests** and **58 LLVM/codegen tests**. The badge
-reports the test count for this current full run. The next G1 task is to settle
-the open match semantics against reference YARA (see [TODO.md](TODO.md)).
+This full local run was on commit `a5a0018`; a later G1 fix now reports the
+occurrence selected by positional conditions. The current working tree passed
+315 YARA/scanner-related tests plus additional witness/parity regressions; a
+full local suite and CI result for the new commit are pending. The next G1 task
+is to settle the open occurrence/alternation semantics against reference YARA
+(see [TODO.md](TODO.md)).
 
 ### CI status
 

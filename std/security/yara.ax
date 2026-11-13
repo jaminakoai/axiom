@@ -511,13 +511,44 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
 
     // Koşul Mantığının Değerlendirilmesi (Condition Evaluation)
     let mut is_rule_matched = false;
+    let mut condition_witness_name = "";
+    let mut condition_witness_offset = -1;
 
     if cond == "all" {
         is_rule_matched = (matched_count == total_patterns);
     } else if cond == "any" {
         is_rule_matched = (matched_count > 0);
     } else {
-        is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, target, target_size);
+        let condition_result = yara_condition_evaluate(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, target, target_size);
+        is_rule_matched = condition_result.value;
+        condition_witness_name = condition_result.witness_name;
+        condition_witness_offset = condition_result.witness_offset;
+    }
+
+    // A positional condition may be satisfied by a later instance than the
+    // first occurrence found by the ordinary pattern scan. Report that exact
+    // occurrence as evidence instead of an unrelated earlier one.
+    if is_rule_matched and condition_witness_offset >= 0 {
+        let mut witness_index = 0;
+        while witness_index < total_patterns {
+            if rule.pattern_names[witness_index] == condition_witness_name {
+                let witness = yara_scan_single_pattern(
+                    target,
+                    condition_witness_name,
+                    rule.patterns[witness_index],
+                    condition_witness_offset,
+                    condition_witness_offset
+                );
+                if witness.matched {
+                    first_matched_pid = witness.pattern_id;
+                    first_offset = witness.offset;
+                    first_len = witness.matched_len;
+                }
+                witness_index = total_patterns;
+            } else {
+                witness_index = witness_index + 1;
+            }
+        }
     }
 
     if (is_rule_matched) {

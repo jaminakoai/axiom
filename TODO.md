@@ -13,8 +13,8 @@
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son hedefli doğrulama | 304 YARA/runtime/self-hosted testi + 58 LLVM/codegen testi geçti (`a5a0018`, 2026-11-13) |
-| CI (GitHub Actions) | `a5a0018` SHA `43419634279` — **7/7 iş başarılı** (13 Kasım 2026) |
+| Son G1 hedefli doğrulama | YARA/scanner ilgili 315 test geçti; ek witness/parity testleri geçti; `make fmt-check` geçti (çalışma ağacı) |
+| Son taban CI | `a5a0018` SHA `43419634279` — **7/7 iş başarılı**; G1 düzeltmesinin CI sonucu bekliyor |
 
 ---
 
@@ -64,6 +64,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Başlangıç tasarım notu: [YARA pattern AST/modeli ve G1 tasarım kararı](docs/reports/2026-11-13-master-roadmap-refresh.md#yara-pattern-modeli-g1-tasarim-notu).
 - [ ] Diferansiyel testlerle eşleşme/ofset/uzunluk ve alternatif eşitlik
   semantiğini kesinleştir; nottaki açık kararları kapat.
+- [x] `$a at N` / `$a in (...)` kuralı daha sonraki bir occurrence ile
+  sağlandığında raporda koşulu sağlayan occurrence'ın offset/uzunluğunu ver;
+  range/alternation/negation ve C/LLVM için regresyon ekle.
+- [ ] Tek bir koşul birden fazla pozitif occurrence gerektirdiğinde raporun
+  kanıt modelini belirle; mevcut çıktı kural başına tek bir witness taşır.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle.
@@ -170,8 +175,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`) | `python -m pytest -q -rs` |
-| Son hedefli testler | 304 YARA/runtime/self-hosted + 58 LLVM/codegen (a5a0018) | `docs/reports/2026-11-13-master-roadmap-refresh.md` |
+| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`, G1 düzeltmesinden önce) | `python -m pytest -q -rs` |
+| G1 hedefli testler | YARA/scanner paketi 315 geçti; son ek parity/witness testleri de geçti | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1014,8 +1019,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (a5a0018) | 1297 geçti, 0 hata/skip | — | 2000 |
-| Güncel hedefli test (a5a0018) | 304 YARA + 58 LLVM/codegen geçti | — | — |
+| Son tam test (a5a0018) | 1297 geçti, 0 hata/skip (G1 düzeltmesinden önce) | — | 2000 |
+| Güncel G1 hedefli doğrulama | 315 ilgili test + ek witness/parity testleri geçti | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

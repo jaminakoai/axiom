@@ -55,10 +55,10 @@ def _rule(pattern, condition="$a"):
     )
 
 
-def _scan(scanner, tmp_path, pattern, target):
+def _scan(scanner, tmp_path, pattern, target, condition="$a"):
     rules_path = tmp_path / "hex-range.yar"
     target_path = tmp_path / "target.bin"
-    rules_path.write_text(_rule(pattern), encoding="utf-8")
+    rules_path.write_text(_rule(pattern, condition), encoding="utf-8")
     target_path.write_bytes(target)
     result = subprocess.run(
         [str(scanner), "scan", str(target_path), "--rules", str(rules_path)],
@@ -217,6 +217,33 @@ def test_range_jump_at_and_in_conditions(condition, target, expected_matches, sc
     )
     assert result.returncode == 0, result.stdout + result.stderr
     assert json.loads(result.stdout)["match_count"] == expected_matches
+
+
+@pytest.mark.parametrize(
+    ("pattern", "target", "condition", "expected"),
+    [
+        ("41 [1-3] 42", b"A1B A12B", "$a at 4", (4, 4)),
+        ("41 [1-3] 42", b"A1B A12B", "$a in (4..7)", (4, 4)),
+    ],
+)
+def test_range_condition_reports_the_occurrence_that_satisfied_it(
+    scanner, tmp_path, pattern, target, condition, expected
+):
+    source = _rule(pattern, condition)
+    # The reference engine exposes every instance; offset 4 is the one selected
+    # by the condition, even though an earlier instance exists at offset 0.
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        assert matches
+        offsets = [
+            instance.offset
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert expected[0] in offsets
+    result = _scan(scanner, tmp_path, pattern, target, condition)
+    assert result["match_count"] == 1
+    assert (result["matches"][0]["offset"], result["matches"][0]["length"]) == expected
 
 
 @pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 4"])

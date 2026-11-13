@@ -210,6 +210,34 @@ def test_pattern_group_range_matches_in_c_and_llvm(scanner, scanner_llvm, tmp_pa
     assert json.loads(c_result.stdout) == json.loads(llvm_result.stdout)
 
 
+@pytest.mark.parametrize(
+    ("definition", "target", "condition", "expected"),
+    [
+        ("{ 41 ( 42 | 44 ) 43 }", b"ABC ADC", "$a at 4", (4, 3)),
+        ('"needle"', b"needle xxneedle", "$a in (9..14)", (9, 6)),
+    ],
+)
+def test_positional_condition_reports_selected_occurrence_in_c_and_llvm(
+    scanner, scanner_llvm, tmp_path, definition, target, condition, expected
+):
+    rules = tmp_path / "position-witness.yar"
+    rules.write_text(
+        'rule PositionWitness {\n strings:\n  $a = ' + definition + '\n'
+        ' condition:\n  ' + condition + '\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "position-witness.bin"
+    sample.write_bytes(target)
+    c_result = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    llvm_result = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert c_result.returncode == llvm_result.returncode == 0
+    c_report = json.loads(c_result.stdout)
+    llvm_report = json.loads(llvm_result.stdout)
+    assert c_report == llvm_report
+    assert c_report["match_count"] == 1
+    assert (c_report["matches"][0]["offset"], c_report["matches"][0]["length"]) == expected
+
+
 def test_rule_meta_and_tags_are_returned_as_typed_json(scanner, scanner_llvm, tmp_path):
     rules = tmp_path / "metadata.yar"
     rules.write_text(

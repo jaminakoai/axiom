@@ -1,8 +1,9 @@
 # Master roadmap yenileme ve YARA pattern tasarım notu
 
 **Tarih:** 13 Kasım 2026  
-**Durum:** G0 doğrulaması tamamlandı; G1 tasarım/semantik incelemesi sürüyor  
-**Kod değişikliği:** yok
+**Durum:** G0 doğrulaması tamamlandı; G1'de positional evidence hatası düzeltildi.
+
+**Kod değişikliği:** YARA condition sonucu, pozisyon koşulunun seçtiği eşleşmeyi raporluyor.
 
 ## Amaç ve sonuç
 
@@ -11,8 +12,9 @@ eski CI koşusu ve tamamlanmış işi sıradaki iş gibi gösteren maddeler düz
 Sıra artık açık kabul kapılarından oluşuyor: G0 doğrulama, G1 pattern modeli,
 G2 gerçek kurallar, G3 dış kullanıcı, G4 platform/dağıtım, G5 sürüm/ekosistem.
 
-G0 tamamlandı. Sıradaki iş G1'dir. Bu not G1'in ilk mimari incelemesidir; pattern
-modeli için bir uygulama başlatmaz. YARA sözdizimi veya runtime kodu değiştirilmedi.
+G0 tamamlandı. G1 sırasında farklı bir doğruluk kusuru bulundu ve dar kapsamlı
+şekilde düzeltildi. Ortak pattern AST henüz uygulanmadı; yeni YARA sözdizimi
+eklenmedi.
 
 ## G0 doğrulama kanıtı
 
@@ -83,6 +85,49 @@ Tasarım tek başına YARA referans davranışını kanıtlamaz. Aşağıdakiler
   sınırlarını uygular?
 - `Jump`, `Alternation` ve `NotByte` hangi birleşimlerde ve hangi iç içe
   derinlikte desteklenir?
+- Koşul birden fazla pozitif pattern occurrence gerektirdiğinde tek witness
+  alanı yeterli mi; rapor tüm occurrence'ları mı, yoksa kural başına tek kanıtı
+  mı göstermeli?
+
+## G1 bulgusu: positional condition yanlış occurrence raporluyordu
+
+### Tekrar üretim
+
+YARA 4.5.4'te `{ 41 ( 42 | 44 ) 43 }`, `ABC ADC` hedefi ve `$a at 4` koşulu
+offset `4`'teki occurrence ile eşleşir. YARA iki instance'ı `(0, 3)` ve `(4, 3)`
+olarak sunar. Axiom kuralı doğru eşleştiriyordu, fakat JSON raporunda ilk
+instance'ı, yani `(0, 3)` değerini yazıyordu. `in (...)` ve bounded jump/negation
+ile de aynı problem vardı: condition evaluator bir occurrence buluyor, scanner
+ise koşuldan bağımsız ilk instance'ı raporluyordu.
+
+### Düzeltme
+
+- `YaraConditionParse` artık koşulun seçtiği pattern kimliğini ve offset'i
+  taşıyor.
+- `$a at N` ve `$a in (N..M)` arama fonksiyonları boolean yerine bulunan
+  occurrence offset'ini condition sonucuna aktarıyor.
+- Boolean `and` / `or` birleşimleri true dalın witness'ını koruyor; parantezler
+  da witness bilgisini geçiriyor.
+- Kural raporu aynı pattern'i tam offset'te tekrar doğrulayıp gerçek eşleşme
+  uzunluğunu alıyor. Public `YaraMatch`/builder imzaları değişmedi.
+- C ve LLVM backend testleri aynı JSON'u doğruluyor.
+
+Bu düzeltme kural başına tek witness modelini korur. `#`, `@`, `!` ve birden
+fazla koşulun ayrı ayrı ihtiyaç duyduğu instance listesini raporlama işi bu
+değişikliğin kapsamında değildir; G1'de karara bağlanmalıdır.
+
+### Doğrulama
+
+Ön düzeltme regresyon koşusu altı yeni senaryonun tamamında hatayı gösterdi:
+`offset 0` raporlandı, beklenen offset bounded jump için 4, alternation için 4,
+negation için 8 idi.
+
+| Komut | Sonuç |
+|---|---|
+| `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
+| Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
+| `make fmt-check` | geçti |
+| GitHub Actions | Bu G1 düzeltmesi için henüz tetiklenmedi |
 
 ### Uygulama öncesi kabul ölçütleri
 
@@ -101,14 +146,22 @@ Tasarım tek başına YARA referans davranışını kanıtlamaz. Aşağıdakiler
 
 ## Değişen dosyalar
 
-- `TODO.md`: tek aktif plan, G0 kapandı, G1 tasarımı sırada.
-- `README.md`, `README.en.md`: güncel tam test sayısı, commit ve CI run bilgisi.
-- `docs/reports/README.md`: bu rapor eklendi.
+- `std/security/yara_condition.ax`, `std/security/yara.ax`: koşul witness'ını
+  sonuçtan rapora taşıma.
+- `tests/test_yara_hex_range_differential.py`,
+  `tests/test_yara_hex_alternation.py`, `tests/test_yara_hex_negation.py`,
+  `tests/test_axiom_scan.py`: YARA diferansiyel ve C/LLVM regressions.
+- `TODO.md`: G0 kapandı; G1 ilerlemesi ve kalan kanıt işleri.
+- `README.md`, `README.en.md`: son tam koşu ile güncel G1 hedefli koşuyu ayrı
+  anlatır.
+- `CHANGELOG.md`: düzeltilen rapor kanıtı hatası.
 
-Kaynak kodu değiştirilmedi. CHANGELOG'a ürün özelliği eklenmedi.
+Tam YARA pattern AST'si henüz yapılmadı; tam test paketi ve bu değişiklik için
+GitHub Actions sonucu bekliyor.
 
 ## Sıradaki iş
 
-G1'in kalan ilk işi açık semantik kararlarını YARA 4.5.4 diferansiyel testleri
-ile kapatmak; ondan sonra tek typed modelin geriye uyumlu API tasarımını
-kesinleştirmek. Bu kapılar geçmeden runtime/grammar implementasyonuna geçilmez.
+G1'in sıradaki işi açık occurrence/alternation semantiklerini YARA 4.5.4 ile
+diferansiyel test etmek ve tek-witness rapor sözleşmesini netleştirmek. Ardından
+typed modelin geriye uyumlu API tasarımını kesinleştir. Bu kapılar geçmeden yeni
+runtime/grammar sözdizimine geçilmez.
