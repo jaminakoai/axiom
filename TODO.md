@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son G1 hedefli doğrulama | 118 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
+| Son G1 hedefli doğrulama | 128 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
 | Son CI | `e00c56d` SHA `43433833667` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
@@ -91,6 +91,20 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle.
+
+  **G1 geçiş tasarımı:** `YaraRule` alanlarını ve `yara_rule_add_pattern`
+  imzasını koru; kaynak pattern'i parser aşamasında `hexast:v1:` adlı tek,
+  sürümlü ASCII programına normalize et. Programın byte/mask, bounded jump,
+  flat alternation ve negated-byte opkodları uzunlukla sınırlandırılmış olsun.
+  C runtime'da tek doğrulayıcı/yürütücü; find/count/nth API'leri aynı
+  occurrence motorunu kullansın. Mevcut `hexrange:`/`hexalt:`/`hexnot:`
+  kodlamaları geçiş testlerinde adapter olarak okunup sonra iç akıştan kaldırılsın.
+  Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
+  parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
+  doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
+  API içinde optimizasyon olarak korunabilir. Performance bütçesi benchmark ile
+  belirlenecek; hedefe göre sınırsız `candidate × atom × gap` taraması kabul
+  edilmez.
 - [x] Mevcut desteklenen biçimlerin birleşimini ve ret sınırlarını belirle:
   normal bayt/nibble wildcard, sabit ve bounded jump, alternation, negation.
 

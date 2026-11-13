@@ -129,6 +129,8 @@ def test_hex_alternation_nonmatches_agree_with_yara(scanner, tmp_path, pattern, 
         ("$a at 0 or $a at 4", (0, 3)),
         ("$a at 1 or $a at 4", (4, 3)),
         ("($a at 1) or ($a in (4..6))", (4, 3)),
+        ("$a at 1", None),
+        ("$a in (1..3)", None),
     ],
 )
 def test_alternation_position_condition_reports_its_witness(scanner, tmp_path, condition, expected):
@@ -136,18 +138,20 @@ def test_alternation_position_condition_reports_its_witness(scanner, tmp_path, c
     target = b"ABC ADC"
     if yara is not None:
         matches = yara.compile(source=source).match(data=target)
-        assert matches
-        offsets = [
-            instance.offset
-            for string_match in matches[0].strings
-            for instance in getattr(string_match, "instances", [])
-        ]
-        assert expected[0] in offsets
+        assert bool(matches) is (expected is not None)
+        if expected is not None:
+            offsets = [
+                instance.offset
+                for string_match in matches[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert expected[0] in offsets
     result = _run(scanner, tmp_path, "scan", source, target)
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
-    assert report["match_count"] == 1
-    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
+    assert report["match_count"] == (1 if expected is not None else 0)
+    if expected is not None:
+        assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
 
 
 def test_alternation_default_report_matches_first_yara_instance(scanner, tmp_path):

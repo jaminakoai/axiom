@@ -186,7 +186,7 @@ negation için 8 idi.
 |---|---|
 | `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
 | Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
-| G1 occurrence differential grubu | **118 passed**: fixed jumps, bounded ranges, alternation, negation, target start bounds ve C/LLVM positional witness |
+| G1 occurrence differential grubu | **128 passed**: fixed jumps, bounded ranges, alternation, negation, true/false occurrence conditions, target start bounds ve C/LLVM positional witness |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions | run `43433833667` (`e00c56d`) — **7/7 success** |
@@ -205,6 +205,23 @@ negation için 8 idi.
 - C backend ve LLVM aynı test örneklerinde aynı raporu üretir.
 - Önceki `hexrange`, `hexalt`, `hexnot`, `??` ve nibble wildcard örnekleri
   geriye dönük regresyon kümesinde kalır.
+
+### G1'de ortak model için önerilen geçiş
+
+Public `YaraRule` alanlarını ve `yara_rule_add_pattern` imzasını koru. Kaynak
+pattern parser'ı tek `hexast:v1:` sürümlü ASCII programına normalize etsin; bu
+program içte tipli byte/mask, bounded jump, flat alternation ve negation
+opkodlarını taşısın. Runtime tek doğrulayıcı ve ortak occurrence yürütücüsü
+kullansın; find/count/nth yardımcıları aynı matcher'ın arayüzleri olsun. Mevcut
+`hexrange:`, `hexalt:` ve `hexnot:` kodlamaları geçiş sırasında adapter olarak
+okunup diferansiyel regresyonlar geçince iç akıştan çıkarılsın.
+
+Mevcut 8 KiB pattern, 64-byte jump, 16-byte range span ve 4×16 alternation
+limitleri korunur. Basit fixed-byte desenleri için mevcut hızlı arama generic
+matcher içinde bir optimizasyon olarak kalabilir. Resource bütçesi, C runtime
+testleri ve gerçek dosya benchmark'ı olmadan genel backtracking ya da
+`candidate × atom × gap` taramasına geçilmez. Bu bir geçiş önerisidir; henüz
+uygulanmadı.
 
 ## Değişen dosyalar
 

@@ -75,23 +75,29 @@ def test_fixed_width_jumps_match_and_agree_with_yara(scanner, tmp_path, pattern,
 
 
 @pytest.mark.parametrize(
-    ("pattern", "target", "condition"),
+    ("pattern", "target", "condition", "expected"),
     [
-        ("41 41", b"AAAA", "#a == 3"),
-        ("41 41", b"AAAA", "@a[2] == 1"),
-        ("41 41", b"AAAA", "!a[3] == 2"),
-        ("41 [1] 41", b"AAAAA", "#a == 3"),
-        ("41 [1] 41", b"AAAAA", "@a[3] == 2"),
-        ("41 [1] 41", b"AAAAA", "!a[1] == 3"),
+        ("41 41", b"AAAA", "#a == 3", True),
+        ("41 41", b"AAAA", "@a[2] == 1", True),
+        ("41 41", b"AAAA", "!a[3] == 2", True),
+        ("41 41", b"AAAA", "#a == 2", False),
+        ("41 41", b"AAAA", "@a[2] == 0", False),
+        ("41 41", b"AAAA", "!a[3] == 3", False),
+        ("41 [1] 41", b"AAAAA", "#a == 3", True),
+        ("41 [1] 41", b"AAAAA", "@a[3] == 2", True),
+        ("41 [1] 41", b"AAAAA", "!a[1] == 3", True),
+        ("41 [1] 41", b"AAAAA", "#a == 2", False),
+        ("41 [1] 41", b"AAAAA", "@a[3] == 1", False),
+        ("41 [1] 41", b"AAAAA", "!a[3] == 4", False),
     ],
 )
 def test_fixed_hex_occurrence_operators_count_overlapping_instances(
-    scanner, tmp_path, pattern, target, condition
+    scanner, tmp_path, pattern, target, condition, expected
 ):
     source = _rule(pattern, condition)
     if yara is not None:
         reference = yara.compile(source=source).match(data=target)
-        assert reference, f"reference YARA rejected a valid matching condition: {condition}"
+        assert bool(reference) is expected, f"unexpected reference result for {condition}"
     rules = tmp_path / "fixed-jump-occurrence.yar"
     rules.write_text(source, encoding="utf-8")
     sample = tmp_path / "overlap-target.bin"
@@ -103,7 +109,7 @@ def test_fixed_hex_occurrence_operators_count_overlapping_instances(
         timeout=120,
     )
     assert result.returncode == 0, result.stdout + result.stderr
-    assert json.loads(result.stdout)["match_count"] == 1
+    assert json.loads(result.stdout)["match_count"] == (1 if expected else 0)
 
 
 @pytest.mark.parametrize(

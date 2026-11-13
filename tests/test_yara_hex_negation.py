@@ -106,25 +106,32 @@ def test_exact_byte_negation_matches_yara_and_reports_instance(
 
 @pytest.mark.parametrize(
     ("condition", "expected"),
-    [("$a at 8", (8, 3)), ("$a in (8..10)", (8, 3))],
+    [
+        ("$a at 8", (8, 3)),
+        ("$a in (8..10)", (8, 3)),
+        ("$a at 4", None),
+        ("$a in (4..7)", None),
+    ],
 )
 def test_negation_position_condition_reports_its_witness(scanner, tmp_path, condition, expected):
     source = _rule("41 ~42 43", condition)
     target = b"ADC ABC AEC"
     if yara is not None:
         matches = yara.compile(source=source).match(data=target)
-        assert matches
-        offsets = [
-            instance.offset
-            for string_match in matches[0].strings
-            for instance in getattr(string_match, "instances", [])
-        ]
-        assert expected[0] in offsets
+        assert bool(matches) is (expected is not None)
+        if expected is not None:
+            offsets = [
+                instance.offset
+                for string_match in matches[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert expected[0] in offsets
     result = _run(scanner, tmp_path, "scan", source, target)
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
-    assert report["match_count"] == 1
-    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
+    assert report["match_count"] == (1 if expected is not None else 0)
+    if expected is not None:
+        assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
 
 
 def test_negation_default_report_matches_first_yara_instance(scanner, tmp_path):
