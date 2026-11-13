@@ -77,8 +77,9 @@ in their own language.
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
   other unsupported modifiers, and hex jump/alternation constructs are also
-  rejected with a parse error. `#a` currently supports text patterns only;
-  `at/in`, `@a[i]`, and `!a[i]` checks support text and hex patterns.
+  rejected with a parse error. `#a` supports text and hex patterns;
+  regex pattern counts are rejected. `at/in`, `@a[i]`, and `!a[i]` checks
+  support text and hex patterns.
   Offset and index checks reject regex patterns.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.

@@ -8614,12 +8614,13 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_pattern_len(const char* hex_pattern) {
     return (ax_int)len;
 }
 
-/* Boyer-Moore-Horspool / Sunday Quick-Search, returning an indexed hit. */
-AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t data_len,
-                                                   const AxiomYaraCompiledPattern* pat,
-                                                   ax_int min_offset, ax_int max_offset,
-                                                   ax_int occurrence) {
-    if (!data || !pat || pat->len <= 0 || occurrence <= 0) return -1;
+/* Wildcard-aware search; occurrence 0 counts all hits, 1-based values select a hit. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_scan_bytes(const uint8_t* data, size_t data_len,
+                                               const AxiomYaraCompiledPattern* pat,
+                                               ax_int min_offset, ax_int max_offset,
+                                               ax_int occurrence, ax_int* count_out) {
+    if (count_out) *count_out = 0;
+    if (!data || !pat || pat->len <= 0 || occurrence < 0) return -1;
     int m = pat->len;
     if ((size_t)m > data_len) return -1;
 
@@ -8629,14 +8630,14 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t da
 
     // Fast-path for exact offset check
     if (min_offset >= 0 && min_offset == max_offset) {
-        if (occurrence != 1) return -1;
         if (min_offset + m > (int64_t)data_len) return -1;
         for (int j = 0; j < m; j++) {
             if ((data[min_offset + j] & pat->masks[j]) != pat->vals[j]) {
                 return -1;
             }
         }
-        return min_offset;
+        if (count_out) *count_out = 1;
+        return occurrence == 0 || occurrence == 1 ? min_offset : -1;
     }
 
     // Build Sunday Quick-Search shift table with wildcard mask awareness
@@ -8672,7 +8673,8 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t da
         }
         if (match) {
             seen++;
-            if (seen == occurrence) return (ax_int)i;
+            if (count_out) *count_out = seen;
+            if (occurrence > 0 && seen == occurrence) return (ax_int)i;
             i++;
             continue;
         }
@@ -8688,6 +8690,21 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t da
     }
 
     return -1;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_nth_bytes(const uint8_t* data, size_t data_len,
+                                                   const AxiomYaraCompiledPattern* pat,
+                                                   ax_int min_offset, ax_int max_offset,
+                                                   ax_int occurrence) {
+    if (occurrence <= 0) return -1;
+    return axiom_yara_scan_bytes(data, data_len, pat, min_offset, max_offset, occurrence, NULL);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_bytes(const uint8_t* data, size_t data_len,
+                                                const AxiomYaraCompiledPattern* pat) {
+    ax_int count = 0;
+    axiom_yara_scan_bytes(data, data_len, pat, -1, -1, 0, &count);
+    return count;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_bytes(const uint8_t* data, size_t data_len,
@@ -8723,6 +8740,18 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_wildcard(const char* target, const ch
     ax_int res = axiom_yara_find_nth_bytes((const uint8_t*)target, strlen(target), &pat, -1, -1, occurrence);
     axiom_yara_pattern_free(&pat);
     return res;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_hex_wildcard(const char* target, const char* hex_pattern) {
+    if (!target || !hex_pattern) return 0;
+    AxiomYaraCompiledPattern pat;
+    if (axiom_yara_parse_hex_pattern_internal(hex_pattern, &pat) <= 0) {
+        axiom_yara_pattern_free(&pat);
+        return 0;
+    }
+    ax_int count = axiom_yara_count_bytes((const uint8_t*)target, strlen(target), &pat);
+    axiom_yara_pattern_free(&pat);
+    return count;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_stream(const char* hex_target, const char* hex_pattern) {

@@ -307,8 +307,8 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
 }
 
-// Counts text-pattern hits in one runtime pass, including overlaps. Parser
-// rejects #a for hex and regex patterns because their counters are not exposed.
+// Counts text and hex-pattern hits in one runtime pass, including overlaps.
+// Parser rejects #a for regex patterns because their counter is not exposed.
 fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
     if str_starts_with(pattern_str, "regex:") { return -1 }
     if str_starts_with(pattern_str, "str:") {
@@ -325,6 +325,10 @@ fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
             p = str_sub(rest, sep + 1, str_len(rest) - sep - 1)
         }
         return rt_yara_count_text(target, p, flags)
+    }
+    if str_starts_with(pattern_str, "hex:") {
+        let p = str_sub(pattern_str, 4, str_len(pattern_str) - 4)
+        return rt_yara_count_hex_wildcard(target, p)
     }
     return -1
 }

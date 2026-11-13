@@ -187,6 +187,18 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     assert c_hex_indexed.returncode == llvm_hex_indexed.returncode == 0
     assert json.loads(c_hex_indexed.stdout) == json.loads(llvm_hex_indexed.stdout)
 
+    count_hex_rules = tmp_path / "count-hex-parity.yar"
+    count_hex_rules.write_text(
+        'rule CountHexParity {\n strings:\n  $a = { 41 42 }\n'
+        ' condition:\n  #a == 2\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"ABAB")
+    c_hex_count = _run(scanner, "scan", str(sample), "--rules", str(count_hex_rules))
+    llvm_hex_count = _run(scanner_llvm, "scan", str(sample), "--rules", str(count_hex_rules))
+    assert c_hex_count.returncode == llvm_hex_count.returncode == 0
+    assert json.loads(c_hex_count.stdout) == json.loads(llvm_hex_count.stdout)
+
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
 def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, condition, expected):
@@ -247,6 +259,9 @@ def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, 
     ('"needle" nocase', b"NEEDLE needle", "#a == 2", 1),
     ('"domain" fullword', b"www.my-domain.com", "#a == 1", 1),
     ('"domain" fullword', b"www.mydomain.com", "#a == 0", 1),
+    ("{ 41 42 }", b"ABAB", "#a == 2", 1),
+    ("{ 4? 42 }", b"ABAB", "#a == 2", 1),
+    ("{ 41 42 }", b"ABAB", "#a == 3", 0),
     ('"aa"', b"aaaa", "#a >= 3 and filesize == 4", 1),
 ])
 def test_pattern_occurrence_count_conditions(scanner, tmp_path, pattern, target, condition, expected):
@@ -263,10 +278,7 @@ def test_pattern_occurrence_count_conditions(scanner, tmp_path, pattern, target,
     assert json.loads(res.stdout)["match_count"] == expected
 
 
-@pytest.mark.parametrize(("pattern", "filename"), [
-    ("/a+/", "regex-count.yar"),
-    ("{ 41 ?? }", "hex-count.yar"),
-])
+@pytest.mark.parametrize(("pattern", "filename"), [("/a+/", "regex-count.yar")])
 def test_pattern_occurrence_count_rejects_unsupported_types(scanner, tmp_path, pattern, filename):
     rules = tmp_path / filename
     rules.write_text(
@@ -275,7 +287,7 @@ def test_pattern_occurrence_count_rejects_unsupported_types(scanner, tmp_path, p
     )
     res = _run(scanner, "rules", str(rules))
     assert res.returncode == 1
-    assert "metin desenlerinde" in json.loads(res.stdout)["error"]
+    assert "regex" in json.loads(res.stdout)["error"]
 
 
 @pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
