@@ -107,6 +107,49 @@ def test_fixed_hex_occurrence_operators_count_overlapping_instances(
 
 
 @pytest.mark.parametrize(
+    ("condition", "expected"),
+    [
+        ("$a at 1", (1, 3)),
+        ("$a in (1..1)", (1, 3)),
+        ("$a at 2", None),
+        ("$a in (0..0)", None),
+    ],
+)
+def test_fixed_jump_position_conditions_include_last_valid_start(
+    scanner, tmp_path, condition, expected
+):
+    source = _rule("41 [1] 42", condition)
+    target = b"xAqB"  # The only/final valid start offset is one.
+    if yara is not None:
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is (expected is not None)
+        if expected is not None:
+            instances = [
+                (instance.offset, instance.matched_length)
+                for string_match in reference[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert expected in instances
+    rules = tmp_path / "fixed-jump-position.yar"
+    rules.write_text(source, encoding="utf-8")
+    sample = tmp_path / "final-start.bin"
+    sample.write_bytes(target)
+    result = subprocess.run(
+        [str(scanner), "scan", str(sample), "--rules", str(rules)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    if expected is None:
+        assert report["match_count"] == 0
+    else:
+        assert report["match_count"] == 1
+        assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
+
+
+@pytest.mark.parametrize(
     "pattern",
     [
         "41 [0] 42",        # zero-width form is intentionally unsupported

@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son G1 hedefli doğrulama | 114 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
+| Son G1 hedefli doğrulama | 118 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
 | Son CI | `e00c56d` SHA `43433833667` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
@@ -108,12 +108,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
   türünün davranış tablosunu yaz; özel hex occurrence operatörlerinin YARA'da
   geçerli, Axiom'da açık hata olduğunu karşılaştırmalı test et. Matris yukarıda.
-- [~] Testleri YARA 4.5.4'e sabitlenmiş diferansiyel karşılaştırmayla genişlet:
+- [~] YARA 4.5.4 diferansiyel testleri:
   bounded jump uzunluk seçimi, çoklu/örtüşen fixed pattern'ler, aynı başlangıçta
   eşleşen alternation dalları, özel hex occurrence fail-closed kararı, positional
-  witness ve bounded jump alt/üst start sınırları test edildi. Kalan sınırlara
-  dair açık durum raporda; diğer pattern türlerinin target sınır matrisi ve
-  eksik koşul birleşimleri tamamlanmalı.
+  witness ve tüm desteklenen türlerde ilk/son start sınırları test edildi.
+  Kalan sınırlara dair açık durum raporda; eksik koşul birleşimleri ve dahili
+  runtime limitleri tamamlanmalı.
 - [ ] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
   kodlamayı doğrudan C runtime testleriyle doğrula.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
