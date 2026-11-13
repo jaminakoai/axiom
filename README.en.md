@@ -594,20 +594,19 @@ Test-infrastructure notes:
 | Field | Value |
 |---|---|
 | Date | 13 November 2026 |
-| Tested tree | `6dfb009` plus the G1 occurrence changes |
+| Commit | `fbae263` |
 | Command | `python -m pytest -q -rs` |
 | Result | **1358 passed, 0 failed, 0 skipped** (1217.88 s) |
 | Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
 This full local run includes the positional-evidence fix and the new `#/@/!`
 support for bounded jumps, alternation, and negation. The focused YARA/scanner
-suite passed 370 tests. The latest completed GitHub Actions run was for the
-previous test commit `1648283` (7/7); CI for these changes will run after push.
+suite passed 370 tests. GitHub Actions for `fbae263` also passed all 7 jobs.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `1648283`:
+All 7 jobs passed in the verified run for commit `fbae263`:
 
 | Job | Status |
 |---|---|
@@ -616,8 +615,8 @@ All 7 jobs passed in the latest completed run for commit `1648283`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43441565454` (13 November 2026, `master`, SHA
-`16482837f9580b6783f8b7bd2c89086d056469c2`).
+Last verified run: `43456582647` (13 November 2026, `master`, SHA
+`fbae26377819ae535524a969ec3d35f7322872a4`).
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -633,8 +632,7 @@ Six root causes fixed on the way here (details: report §9–§12):
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
 The cited 1034-test run matched CI at that time. The latest full local run is
-1358 tests with the G1 occurrence changes; the latest completed CI for the
-previous test commit `1648283` passed all 7 jobs.
+1358 tests on `fbae263`, and CI for the same commit passed all 7 jobs.
 
 ---
 

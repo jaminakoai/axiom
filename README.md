@@ -589,20 +589,19 @@ Test altyapısı notları:
 | Alan | Değer |
 |---|---|
 | Tarih | 13 Kasım 2026 |
-| Test edilen ağaç | `6dfb009` üzerine G1 occurrence değişiklikleri |
+| Commit | `fbae263` |
 | Komut | `python -m pytest -q -rs` |
 | Sonuç | **1358 geçti, 0 başarısız, 0 atlandı** (1217,88 sn) |
 | Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
 Bu tam yerel koşu positional evidence düzeltmesi ve bounded jump, alternation,
 negation için yeni `#/@/!` desteğini içerir. YARA/scanner odaklı paket 370 testte
-geçti. En son tamamlanmış GitHub Actions koşusu önceki test commit'i
-`1648283` içindi (7/7); yeni değişiklikler için CI push sonrasında çalışacaktır.
+geçti. `fbae263` için GitHub Actions da 7/7 işi başarıyla tamamladı.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-Son tamamlanan doğrulanmış koşu `1648283` commit'indeki 7 işi de geçti:
+`fbae263` commit'indeki doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -611,8 +610,8 @@ Son tamamlanan doğrulanmış koşu `1648283` commit'indeki 7 işi de geçti:
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43441565454` (13 Kasım 2026, `master`, SHA
-`16482837f9580b6783f8b7bd2c89086d056469c2`).
+Son doğrulanan koşu: `43456582647` (13 Kasım 2026, `master`, SHA
+`fbae26377819ae535524a969ec3d35f7322872a4`).
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -627,9 +626,9 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
-çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam koşu
-G1 occurrence değişiklikleri dahil son tam yerel koşu 1358 testtir. En son
-tamamlanmış CI, önceki test commit'i `1648283` için 7/7 iş başarılıdır.
+çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam yerel koşu
+G1 occurrence değişiklikleri dahil `fbae263` üzerinde 1358 testtir. Aynı commit
+için CI'da da 7/7 iş başarılıdır.
 
 ---
 

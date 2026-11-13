@@ -200,11 +200,12 @@ negation için 8 idi.
 | Yeni occurrence runtime/API ve C/LLVM koşu grubu | **30 passed**; bounded jump, alternation ve negation için `#/@/!`, aynı start'ta tek instance ve backend eşitliği |
 | Güncel YARA/scanner odaklı paket | `python -m pytest -q tests/test_axiom_scan.py tests/test_yara_*.py tests/test_real_yara_engine.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` — **370 passed**, 145.90 s |
 | 64 MiB occurrence API mikro benchmarkı | bounded jump 0.148 s; alternation 0.552 s; negation 0.150 s; her desen 1 occurrence buldu |
-| Tam yerel paket (G1 occurrence değişiklikleri dahil) | `python -m pytest -q -rs` — **1358 passed, 0 failed, 0 skipped**, 1217.88 s |
+| Tam yerel paket (`fbae263`, G1 occurrence değişiklikleri dahil) | `python -m pytest -q -rs` — **1358 passed, 0 failed, 0 skipped**, 1217.88 s |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions (positional witness düzeltmesi) | run `43433833667` (`e00c56d`) — **7/7 success** |
 | GitHub Actions (son occurrence differential test commit'i) | run `43441565454` (`1648283`) — **7/7 success** |
+| GitHub Actions (occurrence API commit'i) | run `43456582647` (`fbae263`) — **7/7 success** |
 
 ### Uygulama öncesi kabul ölçütleri
 
@@ -254,10 +255,9 @@ uygulanmadı.
 - `CHANGELOG.md`: positional witness ve yeni hex occurrence davranışı.
 
 Tam YARA pattern AST'si henüz yapılmadı. Positional witness düzeltmesi ve
-occurrence genişletmesi yerel tam test paketinde **1358/1358** geçti. Son CI,
-önceki test commit'i için 7/7 geçti; bu değişikliklerin CI sonucu push sonrası
-bekleniyor. JSON raporu hâlâ kural başına tek temsilî witness döndürür; bu API'nin
-tam instance listesine çevrilmesi kapsam dışı.
+occurrence genişletmesi yerel tam test paketinde **1358/1358** ve GitHub Actions'ta
+**7/7** geçti (`fbae263`, run `43456582647`). JSON raporu hâlâ kural başına tek
+temsilî witness döndürür; bu API'nin tam instance listesine çevrilmesi kapsam dışı.
 
 ## Sıradaki iş
 

@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | 1358 geçti, 0 hata/skip; `python -m pytest -q -rs`, 1217,88 sn (G1 occurrence değişiklikleri dahil) |
+| Son tam test paketi | 1358 geçti, 0 hata/skip; `fbae263`, `python -m pytest -q -rs`, 1217,88 sn |
 | Son G1 hedefli doğrulama | 370 YARA/scanner testi geçti; yeni occurrence API ve C/LLVM parity dahil (145,90 sn) |
-| Son CI | `1648283` SHA `43441565454` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
+| Son CI | `fbae263` SHA `43456582647` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
 
@@ -195,8 +195,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 **G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
 `e00c56d` üzerinde düzeltildi. Bounded jump, alternation ve negation için ortak
-occurrence API'si eklendi; tam yerel paket 1358/1358 geçti. Son tamamlanan CI
-`1648283` için 7/7'dir; bu değişikliklerin CI'si push sonrasında çalışacak.
+occurrence API'si eklendi; `fbae263` için tam yerel paket 1358/1358 ve CI 7/7
+geçti.
 Sıradaki iş typed pattern AST geçişi ve runtime sınır/bozuk kodlama testleridir.
 
 ---
