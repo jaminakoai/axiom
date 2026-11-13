@@ -238,6 +238,38 @@ def test_positional_condition_reports_selected_occurrence_in_c_and_llvm(
     assert (c_report["matches"][0]["offset"], c_report["matches"][0]["length"]) == expected
 
 
+@pytest.mark.parametrize(
+    ("definition", "target", "condition", "expected"),
+    [
+        ("{ 41 [1-3] 42 }", b"A1B A12B", "#a == 2", (True, (0, 3))),
+        ("{ 41 ( 42 | 44 ) 43 }", b"ABC ADC", "@a[2] == 4", (True, (0, 3))),
+        ("{ 41 ~42 43 }", b"ADC ABC AEC", "!a[2] == 3", (True, (0, 3))),
+        ("{ 41 ~42 43 }", b"ADC ABC AEC", "#a == 3", (False, None)),
+    ],
+)
+def test_complex_hex_occurrence_conditions_match_in_c_and_llvm(
+    scanner, scanner_llvm, tmp_path, definition, target, condition, expected
+):
+    should_match, witness = expected
+    rules = tmp_path / "complex-occurrence.yar"
+    rules.write_text(
+        'rule ComplexOccurrence {\n strings:\n  $a = ' + definition + '\n'
+        ' condition:\n  ' + condition + '\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "complex-occurrence.bin"
+    sample.write_bytes(target)
+    c_result = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    llvm_result = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert c_result.returncode == llvm_result.returncode == 0
+    c_report = json.loads(c_result.stdout)
+    llvm_report = json.loads(llvm_result.stdout)
+    assert c_report == llvm_report
+    assert c_report["match_count"] == (1 if should_match else 0)
+    if should_match:
+        assert (c_report["matches"][0]["offset"], c_report["matches"][0]["length"]) == witness
+
+
 def test_rule_meta_and_tags_are_returned_as_typed_json(scanner, scanner_llvm, tmp_path):
     rules = tmp_path / "metadata.yar"
     rules.write_text(

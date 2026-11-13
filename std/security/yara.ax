@@ -446,9 +446,12 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 }
 
 // Counts text and hex-pattern hits in one runtime pass, including overlaps.
-// Parser rejects #a for regex patterns because their counter is not exposed.
+// Regex counts remain unsupported because the regex API exposes no instances.
 fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
-    if str_starts_with(pattern_str, "regex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") { return -1 }
+    if str_starts_with(pattern_str, "regex:") { return -1 }
+    if str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+        return rt_yara_count_hex_pattern(target, pattern_str)
+    }
     if str_starts_with(pattern_str, "str:") {
         let mut p = str_sub(pattern_str, 4, str_len(pattern_str) - 4)
         let mut flags = 0

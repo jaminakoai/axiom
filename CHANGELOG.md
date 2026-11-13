@@ -5,6 +5,14 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Geliştirilen (13 Kasım — YARA hex occurrence yürütücüsü)
+- Bounded jump, alternation ve negation hex desenleri için `#a`, `@a[i]` ve
+  `!a[i]` desteği eklendi. Eşleşen start offset'leri overlap edebilir, aynı
+  başlangıç tek instance sayılır; bounded jump'ta aynı başlangıçtaki en kısa
+  geçerli eşleşme seçilir, eşit uzunluklu alternation dalları birleştirilir.
+- C ve LLVM runtime bağları ortak occurrence API'sine taşındı; doğrudan runtime,
+  YARA oracle ve backend parity regresyonları eklendi.
+
 ### Düzeltilen (13 Kasım — YARA koşul kanıtı)
 - `$a at N` veya `$a in (...)` daha sonraki bir occurrence ile doğru olduğunda
   `axiom-scan` artık kanıt offset/uzunluğu olarak ilk, ilgisiz occurrence'ı

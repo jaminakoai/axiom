@@ -303,18 +303,34 @@ def test_range_default_report_uses_first_yara_instance_when_many_exist(
     assert (result["matches"][0]["offset"], result["matches"][0]["length"]) == (0, 3)
 
 
-@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 1", "!a[1] == 4"])
-def test_occurrence_operators_for_range_jumps_fail_closed(condition, scanner, tmp_path):
-    source = _rule("41 [2-4] 42", condition)
+@pytest.mark.parametrize(
+    ("condition", "expected"),
+    [
+        ("#a == 2", True),
+        ("#a == 1", False),
+        ("@a[1] == 0", True),
+        ("@a[2] == 4", True),
+        ("@a[3] == 0", False),
+        ("!a[1] == 3", True),
+        ("!a[2] == 4", True),
+        ("!a[3] == 3", False),
+    ],
+)
+def test_occurrence_operators_for_range_jumps_match_yara(
+    condition, expected, scanner, tmp_path
+):
+    pattern = "41 [1-3] 42"
+    target = b"A1B A12B"
+    source = _rule(pattern, condition)
     if yara is not None:
-        assert yara.compile(source=source).match(data=b"xA12B")
-    rules_path = tmp_path / "hex-range-occurrence.yar"
-    rules_path.write_text(source, encoding="utf-8")
-    result = subprocess.run(
-        [str(scanner), "rules", str(rules_path)],
-        capture_output=True,
-        text=True,
-        timeout=120,
-    )
-    assert result.returncode == 1
-    assert json.loads(result.stdout)["ok"] is False
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is expected
+        if reference:
+            instances = [
+                (instance.offset, instance.matched_length)
+                for string_match in reference[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert instances == [(0, 3), (4, 4)]
+    report = _scan(scanner, tmp_path, pattern, target, condition)
+    assert report["match_count"] == (1 if expected else 0)

@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1308-blue.svg)](#last-full-verified-run)
+[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1358-blue.svg)](#last-full-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -92,11 +92,12 @@ in their own language.
   combined with fixed jumps, but not with `[N-M]` or alternation. `~??` and
   multiple negated bytes are rejected. Nested or multiple alternation groups
   are rejected. All-wildcard patterns are rejected and the
-  encoded pattern is limited to 8 KiB. `#a` supports text and ordinary fixed-length
-  hex patterns; counts for regex, bounded-jump, alternation, and negation patterns are
-  rejected. `$a at/in` supports text and hex patterns; `@a[i]` / `!a[i]` reject
-  bounded-jump, alternation, and negation patterns.
-  Offset and index checks reject regex patterns.
+  encoded pattern is limited to 8 KiB. `#a`, `@a[i]`, and `!a[i]` support text
+  and all supported hex patterns, including bounded jumps, alternation, and
+  negation. Occurrence indexes are 1-based and offsets are 0-based. For a
+  bounded jump with multiple valid lengths at one start, the shortest match is
+  selected; alternation branches matching at the same start count as one
+  occurrence. Regex counts, offsets, and index checks are rejected.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.
   `//` inside a pattern is preserved; `#` is not a YARA comment marker.
@@ -593,21 +594,20 @@ Test-infrastructure notes:
 | Field | Value |
 |---|---|
 | Date | 13 November 2026 |
-| Commit | `e00c56d` |
+| Tested tree | `6dfb009` plus the G1 occurrence changes |
 | Command | `python -m pytest -q -rs` |
-| Result | **1308 passed, 0 failed, 0 skipped** (1252.41 s) |
+| Result | **1358 passed, 0 failed, 0 skipped** (1217.88 s) |
 | Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
-This full local run includes the G1 positional-evidence fix. The focused
-YARA/scanner suite passed 315 tests, with additional witness/parity regressions
-also passing. GitHub Actions for the same commit passed all 7 jobs. The next G1
-task is to settle the remaining occurrence/alternation semantics against
-reference YARA (see [TODO.md](TODO.md)).
+This full local run includes the positional-evidence fix and the new `#/@/!`
+support for bounded jumps, alternation, and negation. The focused YARA/scanner
+suite passed 370 tests. The latest completed GitHub Actions run was for the
+previous test commit `1648283` (7/7); CI for these changes will run after push.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest verified run for commit `e00c56d`:
+All 7 jobs passed in the latest completed run for commit `1648283`:
 
 | Job | Status |
 |---|---|
@@ -616,8 +616,8 @@ All 7 jobs passed in the latest verified run for commit `e00c56d`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43433833667` (13 November 2026, `master`, SHA
-`e00c56d19a0fd10578f436f58e24751638574bb0`).
+Last verified run: `43441565454` (13 November 2026, `master`, SHA
+`16482837f9580b6783f8b7bd2c89086d056469c2`).
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -632,8 +632,9 @@ Six root causes fixed on the way here (details: report §9–§12):
 
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
-The cited 1034-test run matched CI at that time; the latest full run is 1308
-tests at `e00c56d`, also verified by all 7 CI jobs.
+The cited 1034-test run matched CI at that time. The latest full local run is
+1358 tests with the G1 occurrence changes; the latest completed CI for the
+previous test commit `1648283` passed all 7 jobs.
 
 ---
 

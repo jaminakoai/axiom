@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1308-blue.svg)](#son-tam-doğrulanmış-koşu)
+[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1358-blue.svg)](#son-tam-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -91,12 +91,12 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   `~H?` negated byte desteklenir; sabit jump'larla kullanılabilir, `[N-M]` ve
   alternation ile birleştirilemez. `~??` ve birden fazla negation reddedilir.
   İç içe veya birden fazla alternation grubu reddedilir. Tümüyle
-  joker desenler reddedilir ve kodlanmış kalıp 8 KiB'ı aşamaz. `#a` sayımı metin
-  ve normal sabit uzunluklu hex desenlerinde desteklenir; regex, bounded jump,
-  alternation ve negation desenlerinde reddedilir.
-  `$a at/in` metin ve hex desenlerinde desteklenir; `@a[i]` / `!a[i]` bounded
-  jump, alternation ve negation desenlerinde reddedilir.
-  Regex desenlerinde ofset ve indeks kontrolleri reddedilir.
+  joker desenler reddedilir ve kodlanmış kalıp 8 KiB'ı aşamaz. `#a`, `@a[i]`
+  ve `!a[i]` metin ile desteklenen tüm hex desenlerinde (bounded jump,
+  alternation ve negation dahil) desteklenir; occurrence indeksleri 1 tabanlıdır,
+  ofsetler sıfır tabanlıdır. Aynı başlangıçtaki bounded jump için en kısa geçerli
+  eşleşme seçilir; alternation dalları aynı başlangıçta eşleşirse tek occurrence
+  sayılır. Regex desenlerinde sayım, ofset ve indeks kontrolleri reddedilir.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
   reddedilir. `//` kalıp içinde korunur; `#` YARA yorum işareti değildir.
@@ -589,21 +589,20 @@ Test altyapısı notları:
 | Alan | Değer |
 |---|---|
 | Tarih | 13 Kasım 2026 |
-| Commit | `e00c56d` |
+| Test edilen ağaç | `6dfb009` üzerine G1 occurrence değişiklikleri |
 | Komut | `python -m pytest -q -rs` |
-| Sonuç | **1308 geçti, 0 başarısız, 0 atlandı** (1252,41 sn) |
+| Sonuç | **1358 geçti, 0 başarısız, 0 atlandı** (1217,88 sn) |
 | Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
-Bu tam yerel koşu G1'deki positional evidence düzeltmesini içerir. YARA/scanner
-ile ilgili odaklı paket 315 testi, ayrıca yeni witness/parity regresyonları
-geçti. Aynı commit'in GitHub Actions koşusu da 7/7 başarılıdır. G1'in sıradaki
-işi açık occurrence/alternation semantiklerini referans YARA'ya karşı
-kesinleştirmektir ([TODO.md](TODO.md)).
+Bu tam yerel koşu positional evidence düzeltmesi ve bounded jump, alternation,
+negation için yeni `#/@/!` desteğini içerir. YARA/scanner odaklı paket 370 testte
+geçti. En son tamamlanmış GitHub Actions koşusu önceki test commit'i
+`1648283` içindi (7/7); yeni değişiklikler için CI push sonrasında çalışacaktır.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`e00c56d` commit'indeki en güncel doğrulanmış koşuda 7 işin tamamı geçti:
+Son tamamlanan doğrulanmış koşu `1648283` commit'indeki 7 işi de geçti:
 
 | İş | Durum |
 |---|---|
@@ -612,8 +611,8 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43433833667` (13 Kasım 2026, `master`, SHA
-`e00c56d19a0fd10578f436f58e24751638574bb0`).
+Son doğrulanan koşu: `43441565454` (13 Kasım 2026, `master`, SHA
+`16482837f9580b6783f8b7bd2c89086d056469c2`).
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -629,7 +628,8 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
 çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam koşu
-`e00c56d` üzerinde 1308 testtir. Aynı commit için CI'da da 7/7 iş başarılıdır.
+G1 occurrence değişiklikleri dahil son tam yerel koşu 1358 testtir. En son
+tamamlanmış CI, önceki test commit'i `1648283` için 7/7 iş başarılıdır.
 
 ---
 

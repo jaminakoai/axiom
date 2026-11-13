@@ -12,8 +12,8 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son G1 hedefli doğrulama | 128 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
+| Son tam test paketi | 1358 geçti, 0 hata/skip; `python -m pytest -q -rs`, 1217,88 sn (G1 occurrence değişiklikleri dahil) |
+| Son G1 hedefli doğrulama | 370 YARA/scanner testi geçti; yeni occurrence API ve C/LLVM parity dahil (145,90 sn) |
 | Son CI | `1648283` SHA `43441565454` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
@@ -65,8 +65,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `$a at N` / `$a in (...)` kuralı daha sonraki bir occurrence ile
   sağlandığında raporda koşulu sağlayan occurrence'ın offset/uzunluğunu ver;
   range/alternation/negation ve C/LLVM için regresyon ekle.
-- [ ] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
-  semantiğini kesinleştir; nottaki açık kararları kapat.
+- [~] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
+  semantiğini kesinleştir; temel occurrence matrisini kapat, sınır/runtime
+  limitleri ve daha geniş koşul birleşimleri için ek kanıt gerekiyor.
 - [x] `axiom-scan` schema v1 kanıt kapsamını belirle: `matches` ve
   `match_count` kural başına kalır; her eşleşen kural için tek bir temsilî
   witness döner. `at/in` varsa koşulun seçtiği occurrence raporlanır. Bu alanlar
@@ -74,20 +75,19 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   tam instance listesi ancak schema v2 tasarımı ve dış kullanıcı doğrulamasında
   ihtiyaç kanıtlanırsa eklenir.
 - [x] YARA 4.5.4'e göre destek matrisini belirle ve özel hex türlerinde
-  `#/@/!` reddinin hem YARA'da geçerli bir eşleşme ürettiğini hem Axiom'un açık
-  hata verdiğini test et:
+  `#/@/!` occurrence semantiğini diferansiyel testlerle doğrula:
 
   | Pattern türü | `$a at N` / `$a in (...)` | `#a` / `@a[i]` / `!a[i]` |
   |---|---|---|
   | Metin + desteklenen modifier'lar | desteklenir | desteklenir |
   | Sabit hex, wildcard, `[N]` | desteklenir | desteklenir; overlap sayılır |
-  | Bounded `[N-M]` jump | desteklenir; seçilen occurrence raporlanır | açık hata |
-  | Tek düz, eşit uzunluklu alternation | desteklenir; aynı başlangıç tek instance | açık hata |
-  | Tek negated byte | desteklenir; seçilen occurrence raporlanır | açık hata |
+  | Bounded `[N-M]` jump | desteklenir; seçilen occurrence raporlanır | overlap sayılır; aynı başlangıçta en kısa geçerli instance |
+  | Tek düz, eşit uzunluklu alternation | desteklenir; aynı başlangıç tek instance | aynı offset'teki dallar bir instance sayılır |
+  | Tek negated byte | desteklenir; seçilen occurrence raporlanır | overlap sayılır |
   | Regex | açık hata | açık hata |
 
-  Özel hex türlerinin fail-closed kararı mevcut alt küme sözleşmesidir; YARA'nın
-  bu sözdizimlerini desteklediği diferansiyel testlerde doğrulanır.
+  Bu davranış YARA 4.5.4 ile diferansiyel test edilir; regex için occurrence
+  metadata'sı bulunmadığından ilgili koşullar fail-closed olarak reddedilir.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle.
@@ -105,14 +105,16 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   API içinde optimizasyon olarak korunabilir. Performance bütçesi benchmark ile
   belirlenecek; hedefe göre sınırsız `candidate × atom × gap` taraması kabul
   edilmez.
-- [ ] Ortak occurrence yürütücüsüyle mevcut fail-closed `#/@/!` sınırını
-  bounded jump/alternation/negation için kapat. YARA oracle'ına göre her
+- [x] Ortak occurrence yürütücüsüyle `#/@/!` desteğini bounded jump,
+  alternation ve negation için aç. YARA oracle'ına göre her
   başlangıç offset'i en çok bir instance üretir, farklı başlangıçlar overlap
   edebilir, sıralama offset'e göredir; bounded jump'ta aynı başlangıçta en kısa
   geçerli instance seçilir; aynı offset'te birden çok alternation dalı tek
-  instance sayılır. `#` bu instance sayısını, `@a[i]` 1 tabanlı offset'i,
-  `!a[i]` 1 tabanlı uzunluğu döndürür. `axiom-scan` schema v1 yine kural başına
-  tek temsilî witness taşır.
+  instance sayılır. `#` bu instance sayısını, `@a[i]` 1 tabanlı occurrence'ın
+  sıfır tabanlı offset'ini, `!a[i]` eşleşme uzunluğunu döndürür. `axiom-scan`
+  schema v1 yine kural başına tek temsilî witness taşır.
+- [ ] Ortak occurrence yürütücüsünün çalışma maliyetini büyük hedefte ölç ve
+  kabul edilen hex alt kümesi için benchmark kanıtı ekle.
 - [x] Mevcut desteklenen biçimlerin birleşimini ve ret sınırlarını belirle:
   normal bayt/nibble wildcard, sabit ve bounded jump, alternation, negation.
 
@@ -128,11 +130,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   tamamı için uyumluluk iddiası değildir ve AST geçişinde regresyon testleriyle
   korunmalıdır.
 - [x] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
-  türünün davranış tablosunu yaz; özel hex occurrence operatörlerinin YARA'da
-  geçerli, Axiom'da açık hata olduğunu karşılaştırmalı test et. Matris yukarıda.
+  türünün davranış tablosunu yaz; özel hex occurrence operatörlerini YARA ile
+  karşılaştırmalı test et. Matris yukarıda.
 - [~] YARA 4.5.4 diferansiyel testleri:
   bounded jump uzunluk seçimi, çoklu/örtüşen fixed pattern'ler, aynı başlangıçta
-  eşleşen alternation dalları, özel hex occurrence fail-closed kararı, positional
+  eşleşen alternation dalları, bounded/alternation/negation `#/@/!`, positional
   witness ve tüm desteklenen türlerde ilk/son start sınırları test edildi.
   Kalan sınırlara dair açık durum raporda; eksik koşul birleşimleri ve dahili
   runtime limitleri tamamlanmalı.
@@ -192,10 +194,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 ### Şimdi çalışılacak tek madde
 
 **G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
-`e00c56d` üzerinde düzeltildi; tam yerel paket 1308/1308 ve CI 7/7 geçti.
-Occurrence/alternation differential kapsamı 128 teste ulaştı; son kod/test
-commit'i `1648283` için CI 7/7 geçti. Sıradaki iş, bu kanıtı typed pattern ve
-ortak occurrence yürütücüsüne bağlayıp modelin kalan kabul ölçütlerini kapatmak.
+`e00c56d` üzerinde düzeltildi. Bounded jump, alternation ve negation için ortak
+occurrence API'si eklendi; tam yerel paket 1358/1358 geçti. Son tamamlanan CI
+`1648283` için 7/7'dir; bu değişikliklerin CI'si push sonrasında çalışacak.
+Sıradaki iş typed pattern AST geçişi ve runtime sınır/bozuk kodlama testleridir.
 
 ---
 
@@ -232,8 +234,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`) | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner paketi 315 geçti; 11 ek senaryo tam pakete dahil | G1 raporundaki komutlar |
+| Son tam test paketi | 1358 geçti, 0 hata/skip; occurrence değişiklikleri dahil | `python -m pytest -q -rs` |
+| G1 hedefli testler | YARA/scanner paketi 370 geçti; yeni runtime occurrence ve C/LLVM parity dahil | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1076,8 +1078,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (e00c56d) | 1308 geçti, 0 hata/skip | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner odaklı 315 geçti; witness/parity testleri ve CI doğrulandı | — | — |
+| Son tam test (G1 occurrence değişiklikleri dahil) | 1358 geçti, 0 hata/skip | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner odaklı 370 geçti; occurrence, oracle ve C/LLVM parity dahil | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

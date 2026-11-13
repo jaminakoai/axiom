@@ -132,3 +132,53 @@ def test_range_offset_bounds_are_overflow_safe():
     ret, out, err = _compile_and_run(source)
     assert ret == 0, err
     assert "YARA_HEX_RANGE_OFFSETS_OK" in out
+
+
+def test_shared_hex_occurrence_api_counts_and_selects_canonical_instances():
+    source = r'''
+    #include "axiom/runtime.h"
+    #include <stdio.h>
+
+    #define CHECK(expr) do { if (!(expr)) { \
+        fprintf(stderr, "failed at line %d: %s\n", __LINE__, #expr); return 1; \
+    } } while (0)
+
+    int main(void) {
+        const char* range = "hexrange:41|1|3|42";
+        CHECK(axiom_yara_count_hex_pattern("A1B A12B", range) == 2);
+        CHECK(axiom_yara_nth_hex_pattern_offset("A1B A12B", range, 1) == 0);
+        CHECK(axiom_yara_nth_hex_pattern_offset("A1B A12B", range, 2) == 4);
+        CHECK(axiom_yara_nth_hex_pattern_length("A1B A12B", range, 1) == 3);
+        CHECK(axiom_yara_nth_hex_pattern_length("A1B A12B", range, 2) == 4);
+        CHECK(axiom_yara_nth_hex_pattern_offset("A1B A12B", range, 3) == -1);
+        // Multiple valid jump lengths at one start yield one shortest instance.
+        CHECK(axiom_yara_count_hex_pattern("A1B2B", range) == 1);
+        CHECK(axiom_yara_nth_hex_pattern_length("A1B2B", range, 1) == 3);
+        // Different starts may overlap; each start is counted once.
+        CHECK(axiom_yara_count_hex_pattern("AAA", "hexrange:41|0|1|41") == 2);
+
+        const char* alt = "hexalt:41 42 43|41 44 43";
+        CHECK(axiom_yara_count_hex_pattern("ABC ADC", alt) == 2);
+        CHECK(axiom_yara_nth_hex_pattern_offset("ABC ADC", alt, 2) == 4);
+        CHECK(axiom_yara_nth_hex_pattern_length("ABC ADC", alt, 2) == 3);
+        // Both branches match at offset zero, but YARA reports one instance.
+        CHECK(axiom_yara_count_hex_pattern("ABC", "hexalt:41 4? 43|41 42 43") == 1);
+
+        const char* negation = "hexnot:41|42|43";
+        CHECK(axiom_yara_count_hex_pattern("ADC ABC AEC", negation) == 2);
+        CHECK(axiom_yara_nth_hex_pattern_offset("ADC ABC AEC", negation, 2) == 8);
+        CHECK(axiom_yara_nth_hex_pattern_length("ADC ABC AEC", negation, 2) == 3);
+        CHECK(axiom_yara_count_hex_pattern("AB", "hexnot:|42|") == 1);
+        CHECK(axiom_yara_nth_hex_pattern_offset("AB", "hexnot:|42|", 1) == 0);
+        CHECK(axiom_yara_nth_hex_pattern_length("AB", "hexnot:|42|", 1) == 1);
+
+        CHECK(axiom_yara_count_hex_pattern("ABAB", "hex:41 42") == 2);
+        CHECK(axiom_yara_nth_hex_pattern_offset("ABAB", "hex:41 42", 2) == 2);
+        CHECK(axiom_yara_count_hex_pattern("AB", "hexrange:bad") == -1);
+        puts("YARA_HEX_OCCURRENCE_API_OK");
+        return 0;
+    }
+    '''
+    ret, out, err = _compile_and_run(source)
+    assert ret == 0, err
+    assert "YARA_HEX_OCCURRENCE_API_OK" in out

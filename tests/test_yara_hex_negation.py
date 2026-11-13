@@ -172,19 +172,39 @@ def test_unsupported_or_malformed_negation_is_rejected(scanner, tmp_path, patter
     assert json.loads(result.stdout)["ok"] is False
 
 
-@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 3"])
-def test_negated_pattern_occurrence_operators_fail_closed(scanner, tmp_path, condition):
+@pytest.mark.parametrize(
+    ("condition", "expected"),
+    [
+        ("#a == 2", True),
+        ("#a == 1", False),
+        ("@a[1] == 0", True),
+        ("@a[2] == 8", True),
+        ("@a[3] == 0", False),
+        ("!a[1] == 4", False),
+        ("!a[1] == 3", True),
+        ("!a[2] == 3", True),
+        ("!a[3] == 3", False),
+    ],
+)
+def test_negated_pattern_occurrence_operators_match_yara(
+    scanner, tmp_path, condition, expected
+):
     source = _rule("41 ~42 43", condition)
+    target = b"ADC ABC AEC"
     if yara is not None:
-        assert yara.compile(source=source).match(data=b"ADC")
-    result = _run(
-        scanner,
-        tmp_path,
-        "rules",
-        source,
-    )
-    assert result.returncode == 1
-    assert json.loads(result.stdout)["ok"] is False
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is expected
+        if reference:
+            instances = [
+                (instance.offset, instance.matched_length)
+                for string_match in reference[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert instances == [(0, 3), (8, 3)]
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == (1 if expected else 0)
 
 
 def test_hex_negation_runtime_full_and_nibble_masks():

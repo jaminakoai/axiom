@@ -216,21 +216,37 @@ def test_unsupported_or_malformed_hex_alternation_is_rejected(
     assert json.loads(result.stdout)["ok"] is False
 
 
-@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 3"])
-def test_occurrence_operators_for_hex_alternation_fail_closed(scanner, tmp_path, condition):
-    # The scanner does not yet provide occurrence metadata for the union of
-    # alternate branches, so these operators must not silently guess.
-    source = _rule("41 ( 42 | 44 ) 43", condition)
+@pytest.mark.parametrize(
+    ("pattern", "target", "condition", "expected", "instances"),
+    [
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "#a == 2", True, [(0, 3), (4, 3)]),
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "#a == 1", False, [(0, 3), (4, 3)]),
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "@a[2] == 4", True, [(0, 3), (4, 3)]),
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "@a[3] == 0", False, [(0, 3), (4, 3)]),
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "!a[1] == 3", True, [(0, 3), (4, 3)]),
+        ("41 ( 42 | 44 ) 43", b"ABC ADC", "!a[2] == 3", True, [(0, 3), (4, 3)]),
+        ("41 ( 4? | 42 ) 43", b"ABC", "#a == 1", True, [(0, 3)]),
+        ("41 ( 4? | 42 ) 43", b"ABC", "#a == 2", False, [(0, 3)]),
+    ],
+)
+def test_occurrence_operators_for_hex_alternation_match_yara(
+    scanner, tmp_path, pattern, target, condition, expected, instances
+):
+    source = _rule(pattern, condition)
     if yara is not None:
-        assert yara.compile(source=source).match(data=b"ABC")
-    result = _run(
-        scanner,
-        tmp_path,
-        "rules",
-        source,
-    )
-    assert result.returncode == 1
-    assert json.loads(result.stdout)["ok"] is False
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is expected
+        if reference:
+            actual_instances = [
+                (instance.offset, instance.matched_length)
+                for string_match in reference[0].strings
+                for instance in getattr(string_match, "instances", [])
+            ]
+            assert actual_instances == instances
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == (1 if expected else 0)
 
 
 def test_hex_alternation_runtime_matches_and_validates_encoded_branches():

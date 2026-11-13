@@ -1,9 +1,11 @@
 # Master roadmap yenileme ve YARA pattern tasarım notu
 
 **Tarih:** 13 Kasım 2026  
-**Durum:** G0 doğrulaması tamamlandı; G1'de positional evidence hatası düzeltildi.
+**Durum:** G0 doğrulaması tamamlandı; G1 occurrence desteği bounded jump,
+alternation ve negation için genişletildi. Typed pattern AST hâlâ açık.
 
-**Kod değişikliği:** YARA condition sonucu, pozisyon koşulunun seçtiği eşleşmeyi raporluyor.
+**Kod değişiklikleri:** positional witness düzeltmesi ve ortak hex occurrence
+API'si; C/LLVM bağları.
 
 ## Amaç ve sonuç
 
@@ -12,9 +14,9 @@ eski CI koşusu ve tamamlanmış işi sıradaki iş gibi gösteren maddeler düz
 Sıra artık açık kabul kapılarından oluşuyor: G0 doğrulama, G1 pattern modeli,
 G2 gerçek kurallar, G3 dış kullanıcı, G4 platform/dağıtım, G5 sürüm/ekosistem.
 
-G0 tamamlandı. G1 sırasında farklı bir doğruluk kusuru bulundu ve dar kapsamlı
-şekilde düzeltildi. Ortak pattern AST henüz uygulanmadı; yeni YARA sözdizimi
-eklenmedi.
+G0 tamamlandı. G1 positional witness hatası düzeltildi; `#/@/!` bounded jump,
+alternation ve negation desenlerine açıldı ve tam yerel test paketi geçti. Ortak
+typed pattern AST henüz uygulanmadı; yeni YARA sözdizimi eklenmedi.
 
 ## G0 doğrulama kanıtı
 
@@ -128,7 +130,7 @@ YARA 4.5.4 ile ek karşılaştırmalar aşağıdaki davranışı sabitledi:
 | Alternation farklı başlangıçlarda | `(0,3)`, `(4,3)` | varsayılan rapor `(0,3)` | ilk instance eşit |
 | İki alternation dalı aynı offset/uzunlukta (`(4? | ?2)`, `B`) | tek instance `(0,1)` | tek instance `(0,1)` | aynı konum deduplikasyonu |
 | Negated-byte çoklu eşleşme | `(0,3)`, `(8,3)` | varsayılan rapor `(0,3)`; `at/in` sonraki occurrence'ı seçebilir | ilk ve seçili witness eşit |
-| `#/@/!` + bounded jump/alternation/negation | YARA derler ve sentetik hedefte eşleşir | rules komutu açık hata verir | bilinçli, fail-closed alt küme sınırı |
+| `#/@/!` + bounded jump/alternation/negation | YARA derler ve sentetik hedefte eşleşir | count/nth offset/nth length ortak API'den çalışır | sonuçlar diferansiyel ve C/LLVM testleriyle doğrulanır |
 
 ### Pattern bileşimi sınırı
 
@@ -146,8 +148,8 @@ Parser/regresyon testlerinin tarif ettiği alt küme:
   negation, `~??`, bounded jump ile aynı pattern ve alternation ile aynı pattern
   reddedilir.
 
-Bu sınırlar destek matrisidir; yeni birleşim eklemek için değil, AST geçişinde
-regresyonları korumak için kaydedildi.
+Bu sınırlar destek matrisidir; yeni birleşim eklemek için değil, typed AST
+geçişinde regresyonları korumak için kaydedildi.
 
 Bounded jump için koşul aralığı alt/üst sınırlarını da diferansiyel olarak
 kontrol ettim: son geçerli dosya başlangıç ofseti kabul ediliyor; `$a in (4..4)`
@@ -195,6 +197,10 @@ negation için 8 idi.
 | `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
 | Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
 | G1 occurrence differential grubu | **128 passed**: fixed jumps, bounded ranges, alternation, negation, true/false occurrence conditions, target start bounds ve C/LLVM positional witness |
+| Yeni occurrence runtime/API ve C/LLVM koşu grubu | **30 passed**; bounded jump, alternation ve negation için `#/@/!`, aynı start'ta tek instance ve backend eşitliği |
+| Güncel YARA/scanner odaklı paket | `python -m pytest -q tests/test_axiom_scan.py tests/test_yara_*.py tests/test_real_yara_engine.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` — **370 passed**, 145.90 s |
+| 64 MiB occurrence API mikro benchmarkı | bounded jump 0.148 s; alternation 0.552 s; negation 0.150 s; her desen 1 occurrence buldu |
+| Tam yerel paket (G1 occurrence değişiklikleri dahil) | `python -m pytest -q -rs` — **1358 passed, 0 failed, 0 skipped**, 1217.88 s |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions (positional witness düzeltmesi) | run `43433833667` (`e00c56d`) — **7/7 success** |
@@ -234,24 +240,28 @@ uygulanmadı.
 
 ## Değişen dosyalar
 
-- `std/security/yara_condition.ax`, `std/security/yara.ax`: koşul witness'ını
-  sonuçtan rapora taşıma.
+- `std/security/yara_condition.ax`, `std/security/yara.ax` ve `std/security/yara_rules.ax`:
+  koşul witness'ı, occurrence count/nth offset/nth length dispatch'i ve fail-closed
+  regex sayımı.
+- `axiom/runtime.h`, `axiom/checker.py`, `axiom/codegen_c.py`,
+  `axiom/codegen_llvm.py`: ortak hex occurrence yürütücüsü ve iki backend binding'i.
 - `tests/test_yara_hex_range_differential.py`,
   `tests/test_yara_hex_alternation.py`, `tests/test_yara_hex_negation.py`,
   `tests/test_axiom_scan.py`: YARA diferansiyel ve C/LLVM regressions.
 - `TODO.md`: G0 kapandı; G1 ilerlemesi ve kalan kanıt işleri.
 - `README.md`, `README.en.md`: son tam koşu ile güncel G1 hedefli koşuyu ayrı
   anlatır.
-- `CHANGELOG.md`: düzeltilen rapor kanıtı hatası.
+- `CHANGELOG.md`: positional witness ve yeni hex occurrence davranışı.
 
 Tam YARA pattern AST'si henüz yapılmadı. Positional witness düzeltmesi ve
-occurrence differential test genişletmesinin CI işleri geçti. Kural başına
-tek-witness API'sinin kapsamı ve occurrence semantiklerinin tam differential
-testi G1'de devam ediyor.
+occurrence genişletmesi yerel tam test paketinde **1358/1358** geçti. Son CI,
+önceki test commit'i için 7/7 geçti; bu değişikliklerin CI sonucu push sonrası
+bekleniyor. JSON raporu hâlâ kural başına tek temsilî witness döndürür; bu API'nin
+tam instance listesine çevrilmesi kapsam dışı.
 
 ## Sıradaki iş
 
-G1'in sıradaki işi tek-witness rapor sözleşmesinin kullanıcıya sunulma kararını
-vermek, kalan target sınırı ve koşul birleşimlerini diferansiyel test etmek,
-ardından typed modelin geriye uyumlu API tasarımını kesinleştirmek. Bu kapılar
-geçmeden yeni runtime/grammar sözdizimine geçilmez.
+G1'in sıradaki işi özel `hex*:` kodlamalarını typed pattern AST'ye geçirmek,
+bozuk bytecode/overflow sınırlarını doğrudan runtime testleriyle kapatmak ve
+büyük hedeflerde maliyet kanıtını CI'ya eklemektir. Sonra gerçek kural örnekleri
+üzerinde G2 uyumluluk kapısı gelir.

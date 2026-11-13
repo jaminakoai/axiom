@@ -850,21 +850,6 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                             "satir " + int_to_str(condition_line) + ": regex icin # desen sayimi desteklenmiyor",
                             yara_ruleset_new())
                     }
-                    if str_starts_with(rule.patterns[pattern_index], "hexrange:") {
-                        return result_err_with<YaraRuleSet>(
-                            "satir " + int_to_str(condition_line) + ": degisken uzunluklu desen icin # sayimi desteklenmiyor",
-                            yara_ruleset_new())
-                    }
-                    if str_starts_with(rule.patterns[pattern_index], "hexalt:") {
-                        return result_err_with<YaraRuleSet>(
-                            "satir " + int_to_str(condition_line) + ": alternation deseni icin # sayimi desteklenmiyor",
-                            yara_ruleset_new())
-                    }
-                    if str_starts_with(rule.patterns[pattern_index], "hexnot:") {
-                        return result_err_with<YaraRuleSet>(
-                            "satir " + int_to_str(condition_line) + ": negatif bayt deseni icin # sayimi desteklenmiyor",
-                            yara_ruleset_new())
-                    }
                     pattern_index = pattern_index + 1
                 }
             }
