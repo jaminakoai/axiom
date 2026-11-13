@@ -21,6 +21,14 @@ struct YaraConditionTextPattern {
     valid: bool
 }
 
+struct YaraConditionRange {
+    min_offset: int,
+    max_offset: int,
+    position: int,
+    restricted: bool,
+    valid: bool
+}
+
 fn _yc_is_word_char(ch: str) -> bool {
     return str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", ch)
 }
@@ -66,17 +74,17 @@ fn _yc_parse_number(source: str, position: int) -> YaraConditionNumber {
     }
     if hex_prefix {
         let mut i = start + 2
-        let mut value = 0
+        let mut hex_value = 0
         while i < n {
             let digit = _yc_hex_digit(str_char_at(source, i))
             if digit < 0 { break }
-            if value > 576460752303423487 {
+            if hex_value > 576460752303423487 {
                 return YaraConditionNumber { value: 0, position: i, valid: false }
             }
-            value = value * 16 + digit
+            hex_value = hex_value * 16 + digit
             i = i + 1
         }
-        return YaraConditionNumber { value: value, position: i, valid: i > start + 2 }
+        return YaraConditionNumber { value: hex_value, position: i, valid: i > start + 2 }
     }
     let mut end = start
     let mut decimal_value = 0
@@ -149,7 +157,49 @@ fn _yc_compare_int(left: int, op: str, right: int) -> bool {
     return false
 }
 
-fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_values: bool[]) -> YaraConditionParse {
+fn _yc_parse_range_suffix(source: str, position: int) -> YaraConditionRange {
+    let n = str_byte_len(source)
+    let start = _yc_skip_space(source, position)
+    if _yc_keyword_at(source, start, "at") {
+        let offset = _yc_parse_number(source, start + 2)
+        if not offset.valid {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: offset.position, restricted: true, valid: false }
+        }
+        return YaraConditionRange { min_offset: offset.value, max_offset: offset.value, position: offset.position, restricted: true, valid: true }
+    }
+    if _yc_keyword_at(source, start, "in") {
+        let open = _yc_skip_space(source, start + 2)
+        if open >= n or str_char_at(source, open) != "(" {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: open, restricted: true, valid: false }
+        }
+        let lower = _yc_parse_number(source, open + 1)
+        if not lower.valid {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: lower.position, restricted: true, valid: false }
+        }
+        let dots = _yc_skip_space(source, lower.position)
+        if dots + 1 >= n or str_sub(source, dots, 2) != ".." {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: dots, restricted: true, valid: false }
+        }
+        let upper = _yc_parse_number(source, dots + 2)
+        if not upper.valid or upper.value < lower.value {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: upper.position, restricted: true, valid: false }
+        }
+        let close = _yc_skip_space(source, upper.position)
+        if close >= n or str_char_at(source, close) != ")" {
+            return YaraConditionRange { min_offset: 0, max_offset: 0, position: close, restricted: true, valid: false }
+        }
+        return YaraConditionRange { min_offset: lower.value, max_offset: upper.value, position: close + 1, restricted: true, valid: true }
+    }
+    return YaraConditionRange { min_offset: 0, max_offset: 0, position: position, restricted: false, valid: true }
+}
+
+fn _yc_group_pattern_matches(pattern: str, is_present: bool, restricted: bool, min_offset: int, max_offset: int, target: str, target_size: int) -> bool {
+    if not restricted { return is_present }
+    if target_size < 0 { return false }
+    return _yc_pattern_matches_in_range(pattern, target, min_offset, max_offset)
+}
+
+fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
     let n = str_byte_len(source)
     let mut mode = ""
     let mut threshold = 0
@@ -179,26 +229,38 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
     }
     cursor = _yc_skip_space(source, cursor + 2)
     if _yc_keyword_at(source, cursor, "them") {
-        let end = cursor + 4
-        let mut selected = 0
-        let mut matched = 0
-        let mut p = 0
-        while p < len(pattern_names) {
-            selected = selected + 1
-            if p < len(pattern_values) {
-                if pattern_values[p] { matched = matched + 1 }
+        let range = _yc_parse_range_suffix(source, cursor + 4)
+        if not range.valid {
+            return YaraConditionParse { value: false, position: range.position, valid: false }
+        }
+        let mut group_selected_count = 0
+        let mut group_match_count = 0
+        let mut group_pattern_index = 0
+        while group_pattern_index < len(pattern_names) {
+            group_selected_count = group_selected_count + 1
+            let mut present = false
+            if group_pattern_index < len(pattern_values) {
+                present = pattern_values[group_pattern_index]
             }
-            p = p + 1
+            if group_pattern_index < len(pattern_patterns) {
+                if range.restricted and str_starts_with(pattern_patterns[group_pattern_index], "regex:") {
+                    return YaraConditionParse { value: false, position: cursor, valid: false }
+                }
+                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size) {
+                    group_match_count = group_match_count + 1
+                }
+            }
+            group_pattern_index = group_pattern_index + 1
         }
-        let mut value = false
-        if mode == "any" { value = matched > 0 }
-        else if mode == "all" { value = matched == selected }
-        else if mode == "none" { value = matched == 0 }
+        let mut group_result = false
+        if mode == "any" { group_result = group_match_count > 0 }
+        else if mode == "all" { group_result = group_match_count == group_selected_count }
+        else if mode == "none" { group_result = group_match_count == 0 }
         else if mode == "count" {
-            if threshold == 0 { value = matched == 0 }
-            else { value = matched >= threshold }
+            if threshold == 0 { group_result = group_match_count == 0 }
+            else { group_result = group_match_count >= threshold }
         }
-        return YaraConditionParse { value: value, position: end, valid: true }
+        return YaraConditionParse { value: group_result, position: range.position, valid: true }
     }
     if cursor >= n or str_char_at(source, cursor) != "(" {
         return YaraConditionParse { value: false, position: cursor, valid: false }
@@ -240,8 +302,8 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
     // second pass computes the union, so overlapping wildcard selectors never
     // count the same pattern twice.
     let mut selector_cursor = selector_start
-    let mut resolved_selectors = 0
-    while resolved_selectors < selectors {
+    let mut resolved_selector_count = 0
+    while resolved_selector_count < selectors {
         selector_cursor = _yc_skip_space(source, selector_cursor)
         let selector_begin = selector_cursor
         selector_cursor = selector_cursor + 1
@@ -255,13 +317,13 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
             selector_cursor = selector_cursor + 1
         }
         let mut found_selector = false
-        let mut q = 0
-        while q < len(pattern_names) {
-            let matches_selector = pattern_names[q] == selector
+        let mut candidate_pattern_index = 0
+        while candidate_pattern_index < len(pattern_names) {
+            let matches_selector = pattern_names[candidate_pattern_index] == selector
             let mut matches = matches_selector
-            if has_wildcard { matches = str_starts_with(pattern_names[q], selector) }
+            if has_wildcard { matches = str_starts_with(pattern_names[candidate_pattern_index], selector) }
             if matches { found_selector = true }
-            q = q + 1
+            candidate_pattern_index = candidate_pattern_index + 1
         }
         if not found_selector {
             return YaraConditionParse { value: false, position: selector_begin, valid: false }
@@ -270,17 +332,21 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
         if selector_cursor < n and str_char_at(source, selector_cursor) == "," {
             selector_cursor = selector_cursor + 1
         }
-        resolved_selectors = resolved_selectors + 1
+        resolved_selector_count = resolved_selector_count + 1
     }
 
-    let mut selected = 0
-    let mut matched = 0
-    let mut p = 0
-    while p < len(pattern_names) {
+    let range = _yc_parse_range_suffix(source, close + 1)
+    if not range.valid {
+        return YaraConditionParse { value: false, position: range.position, valid: false }
+    }
+    let mut group_selected_count = 0
+    let mut group_match_count = 0
+    let mut group_pattern_index = 0
+    while group_pattern_index < len(pattern_names) {
         let mut included = false
         selector_cursor = selector_start
-        let mut selector_index = 0
-        while selector_index < selectors {
+        let mut selector_index_in_group = 0
+        while selector_index_in_group < selectors {
             selector_cursor = _yc_skip_space(source, selector_cursor)
             let selector_begin = selector_cursor
             selector_cursor = selector_cursor + 1
@@ -288,9 +354,9 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
                 selector_cursor = selector_cursor + 1
             }
             let selector = str_sub(source, selector_begin, selector_cursor - selector_begin)
-            let mut matches = pattern_names[p] == selector
+            let mut matches = pattern_names[group_pattern_index] == selector
             if selector_cursor < n and str_char_at(source, selector_cursor) == "*" {
-                matches = str_starts_with(pattern_names[p], selector)
+                matches = str_starts_with(pattern_names[group_pattern_index], selector)
                 selector_cursor = selector_cursor + 1
             }
             if matches { included = true }
@@ -298,30 +364,37 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
             if selector_cursor < n and str_char_at(source, selector_cursor) == "," {
                 selector_cursor = selector_cursor + 1
             }
-            selector_index = selector_index + 1
+            selector_index_in_group = selector_index_in_group + 1
         }
         if included {
-            selected = selected + 1
+            group_selected_count = group_selected_count + 1
             // Keep the bounds check separate: the LLVM backend may evaluate
             // both sides of `and`, which would index an empty/short array.
-            if p < len(pattern_values) {
-                if pattern_values[p] { matched = matched + 1 }
+            if group_pattern_index < len(pattern_patterns) {
+                let mut present = false
+                if group_pattern_index < len(pattern_values) { present = pattern_values[group_pattern_index] }
+                if range.restricted and str_starts_with(pattern_patterns[group_pattern_index], "regex:") {
+                    return YaraConditionParse { value: false, position: close, valid: false }
+                }
+                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size) {
+                    group_match_count = group_match_count + 1
+                }
             }
         }
-        p = p + 1
+        group_pattern_index = group_pattern_index + 1
     }
-    if selected == 0 {
+    if group_selected_count == 0 {
         return YaraConditionParse { value: false, position: selector_start, valid: false }
     }
-    let mut value = false
-    if mode == "any" { value = matched > 0 }
-    else if mode == "all" { value = matched == selected }
-    else if mode == "none" { value = matched == 0 }
+    let mut group_result = false
+    if mode == "any" { group_result = group_match_count > 0 }
+    else if mode == "all" { group_result = group_match_count == group_selected_count }
+    else if mode == "none" { group_result = group_match_count == 0 }
     else if mode == "count" {
-        if threshold == 0 { value = matched == 0 }
-        else { value = matched >= threshold }
+        if threshold == 0 { group_result = group_match_count == 0 }
+        else { group_result = group_match_count >= threshold }
     }
-    return YaraConditionParse { value: value, position: close + 1, valid: true }
+    return YaraConditionParse { value: group_result, position: range.position, valid: true }
 }
 
 fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
@@ -343,7 +416,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
     }
 
     if _yc_keyword_at(source, i, "any") or _yc_keyword_at(source, i, "all") or _yc_keyword_at(source, i, "none") or str_contains("0123456789", ch) {
-        return _yc_parse_group(source, i, pattern_names, pattern_values)
+        return _yc_parse_group(source, i, pattern_names, pattern_values, pattern_patterns, target, target_size)
     }
 
     if ch == "@" or ch == "!" {

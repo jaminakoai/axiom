@@ -19,6 +19,7 @@
 // RAPOR SOZLESMESI (schema_version = 1):
 //   schema_version, tool, tool_version, rules_count  -> her komutta
 //   scan: target, target_sha256, scanned_bytes, match_count, matches[]
+//     each match also includes rule-level tags[] and typed meta{}
 //   pcap: pcap, pcap_sha256, packet_count, match_count, packets[]
 //
 // v0.2 sinirlari (durust):
@@ -98,6 +99,48 @@ fn _json_escape(s: str) -> str {
     return out
 }
 
+fn _rule_index_by_name(rules: YaraRule[], name: str) -> int {
+    let mut i = 0
+    while i < len(rules) {
+        if rules[i].name == name { return i }
+        i = i + 1
+    }
+    return -1
+}
+
+fn _rule_tags_json(rule: YaraRule) -> str {
+    let mut out = "["
+    let mut i = 0
+    while i < len(rule.tags) {
+        if i > 0 { out = out + "," }
+        out = out + "\"" + _json_escape(rule.tags[i]) + "\""
+        i = i + 1
+    }
+    return out + "]"
+}
+
+fn _rule_meta_json(rule: YaraRule) -> str {
+    let mut out = "{"
+    let mut i = 0
+    while i < len(rule.meta_keys) {
+        if i > 0 { out = out + "," }
+        out = out + "\"" + _json_escape(rule.meta_keys[i]) + "\":"
+        let mut value_type = ""
+        if i < len(rule.meta_types) { value_type = rule.meta_types[i] }
+        if value_type == "string" {
+            out = out + "\"" + _json_escape(rule.meta_values[i]) + "\""
+        } else if value_type == "integer" or value_type == "boolean" {
+            out = out + rule.meta_values[i]
+        } else {
+            // Parsed metadata never reaches this path; retain valid JSON if a
+            // caller constructs a YaraRule with an unknown metadata type.
+            out = out + "null"
+        }
+        i = i + 1
+    }
+    return out + "}"
+}
+
 fn _usage() -> void {
     print("axiom-scan " + _tool_version())
     print("Kullanim:")
@@ -146,6 +189,14 @@ fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
             out = out + ","
         }
         out = out + "{\"rule\":\"" + _json_escape(m.rule_name) + "\""
+        let rule_index = _rule_index_by_name(sets.rules, m.rule_name)
+        if rule_index >= 0 {
+            let matched_rule = sets.rules[rule_index]
+            out = out + ",\"tags\":" + _rule_tags_json(matched_rule)
+            out = out + ",\"meta\":" + _rule_meta_json(matched_rule)
+        } else {
+            out = out + ",\"tags\":[],\"meta\":{}"
+        }
         out = out + ",\"pattern\":\"" + _json_escape(m.pattern_id) + "\""
         out = out + ",\"offset\":" + int_to_str(m.offset)
         out = out + ",\"length\":" + int_to_str(m.matched_len) + "}"

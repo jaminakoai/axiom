@@ -131,6 +131,10 @@ def test_boolean_condition_subset(scanner, tmp_path, condition, target, expected
     ("2 of them and filesize == 10", b"alpha beta", 1),
     ("0 of them", b"nothing", 1),
     ("0 of them", b"alpha", 0),
+    ("any of ($a*) at 6", b"xxxxxxalpha beta", 1),
+    ("all of ($a*) in (6..15)", b"xxxxxxalpha beta", 1),
+    ("2 of ($a*) in (0..10)", b"xxxxxxalpha beta", 0),
+    ("none of them at 0", b"xalpha", 1),
 ])
 def test_pattern_group_conditions(scanner, tmp_path, condition, target, expected):
     rules = tmp_path / "pattern-groups.yar"
@@ -160,6 +164,103 @@ def test_invalid_pattern_group_conditions_are_rejected(scanner, tmp_path, condit
     res = _run(scanner, "rules", str(rules))
     assert res.returncode == 1
     assert "condition" in json.loads(res.stdout)["error"]
+
+
+@pytest.mark.parametrize("condition", [
+    "any of ($a*) in (10..2)", "any of ($a*) at", "any of ($a*) in (1..2",
+])
+def test_invalid_pattern_group_ranges_are_rejected(scanner, tmp_path, condition):
+    rules = tmp_path / "invalid-pattern-group-range.yar"
+    rules.write_text(
+        'rule InvalidRange {\n strings:\n  $a1 = "alpha"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
+
+
+def test_pattern_group_range_counts_each_pattern_once(scanner, tmp_path):
+    rules = tmp_path / "pattern-group-overlap.yar"
+    rules.write_text(
+        'rule GroupRangeOverlap {\n strings:\n  $a1 = "aa"\n  $a2 = "bb"\n'
+        ' condition:\n  2 of ($a*) in (0..10)\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "repeated-pattern.bin"
+    sample.write_bytes(b"aaaa")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == 0
+
+
+def test_pattern_group_range_matches_in_c_and_llvm(scanner, scanner_llvm, tmp_path):
+    rules = tmp_path / "pattern-group-range-parity.yar"
+    rules.write_text(
+        'rule GroupRangeParity {\n strings:\n  $a1 = "alpha"\n  $a2 = "beta"\n'
+        ' condition:\n  all of ($a*) in (6..15)\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "pattern-group-range-target.bin"
+    sample.write_bytes(b"xxxxxxalpha beta")
+    c_result = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    llvm_result = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert c_result.returncode == llvm_result.returncode == 0
+    assert json.loads(c_result.stdout) == json.loads(llvm_result.stdout)
+
+
+def test_rule_meta_and_tags_are_returned_as_typed_json(scanner, scanner_llvm, tmp_path):
+    rules = tmp_path / "metadata.yar"
+    rules.write_text(
+        'rule TaggedRule : malware triage {\n'
+        ' meta:\n  author = "Axiom"\n  severity = 7\n'
+        '  enabled = true\n  magic = 0x10\n  note = "line\\nnext"\n'
+        ' strings:\n  $a = "needle"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    sample = tmp_path / "metadata-target.bin"
+    sample.write_bytes(b"needle")
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    llvm_res = _run(scanner_llvm, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert llvm_res.returncode == 0, llvm_res.stdout + llvm_res.stderr
+    assert json.loads(res.stdout) == json.loads(llvm_res.stdout)
+    match = json.loads(res.stdout)["matches"][0]
+    assert match["tags"] == ["malware", "triage"]
+    assert match["meta"] == {
+        "author": "Axiom", "severity": 7, "enabled": True,
+        "magic": 16, "note": "line\nnext",
+    }
+
+
+@pytest.mark.parametrize("meta_lines", [
+    '  flag = maybe\n',
+    '  author = "unterminated\n',
+    '  duplicate = 1\n  duplicate = 2\n',
+])
+def test_invalid_or_duplicate_rule_meta_is_rejected(scanner, tmp_path, meta_lines):
+    rules = tmp_path / "invalid-metadata.yar"
+    rules.write_text(
+        'rule InvalidMeta {\n meta:\n' + meta_lines
+        + ' strings:\n  $a = "needle"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert json.loads(res.stdout)["ok"] is False
+
+
+def test_duplicate_rule_names_are_rejected(scanner, tmp_path):
+    rules = tmp_path / "duplicate-rule-names.yar"
+    rules.write_text(
+        'rule Duplicate {\n condition:\n  true\n}\n'
+        'rule Duplicate {\n condition:\n  true\n}\n',
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "yinelenen kural adi" in json.loads(res.stdout)["error"]
 
 
 @pytest.mark.parametrize("condition", ["$missing", "$a and", "($a or $b", "$a $b"])

@@ -31,6 +31,10 @@ struct YaraMatch {
 /// Tek bir YARA kurali: desenler, kosul ve ofset sinirlari.
 struct YaraRule {
     name: str,
+    tags: str[],
+    meta_keys: str[],
+    meta_values: str[],
+    meta_types: str[],
     patterns: str[],
     pattern_names: str[],
     condition: str,
@@ -54,8 +58,16 @@ struct YaraRuleSet {
 fn yara_rule_new(name: str, condition: str) -> YaraRule {
     let p: str[] = [];
     let pn: str[] = [];
+    let tags: str[] = [];
+    let meta_keys: str[] = [];
+    let meta_values: str[] = [];
+    let meta_types: str[] = [];
     return YaraRule {
         name: name,
+        tags: tags,
+        meta_keys: meta_keys,
+        meta_values: meta_values,
+        meta_types: meta_types,
         patterns: p,
         pattern_names: pn,
         condition: condition,
@@ -73,6 +85,10 @@ fn yara_rule_add_pattern(rule: YaraRule, pattern_id: str, pattern_str: str) -> Y
     let pn = array_push(rule.pattern_names, pattern_id);
     return YaraRule {
         name: rule.name,
+        tags: rule.tags,
+        meta_keys: rule.meta_keys,
+        meta_values: rule.meta_values,
+        meta_types: rule.meta_types,
         patterns: p,
         pattern_names: pn,
         condition: rule.condition,
@@ -81,10 +97,48 @@ fn yara_rule_add_pattern(rule: YaraRule, pattern_id: str, pattern_str: str) -> Y
     };
 }
 
+fn yara_rule_add_tag(rule: YaraRule, tag: str) -> YaraRule {
+    let tags = array_push(rule.tags, tag)
+    return YaraRule {
+        name: rule.name,
+        tags: tags,
+        meta_keys: rule.meta_keys,
+        meta_values: rule.meta_values,
+        meta_types: rule.meta_types,
+        patterns: rule.patterns,
+        pattern_names: rule.pattern_names,
+        condition: rule.condition,
+        min_offset: rule.min_offset,
+        max_offset: rule.max_offset
+    }
+}
+
+fn yara_rule_add_meta(rule: YaraRule, key: str, value: str, value_type: str) -> YaraRule {
+    let keys = array_push(rule.meta_keys, key)
+    let values = array_push(rule.meta_values, value)
+    let types = array_push(rule.meta_types, value_type)
+    return YaraRule {
+        name: rule.name,
+        tags: rule.tags,
+        meta_keys: keys,
+        meta_values: values,
+        meta_types: types,
+        patterns: rule.patterns,
+        pattern_names: rule.pattern_names,
+        condition: rule.condition,
+        min_offset: rule.min_offset,
+        max_offset: rule.max_offset
+    }
+}
+
 /// Eslesmenin aranacagi ofset araligini sinirlar (dahil).
 fn yara_rule_set_offset_bounds(rule: YaraRule, min_offset: int, max_offset: int) -> YaraRule {
     return YaraRule {
         name: rule.name,
+        tags: rule.tags,
+        meta_keys: rule.meta_keys,
+        meta_values: rule.meta_values,
+        meta_types: rule.meta_types,
         patterns: rule.patterns,
         pattern_names: rule.pattern_names,
         condition: rule.condition,
@@ -97,6 +151,10 @@ fn yara_rule_set_offset_bounds(rule: YaraRule, min_offset: int, max_offset: int)
 fn yara_rule_set_at_offset(rule: YaraRule, offset: int) -> YaraRule {
     return YaraRule {
         name: rule.name,
+        tags: rule.tags,
+        meta_keys: rule.meta_keys,
+        meta_values: rule.meta_values,
+        meta_types: rule.meta_types,
         patterns: rule.patterns,
         pattern_names: rule.pattern_names,
         condition: rule.condition,

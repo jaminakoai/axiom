@@ -27,6 +27,13 @@ import "std/text/regex"
 import "std/encoding/hex"
 import "std/security/yara_condition"
 
+struct YaraMetaParse {
+    key: str,
+    stored_value: str,
+    value_type: str,
+    valid: bool
+}
+
 // --- Yardimcilar ---
 
 fn _trim_blank(s: str) -> str {
@@ -294,6 +301,94 @@ fn _supported_condition(condition: str) -> bool {
     return condition == "any" or condition == "all"
 }
 
+fn _parse_meta_integer(raw: str) -> YaraMetaParse {
+    let mut sign = 1
+    let mut start = 0
+    if len(raw) > 0 and str_char_at(raw, 0) == "-" {
+        sign = -1
+        start = 1
+    }
+    if start >= len(raw) {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+    }
+
+    let mut is_hex = false
+    if start + 2 <= len(raw) and str_sub(raw, start, 2) == "0x" {
+        is_hex = true
+        start = start + 2
+    } else if start + 2 <= len(raw) and str_sub(raw, start, 2) == "0X" {
+        is_hex = true
+        start = start + 2
+    }
+    if start >= len(raw) {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+    }
+    let digits = len(raw) - start
+    if (is_hex and digits > 15) or (not is_hex and digits > 18) {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+    }
+    let mut integer_accumulator = 0
+    let mut i = start
+    while i < len(raw) {
+        let ch = str_char_at(raw, i)
+        let mut digit = -1
+        if str_contains("0123456789", ch) {
+            digit = str_to_int(ch)
+        } else if is_hex {
+            let lower = to_lower_tr(ch)
+            let index = str_index_of("abcdef", lower)
+            if index >= 0 { digit = index + 10 }
+        }
+        if digit < 0 or (not is_hex and digit >= 10) {
+            return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+        }
+        if is_hex { integer_accumulator = integer_accumulator * 16 + digit }
+        else { integer_accumulator = integer_accumulator * 10 + digit }
+        i = i + 1
+    }
+    return YaraMetaParse { key: "", stored_value: int_to_str(integer_accumulator * sign), value_type: "integer", valid: true }
+}
+
+fn _parse_meta_def(line: str) -> YaraMetaParse {
+    let t = str_trim(line)
+    let eq = str_index_of(t, "=")
+    if eq <= 0 {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+    }
+    let key = str_trim(str_sub(t, 0, eq))
+    if len(key) == 0 or not str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_", str_char_at(key, 0)) {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+    }
+    let mut k = 1
+    while k < len(key) {
+        if not str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", str_char_at(key, k)) {
+        return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+        }
+        k = k + 1
+    }
+
+    let raw = str_trim(str_sub(t, eq + 1, len(t) - eq - 1))
+    if raw == "true" or raw == "false" {
+        return YaraMetaParse { key: key, stored_value: raw, value_type: "boolean", valid: true }
+    }
+    if str_starts_with(raw, "\"") {
+        let close = _find_unescaped_quote(str_sub(raw, 1, len(raw) - 1))
+        if close < 0 or close + 2 != len(raw) {
+            return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+        }
+        let value = str_sub(raw, 1, close)
+        if len(_yara_escape_error(value)) > 0 or str_contains(value, "\\x") {
+            return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+        }
+        return YaraMetaParse { key: key, stored_value: _decode_yara_text(value), value_type: "string", valid: true }
+    }
+    let integer = _parse_meta_integer(raw)
+    if integer.valid {
+        return YaraMetaParse { key: key, stored_value: integer.stored_value, value_type: "integer", valid: true }
+    }
+    return YaraMetaParse { key: "", stored_value: "", value_type: "", valid: false }
+}
+
 // YARA'daki // yorumlarini string icinde kesme. # yorum imi degildir:
 // kosulda #a, string'de #malware gibi kullanimi koru.
 fn _strip_line_comment(line: str) -> str {
@@ -327,6 +422,7 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
     let mut ruleset = yara_ruleset_new()
 
     let mut in_rule = false
+    let mut in_meta = false
     let mut in_strings = false
     let mut in_condition = false
     let mut rule_name = ""
@@ -345,11 +441,6 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
 
         if not in_rule {
             if _starts_with_ci(trimmed, "rule") {
-                if str_contains(trimmed, ":") {
-                    return result_err_with<YaraRuleSet>(
-                        "satir " + int_to_str(i + 1) + ": etiketler bu YARA alt kumesinde desteklenmiyor",
-                        yara_ruleset_new())
-                }
                 let name = _parse_rule_name(trimmed)
                 if len(name) == 0 {
                     return result_err_with<YaraRuleSet>(
@@ -357,6 +448,7 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                         yara_ruleset_new())
                 }
                 in_rule = true
+                in_meta = false
                 in_strings = false
                 in_condition = false
                 rule_name = name
@@ -364,6 +456,36 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                 condition_seen = false
                 condition_line = 0
                 rule = yara_rule_new(name, "any of them")
+                let tag_colon = str_index_of(trimmed, ":")
+                if tag_colon >= 0 {
+                    let mut tag_text = str_trim(str_sub(trimmed, tag_colon + 1, len(trimmed) - tag_colon - 1))
+                    let brace = str_index_of(tag_text, "{")
+                    if brace >= 0 { tag_text = str_trim(str_sub(tag_text, 0, brace)) }
+                    let mut tag_token = ""
+                    let mut tag_pos = 0
+                    while tag_pos <= len(tag_text) {
+                        let mut ch = " "
+                        if tag_pos < len(tag_text) { ch = str_char_at(tag_text, tag_pos) }
+                        if ch == " " or ch == "\t" or tag_pos == len(tag_text) {
+                            if len(tag_token) > 0 {
+                                rule = yara_rule_add_tag(rule, tag_token)
+                                tag_token = ""
+                            }
+                        } else if str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", ch) {
+                            tag_token = tag_token + ch
+                        } else {
+                            return result_err_with<YaraRuleSet>(
+                                "satir " + int_to_str(i + 1) + ": gecersiz rule etiketi",
+                                yara_ruleset_new())
+                        }
+                        tag_pos = tag_pos + 1
+                    }
+                    if len(rule.tags) == 0 {
+                        return result_err_with<YaraRuleSet>(
+                            "satir " + int_to_str(i + 1) + ": rule etiketi eksik",
+                            yara_ruleset_new())
+                    }
+                }
                 rule_count = rule_count + 1
             } else if not _is_blank(trimmed) {
                 return result_err_with<YaraRuleSet>(
@@ -375,13 +497,22 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
         }
 
         // Kural icindeyiz
+        if _starts_with_ci(trimmed, "meta:") {
+            in_meta = true
+            in_strings = false
+            in_condition = false
+            i = i + 1
+            continue
+        }
         if _starts_with_ci(trimmed, "strings") {
+            in_meta = false
             in_strings = true
             in_condition = false
             i = i + 1
             continue
         }
         if _starts_with_ci(trimmed, "condition") {
+            in_meta = false
             in_strings = false
             condition_seen = true
             condition_line = i + 1
@@ -407,6 +538,29 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
             continue
         }
 
+        if in_meta {
+            if not _is_blank(trimmed) {
+                let meta = _parse_meta_def(trimmed)
+                if not meta.valid {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": desteklenmeyen veya gecersiz meta degeri",
+                        yara_ruleset_new())
+                }
+                let mut existing = 0
+                while existing < len(rule.meta_keys) {
+                    if rule.meta_keys[existing] == meta.key {
+                        return result_err_with<YaraRuleSet>(
+                            "satir " + int_to_str(i + 1) + ": yinelenen meta anahtari: " + meta.key,
+                            yara_ruleset_new())
+                    }
+                    existing = existing + 1
+                }
+                rule = yara_rule_add_meta(rule, meta.key, meta.stored_value, meta.value_type)
+            }
+            i = i + 1
+            continue
+        }
+
         // Kapanis: yalnizca '}' iceren satir
         let t = trimmed
         if t == "}" {
@@ -419,6 +573,15 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                 return result_err_with<YaraRuleSet>(
                     "satir " + int_to_str(i + 1) + ": condition bolumu eksik",
                     yara_ruleset_new())
+            }
+            let mut prior_rule = 0
+            while prior_rule < len(ruleset.rules) {
+                if ruleset.rules[prior_rule].name == rule_name {
+                    return result_err_with<YaraRuleSet>(
+                        "satir " + int_to_str(i + 1) + ": yinelenen kural adi: " + rule_name,
+                        yara_ruleset_new())
+                }
+                prior_rule = prior_rule + 1
             }
             if not _supported_condition(condition) {
                 let condition_error = yara_condition_validate(condition, rule.pattern_names, rule.patterns)
@@ -442,6 +605,10 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
             // Toplanan pattern'lari KORU, yalnizca kosulu guncelle.
             let final_rule = YaraRule {
                 name: rule_name,
+                tags: rule.tags,
+                meta_keys: rule.meta_keys,
+                meta_values: rule.meta_values,
+                meta_types: rule.meta_types,
                 patterns: rule.patterns,
                 pattern_names: rule.pattern_names,
                 condition: condition,
@@ -450,6 +617,7 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
             }
             ruleset = yara_ruleset_add_rule(ruleset, final_rule)
             in_rule = false
+            in_meta = false
             in_strings = false
             in_condition = false
             i = i + 1

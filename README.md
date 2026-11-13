@@ -70,6 +70,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   `any/all/none/N of ($a*)` ve açık desen kümeleri (`any of ($a,$b)`) gibi
   desen grupları; bunlar boolean ifadelerde birleştirilebilir. `$a` desen
   başvuruları, `$a at N` / `$a in (N..M)` ofset kontrolleri, `@a[i]` ofseti,
+  desen grupları için `at N` / `in (N..M)` aralıkları, `meta:` string/bool/
+  tamsayı değerleri ve kural etiketleri scan JSON raporunda sunulur;
+  meta stringlerde `\xNN` kaçışları açık hata verir;
   `!a[i]` eşleşme uzunluğu, `#a` desen sayımı,
   `filesize` karşılaştırmaları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
   (`at/in` sınırları onluk veya `0x` hex sayısal sabitlerdir).

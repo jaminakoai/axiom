@@ -72,7 +72,9 @@ in their own language.
   and explicit pattern sets such as `any of ($a,$b)`, composable with boolean
   expressions, `$a` pattern references,
   `$a at N` / `$a in (N..M)` offset checks, `@a[i]` offsets, `!a[i]` match
-  lengths, and `#a` occurrence counts,
+  lengths, pattern-group `at N` / `in (N..M)` ranges, `#a` occurrence counts,
+  and rule `meta:` string, boolean, integer values and tags in scan JSON reports,
+  while `\xNN` escapes in metadata strings are explicitly rejected,
   `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`
   (`not` > `and` > `or` precedence). Offset bounds are decimal or `0x` hex
   integer literals.
