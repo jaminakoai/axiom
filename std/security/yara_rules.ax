@@ -431,7 +431,7 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                     yara_ruleset_new())
             }
             if not _supported_condition(condition) {
-                let condition_error = yara_condition_validate(condition, rule.pattern_names)
+                let condition_error = yara_condition_validate(condition, rule.pattern_names, rule.patterns)
                 if len(condition_error) > 0 {
                     return result_err_with<YaraRuleSet>(
                         "satir " + int_to_str(condition_line) + ": " + condition_error,

@@ -72,7 +72,8 @@ def test_rules_command_counts(scanner, tmp_path):
 
 
 @pytest.mark.parametrize("condition", [
-    "$a at 0",
+    "entrypoint",
+    "uint16(0) == 0x5A4D",
 ])
 def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanner, tmp_path, condition):
     rules = tmp_path / "unsupported.yar"
@@ -149,6 +150,18 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     llvm_count = _run(scanner_llvm, "scan", str(sample), "--rules", str(count_rules))
     assert c_count.returncode == llvm_count.returncode == 0
     assert json.loads(c_count.stdout) == json.loads(llvm_count.stdout)
+
+    offset_rules = tmp_path / "offset-parity.yar"
+    offset_rules.write_text(
+        'rule OffsetParity {\n strings:\n  $a = "needle"\n'
+        ' condition:\n  $a in (0x2..0x8)\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"xxneedle")
+    c_offset = _run(scanner, "scan", str(sample), "--rules", str(offset_rules))
+    llvm_offset = _run(scanner_llvm, "scan", str(sample), "--rules", str(offset_rules))
+    assert c_offset.returncode == llvm_offset.returncode == 0
+    assert json.loads(c_offset.stdout) == json.loads(llvm_offset.stdout)
 
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
@@ -239,6 +252,58 @@ def test_pattern_occurrence_count_rejects_unsupported_types(scanner, tmp_path, p
     res = _run(scanner, "rules", str(rules))
     assert res.returncode == 1
     assert "metin desenlerinde" in json.loads(res.stdout)["error"]
+
+
+@pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
+    ('"needle"', b"needle xx", "$a at 0", 1),
+    ('"needle"', b"xxneedle", "$a at 0x2", 1),
+    ('"needle"', b"xxneedle", "$a at 0", 0),
+    ('"needle"', b"xxneedle yyneedle", "$a in (0..7)", 1),
+    ('"needle"', b"xxneedle yyneedle", "$a in (8..20)", 1),
+    ('"needle"', b"xxneedle", "$a in (0..1)", 0),
+    ('"needle" nocase', b"xxNEEDLE", "$a in (2..7)", 1),
+    ("{ 4D 5A }", b"xxxxMZ", "$a at 4", 1),
+    ("{ 4D 5A }", b"xxxxMZ", "$a in (3..5)", 1),
+])
+def test_pattern_offset_conditions(scanner, tmp_path, pattern, target, condition, expected):
+    rules = tmp_path / "offset.yar"
+    rules.write_text(
+        'rule OffsetRule {\n strings:\n  $a = ' + pattern + '\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "offset-target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
+@pytest.mark.parametrize("condition", [
+    "$a at", "$a at -1", "$a at 999999999999999999999",
+    "$a in 0..4", "$a in (5..2)",
+])
+def test_malformed_pattern_offset_conditions_are_rejected(scanner, tmp_path, condition):
+    rules = tmp_path / "bad-offset.yar"
+    rules.write_text(
+        'rule BadOffset {\n strings:\n  $a = "needle"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
+
+
+def test_pattern_offset_conditions_reject_regex(scanner, tmp_path):
+    rules = tmp_path / "regex-offset.yar"
+    rules.write_text(
+        'rule RegexOffset {\n strings:\n  $a = /needle/\n condition:\n  $a at 0\n}\n',
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
 
 
 def test_comment_markers_inside_yara_text_are_preserved(scanner, tmp_path):
