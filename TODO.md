@@ -99,7 +99,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   alternation ve negation atomlarını `hexast:v1:` programına yazar. Runtime bu
   programı fail-closed doğrulayıp doğrudan occurrence yürütücüsünün typed
   fixed/range/alternation/negation modeline parse eder. Eski doğrudan runtime
-  API'leri için legacy etiket adaptörleri tutuluyor.
+  API'leri için legacy etiket adaptörleri tutuluyor. Executor artık tür ve
+  kaynak ömrünü tek `AxiomYaraHexPattern` discriminated union'ında tutuyor;
+  dağınık kind + dört ayrı yerel matcher değişkeni kaldırıldı.
 
   **G1 geçiş tasarımı:** `YaraRule` alanlarını ve `yara_rule_add_pattern`
   imzasını koru; kaynak pattern'i parser aşamasında `hexast:v1:` adlı tek,
@@ -108,10 +110,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   C runtime'da tek doğrulayıcı/yürütücü; find/count/nth API'leri aynı
   occurrence motorunu kullansın. Mevcut `hexrange:`/`hexalt:`/`hexnot:`
   kodlamaları geçiş testlerinde adapter olarak okunup sonra iç akıştan kaldırılsın.
-  İlk geçiş dikey dilimi tamamlandı: parser tek sürümlü AST yazıyor; C runtime
-  bytecode'u sınırlandırıp AST opcode'larından occurrence yürütücüsünün typed
-  modelini kuruyor. Ortak, tek `AxiomYaraHexPattern` düğüm dizisine geçiş ve
-  eski doğrudan runtime API adapter'larını azaltmak sonraki alt adımdır.
+  AST parser ve ortak typed pattern sahipliği tamamlandı. Bir sonraki alt adım
+  pattern içeriğini tek `AxiomYaraHexPattern` atom dizisiyle (`Byte`, `Jump`,
+  `Alternation`, `NotByte`) temsil edip range/alt/negation matcher dallarını bu
+  dizi üzerinden yürütmek ve eski doğrudan runtime API adapter'larını azaltmaktır.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic

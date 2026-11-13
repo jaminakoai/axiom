@@ -307,3 +307,13 @@ tam YARA/scanner paketi **373 geçti** ve tam proje paketi **1361 geçti**
 paketi yeniden **373 geçti**, tam `python -m pytest -q -rs` **1361 geçti**
 (1220,96 sn); malformed AST regresyonları da bu koşularda dahil edildi. Bu
 runtime refaktörünün CI doğrulaması commit/push sonrasında çalışacak.
+
+Ardından matcher'ın lifetime/kind yönetimi `AxiomYaraHexPattern` adlı tek
+discriminated union'a toplandı. Bir ara test koşusu bu union'da başka üyeye
+yazılmış bir başlangıç sentinel'inin alternation pointer'ını bozdu (`free():
+invalid pointer`); sentinel kaldırıldı. Doğrudan C testlerinde **92/92**, tam
+YARA/scanner paketinde **373/373** ve tam proje testinde **1361/1361** geçti
+(1213,16 sn); `make fmt-check` ve `git diff --check` temiz. Tek
+`Byte/Jump/Alternation/NotByte` atom dizisi executor ve legacy API adapter
+sadeleştirmesi hâlâ açık. Bu union refaktörünün CI doğrulaması commit/push
+sonrasında çalışacak.
