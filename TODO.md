@@ -14,7 +14,7 @@
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
 | Son G1 hedefli doğrulama | 128 occurrence/hex differential testi geçti (fixed, bounded, alternation, negation, C/LLVM) |
-| Son CI | `e00c56d` SHA `43433833667` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
+| Son CI | `1648283` SHA `43441565454` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
 
@@ -105,6 +105,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   API içinde optimizasyon olarak korunabilir. Performance bütçesi benchmark ile
   belirlenecek; hedefe göre sınırsız `candidate × atom × gap` taraması kabul
   edilmez.
+- [ ] Ortak occurrence yürütücüsüyle mevcut fail-closed `#/@/!` sınırını
+  bounded jump/alternation/negation için kapat. YARA oracle'ına göre her
+  başlangıç offset'i en çok bir instance üretir, farklı başlangıçlar overlap
+  edebilir, sıralama offset'e göredir; bounded jump'ta aynı başlangıçta en kısa
+  geçerli instance seçilir; aynı offset'te birden çok alternation dalı tek
+  instance sayılır. `#` bu instance sayısını, `@a[i]` 1 tabanlı offset'i,
+  `!a[i]` 1 tabanlı uzunluğu döndürür. `axiom-scan` schema v1 yine kural başına
+  tek temsilî witness taşır.
 - [x] Mevcut desteklenen biçimlerin birleşimini ve ret sınırlarını belirle:
   normal bayt/nibble wildcard, sabit ve bounded jump, alternation, negation.
 
@@ -184,9 +192,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 ### Şimdi çalışılacak tek madde
 
 **G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
-`e00c56d` üzerinde düzeltildi; tam yerel paket 1308/1308 ve CI 7/7 geçti. Sırada
-occurrence/alternation davranışlarını YARA 4.5.4 ile karşılaştırıp modelin kalan
-kabul ölçütlerini kapatmak var.
+`e00c56d` üzerinde düzeltildi; tam yerel paket 1308/1308 ve CI 7/7 geçti.
+Occurrence/alternation differential kapsamı 128 teste ulaştı; son kod/test
+commit'i `1648283` için CI 7/7 geçti. Sıradaki iş, bu kanıtı typed pattern ve
+ortak occurrence yürütücüsüne bağlayıp modelin kalan kabul ölçütlerini kapatmak.
 
 ---
 

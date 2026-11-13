@@ -162,6 +162,14 @@ pattern'lerinde occurrence operatörlerini desteklerken Axiom henüz tüm
 instance'ları aynı sonuç modelinde temsil etmiyor; bu nedenle sessiz yaklaşık
 hesap yerine parse hatası veriyor.
 
+Oracle'dan saptanan hedef davranış occurrence motoru için yeterince somut:
+YARA her distinct start offset için bir instance üretir; farklı offset'lerin
+eşleşmeleri overlap edebilir ve offset artan sıradadır. Variable-width jump aynı
+başlangıçta birkaç geçerli uzunluk bulursa en kısa instance'ı seçer. Aynı
+offset'te iki alternation dalı eşleşirse bir instance sayar. Sonraki G1 işi bu
+semantiği generic matcher'a taşıyıp bugün fail-closed olan `#/@/!` kullanımını
+bounded/alternation/negation türlerinde diferansiyel olarak açmaktır.
+
 ### `axiom-scan` schema v1 için rapor sözleşmesi
 
 - `match_count` eşleşen **kural sayısıdır**, pattern occurrence sayısı değildir.
@@ -189,7 +197,8 @@ negation için 8 idi.
 | G1 occurrence differential grubu | **128 passed**: fixed jumps, bounded ranges, alternation, negation, true/false occurrence conditions, target start bounds ve C/LLVM positional witness |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
-| GitHub Actions | run `43433833667` (`e00c56d`) — **7/7 success** |
+| GitHub Actions (positional witness düzeltmesi) | run `43433833667` (`e00c56d`) — **7/7 success** |
+| GitHub Actions (son occurrence differential test commit'i) | run `43441565454` (`1648283`) — **7/7 success** |
 
 ### Uygulama öncesi kabul ölçütleri
 
@@ -235,9 +244,10 @@ uygulanmadı.
   anlatır.
 - `CHANGELOG.md`: düzeltilen rapor kanıtı hatası.
 
-Tam YARA pattern AST'si henüz yapılmadı. Bu G1 düzeltmesinin tam testi ve CI'si
-geçti; kural başına tek-witness API'sinin kapsamı ve occurrence semantiklerinin
-tam diferansiyel testi G1'de devam ediyor.
+Tam YARA pattern AST'si henüz yapılmadı. Positional witness düzeltmesi ve
+occurrence differential test genişletmesinin CI işleri geçti. Kural başına
+tek-witness API'sinin kapsamı ve occurrence semantiklerinin tam differential
+testi G1'de devam ediyor.
 
 ## Sıradaki iş
 
