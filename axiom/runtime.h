@@ -8531,6 +8531,9 @@ typedef struct {
     int len;
 } AxiomYaraCompiledPattern;
 
+// Bound direct runtime pattern inputs before allocating or scanning them.
+#define AXIOM_YARA_MAX_HEX_PATTERN_TEXT 8192u
+
 AXIOM_RUNTIME_FN void axiom_yara_pattern_free(AxiomYaraCompiledPattern* pat) {
     if (pat) {
         if (pat->vals) { free(pat->vals); pat->vals = NULL; }
@@ -8540,70 +8543,87 @@ AXIOM_RUNTIME_FN void axiom_yara_pattern_free(AxiomYaraCompiledPattern* pat) {
 }
 
 AXIOM_RUNTIME_FN int axiom_yara_parse_hex_pattern_internal(const char* pattern_str, AxiomYaraCompiledPattern* pat) {
-    if (!pattern_str || !pat) return 0;
-    size_t s_len = strlen(pattern_str);
-    pat->vals = (uint8_t*)malloc(s_len + 16);
-    pat->masks = (uint8_t*)malloc(s_len + 16);
+    if (!pat) return 0;
+    pat->vals = NULL;
+    pat->masks = NULL;
     pat->len = 0;
+    if (!pattern_str) return 0;
+    size_t s_len = strlen(pattern_str);
+    if (s_len == 0 || s_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT) return 0;
+    pat->vals = (uint8_t*)malloc(s_len + 1);
+    pat->masks = (uint8_t*)malloc(s_len + 1);
     if (!pat->vals || !pat->masks) {
         if (pat->vals) free(pat->vals);
         if (pat->masks) free(pat->masks);
+        pat->vals = NULL;
+        pat->masks = NULL;
         return 0;
     }
 
-    const char* p = pattern_str;
-    while (*p) {
-        while (*p && (isspace((unsigned char)*p) || *p == '{' || *p == '}' || *p == ',' || *p == '|')) {
-            p++;
-        }
-        if (!*p) break;
+    const char* begin = pattern_str;
+    const char* end = pattern_str + s_len;
+    while (begin < end && isspace((unsigned char)*begin)) begin++;
+    while (end > begin && isspace((unsigned char)end[-1])) end--;
+    if (begin == end) goto invalid_pattern;
 
-        if (*p == '?') {
+    // Braces are accepted only as one balanced outer pair, as used by YARA
+    // hex strings. Every other non-token character is rejected below.
+    if (*begin == '{') {
+        begin++;
+        if (end <= begin || end[-1] != '}') goto invalid_pattern;
+        end--;
+    }
+
+    const char* p = begin;
+    while (p < end) {
+        if (isspace((unsigned char)*p)) {
             p++;
-            if (*p == '?') {
-                p++;
+            continue;
+        }
+        if ((size_t)(end - p) < 2) goto invalid_pattern;
+
+        char c1 = *p;
+        char c2 = p[1];
+        if (c1 == '?') {
+            if (c2 == '?') {
                 pat->vals[pat->len] = 0x00;
                 pat->masks[pat->len] = 0x00;
-                pat->len++;
-            } else if (isxdigit((unsigned char)*p)) {
-                // ?5 -> low nibble only
-                char c = *p++;
-                int low = isdigit((unsigned char)c) ? (c - '0') : (tolower((unsigned char)c) - 'a' + 10);
+            } else if (isxdigit((unsigned char)c2)) {
+                int low = isdigit((unsigned char)c2) ? (c2 - '0') : (tolower((unsigned char)c2) - 'a' + 10);
                 pat->vals[pat->len] = (uint8_t)(low & 0x0F);
                 pat->masks[pat->len] = 0x0F;
-                pat->len++;
             } else {
-                // Single ? treated as full wildcard ??
-                pat->vals[pat->len] = 0x00;
-                pat->masks[pat->len] = 0x00;
-                pat->len++;
+                goto invalid_pattern;
             }
-        } else if (isxdigit((unsigned char)*p)) {
-            char c1 = *p++;
+        } else if (isxdigit((unsigned char)c1)) {
             int high = isdigit((unsigned char)c1) ? (c1 - '0') : (tolower((unsigned char)c1) - 'a' + 10);
-            if (*p == '?') {
-                p++;
-                // 4? -> high nibble only
+            if (c2 == '?') {
                 pat->vals[pat->len] = (uint8_t)((high << 4) & 0xF0);
                 pat->masks[pat->len] = 0xF0;
-                pat->len++;
-            } else if (isxdigit((unsigned char)*p)) {
-                char c2 = *p++;
+            } else if (isxdigit((unsigned char)c2)) {
                 int low = isdigit((unsigned char)c2) ? (c2 - '0') : (tolower((unsigned char)c2) - 'a' + 10);
                 pat->vals[pat->len] = (uint8_t)(((high << 4) | low) & 0xFF);
                 pat->masks[pat->len] = 0xFF;
-                pat->len++;
             } else {
-                // Single hex digit treated as 0x0N with mask 0xFF
-                pat->vals[pat->len] = (uint8_t)(high & 0xFF);
-                pat->masks[pat->len] = 0xFF;
-                pat->len++;
+                // A byte must be exactly two adjacent hex/wildcard nibbles.
+                goto invalid_pattern;
             }
         } else {
-            p++;
+            goto invalid_pattern;
         }
+        pat->len++;
+        p += 2;
     }
+    if (pat->len == 0) goto invalid_pattern;
     return pat->len;
+
+invalid_pattern:
+    if (pat->vals) free(pat->vals);
+    if (pat->masks) free(pat->masks);
+    pat->vals = NULL;
+    pat->masks = NULL;
+    pat->len = 0;
+    return 0;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_pattern_len(const char* hex_pattern) {
@@ -8621,16 +8641,19 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_scan_bytes(const uint8_t* data, size_t data_l
                                                ax_int occurrence, ax_int* count_out) {
     if (count_out) *count_out = 0;
     if (!data || !pat || pat->len <= 0 || occurrence < 0) return -1;
+    if (data_len > (size_t)INT64_MAX) return -1;
     int m = pat->len;
     if ((size_t)m > data_len) return -1;
 
+    int64_t last_start = (int64_t)data_len - (int64_t)m;
     int64_t start = (min_offset >= 0) ? min_offset : 0;
-    int64_t end = (max_offset >= 0 && (max_offset + m) <= (int64_t)data_len) ? max_offset : ((int64_t)data_len - m);
-    if (start > (int64_t)data_len - m || start > end) return -1;
+    int64_t end = last_start;
+    if (max_offset >= 0 && max_offset < end) end = max_offset;
+    if (start > last_start || start > end) return -1;
 
     // Fast-path for exact offset check
     if (min_offset >= 0 && min_offset == max_offset) {
-        if (min_offset + m > (int64_t)data_len) return -1;
+        if (min_offset > last_start) return -1;
         for (int j = 0; j < m; j++) {
             if ((data[min_offset + j] & pat->masks[j]) != pat->vals[j]) {
                 return -1;
@@ -8763,21 +8786,21 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_stream(const char* hex_target, const
     size_t raw_len = 0;
     const char* p = hex_target;
     while (*p) {
-        while (*p && (isspace((unsigned char)*p) || *p == ',')) p++;
+        while (*p && isspace((unsigned char)*p)) p++;
         if (!*p) break;
-        if (isxdigit((unsigned char)*p)) {
-            char c1 = *p++;
-            int hi = isdigit((unsigned char)c1) ? (c1 - '0') : (tolower((unsigned char)c1) - 'a' + 10);
-            if (isxdigit((unsigned char)*p)) {
-                char c2 = *p++;
-                int lo = isdigit((unsigned char)c2) ? (c2 - '0') : (tolower((unsigned char)c2) - 'a' + 10);
-                raw[raw_len++] = (uint8_t)((hi << 4) | lo);
-            } else {
-                raw[raw_len++] = (uint8_t)hi;
-            }
-        } else {
-            p++;
+        if (!isxdigit((unsigned char)*p) || !p[1] || !isxdigit((unsigned char)p[1])) {
+            free(raw);
+            return -1;
         }
+        char c1 = *p++;
+        char c2 = *p++;
+        int hi = isdigit((unsigned char)c1) ? (c1 - '0') : (tolower((unsigned char)c1) - 'a' + 10);
+        int lo = isdigit((unsigned char)c2) ? (c2 - '0') : (tolower((unsigned char)c2) - 'a' + 10);
+        raw[raw_len++] = (uint8_t)((hi << 4) | lo);
+    }
+    if (raw_len == 0) {
+        free(raw);
+        return -1;
     }
 
     AxiomYaraCompiledPattern pat;

@@ -79,8 +79,11 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
-  diğer desteklenmeyen modifier'lar ve hex jump/alternation yapıları da
-  ayrıştırma hatasıyla reddedilir. `#a` sayımı metin ve hex desenlerinde desteklenir;
+  diğer desteklenmeyen modifier'lar, değişken/sınırsız hex jump'ları,
+  alternation ve negation da ayrıştırma hatasıyla reddedilir. Hex kalıpları
+  nibble jokerlerini ve sabit `[N]` atlamalarını (N=1..64) destekler; tümüyle
+  joker desenler reddedilir ve genişletilmiş kalıp 8 KiB'ı aşamaz.
+  `#a` sayımı metin ve hex desenlerinde desteklenir;
   regex desenlerinde reddedilir.
   `$a at/in` ve `@a[i]` / `!a[i]` metin ve hex desenlerinde desteklenir.
   Regex desenlerinde ofset ve indeks kontrolleri reddedilir.

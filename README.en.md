@@ -81,8 +81,10 @@ in their own language.
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
-  other unsupported modifiers, and hex jump/alternation constructs are also
-  rejected with a parse error. `#a` supports text and hex patterns;
+  other unsupported modifiers, variable/unbounded hex jumps, alternation, and
+  negation are also rejected with a parse error. Hex patterns support nibble
+  wildcards and fixed `[N]` jumps (N=1..64); all-wildcard patterns are rejected
+  and the expanded pattern is limited to 8 KiB. `#a` supports text and hex patterns;
   regex pattern counts are rejected. `at/in`, `@a[i]`, and `!a[i]` checks
   support text and hex patterns.
   Offset and index checks reject regex patterns.

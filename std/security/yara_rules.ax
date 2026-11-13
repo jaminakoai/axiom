@@ -196,6 +196,73 @@ fn _parse_text_modifier_flags(tail: str) -> int {
     return flags
 }
 
+fn _is_hex_pattern_digit(ch: str) -> bool {
+    return str_contains("0123456789abcdefABCDEF", ch)
+}
+
+// Normalize the supported fixed-width YARA hex subset. A jump `[N]` is
+// expanded to N full-byte wildcards so the existing fixed-length matcher can
+// handle it without changing runtime APIs. Per-jump expansion is deliberately
+// bounded to 1..64 bytes; ranges, open-ended jumps, and other operators fail
+// closed here.
+fn _normalize_yara_hex_pattern(hex: str) -> str {
+    let mut out = ""
+    let mut i = 0
+    let mut has_constrained_byte = false
+    while i < len(hex) {
+        let ch = str_char_at(hex, i)
+        if ch == " " or ch == "\t" or ch == "\r" or ch == "\n" {
+            i = i + 1
+            continue
+        }
+
+        if ch == "[" {
+            let mut cursor = i + 1
+            let mut count = 0
+            let mut digits = 0
+            while cursor < len(hex) and str_contains("0123456789", str_char_at(hex, cursor)) {
+                if digits >= 2 { return "" }
+                let digit = str_to_int(str_char_at(hex, cursor))
+                if count > 6 or (count == 6 and digit > 4) { return "" }
+                count = count * 10 + digit
+                digits = digits + 1
+                cursor = cursor + 1
+            }
+            if digits == 0 or count < 1 or count > 64 { return "" }
+            if cursor >= len(hex) or str_char_at(hex, cursor) != "]" { return "" }
+            let mut required = count * 3 - 1
+            if len(out) > 0 { required = required + 1 }
+            // Keep normalized input within the runtime's 8 KiB hex-pattern
+            // limit; otherwise a parsed rule could silently fail at scan time.
+            if len(out) + required > 8192 { return "" }
+            let mut jump_index = 0
+            while jump_index < count {
+                if len(out) > 0 { out = out + " " }
+                out = out + "??"
+                jump_index = jump_index + 1
+            }
+            i = cursor + 1
+            continue
+        }
+
+        if i + 1 >= len(hex) { return "" }
+        let first = ch
+        let second = str_char_at(hex, i + 1)
+        let valid_first = first == "?" or _is_hex_pattern_digit(first)
+        let valid_second = second == "?" or _is_hex_pattern_digit(second)
+        if not valid_first or not valid_second { return "" }
+        let mut required = 2
+        if len(out) > 0 { required = required + 1 }
+        if len(out) + required > 8192 { return "" }
+        if first != "?" or second != "?" { has_constrained_byte = true }
+        if len(out) > 0 { out = out + " " }
+        out = out + first + second
+        i = i + 2
+    }
+    if not has_constrained_byte { return "" }
+    return out
+}
+
 // strings: bolumundeki "$id = ..." satirini ayristirir.
 // Donus: ilk '=' isaretinden bolunebilen "$id=pattern" veya bos metin.
 // Dinamik dizi dondurmemek LLVM erken-donus temizligiyle ilgili bir backend
@@ -247,13 +314,8 @@ fn _parse_string_def(line: str) -> str {
         if close < 0 {
             return ""
         }
-        let hex = str_trim(str_sub(raw, 1, close - 1))
-        if len(hex) == 0 {
-            return ""
-        }
-        if str_contains(hex, "[") or str_contains(hex, "]") or str_contains(hex, "(") or str_contains(hex, ")") or str_contains(hex, "|") or str_contains(hex, "~") {
-            return ""
-        }
+        let hex = _normalize_yara_hex_pattern(str_sub(raw, 1, close - 1))
+        if len(hex) == 0 { return "" }
         let tail = str_trim(str_sub(raw, close + 1, len(raw) - close - 1))
         if len(tail) > 0 {
             return ""

@@ -5,6 +5,19 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Eklenen (13 Kasım — güvenli sabit genişlikli YARA hex jump)
+- Hex kurallarında `[N]` artık `N=1..64` için joker bayt dizisine normalize
+  edilerek destekleniyor. Değişken aralık, sınırsız jump, alternation,
+  negation ve hatalı bayt sözdizimi açık parse hatası veriyor.
+- Runtime hex parserı doğrudan API çağrılarında da geçersiz karakterleri
+  yutmuyor; tek nibble/tek `?`, bozuk encoded-target verisi ve 8 KiB üzeri
+  desenler reddediliyor. Offset sınırları signed overflow'a karşı güvenli.
+- Genişletilmiş kalıp parser aşamasında runtime'ın 8 KiB sınırına göre
+  doğrulanıyor; böylece kabul edilen kuralın taramada sessizce kaçırılması
+  önleniyor.
+- Diferansiyel ve regresyon doğrulaması: YARA/self-hosted odaklı paket
+  **217 geçti, 0 atlandı**.
+
 ### Düzeltilen (13 Kasım — YARA alt kümesi doğruluğu ve regex güvenliği)
 - `nocase`/`ascii`/`fullword` modifier bayrakları taramada ve desen sayımında
   yalnızca bilinen birleşimler olarak kabul ediliyor; bozuk veya bilinmeyen
