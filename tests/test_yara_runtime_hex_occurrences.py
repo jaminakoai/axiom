@@ -64,6 +64,7 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
             "hexast:v1:", "hexast:v1:B41", "hexast:v1:X41;",
             "hexast:v1:B41;J1-3;", "hexast:v1:B41;J1-3;N42;",
             "hexast:v1:B41;J3-1;B42;", "hexast:v1:B41;J0-65;B42;",
+            "hexast:v1:B??;J0-16;B??;",
             "hexast:v1:A41;", "hexast:v1:A41|42|43|44|45;",
             "hexast:v2:B41;"
         };

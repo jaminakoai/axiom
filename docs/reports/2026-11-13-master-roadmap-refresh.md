@@ -289,18 +289,21 @@ yakaladı ve düzeltildi.
 Parser artık sabit/wildcard byte (`B`), bounded jump (`J`), flat alternation
 (`A`) ve tek-byte negation (`N`) atomlarını `hexast:v1:` programına normalize
 ediyor. C runtime programı sürüm, opcode, terminator, jump aralığı ve
-alternation dal sayısı yönünden doğrulayıp mevcut matcher temsillerine çeviriyor.
-Eski `hexrange:`/`hexalt:`/`hexnot:` kodlamaları parser iç akışından çıktı;
-runtime adapter olarak ve geriye uyumlu doğrudan API'lerde kaldı.
+alternation dal sayısı yönünden doğrulayıp occurrence yürütücüsünün typed
+fixed/range/alternation/negation modelini doğrudan kuruyor. Eski
+`hexrange:`/`hexalt:`/`hexnot:` kodlamaları parser iç akışından çıktı; geriye
+uyumlu doğrudan runtime API'lerinde kalıyor.
 
-Bu ilk AST dilimi tek tip parser/runtime sınırını kuruyor; C eşleştirme çekirdeği
-henüz typed atomları doğrudan yürütmüyor. Sonraki adım adapter dönüşümünü
-kaldırıp mevcut range/alternation/negation struct'larını typed AST yürütücüsüyle
-değiştirmek.
+Bu dilim tek, sıralı `AxiomYaraHexPattern` atom dizisi oluşturmuyor: hâlâ bir
+pattern türü seçip mevcut typed matcher struct'larını dolduruyor. Bir sonraki
+refaktör bu türlere özel dalları tek atom yürütücüsünde birleştirmek ve eski
+doğrudan runtime API adapter'larını azaltmak.
 
 Doğrulama: ortak API aşamasında tam `python -m pytest -q -rs` **1361 geçti**
-(1287,09 sn), hedefli YARA/scanner paketi **373 geçti**. AST bytecode testleri
-eklendikten sonra parser/runtime kümesi **140 geçti**, malformed AST doğrudan C
-runtime kontrolleri eklendi ve son YARA/scanner paketi **373 geçti**. AST dahil
-güncel tam proje paketi `python -m pytest -q -rs` ile **1361 geçti**
-(1223,42 sn). CI, bu AST commit'i push edildikten sonra çalışacak.
+(1287,09 sn), hedefli YARA/scanner paketi **373 geçti**. Parser/runtime kümesi
+**140 geçti**, malformed AST doğrudan C runtime kontrolleri eklendi, AST dahil
+tam YARA/scanner paketi **373 geçti** ve tam proje paketi **1361 geçti**
+(1223,42 sn). Doğrudan typed model yürütücüsü değişikliğinden sonra YARA/scanner
+paketi yeniden **373 geçti**, tam `python -m pytest -q -rs` **1361 geçti**
+(1220,96 sn); malformed AST regresyonları da bu koşularda dahil edildi. Bu
+runtime refaktörünün CI doğrulaması commit/push sonrasında çalışacak.

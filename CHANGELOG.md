@@ -11,8 +11,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   ortak find API'si offset sınırlarını aynı yerde uyguluyor.
 - Kural parser'ı sabit/wildcard byte, bounded jump, düz alternation ve negation
   kalıplarını `hexast:v1` sürümlü bytecode'a normalize ediyor. C runtime programı
-  sınırlarıyla doğrulayıp geçiş sırasında önceki matcher temsillerine uyarlar;
-  uyumluluk etiketlerinin tamamen kaldırılması henüz tamamlanmadı.
+  sınırlarıyla doğrulayıp opcode'lardan occurrence modelini doğrudan kuruyor;
+  eski doğrudan runtime API'leri için tag adaptörleri korunuyor.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve

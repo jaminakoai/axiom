@@ -9366,12 +9366,17 @@ AXIOM_RUNTIME_FN int axiom_yara_hex_ast_append(char* dst, size_t cap, size_t* us
     return 1;
 }
 
-// Transitional decoder for hexast:v1. The program is a flat typed sequence:
-// B<hex bytes>;, J<min>-<max>;, A<branches>;, N<byte>;. The current subset
-// permits at most one non-byte atom; execution is adapted to legacy matchers.
-AXIOM_RUNTIME_FN int axiom_yara_hex_ast_to_legacy(const char* encoded, char* out, size_t out_cap) {
+// Parse hexast:v1 directly into the occurrence matcher's typed model. This
+// removes legacy tag construction from the hot path while retaining adapters
+// for callers that still pass the old encodings directly.
+AXIOM_RUNTIME_FN int axiom_yara_parse_hex_ast_internal(const char* encoded, int* kind,
+                                                        AxiomYaraCompiledPattern* fixed,
+                                                        AxiomYaraHexRangePattern* range,
+                                                        AxiomYaraHexAlternation* alt,
+                                                        AxiomYaraHexNegation* negation) {
     static const char tag[] = "hexast:v1:";
-    if (!encoded || !out || out_cap < 16 || strncmp(encoded, tag, sizeof(tag) - 1) != 0) return 0;
+    if (!encoded || !kind || !fixed || !range || !alt || !negation ||
+        strncmp(encoded, tag, sizeof(tag) - 1) != 0) return 0;
     size_t encoded_len = strlen(encoded);
     if (encoded_len <= sizeof(tag) - 1 || encoded_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT) return 0;
 
@@ -9409,11 +9414,10 @@ AXIOM_RUNTIME_FN int axiom_yara_hex_ast_to_legacy(const char* encoded, char* out
         }
     }
 
-    out[0] = '\0';
-    size_t used = 0;
     if (special_kind == 0) {
-        return prefix_len > 0 && axiom_yara_hex_ast_append(out, out_cap, &used, "hex:", 4) &&
-               axiom_yara_hex_ast_append(out, out_cap, &used, prefix, prefix_len);
+        if (prefix_len == 0 || axiom_yara_parse_hex_pattern_internal(prefix, fixed) <= 0) return 0;
+        *kind = 0;
+        return 1;
     }
     if (special_kind == 1) {
         char* dash = strchr(special, '-');
@@ -9421,34 +9425,64 @@ AXIOM_RUNTIME_FN int axiom_yara_hex_ast_to_legacy(const char* encoded, char* out
         if (!prefix_len || !suffix_len || !dash || strchr(dash + 1, '-') ||
             !axiom_yara_parse_jump_bound(special, (size_t)(dash - special), &min_gap) ||
             !axiom_yara_parse_jump_bound(dash + 1, strlen(dash + 1), &max_gap) ||
-            min_gap > max_gap || max_gap - min_gap > 16) return 0;
-        int n = snprintf(out, out_cap, "hexrange:%s|%d|%d|%s", prefix, min_gap, max_gap, suffix);
-        return n >= 0 && (size_t)n < out_cap;
+            min_gap > max_gap || max_gap - min_gap > 16 ||
+            axiom_yara_parse_hex_pattern_internal(prefix, &range->prefix) <= 0 ||
+            axiom_yara_parse_hex_pattern_internal(suffix, &range->suffix) <= 0) return 0;
+        range->min_gap = min_gap;
+        range->max_gap = max_gap;
+        range->suffix_anchor = -1;
+        range->suffix_anchor_matches = 0;
+        range->suffix_anchor_bits = NULL;
+        range->suffix_anchor_bits_len = 0;
+        int constrained = 0;
+        for (int i = 0; i < range->prefix.len; i++) if (range->prefix.masks[i] != 0) constrained = 1;
+        for (int i = 0; i < range->suffix.len; i++) if (range->suffix.masks[i] != 0) constrained = 1;
+        if (!constrained) return 0;
+        *kind = 1;
+        return 1;
     }
     if (special_kind == 3) {
         if (strlen(special) != 2 || (special[0] == '?' && special[1] == '?')) return 0;
-        int n = snprintf(out, out_cap, "hexnot:%s|%s|%s", prefix, special, suffix);
-        return n >= 0 && (size_t)n < out_cap;
+        uint8_t mask_hi = 0, value_hi = 0, mask_lo = 0, value_lo = 0;
+        if (!axiom_yara_negated_hex_nibble(special[0], &mask_hi, &value_hi, 0xF0, 4) ||
+            !axiom_yara_negated_hex_nibble(special[1], &mask_lo, &value_lo, 0x0F, 0)) return 0;
+        negation->excluded_mask = (uint8_t)(mask_hi | mask_lo);
+        negation->excluded_value = (uint8_t)(value_hi | value_lo);
+        if (!negation->excluded_mask) return 0;
+        if ((prefix_len && axiom_yara_parse_hex_pattern_internal(prefix, &negation->prefix) <= 0) ||
+            (suffix_len && axiom_yara_parse_hex_pattern_internal(suffix, &negation->suffix) <= 0)) return 0;
+        *kind = 3;
+        return 1;
     }
 
-    if (!axiom_yara_hex_ast_append(out, out_cap, &used, "hexalt:", 7)) return 0;
     const char* branch = special;
-    int branch_count = 0;
+    int has_constrained_byte = 0;
     while (1) {
         const char* separator = strchr(branch, '|');
         size_t branch_len = separator ? (size_t)(separator - branch) : strlen(branch);
-        if (!branch_len || branch_count >= 4) return 0;
-        if (branch_count && !axiom_yara_hex_ast_append(out, out_cap, &used, "|", 1)) return 0;
-        if (prefix_len && (!axiom_yara_hex_ast_append(out, out_cap, &used, prefix, prefix_len) ||
-                           !axiom_yara_hex_ast_append(out, out_cap, &used, " ", 1))) return 0;
-        if (!axiom_yara_hex_ast_append(out, out_cap, &used, branch, branch_len)) return 0;
-        if (suffix_len && (!axiom_yara_hex_ast_append(out, out_cap, &used, " ", 1) ||
-                           !axiom_yara_hex_ast_append(out, out_cap, &used, suffix, suffix_len))) return 0;
-        branch_count++;
+        if (!branch_len || alt->branch_count >= 4) return 0;
+        char branch_text[AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1] = {0};
+        size_t used = 0;
+        if ((prefix_len && (!axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, prefix, prefix_len) ||
+                            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, " ", 1))) ||
+            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, branch, branch_len) ||
+            (suffix_len && (!axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, " ", 1) ||
+                            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, suffix, suffix_len)))) return 0;
+        AxiomYaraCompiledPattern* compiled = &alt->branches[alt->branch_count];
+        int parsed_len = axiom_yara_parse_hex_pattern_internal(branch_text, compiled);
+        if (parsed_len <= 0 || parsed_len > 16) return 0;
+        if (alt->branch_count == 0) alt->common_len = parsed_len;
+        else if (parsed_len != alt->common_len) return 0;
+        for (int i = 0; i < parsed_len; i++) {
+            if (compiled->masks[i] != 0) has_constrained_byte = 1;
+        }
+        alt->branch_count++;
         if (!separator) break;
         branch = separator + 1;
     }
-    return branch_count >= 2;
+    if (alt->branch_count < 2 || !has_constrained_byte) return 0;
+    *kind = 2;
+    return 1;
 }
 
 // Shared occurrence executor for supported hex-pattern encodings. A distinct
@@ -9462,12 +9496,6 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
                                                                     ax_int max_offset) {
     if (!target || !encoded || occurrence < 0 || min_offset < -1 || max_offset < -1 ||
         (min_offset >= 0 && max_offset >= 0 && min_offset > max_offset)) return -1;
-    if (strncmp(encoded, "hexast:v1:", 10) == 0) {
-        char legacy[AXIOM_YARA_MAX_HEX_PATTERN_TEXT * 4u + 64u];
-        if (!axiom_yara_hex_ast_to_legacy(encoded, legacy, sizeof(legacy))) return -1;
-        return axiom_yara_hex_pattern_occurrence_internal(target, legacy, occurrence, return_length,
-                                                           min_offset, max_offset);
-    }
     size_t target_len = strlen(target);
     if (target_len > (size_t)INT64_MAX) return -1;
     const uint8_t* bytes = (const uint8_t*)target;
@@ -9481,7 +9509,9 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
     memset(&negation, 0, sizeof(negation));
 
     int parsed = 0;
-    if (strncmp(encoded, "hexrange:", 9) == 0) {
+    if (strncmp(encoded, "hexast:v1:", 10) == 0) {
+        parsed = axiom_yara_parse_hex_ast_internal(encoded, &kind, &fixed, &range, &alt, &negation);
+    } else if (strncmp(encoded, "hexrange:", 9) == 0) {
         kind = 1;
         parsed = axiom_yara_parse_hex_range_internal(encoded, &range);
     } else if (strncmp(encoded, "hexalt:", 7) == 0) {
