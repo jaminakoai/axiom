@@ -182,3 +182,45 @@ def test_shared_hex_occurrence_api_counts_and_selects_canonical_instances():
     ret, out, err = _compile_and_run(source)
     assert ret == 0, err
     assert "YARA_HEX_OCCURRENCE_API_OK" in out
+
+
+def test_range_count_filters_long_suffix_near_misses_before_full_compare():
+    source = r'''
+    #include "axiom/runtime.h"
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+
+    int main(void) {
+        const size_t target_len = 512u * 1024u;
+        char* target = (char*)malloc(target_len + 1);
+        if (!target) return 2;
+        memset(target, 'F', target_len);
+        target[target_len - 1] = 'E';
+        target[target_len] = '\0';
+
+        char encoded[4096];
+        size_t used = (size_t)snprintf(encoded, sizeof(encoded), "hexrange:46|0|16|");
+        for (int i = 0; i < 999; i++) {
+            if (used + 3 >= sizeof(encoded)) { free(target); return 3; }
+            encoded[used++] = '4';
+            encoded[used++] = '6';
+            encoded[used++] = ' ';
+        }
+        encoded[used++] = '4';
+        encoded[used++] = '5';
+        encoded[used] = '\0';
+
+        ax_int count = axiom_yara_count_hex_pattern(target, encoded);
+        free(target);
+        if (count != 17) {
+            fprintf(stderr, "expected 17 overlapping starts, got %lld\n", (long long)count);
+            return 1;
+        }
+        puts("YARA_HEX_RANGE_LONG_SUFFIX_FILTER_OK");
+        return 0;
+    }
+    '''
+    ret, out, err = _compile_and_run(source)
+    assert ret == 0, err
+    assert "YARA_HEX_RANGE_LONG_SUFFIX_FILTER_OK" in out

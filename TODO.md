@@ -12,8 +12,8 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | 1358 geçti, 0 hata/skip; `fbae263`, `python -m pytest -q -rs`, 1217,88 sn |
-| Son G1 hedefli doğrulama | 370 YARA/scanner testi geçti; yeni occurrence API ve C/LLVM parity dahil (145,90 sn) |
+| Son tam test paketi | 1361 geçti, 0 hata/skip; G1 runtime performans düzeltmesi dahil, `python -m pytest -q -rs`, 1214,75 sn |
+| Son G1 hedefli doğrulama | 373 YARA/scanner testi geçti; runtime/API, oracle ve C/LLVM parity dahil (139,62 sn) |
 | Son CI | `fbae263` SHA `43456582647` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
@@ -113,8 +113,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   instance sayılır. `#` bu instance sayısını, `@a[i]` 1 tabanlı occurrence'ın
   sıfır tabanlı offset'ini, `!a[i]` eşleşme uzunluğunu döndürür. `axiom-scan`
   schema v1 yine kural başına tek temsilî witness taşır.
-- [ ] Ortak occurrence yürütücüsünün çalışma maliyetini büyük hedefte ölç ve
-  kabul edilen hex alt kümesi için benchmark kanıtı ekle.
+- [x] Ortak occurrence yürütücüsünün çalışma maliyetini büyük hedefte ölç ve
+  kabul edilen hex alt kümesi için benchmark kanıtı ekle: standart 64 MiB
+  bounded/alt/neg occurrence sayımı sırasıyla 0.141/0.437/0.010 sn; bounded `[0-16]`
+  uzun-suffix yakın-eşleşme testi 64 MiB'de 17 occurrence'ı 1.321 sn'de saydı.
+  Bounded range için geçici anchor bitset'i en çok hedef boyutunun 1/8'i kadar
+  ek bellek tutar.
 - [x] Mevcut desteklenen biçimlerin birleşimini ve ret sınırlarını belirle:
   normal bayt/nibble wildcard, sabit ve bounded jump, alternation, negation.
 
@@ -195,9 +199,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 **G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
 `e00c56d` üzerinde düzeltildi. Bounded jump, alternation ve negation için ortak
-occurrence API'si eklendi; `fbae263` için tam yerel paket 1358/1358 ve CI 7/7
-geçti.
-Sıradaki iş typed pattern AST geçişi ve runtime sınır/bozuk kodlama testleridir.
+occurrence API'si eklendi; `fbae263` için 1358/1358 ve CI 7/7 geçti. Sonraki
+runtime hardening değişikliği uzun suffix yakın-eşleşmelerini 64 MiB'de 1,321 sn
+içinde saydı; güncel tam yerel paket 1361/1361 geçti. Sıradaki iş typed pattern
+AST geçişi ve bozuk bytecode/overflow testleridir.
 
 ---
 

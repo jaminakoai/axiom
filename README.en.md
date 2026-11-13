@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1358-blue.svg)](#last-full-verified-run)
+[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1361-blue.svg)](#last-full-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -594,19 +594,21 @@ Test-infrastructure notes:
 | Field | Value |
 |---|---|
 | Date | 13 November 2026 |
-| Commit | `fbae263` |
+| Tested tree | `fbae263` plus the bounded-range performance fix |
 | Command | `python -m pytest -q -rs` |
-| Result | **1358 passed, 0 failed, 0 skipped** (1217.88 s) |
+| Result | **1361 passed, 0 failed, 0 skipped** (1214.75 s) |
 | Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
 This full local run includes the positional-evidence fix and the new `#/@/!`
-support for bounded jumps, alternation, and negation. The focused YARA/scanner
-suite passed 370 tests. GitHub Actions for `fbae263` also passed all 7 jobs.
+support for bounded jumps, alternation, and negation, plus the bounded-range
+near-match performance fix. The focused YARA/scanner suite passed 373 tests.
+The latest completed GitHub Actions run was for `fbae263` (7/7); CI for this fix
+will run after push.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the verified run for commit `fbae263`:
+All 7 jobs passed in the latest completed run for commit `fbae263`:
 
 | Job | Status |
 |---|---|
@@ -632,7 +634,8 @@ Six root causes fixed on the way here (details: report §9–§12):
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
 The cited 1034-test run matched CI at that time. The latest full local run is
-1358 tests on `fbae263`, and CI for the same commit passed all 7 jobs.
+1361 tests with the G1 occurrence and bounded-range performance changes. The
+latest completed CI for baseline `fbae263` passed all 7 jobs.
 
 ---
 

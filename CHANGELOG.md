@@ -5,6 +5,16 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Düzeltilen (13 Kasım — bounded YARA occurrence maliyeti)
+- `#a` bounded-jump sayımında tekrarlanan prefix ve uzun, neredeyse eşleşen
+  suffix'lerin her olası jump'ta tekrar taranması önlendi. Hedefe göre nadir
+  suffix baytı seçiliyor; kompakt bitset, geçerli jump penceresinde bu bayt yoksa
+  suffix karşılaştırmasını atlıyor. Tek byte prefix araması `memchr` yolunu kullanıyor.
+- 64 MiB adversarial hedefte 17 instance **1,321 sn**'de sayıldı; yardımcı bitset
+  en çok hedef boyutunun 1/8'i kadar geçici bellek kullanır.
+- Bozuk kodlama, kısa hedef, hatalı indeks, overlap, canonical uzunluk ve YARA
+  4.5.4 occurrence semantiği için doğrudan runtime regresyonları eklendi.
+
 ### Geliştirilen (13 Kasım — YARA hex occurrence yürütücüsü)
 - Bounded jump, alternation ve negation hex desenleri için `#a`, `@a[i]` ve
   `!a[i]` desteği eklendi. Eşleşen start offset'leri overlap edebilir, aynı

@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1358-blue.svg)](#son-tam-doğrulanmış-koşu)
+[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1361-blue.svg)](#son-tam-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -589,14 +589,16 @@ Test altyapısı notları:
 | Alan | Değer |
 |---|---|
 | Tarih | 13 Kasım 2026 |
-| Commit | `fbae263` |
+| Test edilen ağaç | `fbae263` üzerine bounded-range performans düzeltmesi |
 | Komut | `python -m pytest -q -rs` |
-| Sonuç | **1358 geçti, 0 başarısız, 0 atlandı** (1217,88 sn) |
+| Sonuç | **1361 geçti, 0 başarısız, 0 atlandı** (1214,75 sn) |
 | Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
 Bu tam yerel koşu positional evidence düzeltmesi ve bounded jump, alternation,
-negation için yeni `#/@/!` desteğini içerir. YARA/scanner odaklı paket 370 testte
-geçti. `fbae263` için GitHub Actions da 7/7 işi başarıyla tamamladı.
+negation için yeni `#/@/!` desteği ve bounded-range yakın-eşleşme performans
+düzeltmesini içerir. YARA/scanner odaklı paket 373 testte geçti. Son tamamlanmış
+GitHub Actions `fbae263` için 7/7 idi; bu düzeltmenin CI sonucu push sonrasında
+çalışacaktır.
 
 ### CI durumu
 
@@ -627,8 +629,8 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
 çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam yerel koşu
-G1 occurrence değişiklikleri dahil `fbae263` üzerinde 1358 testtir. Aynı commit
-için CI'da da 7/7 iş başarılıdır.
+G1 occurrence ve bounded-range performans değişiklikleri dahil 1361 testtir.
+En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarılıdır.
 
 ---
 

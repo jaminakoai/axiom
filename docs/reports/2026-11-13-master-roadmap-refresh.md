@@ -201,6 +201,11 @@ negation için 8 idi.
 | Güncel YARA/scanner odaklı paket | `python -m pytest -q tests/test_axiom_scan.py tests/test_yara_*.py tests/test_real_yara_engine.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` — **370 passed**, 145.90 s |
 | 64 MiB occurrence API mikro benchmarkı | bounded jump 0.148 s; alternation 0.552 s; negation 0.150 s; her desen 1 occurrence buldu |
 | Tam yerel paket (`fbae263`, G1 occurrence değişiklikleri dahil) | `python -m pytest -q -rs` — **1358 passed, 0 failed, 0 skipped**, 1217.88 s |
+| Runtime hardening sonrası YARA/scanner paketi | **373 passed**, 139.62 s; doğrudan runtime malformed/index/mask/overlap testleri ve uzun suffix regresyonu dahil |
+| 64 MiB adversarial bounded-range sayımı | Prefix tüm hedefte tekrarlanıyor; 999-byte near-match suffix ve tek geç occurrence; **17 instance, 1.321 s**; geçici bitmap 8 MiB |
+| 64 MiB standart occurrence sayımı (anchor hardening sonrası) | bounded jump 0.141 s; alternation 0.437 s; negation 0.010 s; her desen 1 instance buldu |
+| Güncel tam yerel paket | `python -m pytest -q -rs` — **1361 passed, 0 failed, 0 skipped**, 1214.75 s |
+| ASan/UBSan doğrudan occurrence runtime smoke | 1 MiB adversarial fixture; return code 0, leak/UB raporu yok |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions (positional witness düzeltmesi) | run `43433833667` (`e00c56d`) — **7/7 success** |
@@ -244,24 +249,29 @@ uygulanmadı.
 - `std/security/yara_condition.ax`, `std/security/yara.ax` ve `std/security/yara_rules.ax`:
   koşul witness'ı, occurrence count/nth offset/nth length dispatch'i ve fail-closed
   regex sayımı.
-- `axiom/runtime.h`, `axiom/checker.py`, `axiom/codegen_c.py`,
+- `axiom/runtime.h`: ortak occurrence yürütücüsü, bounded-range suffix anchor bitset'i
+  ve tek-byte find fast path.
+- `axiom/checker.py`, `axiom/codegen_c.py`,
   `axiom/codegen_llvm.py`: ortak hex occurrence yürütücüsü ve iki backend binding'i.
 - `tests/test_yara_hex_range_differential.py`,
   `tests/test_yara_hex_alternation.py`, `tests/test_yara_hex_negation.py`,
-  `tests/test_axiom_scan.py`: YARA diferansiyel ve C/LLVM regressions.
+  `tests/test_yara_runtime_hex_ranges.py`,
+  `tests/test_yara_runtime_hex_occurrences.py`, `tests/test_axiom_scan.py`:
+  YARA diferansiyel, runtime, performans ve C/LLVM regressions.
 - `TODO.md`: G0 kapandı; G1 ilerlemesi ve kalan kanıt işleri.
 - `README.md`, `README.en.md`: son tam koşu ile güncel G1 hedefli koşuyu ayrı
   anlatır.
 - `CHANGELOG.md`: positional witness ve yeni hex occurrence davranışı.
 
-Tam YARA pattern AST'si henüz yapılmadı. Positional witness düzeltmesi ve
-occurrence genişletmesi yerel tam test paketinde **1358/1358** ve GitHub Actions'ta
-**7/7** geçti (`fbae263`, run `43456582647`). JSON raporu hâlâ kural başına tek
-temsilî witness döndürür; bu API'nin tam instance listesine çevrilmesi kapsam dışı.
+Tam YARA pattern AST'si henüz yapılmadı. Son runtime hardening ve occurrence
+değişiklikleri tam yerel test paketinde **1361/1361** geçti; ayrıca uzun suffix
+adversarial benchmarkı 64 MiB'de 17 instance'ı 1,321 sn'de saydı. Bu son runtime
+değişiklikleri için CI push sonrasında çalışacak. JSON raporu hâlâ kural başına
+tek temsilî witness döndürür; bu API'nin tam instance listesine çevrilmesi kapsam dışı.
 
 ## Sıradaki iş
 
 G1'in sıradaki işi özel `hex*:` kodlamalarını typed pattern AST'ye geçirmek,
 bozuk bytecode/overflow sınırlarını doğrudan runtime testleriyle kapatmak ve
-büyük hedeflerde maliyet kanıtını CI'ya eklemektir. Sonra gerçek kural örnekleri
+adversarial maliyet kanıtını CI'ya eklemektir. Sonra gerçek kural örnekleri
 üzerinde G2 uyumluluk kapısı gelir.
