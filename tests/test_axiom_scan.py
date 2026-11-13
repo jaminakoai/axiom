@@ -163,6 +163,18 @@ def test_boolean_conditions_match_in_c_and_llvm(scanner, scanner_llvm, tmp_path)
     assert c_offset.returncode == llvm_offset.returncode == 0
     assert json.loads(c_offset.stdout) == json.loads(llvm_offset.stdout)
 
+    indexed_rules = tmp_path / "indexed-parity.yar"
+    indexed_rules.write_text(
+        'rule IndexedParity {\n strings:\n  $a = "aa"\n'
+        ' condition:\n  @a[2] == 1 and !a[3] == 2\n}\n',
+        encoding="utf-8",
+    )
+    sample.write_bytes(b"aaaa")
+    c_indexed = _run(scanner, "scan", str(sample), "--rules", str(indexed_rules))
+    llvm_indexed = _run(scanner_llvm, "scan", str(sample), "--rules", str(indexed_rules))
+    assert c_indexed.returncode == llvm_indexed.returncode == 0
+    assert json.loads(c_indexed.stdout) == json.loads(llvm_indexed.stdout)
+
 
 @pytest.mark.parametrize(("condition", "expected"), [("true", 1), ("false", 0)])
 def test_boolean_constant_conditions_can_have_no_patterns(scanner, tmp_path, condition, expected):
@@ -299,6 +311,56 @@ def test_pattern_offset_conditions_reject_regex(scanner, tmp_path):
     rules = tmp_path / "regex-offset.yar"
     rules.write_text(
         'rule RegexOffset {\n strings:\n  $a = /needle/\n condition:\n  $a at 0\n}\n',
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
+
+
+@pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
+    ('"aa"', b"aaaa", "@a[1] == 0", 1),
+    ('"aa"', b"aaaa", "@a[2] == 1", 1),
+    ('"aa"', b"aaaa", "@a[3] >= 2", 1),
+    ('"aa"', b"aaaa", "!a[1] == 2", 1),
+    ('"aa"', b"aaaa", "!a[2] >= 2", 1),
+    ('"aa"', b"aaaa", "@a[4] != 0", 0),
+    ('"needle" nocase', b"xxNEEDLE", "@a[1] == 2 and !a[1] == 6", 1),
+    ('"domain" fullword', b"www.mydomain.com", "#a == 0 and @a[1] == 0", 0),
+])
+def test_pattern_occurrence_offset_and_length_conditions(scanner, tmp_path, pattern, target, condition, expected):
+    rules = tmp_path / "occurrence-index.yar"
+    rules.write_text(
+        'rule OccurrenceIndex {\n strings:\n  $a = ' + pattern + '\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    sample = tmp_path / "occurrence-target.bin"
+    sample.write_bytes(target)
+    res = _run(scanner, "scan", str(sample), "--rules", str(rules))
+    assert res.returncode == 0, res.stdout + res.stderr
+    assert json.loads(res.stdout)["match_count"] == expected
+
+
+@pytest.mark.parametrize("condition", ["@a[0] == 0", "!a[0] > 0", "@a[1]", "!a[1] =="])
+def test_malformed_occurrence_index_conditions_are_rejected(scanner, tmp_path, condition):
+    rules = tmp_path / "bad-occurrence-index.yar"
+    rules.write_text(
+        'rule BadOccurrenceIndex {\n strings:\n  $a = "needle"\n condition:\n  '
+        + condition + "\n}\n",
+        encoding="utf-8",
+    )
+    res = _run(scanner, "rules", str(rules))
+    assert res.returncode == 1
+    assert "condition" in json.loads(res.stdout)["error"]
+
+
+@pytest.mark.parametrize("pattern", ["{ 4D 5A }", "/needle/"])
+def test_occurrence_index_conditions_reject_non_text_patterns(scanner, tmp_path, pattern):
+    rules = tmp_path / "unsupported-occurrence-index.yar"
+    rules.write_text(
+        'rule UnsupportedIndex {\n strings:\n  $a = ' + pattern
+        + '\n condition:\n  @a[1] == 0\n}\n',
         encoding="utf-8",
     )
     res = _run(scanner, "rules", str(rules))

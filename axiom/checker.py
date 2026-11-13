@@ -430,6 +430,7 @@ BUILTIN_FUNCTIONS = {
     'rt_ascii_case_find': (['str', 'str'], 'int'),
     'rt_yara_find_text': (['str', 'str', 'int', 'int', 'int'], 'int'),
     'rt_yara_count_text': (['str', 'str', 'int'], 'int'),
+    'rt_yara_nth_text_offset': (['str', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_wildcard': (['str', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_wildcard_raw': (['str', 'int', 'str', 'int', 'int'], 'int'),
     'rt_yara_find_hex_stream': (['str', 'str'], 'int'),

@@ -15,6 +15,12 @@ struct YaraConditionNumber {
     valid: bool
 }
 
+struct YaraConditionTextPattern {
+    text: str,
+    flags: int,
+    valid: bool
+}
+
 fn _yc_is_word_char(ch: str) -> bool {
     return str_contains("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_", ch)
 }
@@ -114,6 +120,35 @@ fn _yc_pattern_matches_in_range(pattern: str, target: str, min_offset: int, max_
     return false
 }
 
+fn _yc_text_pattern_parts(pattern: str) -> YaraConditionTextPattern {
+    if not str_starts_with(pattern, "str:") {
+        return YaraConditionTextPattern { text: "", flags: 0, valid: false }
+    }
+    let mut text = str_sub(pattern, 4, str_len(pattern) - 4)
+    let mut flags = 0
+    if str_starts_with(pattern, "str:nocase:") {
+        text = str_sub(pattern, len("str:nocase:"), str_len(pattern) - len("str:nocase:"))
+        flags = 1
+    } else if str_starts_with(pattern, "str:flags:") {
+        let rest = str_sub(pattern, len("str:flags:"), str_len(pattern) - len("str:flags:"))
+        let separator = str_index_of(rest, ":")
+        if separator < 0 { return YaraConditionTextPattern { text: "", flags: 0, valid: false } }
+        flags = str_to_int(str_sub(rest, 0, separator))
+        text = str_sub(rest, separator + 1, str_len(rest) - separator - 1)
+    }
+    return YaraConditionTextPattern { text: text, flags: flags, valid: true }
+}
+
+fn _yc_compare_int(left: int, op: str, right: int) -> bool {
+    if op == "<" { return left < right }
+    if op == "<=" { return left <= right }
+    if op == ">" { return left > right }
+    if op == ">=" { return left >= right }
+    if op == "==" { return left == right }
+    if op == "!=" { return left != right }
+    return false
+}
+
 fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
     let i = _yc_skip_space(source, position)
     let n = str_byte_len(source)
@@ -130,6 +165,67 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
             return YaraConditionParse { value: false, position: close, valid: false }
         }
         return YaraConditionParse { value: inner.value, position: close + 1, valid: true }
+    }
+
+    if ch == "@" or ch == "!" {
+        let get_length = ch == "!"
+        let mut name_end = i + 1
+        while name_end < n and _yc_is_word_char(str_char_at(source, name_end)) { name_end = name_end + 1 }
+        if name_end == i + 1 { return YaraConditionParse { value: false, position: i, valid: false } }
+        let name = "$" + str_sub(source, i + 1, name_end - i - 1)
+        let mut found = -1
+        let mut p = 0
+        while p < len(pattern_names) {
+            if pattern_names[p] == name { found = p }
+            p = p + 1
+        }
+        if found < 0 or found >= len(pattern_patterns) {
+            return YaraConditionParse { value: false, position: i, valid: false }
+        }
+        let pattern = _yc_text_pattern_parts(pattern_patterns[found])
+        if not pattern.valid { return YaraConditionParse { value: false, position: i, valid: false } }
+        let open = _yc_skip_space(source, name_end)
+        if open >= n or str_char_at(source, open) != "[" {
+            return YaraConditionParse { value: false, position: open, valid: false }
+        }
+        let occurrence = _yc_parse_number(source, open + 1)
+        if not occurrence.valid or occurrence.value <= 0 {
+            return YaraConditionParse { value: false, position: occurrence.position, valid: false }
+        }
+        let bracket = _yc_skip_space(source, occurrence.position)
+        if bracket >= n or str_char_at(source, bracket) != "]" {
+            return YaraConditionParse { value: false, position: bracket, valid: false }
+        }
+        let op_start = _yc_skip_space(source, bracket + 1)
+        let mut op = ""
+        let mut op_len = 0
+        if op_start + 1 < n {
+            let pair = str_sub(source, op_start, 2)
+            if pair == "<=" or pair == ">=" or pair == "==" or pair == "!=" {
+                op = pair
+                op_len = 2
+            }
+        }
+        if op_len == 0 and op_start < n {
+            let single = str_char_at(source, op_start)
+            if single == "<" or single == ">" {
+                op = single
+                op_len = 1
+            }
+        }
+        if op_len == 0 { return YaraConditionParse { value: false, position: op_start, valid: false } }
+        let expected = _yc_parse_number(source, op_start + op_len)
+        if not expected.valid { return YaraConditionParse { value: false, position: expected.position, valid: false } }
+        let mut actual = -1
+        if target_size >= 0 {
+            let offset = rt_yara_nth_text_offset(target, pattern.text, pattern.flags, occurrence.value)
+            if offset >= 0 {
+                actual = offset
+                if get_length { actual = str_byte_len(pattern.text) }
+            }
+        }
+        let matched = actual >= 0 and _yc_compare_int(actual, op, expected.value)
+        return YaraConditionParse { value: matched, position: expected.position, valid: true }
     }
 
     if ch == "$" {

@@ -1670,6 +1670,37 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle,
     return count;
 }
 
+/* Return the 1-based nth text match offset, including overlapping hits. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset(const char* s, const char* needle,
+                                                    ax_int flags, ax_int occurrence) {
+    if (!s || !needle || occurrence <= 0) return -1;
+    const unsigned char* hay = (const unsigned char*)s;
+    const unsigned char* pat = (const unsigned char*)needle;
+    size_t hay_len = strlen(s);
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0 || pat_len > hay_len) return -1;
+    int nocase = (flags & 1) != 0;
+    int fullword = (flags & 8) != 0;
+    ax_int seen = 0;
+    size_t last = hay_len - pat_len;
+    for (size_t i = 0; i <= last; i++) {
+        size_t j = 0;
+        while (j < pat_len) {
+            unsigned char a = hay[i + j];
+            unsigned char b = pat[j];
+            if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
+            if (a != b) break;
+            j++;
+        }
+        if (j != pat_len) continue;
+        if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
+                         (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
+        seen++;
+        if (seen == occurrence) return (ax_int)i;
+    }
+    return -1;
+}
+
 AXIOM_RUNTIME_FN ax_str axiom_str_replace(const char* s, const char* old_s, const char* new_s) {
     if (!s) return axiom_owned_str_wrap("");
     if (!old_s || old_s[0] == '\0') return axiom_safe_strdup(s);
