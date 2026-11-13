@@ -398,6 +398,8 @@ BUILTIN_MAP = {
     'rt_yara_find_hex_range_length': 'axiom_yara_find_hex_range_length',
     'rt_yara_find_hex_alternation': 'axiom_yara_find_hex_alternation',
     'rt_yara_hex_alternation_len': 'axiom_yara_hex_alternation_len',
+    'rt_yara_find_hex_negation': 'axiom_yara_find_hex_negation',
+    'rt_yara_hex_negation_len': 'axiom_yara_hex_negation_len',
     'rt_yara_find_hex_wildcard_raw': 'axiom_yara_find_hex_wildcard_raw',
     'rt_yara_find_hex_stream': 'axiom_yara_find_hex_stream',
     'rt_yara_pattern_len': 'axiom_yara_pattern_len',

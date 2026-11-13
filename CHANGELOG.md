@@ -5,6 +5,16 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Eklenen (13 Kasım — sınırlı YARA negated byte)
+- Hex desenlerinde her kalıp için tek bir `~HH`, `~?H` veya `~H?` byte
+  negation'ı destekleniyor. Sabit `[N]` jump'larıyla kullanılabilir; ikinci
+  negation, `~??`, bounded `[N-M]` ve alternation ile birleşim reddedilir.
+- Negated desenlerde `$a at/in` ve sabit eşleşme uzunluğu desteklenir;
+  `#a`, `@a[i]` ve `!a[i]` occurrence verisi sunulmadığından açıkça reddedilir.
+- Runtime, dahili negation kodlamasını ve byte maskesini doğrular; prefix veya
+  suffix bulunmayan desenleri de güvenli biçimde tarar.
+- YARA diferansiyel, parser ve doğrudan C runtime testleri eklendi.
+
 ### Eklenen (13 Kasım — sınırlı YARA hex alternation)
 - Hex kalıpları artık bir düz alternation grubunda 2–4 eşit uzunluklu (1–16
   bayt) dalı destekliyor. Dallar yalnızca tam bayt veya nibble wildcard token'larından

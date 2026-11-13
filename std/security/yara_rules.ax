@@ -302,6 +302,9 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
     let mut has_alternation = false
     let mut alt_prefix = ""
     let mut alt_branches = ""
+    let mut has_negation = false
+    let mut negation_prefix = ""
+    let mut negated_token = ""
     let mut i = 0
     let mut has_constrained_byte = false
     while i < len(hex) {
@@ -316,7 +319,7 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
             if not lower.valid { return "" }
             let mut cursor = lower.position
             if cursor < len(hex) and str_char_at(hex, cursor) == "-" {
-                if has_range or has_alternation { return "" }
+                if has_range or has_alternation or has_negation { return "" }
                 let upper = _parse_yara_jump_endpoint(hex, cursor + 1)
                 if not upper.valid or upper.value < lower.value or upper.value > 64 {
                     return ""
@@ -350,7 +353,7 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
         }
 
         if ch == "(" {
-            if has_alternation or has_range { return "" }
+            if has_alternation or has_range or has_negation { return "" }
             let alternation = _parse_yara_hex_alternation(hex, i)
             if not alternation.valid { return "" }
             has_alternation = true
@@ -359,6 +362,26 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
             if alternation.has_constrained_byte { has_constrained_byte = true }
             out = ""
             i = alternation.position
+            continue
+        }
+
+        if ch == "~" {
+            if has_negation or has_range or has_alternation or i + 2 >= len(hex) { return "" }
+            let first = str_char_at(hex, i + 1)
+            let second = str_char_at(hex, i + 2)
+            let valid_first = first == "?" or _is_hex_pattern_digit(first)
+            let valid_second = second == "?" or _is_hex_pattern_digit(second)
+            if not valid_first or not valid_second or (first == "?" and second == "?") { return "" }
+            let mut canonical_first = first
+            let mut canonical_second = second
+            if first != "?" { canonical_first = to_upper_tr(first) }
+            if second != "?" { canonical_second = to_upper_tr(second) }
+            has_negation = true
+            negation_prefix = out
+            negated_token = canonical_first + canonical_second
+            out = ""
+            has_constrained_byte = true
+            i = i + 3
             continue
         }
 
@@ -384,6 +407,11 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
     if has_range {
         if len(range_left) == 0 or len(out) == 0 { return "" }
         let encoded = "hexrange:" + range_left + "|" + int_to_str(range_min) + "|" + int_to_str(range_max) + "|" + out
+        if len(encoded) > 8192 { return "" }
+        return encoded
+    }
+    if has_negation {
+        let encoded = "hexnot:" + negation_prefix + "|" + negated_token + "|" + out
         if len(encoded) > 8192 { return "" }
         return encoded
     }
@@ -474,7 +502,7 @@ fn _parse_string_def(line: str) -> str {
         if len(tail) > 0 {
             return ""
         }
-        if str_starts_with(hex, "hexrange:") or str_starts_with(hex, "hexalt:") { return id + "=" + hex }
+        if str_starts_with(hex, "hexrange:") or str_starts_with(hex, "hexalt:") or str_starts_with(hex, "hexnot:") { return id + "=" + hex }
         return id + "=hex:" + hex
     }
 
@@ -830,6 +858,11 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                     if str_starts_with(rule.patterns[pattern_index], "hexalt:") {
                         return result_err_with<YaraRuleSet>(
                             "satir " + int_to_str(condition_line) + ": alternation deseni icin # sayimi desteklenmiyor",
+                            yara_ruleset_new())
+                    }
+                    if str_starts_with(rule.patterns[pattern_index], "hexnot:") {
+                        return result_err_with<YaraRuleSet>(
+                            "satir " + int_to_str(condition_line) + ": negatif bayt deseni icin # sayimi desteklenmiyor",
                             yara_ruleset_new())
                     }
                     pattern_index = pattern_index + 1

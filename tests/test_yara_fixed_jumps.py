@@ -84,7 +84,6 @@ def test_fixed_width_jumps_match_and_agree_with_yara(scanner, tmp_path, pattern,
         "41 [abc] 42",
         "41 [2 42",
         "41 ]42",
-        "41 ~00",            # negation
         "41 GG 42",          # invalid byte token
         "41 4 42",           # odd nibble
         "41 ? 42",           # lone wildcard nibble

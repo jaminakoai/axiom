@@ -8976,6 +8976,176 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_range_length(const char* target, con
 }
 
 typedef struct {
+    AxiomYaraCompiledPattern prefix;
+    AxiomYaraCompiledPattern suffix;
+    uint8_t excluded_mask;
+    uint8_t excluded_value;
+} AxiomYaraHexNegation;
+
+AXIOM_RUNTIME_FN void axiom_yara_hex_negation_free(AxiomYaraHexNegation* negation) {
+    if (!negation) return;
+    axiom_yara_pattern_free(&negation->prefix);
+    axiom_yara_pattern_free(&negation->suffix);
+    negation->excluded_mask = 0;
+    negation->excluded_value = 0;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_negated_hex_nibble(char ch, uint8_t* mask, uint8_t* value,
+                                                    uint8_t nibble_mask, unsigned int shift) {
+    if (ch == '?') {
+        *mask = 0;
+        *value = 0;
+        return 1;
+    }
+    if (!isxdigit((unsigned char)ch)) return 0;
+    unsigned char lower = (unsigned char)tolower((unsigned char)ch);
+    uint8_t nibble = (uint8_t)(isdigit(lower) ? lower - '0' : lower - 'a' + 10);
+    *mask = nibble_mask;
+    *value = (uint8_t)(nibble << shift);
+    return 1;
+}
+
+// Internal form: hexnot:<prefix>|<negated-byte-token>|<suffix>
+AXIOM_RUNTIME_FN int axiom_yara_parse_hex_negation_internal(const char* encoded,
+                                                             AxiomYaraHexNegation* negation) {
+    if (!negation) return 0;
+    memset(negation, 0, sizeof(*negation));
+    if (!encoded) return 0;
+    size_t encoded_len = strlen(encoded);
+    static const char tag[] = "hexnot:";
+    const size_t tag_len = sizeof(tag) - 1;
+    if (encoded_len < tag_len + 4 || encoded_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT ||
+        memcmp(encoded, tag, tag_len) != 0) return 0;
+
+    const char* fields[3] = {0};
+    size_t field_lens[3] = {0};
+    size_t field_index = 0;
+    const char* field_start = encoded + tag_len;
+    for (const char* p = field_start; ; p++) {
+        if (*p == '|' || *p == '\0') {
+            if (field_index >= 3) return 0;
+            fields[field_index] = field_start;
+            field_lens[field_index] = (size_t)(p - field_start);
+            field_index++;
+            if (*p == '\0') break;
+            field_start = p + 1;
+        }
+    }
+    if (field_index != 3 || field_lens[1] != 2) goto invalid_negation;
+
+    uint8_t mask_hi = 0, value_hi = 0, mask_lo = 0, value_lo = 0;
+    if (!axiom_yara_negated_hex_nibble(fields[1][0], &mask_hi, &value_hi, 0xF0, 4) ||
+        !axiom_yara_negated_hex_nibble(fields[1][1], &mask_lo, &value_lo, 0x0F, 0)) goto invalid_negation;
+    negation->excluded_mask = (uint8_t)(mask_hi | mask_lo);
+    negation->excluded_value = (uint8_t)(value_hi | value_lo);
+    if (negation->excluded_mask == 0) goto invalid_negation;
+
+    AxiomYaraCompiledPattern* parts[2] = {&negation->prefix, &negation->suffix};
+    const size_t part_indexes[2] = {0, 2};
+    for (int part = 0; part < 2; part++) {
+        size_t part_len = field_lens[part_indexes[part]];
+        if (part_len == 0) continue;
+        char* text = (char*)malloc(part_len + 1);
+        if (!text) goto invalid_negation;
+        memcpy(text, fields[part_indexes[part]], part_len);
+        text[part_len] = '\0';
+        int has_brace = 0;
+        for (size_t i = 0; i < part_len; i++) {
+            if (text[i] == '{' || text[i] == '}') has_brace = 1;
+        }
+        int parsed = has_brace ? 0 : axiom_yara_parse_hex_pattern_internal(text, parts[part]);
+        free(text);
+        if (parsed <= 0) goto invalid_negation;
+    }
+    return 1;
+
+invalid_negation:
+    axiom_yara_hex_negation_free(negation);
+    return 0;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_negation_match_at(const uint8_t* target, size_t target_len,
+                                                       const AxiomYaraHexNegation* negation,
+                                                       int64_t start) {
+    if (!target || !negation || start < 0 || target_len > (size_t)INT64_MAX) return 0;
+    int total_len = negation->prefix.len + 1 + negation->suffix.len;
+    int64_t remaining = (int64_t)target_len - start;
+    if (remaining < total_len) return 0;
+    if (negation->prefix.len > 0 &&
+        axiom_yara_find_bytes(target, target_len, &negation->prefix, start, start) != start) return 0;
+    int64_t negated_offset = start + negation->prefix.len;
+    if (((uint8_t)target[negated_offset] & negation->excluded_mask) == negation->excluded_value) return 0;
+    int64_t suffix_offset = negated_offset + 1;
+    if (negation->suffix.len > 0 &&
+        axiom_yara_find_bytes(target, target_len, &negation->suffix, suffix_offset, suffix_offset) != suffix_offset) return 0;
+    return 1;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_negation(const char* target, const char* encoded,
+                                                       ax_int min_offset, ax_int max_offset) {
+    if (!target || !encoded) return -1;
+    AxiomYaraHexNegation negation;
+    if (!axiom_yara_parse_hex_negation_internal(encoded, &negation)) return -1;
+    size_t target_len = strlen(target);
+    if (target_len > (size_t)INT64_MAX) {
+        axiom_yara_hex_negation_free(&negation);
+        return -1;
+    }
+    int total_len = negation.prefix.len + 1 + negation.suffix.len;
+    int64_t end = (int64_t)target_len - total_len;
+    int64_t start = min_offset >= 0 ? min_offset : 0;
+    if (max_offset >= 0 && max_offset < end) end = max_offset;
+    ax_int result = -1;
+
+    if (start <= end && negation.prefix.len > 0) {
+        int64_t candidate = start;
+        while (candidate <= end) {
+            ax_int found = axiom_yara_find_bytes((const uint8_t*)target, target_len,
+                                                  &negation.prefix, candidate, end);
+            if (found < 0) break;
+            if (axiom_yara_hex_negation_match_at((const uint8_t*)target, target_len, &negation, found)) {
+                result = found;
+                break;
+            }
+            candidate = found + 1;
+        }
+    } else if (start <= end && negation.suffix.len > 0) {
+        int64_t suffix_start = start + 1;
+        int64_t suffix_end = end + 1;
+        while (suffix_start <= suffix_end) {
+            ax_int found = axiom_yara_find_bytes((const uint8_t*)target, target_len,
+                                                  &negation.suffix, suffix_start, suffix_end);
+            if (found < 0) break;
+            int64_t candidate = (int64_t)found - 1;
+            if (candidate >= start && candidate <= end &&
+                axiom_yara_hex_negation_match_at((const uint8_t*)target, target_len, &negation, candidate)) {
+                result = (ax_int)candidate;
+                break;
+            }
+            suffix_start = (int64_t)found + 1;
+        }
+    } else if (start <= end) {
+        for (int64_t candidate = start; candidate <= end; candidate++) {
+            if (axiom_yara_hex_negation_match_at((const uint8_t*)target, target_len, &negation, candidate)) {
+                result = (ax_int)candidate;
+                break;
+            }
+        }
+    }
+    axiom_yara_hex_negation_free(&negation);
+    return result;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_negation_len(const char* encoded) {
+    if (!encoded) return -1;
+    AxiomYaraHexNegation negation;
+    if (!axiom_yara_parse_hex_negation_internal(encoded, &negation)) return -1;
+    int result = negation.prefix.len + 1 + negation.suffix.len;
+    axiom_yara_hex_negation_free(&negation);
+    return (ax_int)result;
+}
+
+typedef struct {
     AxiomYaraCompiledPattern branches[4];
     int branch_count;
     int common_len;

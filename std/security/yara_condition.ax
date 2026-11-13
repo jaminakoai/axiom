@@ -131,6 +131,9 @@ fn _yc_pattern_matches_in_range(pattern: str, target: str, min_offset: int, max_
     if str_starts_with(pattern, "hexalt:") {
         return rt_yara_find_hex_alternation(target, pattern, min_offset, max_offset) >= 0
     }
+    if str_starts_with(pattern, "hexnot:") {
+        return rt_yara_find_hex_negation(target, pattern, min_offset, max_offset) >= 0
+    }
     return false
 }
 
