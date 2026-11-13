@@ -219,6 +219,41 @@ fn yara_scan_buf(buf_handle: int, hex_pattern: str, min_offset: int, max_offset:
     return rt_yara_scan_buf_handle(buf_handle, hex_pattern, min_offset, max_offset);
 }
 
+// The text runtime supports nocase (1), ascii (2), and fullword (8).
+// Reject unknown flag bits, including wide, instead of silently using ASCII.
+fn _yara_text_flags_supported(flags: int) -> bool {
+    return flags == 0 or flags == 1 or flags == 2 or flags == 3
+        or flags == 8 or flags == 9 or flags == 10 or flags == 11
+}
+
+fn _yara_text_flags_parse(raw: str) -> int {
+    if raw == "0" { return 0 }
+    if raw == "1" { return 1 }
+    if raw == "2" { return 2 }
+    if raw == "3" { return 3 }
+    if raw == "8" { return 8 }
+    if raw == "9" { return 9 }
+    if raw == "10" { return 10 }
+    if raw == "11" { return 11 }
+    return -1
+}
+
+/// Regex'i guvenlik kapisindan gecirerek tarar; gecersiz veya riskli desen Err verir.
+/// Regex kullanan cagiranlar hata bilgisini korumak icin bu API'yi tercih etmelidir.
+fn yara_scan_regex_result(buf: str, regex_pattern: str) -> Result < bool, str > {
+    return regex_is_match_result(regex_pattern, buf)
+}
+
+/// Pattern'in regex kismi varsa gecerli ve guvenli oldugunu dogrular.
+/// Gecerliyse bos metin, aksi halde hata mesaji dondurur.
+fn yara_validate_pattern(pattern_str: str) -> str {
+    if str_starts_with(pattern_str, "regex:") {
+        let p = str_sub(pattern_str, 6, str_len(pattern_str) - 6)
+        return regex_validate(p)
+    }
+    return ""
+}
+
 // -----------------------------------------------------------------------------
 // Tekli Desen ve Kural Eşleme Mantığı (Pattern & Rule Scanning Engine)
 // -----------------------------------------------------------------------------
@@ -231,7 +266,10 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     // 1. Regex Deseni
     if (str_starts_with(pattern_str, "regex:")) {
         let p = str_sub(pattern_str, 6, str_len(pattern_str) - 6);
-        let ok = rt_regex_is_match(p, target);
+        // Eski YARA runtime cagrisi regex_validate kapisini atliyordu.
+        // regex_is_match_result once guvenlik/sozdizimi kontrolu yapar.
+        let result = yara_scan_regex_result(target, p);
+        let ok = result.is_ok and result.value;
         if (ok) {
             return YaraMatch {
                 rule_name: "",
@@ -265,8 +303,11 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
             if sep < 0 {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
             }
-            flags = str_to_int(str_sub(rest, 0, sep));
+            flags = _yara_text_flags_parse(str_sub(rest, 0, sep));
             p = str_sub(rest, sep + 1, str_len(rest) - sep - 1);
+        }
+        if flags < 0 or not _yara_text_flags_supported(flags) {
+            return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
         }
         let mut idx = -1;
         let mut match_len = str_byte_len(p);
@@ -380,9 +421,10 @@ fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
             let rest = str_sub(pattern_str, len("str:flags:"), str_len(pattern_str) - len("str:flags:"))
             let sep = str_index_of(rest, ":")
             if sep < 0 { return -1 }
-            flags = str_to_int(str_sub(rest, 0, sep))
+            flags = _yara_text_flags_parse(str_sub(rest, 0, sep))
             p = str_sub(rest, sep + 1, str_len(rest) - sep - 1)
         }
+        if flags < 0 or not _yara_text_flags_supported(flags) { return -1 }
         return rt_yara_count_text(target, p, flags)
     }
     if str_starts_with(pattern_str, "hex:") {
@@ -513,7 +555,8 @@ fn yara_scan_regex(buf: str, regex_pattern: str) -> bool
     requires len(buf) > 0
     requires len(regex_pattern) > 0
 {
-    return regex_is_match(regex_pattern, buf);
+    let result = yara_scan_regex_result(buf, regex_pattern);
+    return result.is_ok and result.value;
 }
 
 /// Geriye donuk uyumluluk: hex veride hex deseni arar.

@@ -13,12 +13,12 @@
 //           any of them
 //   }
 //
-// Kosullar: desen basvurulari, desen gruplari, `of them`, dosya boyutu,
-// boolean operatorleri ve parantezler.
+// Kosullar: desen basvurulari/gruplari, `at`/`in`, `#`/`@`/`!`, filesize,
+// boolean operatorleri ve parantezler. meta ve rule tag'leri de ayrisip
+// rapora tasinir. Metin desenlerinde nocase/ascii/fullword desteklenir.
 //
-// Desteklenmeyen YARA ozellikleri: meta/tags,
-// at/in, wide ve gelismis hex operatorleri.
-// Desteklenmeyen ifadeler sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
+// Desteklenmeyen YARA ozellikleri (wide, xor/base64 ve gelismis hex yapilari
+// gibi) sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
 import "std/core/error"
 import "std/text/unicode"
@@ -403,8 +403,14 @@ fn _strip_line_comment(line: str) -> str {
             escaped = true
         } else if ch == "\"" {
             in_string = not in_string
-        } else if not in_string and ch == "/" and i + 1 < len(line) and str_char_at(line, i + 1) == "/" {
-            return str_sub(line, 0, i)
+        } else if not in_string and ch == "/" {
+            // Keep the bounds check separate: LLVM may eagerly evaluate the
+            // right side of `and` and read past a trailing slash.
+            if i + 1 < len(line) {
+                if str_char_at(line, i + 1) == "/" {
+                    return str_sub(line, 0, i)
+                }
+            }
         }
         i = i + 1
     }

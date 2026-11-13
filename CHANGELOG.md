@@ -5,6 +5,19 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Düzeltilen (13 Kasım — YARA alt kümesi doğruluğu ve regex güvenliği)
+- `nocase`/`ascii`/`fullword` modifier bayrakları taramada ve desen sayımında
+  yalnızca bilinen birleşimler olarak kabul ediliyor; bozuk veya bilinmeyen
+  dahili flag değerleri sessizce ASCII aramasına düşmüyor. `wide`, mevcut
+  NUL-sonlanan hedef gösterimi nedeniyle açık hata olarak kalıyor.
+- YARA regex taraması artık doğrulama ve risk kapısını kullanıyor. Yeni
+  `yara_scan_regex_result` hatayı çağırana taşır; eski bool API'si geçersiz/
+  riskli desende fail-closed davranır.
+- Kaçışlar, string içindeki `//`, satır sonu yorumları ve tek başına son `/`
+  için regresyon testleri eklendi; yorum taramasındaki sınır kontrolü LLVM
+  değerlendirme davranışına karşı güvenli hale getirildi.
+- Doğrulama: YARA/self-hosted odaklı paket **193 geçti, 0 atlandı**.
+
 ### Düzeltilen (13 Kasım — self-hosted codegen tür çıkarımı)
 - **Fonksiyon kapsamı:** self-hosted C codegen artık yerel string türlerini
   fonksiyonlar arasında taşımıyor; aynı isimli string, integer ve boolean
