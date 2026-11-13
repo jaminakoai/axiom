@@ -10,10 +10,130 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-12 |
-| Aşama | **Faz 1 — Güvenlik araçları odaklı olgunlaşma** |
-| Test (yerel) | 1034 geçiyor / 1034 (12 Kasım 2026, `pytest -q`) |
-| CI (GitHub Actions) | **yeşil** — 7/7 iş geçiyor (koşu `43266408601`); 6 kök neden giderildi (§9–§12) |
+| Son güncelleme | 2026-11-13 |
+| Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
+| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`, 2026-11-13; `python -m pytest -q -rs`) |
+| Son hedefli doğrulama | 304 YARA/runtime/self-hosted testi + 58 LLVM/codegen testi geçti (`a5a0018`, 2026-11-13) |
+| CI (GitHub Actions) | `a5a0018` SHA `43419634279` — **7/7 iş başarılı** (13 Kasım 2026) |
+
+---
+
+## AKTİF MASTER ROADMAP — HER TURDA ÖNCE BURAYI UYGULA
+
+Bu bölüm **şu anki yürütme sırasıdır**. Aşağıdaki P1/P2 tabloları bitmiş işlerin
+kanıtını ve daha geniş ürün yönünü korur; burada daha güncel durum varsa aktif
+roadmap geçerlidir. Başka TODO dosyası açılmaz.
+
+### Mevcut konum ve ilerleme tahmini
+
+- Axiom'ın derleyici, iki arka uç, standart kütüphane, paket altyapısı ve
+  `axiom-scan`/DFIR örnekleri mevcut. Faz 1'in **kod ve test işleri** tamamlandı;
+  Faz 2'nin büyük bölümü uygulandı.
+- Faz 1'in dış kullanıcı kapısı **açılmadı**: `axiom-scan`'i kendi verisinde
+  deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
+- Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
+  negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
+  iddiası değildir.
+- İlk güvenilir public release hedefine göre yaklaşık **%65** ilerleme tahmini
+  kullanılıyor. Bu ölçülmüş KPI değildir: güncel test/CI kanıtı tamamlandı,
+  fakat dış kullanıcı doğrulaması ve dağıtım hazırlığı hâlâ eksik.
+
+### İş sırası ve kabul kapıları
+
+#### G0 — Güncel ve güvenilir başlangıç noktası `[x]` — 13 Kasım 2026 tamamlandı
+
+- [x] `python -m pytest -q -rs` komutunu güncel `master` üzerinde çalıştır;
+  toplam geçti/hata/skip sayısını ve commit SHA'yı kaydet.
+- [x] Hata/skip triage: tam koşuda başarısızlık ve skip yoktu; yeni hata
+  sınıflandırması gerekmemedi.
+- [x] `a5a0018` sonrası GitHub Actions sonucunu doğrula: `gh run view
+  43419634279 --repo jaminakoai/axiom`; 7/7 job başarılı. CI tam test paketini
+  Python 3.10–3.13 ve sanitizer/LLVM/DWARF işlerinde çalıştırdı.
+- [x] Aynı commit için yerel tam test paketini koşup CI sonucundan ayrı kaydet:
+  `a5a0018`, 1297 geçti / 0 başarısız / 0 atlandı, 1205.72 s.
+- [x] `README.md`, `README.en.md`, `CHANGELOG.md` ve bu dosyadaki test/özellik
+  durumlarının birbirini tuttuğunu denetle.
+- **Kapı:** güncel test sonucu biliniyor; hata ve skip'ler açıklanmış; README ile
+  kod arasındaki özellik iddiaları eşleşiyor.
+
+#### G1 — YARA alt kümesini tek bir güvenilir modele taşı `[ ]` — sıradaki iş
+
+Mevcut `hexrange:`, `hexalt:` ve `hexnot:` dahili etiketleri ayrı özel yollar
+oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
+
+- [x] Başlangıç tasarım notu: [YARA pattern AST/modeli ve G1 tasarım kararı](docs/reports/2026-11-13-master-roadmap-refresh.md#yara-pattern-modeli-g1-tasarim-notu).
+- [ ] Diferansiyel testlerle eşleşme/ofset/uzunluk ve alternatif eşitlik
+  semantiğini kesinleştir; nottaki açık kararları kapat.
+- [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
+  çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
+  gerekiyorsa uyumluluk katmanı ekle.
+- [ ] Desteklenen biçimlerin birleşimini belirle: normal bayt/nibble wildcard,
+  sabit ve bounded jump, alternation, negation. Her birleşim ya doğru
+  desteklensin ya da konumlu parse hatasıyla reddedilsin.
+- [ ] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
+  türünün davranış tablosunu yaz. Yanlış sayım/ofset/uzunluk üretmek yerine
+  destek dışı kullanımı açıkça reddet.
+- [ ] Testleri YARA 4.5.4'e sabitlenmiş diferansiyel karşılaştırmayla genişlet:
+  offset, match length, çoklu/örtüşen eşleşmeler, aynı konumdaki alternatifler,
+  sınırlar ve hatalı syntax.
+- [ ] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
+  kodlamayı doğrudan C runtime testleriyle doğrula.
+- **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
+  diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
+  atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.
+
+#### G2 — Gerçek kural dosyalarıyla uyumluluk kanıtı `[ ]`
+
+- [ ] Lisansı ve sürümü kayıtlı, küçük ve yeniden dağıtılabilir bir YARA kural
+  örnek kümesi seç; zararlı örnek indirmeden sentetik/zararsız hedef dosyaları
+  kullan.
+- [ ] Her kuralı `supported`, `explicitly unsupported` veya `mismatch` olarak
+  sınıflandır; sessiz mismatch kabul etme.
+- [ ] Kuralların destek durumunu README'de sürümlü özellik matrisiyle göster.
+- [ ] Bu matrisi CI'da koşan diferansiyel/regresyon testine bağla.
+- **Kapı:** örnek kümesindeki her kural ya doğru eşleşiyor ya neden destek
+  dışında olduğu açıkça raporlanıyor.
+
+#### G3 — Dış kullanıcı doğrulaması `[ ]` — Faz 1 ürün kapısı
+
+- [ ] Bir dış kullanıcı için tekrar üretilebilir kurulum ve 5 dakikalık
+  başlangıç akışı hazırla.
+- [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
+  çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
+- [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
+  gizli olmayan kanıt) izin verilen sınırlar içinde kaydet; kullanıcı verisini
+  projeye toplamayı varsayılan yapma.
+- [ ] Kullanıcı testindeki bulguları `TODO.md`'ye issue/iş olarak ekle ve
+  önceliklendir.
+- **Kapı:** en az bir bağımsız kullanıcının gerçek iş akışı ve sonucu
+  belgelenmeden Faz 3/1.0 iddiasına geçme.
+
+#### G4 — Alfa dağıtımını sağlamlaştır `[ ]`
+
+- [ ] GitHub Actions'ı güncel Linux, gerçek Windows runner ve macOS runner'da
+  doğrula; Wine testini gerçek Windows CI kanıtı olarak sayma.
+- [ ] Temiz makineden kurulum/çalıştırma adımlarını doğrula; platform ve sistem
+  kütüphanesi gereksinimlerini açıkça yaz.
+- [ ] `axpm` için en az bir resmi, sürümlenmiş örnek paketi yayınla; imza,
+  checksum, uninstall/upgrade ve bozuk indirme yollarını test et.
+- [ ] Kırıcı API/syntax değişiklikleri, semver ve desteklenen platform matrisi
+  için 1.0 öncesi kararı yaz.
+- **Kapı:** temiz ortamda kurulumdan örnek taramaya kadar belgelenmiş akış
+  çalışıyor; desteklenmeyen ortamlar açıkça belirtiliyor.
+
+#### G5 — Nişte büyüme ve 1.0 `[ ]` — G3/G4 sonrası
+
+- [ ] Gerçek kullanıcı ve bakım kapasitesi oluştukça paket/yazar hedefleri koy;
+  hedef sayısını kullanıcı ihtiyacının yerine geçirme.
+- [ ] 1.0 API kararlılığı ve iki sürüm geriye uyumluluk politikasını onayla.
+- [ ] Regülasyon kanıt paketi, fon başvurusu ve genel amaçlı dil hedeflerini
+  yalnız somut talep/ortak bulunduğunda başlat.
+
+### Şimdi çalışılacak tek madde
+
+**G1 — YARA pattern modelinin tasarım notunu hazırla.** G0, `a5a0018` üzerinde
+1297 yerel testin tamamı ve GitHub Actions 7/7 ile kapatıldı. Önce tasarım ve
+kabul ölçütleri; ondan sonra sınırlı uygulama.
 
 ---
 
@@ -50,7 +170,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Test (yerel) | 1034 geçiyor (skip yok) | `python3 -m pytest -q` |
+| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`) | `python -m pytest -q -rs` |
+| Son hedefli testler | 304 YARA/runtime/self-hosted + 58 LLVM/codegen (a5a0018) | `docs/reports/2026-11-13-master-roadmap-refresh.md` |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -58,7 +179,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | LLVM backend örnek | 21/21 | `... --backend=llvm` |
 | Self-hosted (`bin/axiomc`) | **21/21** ✅ | `./bin/axiomc build examples/$f.ax` |
 | Paket kayıt defteri | **v1 var** (ed25519, semver, transitive) | `tests/test_registry.py` |
-| Windows desteği | **21/21 derleniyor + wine'da çalışıyor** | `axiom build --target windows` + `wine` |
+| Windows desteği | **21/21 cross-compile + Wine**; gerçek Windows runner yok | `axiom build --target windows` + `wine` |
+| macOS | doğrulanmış destek/CI yok | G4 platform CI işi |
 | Doküman dili | TR + EN (tam) | `docs/en/TUTORIAL.md` |
 | LSP | 10 metod (refs, rename, format, semantic tokens, signature help) | `tests/test_lsp_full_features.py` |
 | API dokümanı | `axiom doc` → `docs/api/` | `axiom doc std/` |
@@ -84,7 +206,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | Blok | Durum | Etki |
 |---|---|---|
 | Paket sayısı | altyapı hazır, **0 yayınlanmış paket** | Dış katkı pratikte yok |
-| Windows/macOS | yok / kısmi | Kullanıcı tabanı daralıyor |
+| Windows/macOS | Windows cross-compile + Wine 21/21; gerçek Windows CI ve macOS doğrulaması yok | Destek matrisi ve kullanıcı tabanı sınırlı |
 | Self-hosted eşitlik | **21/21** ✅ (4→8→11→12→15→21) | Tam parite |
 | IANA saat dilimi / DST | sabit ofset (bilinçli sınır) | Takvim uygulamaları için yetersiz |
 | NFKC/NFKD | yok (NFC/NFD tam) | Homoglif normalleştirmesi yok |
@@ -129,10 +251,9 @@ yeşil test sessiz yanlış sonucu gizler.
 ### 2.2 Hedef sırası (kullanıcı kararı, onaylanmış)
 
 ```
-FAZ 1: Güvenlik araçları (red team + blue team)   ✅ KAPANDI (2026-11-09)
+FAZ 1: Güvenlik araçları (kod/test)                ✅ tamam; dış kullanıcı kapısı ⬜
    ↓
-FAZ 2: Olgun kütüphane + ekosistem altyapısı      ← BURADAYIZ (altyapı bitti,
-                                                     "0 yayınlanmış paket" kaldı)
+FAZ 2: Olgun kütüphane + ekosistem altyapısı      🟡 büyük ölçüde hazır; 0 paket yayınlı
    ↓
 FAZ 3: Niş'te referans dil (güvenlik-kritik yazılım)
    ↓
@@ -893,7 +1014,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Test | 1034 ✅ | 900 | 2000 |
+| Son tam test (a5a0018) | 1297 geçti, 0 hata/skip | — | 2000 |
+| Güncel hedefli test (a5a0018) | 304 YARA + 58 LLVM/codegen geçti | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |
@@ -901,7 +1023,7 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 | Üretim kullanıcısı | 0 | 1 | 3 |
 | Self-hosted örnek | **21/21** ✅ | 8/21 | 21/21 |
 | C'ye hız oranı (aritmetik) | 1,5–2,2× | ≤2× | ≤1,5× |
-| Platform | **2 (Linux + Windows, wine'da 21/21 çalışıyor)** | 1 | 2+ |
+| Platform | Linux; Windows cross-compile + Wine 21/21; gerçek Windows/macOS CI yok | 1 | 2+ gerçek runner |
 
 ---
 
@@ -921,13 +1043,17 @@ Aşağıdakiler **geçmiş kayıttır**, güncel değildir. Çelişki varsa bu d
 
 ---
 
-## 12. HEMEN YAPILACAKLAR (bu hafta, sırayla)
+## 12. GÜNCEL YÜRÜTME SIRASI
 
-1. **P1-02** — Gerçek JSON parser (Sigma/YARA kuralları buna bağlı)
-2. **P1-01** — HTTP/1.1 chunked + redirect (tarama aracı buna bağlı)
-3. **P2-01** — Registry v1 (dış katkının ön koşulu)
-4. **P1-03** — `axiom-scan` v0.1 (killer app)
-5. **P2-03 + P2-04** — `///` doc comment + İngilizce doküman
+Bu bölüm aktif listedeki sırayı tekrarlar; görev ayrıntıları ve kabul kapıları
+belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 
-> **Not:** 1 ve 2 olmadan 3 anlamsız; 3 olmadan ekosistem başlamaz;
-> 4 olmadan kimse 1–3'ü fark etmez.
+1. **G1:** YARA hex pattern modelini birleştir; desteklenen kombinasyon ve
+   occurrence semantiğini diferansiyel testlerle belirle.
+2. **G2:** lisans/sürümü sabitlenmiş zararsız gerçek-kural örnek kümesi.
+3. **G3:** en az bir bağımsız kullanıcının `axiom-scan` ile gerçek iş akışı.
+4. **G4:** gerçek Windows/macOS CI ve temiz ortamda dağıtım doğrulaması.
+5. **G5:** kullanıcı kanıtı ve bakım kapasitesinden sonra 1.0/ekosistem hedefleri.
+
+**G0 kapandı. Şimdiki iş G1'in tasarımıdır.** Tasarım notu ve kabul ölçütleri
+netleşmeden yeni YARA sözdizimi eklenmez.

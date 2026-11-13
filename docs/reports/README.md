@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 43 rapor** · 44 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 44 rapor** · 45 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -79,6 +79,10 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 - [P1-03c — axiom-scan v0.2 + DFIR odaklı GitHub hazırlığı](P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md)
 - [Sandbox Test Triyajı + Sonsuz Döngü Kök Neden](sandbox-test-triage-2026-11-12.md)
+
+## 13 Kasım 2026
+
+- [Master roadmap yenileme ve güncel doğrulama](2026-11-13-master-roadmap-refresh.md)
 
 ## Okuma sırası (yeni gelen için)
 

@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (local run)](https://img.shields.io/badge/tests%20(local)-1034-blue.svg)](#last-verified-run)
+[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1297-blue.svg)](#last-full-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -44,7 +44,7 @@ service or network required):
 
 | Tool | Input | Analysis | Output |
 |---|---|---|---|
-| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | A YARA-subset rule file + a file **or** a PCAP | text, hex-wildcard and simple regex patterns; group and Boolean conditions | Schema-versioned JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, matches |
+| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | A YARA-subset rule file + a file **or** a PCAP | text, hex wildcards/bounded jumps, bounded alternation/negation and regex; group and Boolean conditions | Schema-versioned JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, matches |
 | **DFIR triage** (`examples/22_dfir_triage.ax`) | The running system (`/proc`) and an optional log file (`AXIOM_DFIR_LOG`) | process list, listening TCP ports, SHA-256 integrity of critical files, Sigma log scanning | A single JSON report: `processes`, `network`, `integrity`, `log`, `detections`, `risk` |
 
 **What concrete job does it make easier?**
@@ -588,24 +588,25 @@ Test-infrastructure notes:
   tests are skipped for environment reasons. Wine prefixes are removed at the
   end of the session.
 
-### Last verified run
+### Last full verified run
 
 | Field | Value |
 |---|---|
-| Date | 12 November 2026 |
-| Command | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Result | **1034 passed, 0 failed, 0 skipped** (946.62 s) |
-| Environment | Linux x86_64, clang 21.1.8, wine installed, `bin/axiomc` built locally |
+| Date | 13 November 2026 |
+| Commit | `a5a0018` |
+| Command | `python -m pytest -q -rs` |
+| Result | **1297 passed, 0 failed, 0 skipped** |
+| Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
-**1034** is the total number of collected tests. Because wine, clang and z3 are
-present locally, the wine/Windows tests really run and nothing is skipped. The
-same suite in an environment missing those components starts **skipping**
-(see below) — same count, different outcome.
+This full run is on current HEAD `a5a0018`. Earlier focused runs also passed
+**304 YARA/runtime/self-hosted tests** and **58 LLVM/codegen tests**. The badge
+reports the test count for this current full run. The next G1 task is to settle
+the open match semantics against reference YARA (see [TODO.md](TODO.md)).
 
 ### CI status
 
-**GitHub Actions is green.** The badge is wired to the real workflow
-(`.github/workflows/ci.yml`, `master`); all 7 jobs pass:
+The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
+All 7 jobs passed in the latest verified run for commit `a5a0018`:
 
 | Job | Status |
 |---|---|
@@ -614,7 +615,8 @@ same suite in an environment missing those components starts **skipping**
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43266408601` (12 November 2026, `master`).
+Last verified run: `43419634279` (13 November 2026, `master`, SHA
+`a5a0018d3fdf3ee43f843a4cc65239a553786fb8`).
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -629,7 +631,8 @@ Six root causes fixed on the way here (details: report §9–§12):
 
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
-The local run (1034/0/0) and CI now agree.
+The cited 1034-test run matched CI at that time; the latest full run is 1297
+tests at `a5a0018`, also verified by all 7 CI jobs.
 
 ---
 

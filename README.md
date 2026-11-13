@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (yerel koşu)](https://img.shields.io/badge/tests%20(yerel)-1034-blue.svg)](#son-doğrulanmış-koşu)
+[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1297-blue.svg)](#son-tam-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -44,7 +44,7 @@ güvenlik triyajı için kullanılabilir:
 
 | Araç | Girdi | Yaptığı analiz | Çıktı |
 |---|---|---|---|
-| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | YARA alt kümesi kural dosyası + bir dosya **veya** PCAP | metin, hex-wildcard ve basit regex desenleri; grup ve Boole koşulları | Şema sürümlü JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, eşleşmeler |
+| **`axiom-scan`** (`examples/21_axiom_scan.ax`) | YARA alt kümesi kural dosyası + bir dosya **veya** PCAP | metin, hex wildcard/sınırlı jump, sınırlı alternation/negation ve regex; grup ve Boole koşulları | Şema sürümlü JSON: `schema_version`, `tool_version`, `rules_count`, `target_sha256`, `scanned_bytes`, `match_count`, eşleşmeler |
 | **DFIR triyajı** (`examples/22_dfir_triage.ax`) | Çalışan sistem (`/proc`) ve isteğe bağlı log dosyası (`AXIOM_DFIR_LOG`) | süreç listesi, dinlenen TCP portları, kritik dosya SHA-256 bütünlüğü, Sigma kuralıyla log taraması | Tek JSON rapor: `processes`, `network`, `integrity`, `log`, `detections`, `risk` |
 
 **Hangi somut işi kolaylaştırır?**
@@ -584,24 +584,26 @@ Test altyapısı notları:
 - Windows hedefi testleri `wine` üzerinde gerçek çalıştırma yapar; wine yoksa
   ilgili testler ortam nedeniyle atlanır. Oturum sonunda wine prefix'leri silinir.
 
-### Son doğrulanmış koşu
+### Son tam doğrulanmış koşu
 
 | Alan | Değer |
 |---|---|
-| Tarih | 12 Kasım 2026 |
-| Komut | `python3 -m pytest -q --no-header -p no:cacheprovider` |
-| Sonuç | **1034 geçti, 0 başarısız, 0 atlandı** (946,62 s) |
-| Ortam | Linux x86_64, clang 21.1.8, wine kurulu, `bin/axiomc` yerelde derlenmiş |
+| Tarih | 13 Kasım 2026 |
+| Commit | `a5a0018` |
+| Komut | `python -m pytest -q -rs` |
+| Sonuç | **1297 geçti, 0 başarısız, 0 atlandı** |
+| Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
-Buradaki **1034**, toplam toplanan test sayısıdır. Yerelde wine + clang + z3
-mevcut olduğu için wine/Windows testleri de gerçekten koşar ve hiçbir test
-atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başlar
-(aşağıya bakın) — sayı aynıdır, sonuç farklıdır.
+Bu tam koşu güncel HEAD `a5a0018` üzerindedir. YARA/runtime/self-hosted odaklı
+304 test ve LLVM/codegen paketindeki 58 test de daha önce hedefli olarak
+doğrulanmıştı. Rozet bu güncel tam koşudaki test sayısını gösterir. G1'in
+sıradaki işi, tasarım notunda açık kalan eşleşme semantiklerini referans
+YARA'ya karşı test ederek kesinleştirmektir ([TODO.md](TODO.md)).
 
 ### CI durumu
 
-**GitHub Actions yeşil.** Rozet gerçek workflow'a bağlıdır
-(`.github/workflows/ci.yml`, `master`); 7 işin tamamı geçiyor:
+Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
+`a5a0018` commit'indeki en güncel doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -610,7 +612,8 @@ atlanmaz. Aynı paket, bu üç bileşenin eksik olduğu ortamda **atmaya** başl
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43266408601` (12 Kasım 2026, `master`).
+Son doğrulanan koşu: `43419634279` (13 Kasım 2026, `master`, SHA
+`a5a0018d3fdf3ee43f843a4cc65239a553786fb8`).
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -625,7 +628,8 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
-çıkmasını sağladı. Yerel koşu (1034/0/0) ile CI artık aynı fikirde.
+çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam koşu
+`a5a0018` üzerinde 1297 testtir. Aynı commit için CI'da da 7/7 iş başarılıdır.
 
 ---
 
