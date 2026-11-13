@@ -93,9 +93,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   tek API'de uygula ve seçilen offset'in canonical uzunluğunu ortak API'den al.
   Eski `hexrange:`/`hexalt:`/`hexnot:` etiketleri AST geçişi bitene kadar parser
   ile runtime arasındaki geçici uyumluluk kodlamalarıdır.
-- [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
+- [~] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
-  gerekiyorsa uyumluluk katmanı ekle.
+  gerekiyorsa uyumluluk katmanı ekle. Parser artık byte/mask, bounded jump,
+  alternation ve negation atomlarını `hexast:v1:` programına yazar. Runtime bu
+  programı fail-closed doğrulayıp mevcut matcher'lara uyumluluk adaptörüyle
+  aktarır; doğrudan typed AST yürütücüsüne geçiş açık.
 
   **G1 geçiş tasarımı:** `YaraRule` alanlarını ve `yara_rule_add_pattern`
   imzasını koru; kaynak pattern'i parser aşamasında `hexast:v1:` adlı tek,
@@ -104,6 +107,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   C runtime'da tek doğrulayıcı/yürütücü; find/count/nth API'leri aynı
   occurrence motorunu kullansın. Mevcut `hexrange:`/`hexalt:`/`hexnot:`
   kodlamaları geçiş testlerinde adapter olarak okunup sonra iç akıştan kaldırılsın.
+  İlk geçiş dikey dilimi tamamlandı: parser tek sürümlü AST yazıyor; C runtime
+  bytecode'u sınırlandırıp eski üç matcher temsiline dönüştürüyor. AST'yi
+  `AxiomYaraHexRangePattern`/`Alternation`/`Negation` yapılarından bağımsız
+  yürütmek ve adapter'ları kaldırmak sonraki alt adımdır.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
@@ -148,11 +155,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Kalan sınırlara dair açık durum raporda; eksik koşul birleşimleri ve dahili
   runtime limitleri tamamlanmalı.
 - [~] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
-  kodlamayı doğrudan C runtime testleriyle doğrula. Mevcut legacy hex kodlamaları
-  için malformed range/alternation/negation, 8 KiB pattern limiti, signed offset
-  sınırı ve occurrence indeks taşması doğrudan test ediliyor. `hexast:v1`
-  bytecode henüz mevcut olmadığından AST program doğrulama/overflow testleri ve
-  AST geçişi sonrası hedef-boyutu stres kanıtı açık kalıyor.
+  kodlamayı doğrudan C runtime testleriyle doğrula. Legacy kodlamalar için
+  malformed range/alternation/negation, 8 KiB pattern limiti, signed offset
+  sınırı ve occurrence indeks taşması; `hexast:v1` için eksik/yanlış opcode,
+  çoklu özel atom, hatalı/taşan jump ve fazla alternation dalı doğrudan test
+  ediliyor. Doğrudan typed executor'a geçiş sonrası overflow ve hedef boyutu
+  stres kanıtı açık kalıyor.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
   diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
   atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.

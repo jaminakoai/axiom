@@ -276,7 +276,7 @@ bozuk bytecode/overflow sınırlarını doğrudan runtime testleriyle kapatmak v
 adversarial maliyet kanıtını CI'ya eklemektir. Sonra gerçek kural örnekleri
 üzerinde G2 uyumluluk kapısı gelir.
 
-## G1 artımlı uygulama — ortak hex occurrence API'si
+## G1 artımlı uygulama — ortak hex occurrence API'si ve AST bytecode üretimi
 
 AST geçişinden önce tüm hex biçimlerinin arama yolundaki dispatch ayrışmasını
 azaltmak için `rt_yara_find_hex_pattern(target, pattern, min, max)` ve seçili
@@ -284,10 +284,23 @@ offset için `rt_yara_hex_pattern_length_at(...)` eklendi. Sabit hex, bounded
 jump, alternation ve negation artık parser koşul araması ile YaraMatch raporunda
 aynı C runtime occurrence yürütücüsünden geçiyor; C/LLVM binding'leri eklendi.
 Alternation için offset sınır testi bu geçişte kapsam genişletilince bir hata
-yakaladı ve düzeltildi. Parser'ın `hexrange:`/`hexalt:`/`hexnot:` etiketleri
-henüz kaldırılmadı; bu adım typed AST'nin yerine geçmiyor.
+yakaladı ve düzeltildi.
 
-Doğrulama: tam `python -m pytest -q -rs` **1361 geçti** (1287,09 sn), hedefli
-YARA/scanner paketi **373 geçti**; son runtime/alternation/parity tekrar koşusu
-**22 geçti**. `make fmt-check` ve `git diff --check` temiz. Bu commit henüz push
-edilmedi; CI doğrulaması push sonrası yapılacak.
+Parser artık sabit/wildcard byte (`B`), bounded jump (`J`), flat alternation
+(`A`) ve tek-byte negation (`N`) atomlarını `hexast:v1:` programına normalize
+ediyor. C runtime programı sürüm, opcode, terminator, jump aralığı ve
+alternation dal sayısı yönünden doğrulayıp mevcut matcher temsillerine çeviriyor.
+Eski `hexrange:`/`hexalt:`/`hexnot:` kodlamaları parser iç akışından çıktı;
+runtime adapter olarak ve geriye uyumlu doğrudan API'lerde kaldı.
+
+Bu ilk AST dilimi tek tip parser/runtime sınırını kuruyor; C eşleştirme çekirdeği
+henüz typed atomları doğrudan yürütmüyor. Sonraki adım adapter dönüşümünü
+kaldırıp mevcut range/alternation/negation struct'larını typed AST yürütücüsüyle
+değiştirmek.
+
+Doğrulama: ortak API aşamasında tam `python -m pytest -q -rs` **1361 geçti**
+(1287,09 sn), hedefli YARA/scanner paketi **373 geçti**. AST bytecode testleri
+eklendikten sonra parser/runtime kümesi **140 geçti**, malformed AST doğrudan C
+runtime kontrolleri eklendi ve son YARA/scanner paketi **373 geçti**. AST dahil
+güncel tam proje paketi `python -m pytest -q -rs` ile **1361 geçti**
+(1223,42 sn). CI, bu AST commit'i push edildikten sonra çalışacak.

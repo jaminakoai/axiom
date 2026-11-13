@@ -52,6 +52,25 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
     } } while (0)
 
     int main(void) {
+        CHECK(axiom_yara_count_hex_pattern("ABAB", "hexast:v1:B41 42;") == 2);
+        CHECK(axiom_yara_find_hex_pattern("ABAB", "hexast:v1:B41 42;", 1, -1) == 2);
+        CHECK(axiom_yara_count_hex_pattern("A1B2B", "hexast:v1:B41;J1-3;B42;") == 1);
+        CHECK(axiom_yara_nth_hex_pattern_length("A1B2B", "hexast:v1:B41;J1-3;B42;", 1) == 3);
+        CHECK(axiom_yara_count_hex_pattern("ABC ADC", "hexast:v1:B41;A42|44;B43;") == 2);
+        CHECK(axiom_yara_count_hex_pattern("ADC ABC", "hexast:v1:B41;N42;B43;") == 1);
+        CHECK(axiom_yara_count_hex_pattern("ACXC", "hexast:v1:N42;B43;") == 2);
+
+        const char* malformed_ast[] = {
+            "hexast:v1:", "hexast:v1:B41", "hexast:v1:X41;",
+            "hexast:v1:B41;J1-3;", "hexast:v1:B41;J1-3;N42;",
+            "hexast:v1:B41;J3-1;B42;", "hexast:v1:B41;J0-65;B42;",
+            "hexast:v1:A41;", "hexast:v1:A41|42|43|44|45;",
+            "hexast:v2:B41;"
+        };
+        for (int i = 0; i < (int)(sizeof(malformed_ast) / sizeof(malformed_ast[0])); i++) {
+            CHECK(axiom_yara_count_hex_pattern("ABC", malformed_ast[i]) == -1);
+        }
+
         CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", -1, -1) == 0);
         CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", 1, -1) == 2);
         CHECK(axiom_yara_find_hex_pattern("ABAB", "hex:41 42", 0, 0) == 0);

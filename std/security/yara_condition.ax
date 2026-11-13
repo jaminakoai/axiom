@@ -123,7 +123,7 @@ fn _yc_pattern_find_in_range(pattern: str, target: str, min_offset: int, max_off
         }
         return rt_yara_find_text(target, p, flags, min_offset, max_offset)
     }
-    if str_starts_with(pattern, "hex:") or str_starts_with(pattern, "hexrange:") or str_starts_with(pattern, "hexalt:") or str_starts_with(pattern, "hexnot:") {
+    if str_starts_with(pattern, "hexast:v1:") or str_starts_with(pattern, "hex:") or str_starts_with(pattern, "hexrange:") or str_starts_with(pattern, "hexalt:") or str_starts_with(pattern, "hexnot:") {
         return rt_yara_find_hex_pattern(target, pattern, min_offset, max_offset)
     }
     return -1
@@ -441,7 +441,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
         }
         let pattern_source = pattern_patterns[found]
         let is_text = str_starts_with(pattern_source, "str:")
-        let is_hex = str_starts_with(pattern_source, "hex:") or str_starts_with(pattern_source, "hexrange:") or str_starts_with(pattern_source, "hexalt:") or str_starts_with(pattern_source, "hexnot:")
+        let is_hex = str_starts_with(pattern_source, "hexast:v1:") or str_starts_with(pattern_source, "hex:") or str_starts_with(pattern_source, "hexrange:") or str_starts_with(pattern_source, "hexalt:") or str_starts_with(pattern_source, "hexnot:")
         if not is_text and not is_hex {
             return YaraConditionParse { value: false, position: i, valid: false, witness_name: "", witness_offset: -1 }
         }

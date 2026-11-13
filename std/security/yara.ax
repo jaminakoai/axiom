@@ -290,7 +290,7 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 
     // All supported hex forms share one occurrence matcher. This keeps
     // bounded jumps, alternation, negation and fixed bytes on the same path.
-    if str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+    if str_starts_with(pattern_str, "hexast:v1:") or str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
         let off = rt_yara_find_hex_pattern(target, pattern_str, min_offset, max_offset)
         if off >= 0 {
             let match_len = rt_yara_hex_pattern_length_at(target, pattern_str, off)
@@ -424,7 +424,7 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
 // Regex counts remain unsupported because the regex API exposes no instances.
 fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
     if str_starts_with(pattern_str, "regex:") { return -1 }
-    if str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+    if str_starts_with(pattern_str, "hexast:v1:") or str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
         return rt_yara_count_hex_pattern(target, pattern_str)
     }
     if str_starts_with(pattern_str, "str:") {

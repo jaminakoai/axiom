@@ -9357,6 +9357,100 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_next_compiled(const uint8_t* target, siz
     return axiom_yara_find_bytes(target, target_len, pattern, start, end);
 }
 
+AXIOM_RUNTIME_FN int axiom_yara_hex_ast_append(char* dst, size_t cap, size_t* used,
+                                                const char* src, size_t len) {
+    if (!dst || !used || (!src && len) || *used >= cap || len >= cap - *used) return 0;
+    if (len) memcpy(dst + *used, src, len);
+    *used += len;
+    dst[*used] = '\0';
+    return 1;
+}
+
+// Transitional decoder for hexast:v1. The program is a flat typed sequence:
+// B<hex bytes>;, J<min>-<max>;, A<branches>;, N<byte>;. The current subset
+// permits at most one non-byte atom; execution is adapted to legacy matchers.
+AXIOM_RUNTIME_FN int axiom_yara_hex_ast_to_legacy(const char* encoded, char* out, size_t out_cap) {
+    static const char tag[] = "hexast:v1:";
+    if (!encoded || !out || out_cap < 16 || strncmp(encoded, tag, sizeof(tag) - 1) != 0) return 0;
+    size_t encoded_len = strlen(encoded);
+    if (encoded_len <= sizeof(tag) - 1 || encoded_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT) return 0;
+
+    char prefix[AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1] = {0};
+    char suffix[AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1] = {0};
+    char special[AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1] = {0};
+    size_t prefix_len = 0, suffix_len = 0;
+    int special_kind = 0;
+    const char* cursor = encoded + sizeof(tag) - 1;
+    const char* end = encoded + encoded_len;
+
+    while (cursor < end) {
+        char opcode = *cursor++;
+        const char* operand = cursor;
+        while (cursor < end && *cursor != ';') cursor++;
+        if (cursor >= end) return 0;
+        size_t operand_len = (size_t)(cursor - operand);
+        cursor++;
+        if (operand_len == 0 || operand_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT) return 0;
+        if (opcode == 'B') {
+            char* destination = special_kind == 0 ? prefix : suffix;
+            size_t* used = special_kind == 0 ? &prefix_len : &suffix_len;
+            if (*used + operand_len + (*used > 0 ? 1u : 0u) >= AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1u) return 0;
+            if (*used) destination[(*used)++] = ' ';
+            memcpy(destination + *used, operand, operand_len);
+            *used += operand_len;
+            destination[*used] = '\0';
+        } else if (opcode == 'J' || opcode == 'A' || opcode == 'N') {
+            if (special_kind != 0) return 0;
+            special_kind = opcode == 'J' ? 1 : (opcode == 'A' ? 2 : 3);
+            memcpy(special, operand, operand_len);
+            special[operand_len] = '\0';
+        } else {
+            return 0;
+        }
+    }
+
+    out[0] = '\0';
+    size_t used = 0;
+    if (special_kind == 0) {
+        return prefix_len > 0 && axiom_yara_hex_ast_append(out, out_cap, &used, "hex:", 4) &&
+               axiom_yara_hex_ast_append(out, out_cap, &used, prefix, prefix_len);
+    }
+    if (special_kind == 1) {
+        char* dash = strchr(special, '-');
+        int min_gap = 0, max_gap = 0;
+        if (!prefix_len || !suffix_len || !dash || strchr(dash + 1, '-') ||
+            !axiom_yara_parse_jump_bound(special, (size_t)(dash - special), &min_gap) ||
+            !axiom_yara_parse_jump_bound(dash + 1, strlen(dash + 1), &max_gap) ||
+            min_gap > max_gap || max_gap - min_gap > 16) return 0;
+        int n = snprintf(out, out_cap, "hexrange:%s|%d|%d|%s", prefix, min_gap, max_gap, suffix);
+        return n >= 0 && (size_t)n < out_cap;
+    }
+    if (special_kind == 3) {
+        if (strlen(special) != 2 || (special[0] == '?' && special[1] == '?')) return 0;
+        int n = snprintf(out, out_cap, "hexnot:%s|%s|%s", prefix, special, suffix);
+        return n >= 0 && (size_t)n < out_cap;
+    }
+
+    if (!axiom_yara_hex_ast_append(out, out_cap, &used, "hexalt:", 7)) return 0;
+    const char* branch = special;
+    int branch_count = 0;
+    while (1) {
+        const char* separator = strchr(branch, '|');
+        size_t branch_len = separator ? (size_t)(separator - branch) : strlen(branch);
+        if (!branch_len || branch_count >= 4) return 0;
+        if (branch_count && !axiom_yara_hex_ast_append(out, out_cap, &used, "|", 1)) return 0;
+        if (prefix_len && (!axiom_yara_hex_ast_append(out, out_cap, &used, prefix, prefix_len) ||
+                           !axiom_yara_hex_ast_append(out, out_cap, &used, " ", 1))) return 0;
+        if (!axiom_yara_hex_ast_append(out, out_cap, &used, branch, branch_len)) return 0;
+        if (suffix_len && (!axiom_yara_hex_ast_append(out, out_cap, &used, " ", 1) ||
+                           !axiom_yara_hex_ast_append(out, out_cap, &used, suffix, suffix_len))) return 0;
+        branch_count++;
+        if (!separator) break;
+        branch = separator + 1;
+    }
+    return branch_count >= 2;
+}
+
 // Shared occurrence executor for supported hex-pattern encodings. A distinct
 // start offset contributes at most one instance; scanning every byte permits
 // overlap, while each matcher selects its canonical instance length.
@@ -9368,6 +9462,12 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
                                                                     ax_int max_offset) {
     if (!target || !encoded || occurrence < 0 || min_offset < -1 || max_offset < -1 ||
         (min_offset >= 0 && max_offset >= 0 && min_offset > max_offset)) return -1;
+    if (strncmp(encoded, "hexast:v1:", 10) == 0) {
+        char legacy[AXIOM_YARA_MAX_HEX_PATTERN_TEXT * 4u + 64u];
+        if (!axiom_yara_hex_ast_to_legacy(encoded, legacy, sizeof(legacy))) return -1;
+        return axiom_yara_hex_pattern_occurrence_internal(target, legacy, occurrence, return_length,
+                                                           min_offset, max_offset);
+    }
     size_t target_len = strlen(target);
     if (target_len > (size_t)INT64_MAX) return -1;
     const uint8_t* bytes = (const uint8_t*)target;

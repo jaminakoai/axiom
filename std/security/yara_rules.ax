@@ -289,10 +289,15 @@ fn _parse_yara_hex_alternation(source: str, position: int) -> YaraHexAlternation
     return YaraHexAlternation { branches: "", position: cursor, byte_length: 0, has_constrained_byte: false, valid: false }
 }
 
-// Normalize supported YARA hex jumps. Fixed `[N]` jumps expand to full-byte
-// wildcards; one bounded `[N-M]` jump is encoded for the variable-length
-// runtime matcher. Both forms and the compact range encoding are bounded to
-// keep parsing and scanning work predictable.
+fn _yara_hex_ast_bytes(bytes: str) -> str {
+    if len(bytes) == 0 { return "" }
+    return "B" + bytes + ";"
+}
+
+// Normalize supported YARA hex syntax to the versioned, flat AST bytecode.
+// Fixed `[N]` jumps expand to full-byte wildcards; one bounded `[N-M]` jump
+// remains a typed jump atom. Existing resource limits keep parsing and
+// scanning work predictable.
 fn _normalize_yara_hex_pattern(hex: str) -> str {
     let mut out = ""
     let mut range_left = ""
@@ -404,45 +409,32 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
         i = i + 2
     }
     if not has_constrained_byte { return "" }
+    let mut ast = "hexast:v1:"
     if has_range {
         if len(range_left) == 0 or len(out) == 0 { return "" }
-        let encoded = "hexrange:" + range_left + "|" + int_to_str(range_min) + "|" + int_to_str(range_max) + "|" + out
-        if len(encoded) > 8192 { return "" }
-        return encoded
+        ast = ast + _yara_hex_ast_bytes(range_left)
+        ast = ast + "J" + int_to_str(range_min) + "-" + int_to_str(range_max) + ";"
+        ast = ast + _yara_hex_ast_bytes(out)
+        if len(ast) > 8192 { return "" }
+        return ast
     }
     if has_negation {
-        let encoded = "hexnot:" + negation_prefix + "|" + negated_token + "|" + out
-        if len(encoded) > 8192 { return "" }
-        return encoded
+        ast = ast + _yara_hex_ast_bytes(negation_prefix)
+        ast = ast + "N" + negated_token + ";"
+        ast = ast + _yara_hex_ast_bytes(out)
+        if len(ast) > 8192 { return "" }
+        return ast
     }
     if has_alternation {
-        let mut remaining = alt_branches
-        let mut encoded = "hexalt:"
-        let mut branch_index = 0
-        while branch_index < 4 and len(remaining) > 0 {
-            let separator = str_index_of(remaining, "|")
-            let mut branch = remaining
-            if separator >= 0 {
-                branch = str_sub(remaining, 0, separator)
-                remaining = str_sub(remaining, separator + 1, len(remaining) - separator - 1)
-            } else {
-                remaining = ""
-            }
-            if branch_index > 0 { encoded = encoded + "|" }
-            encoded = encoded + alt_prefix
-            if len(alt_prefix) > 0 and len(branch) > 0 { encoded = encoded + " " }
-            encoded = encoded + branch
-            if len(out) > 0 {
-                if len(alt_prefix) > 0 or len(branch) > 0 { encoded = encoded + " " }
-                encoded = encoded + out
-            }
-            if len(encoded) > 8192 { return "" }
-            branch_index = branch_index + 1
-        }
-        if branch_index < 2 or len(remaining) > 0 { return "" }
-        return encoded
+        ast = ast + _yara_hex_ast_bytes(alt_prefix)
+        ast = ast + "A" + alt_branches + ";"
+        ast = ast + _yara_hex_ast_bytes(out)
+        if len(ast) > 8192 { return "" }
+        return ast
     }
-    return out
+    ast = ast + _yara_hex_ast_bytes(out)
+    if len(ast) > 8192 { return "" }
+    return ast
 }
 
 // strings: bolumundeki "$id = ..." satirini ayristirir.
@@ -502,7 +494,7 @@ fn _parse_string_def(line: str) -> str {
         if len(tail) > 0 {
             return ""
         }
-        if str_starts_with(hex, "hexrange:") or str_starts_with(hex, "hexalt:") or str_starts_with(hex, "hexnot:") { return id + "=" + hex }
+        if str_starts_with(hex, "hexast:v1:") { return id + "=" + hex }
         return id + "=hex:" + hex
     }
 
