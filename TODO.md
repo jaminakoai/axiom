@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-13 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`, 2026-11-13; `python -m pytest -q -rs`) |
-| Son G1 hedefli doğrulama | YARA/scanner ilgili 315 test geçti; ek witness/parity testleri geçti; `make fmt-check` geçti (çalışma ağacı) |
-| Son taban CI | `a5a0018` SHA `43419634279` — **7/7 iş başarılı**; G1 düzeltmesinin CI sonucu bekliyor |
+| Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`, 2026-11-13; `python -m pytest -q -rs`) |
+| Son G1 hedefli doğrulama | YARA/scanner testleri ve C/LLVM witness regresyonları geçti; `make fmt-check` geçti |
+| Son CI | `e00c56d` SHA `43433833667` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
 
 ---
 
@@ -62,11 +62,11 @@ Mevcut `hexrange:`, `hexalt:` ve `hexnot:` dahili etiketleri ayrı özel yollar
 oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 - [x] Başlangıç tasarım notu: [YARA pattern AST/modeli ve G1 tasarım kararı](docs/reports/2026-11-13-master-roadmap-refresh.md#yara-pattern-modeli-g1-tasarim-notu).
-- [ ] Diferansiyel testlerle eşleşme/ofset/uzunluk ve alternatif eşitlik
-  semantiğini kesinleştir; nottaki açık kararları kapat.
 - [x] `$a at N` / `$a in (...)` kuralı daha sonraki bir occurrence ile
   sağlandığında raporda koşulu sağlayan occurrence'ın offset/uzunluğunu ver;
   range/alternation/negation ve C/LLVM için regresyon ekle.
+- [ ] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
+  semantiğini kesinleştir; nottaki açık kararları kapat.
 - [ ] Tek bir koşul birden fazla pozitif occurrence gerektirdiğinde raporun
   kanıt modelini belirle; mevcut çıktı kural başına tek bir witness taşır.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
@@ -136,9 +136,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G1 — YARA pattern modelinin tasarım notunu hazırla.** G0, `a5a0018` üzerinde
-1297 yerel testin tamamı ve GitHub Actions 7/7 ile kapatıldı. Önce tasarım ve
-kabul ölçütleri; ondan sonra sınırlı uygulama.
+**G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
+`e00c56d` üzerinde düzeltildi; tam yerel paket 1308/1308 ve CI 7/7 geçti. Sırada
+occurrence/alternation davranışlarını YARA 4.5.4 ile karşılaştırıp modelin kalan
+kabul ölçütlerini kapatmak var.
 
 ---
 
@@ -175,8 +176,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | 1297 geçti, 0 hata/skip (`a5a0018`, G1 düzeltmesinden önce) | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner paketi 315 geçti; son ek parity/witness testleri de geçti | G1 raporundaki komutlar |
+| Son tam test paketi | 1308 geçti, 0 hata/skip (`e00c56d`) | `python -m pytest -q -rs` |
+| G1 hedefli testler | YARA/scanner paketi 315 geçti; 11 ek senaryo tam pakete dahil | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1019,8 +1020,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (a5a0018) | 1297 geçti, 0 hata/skip (G1 düzeltmesinden önce) | — | 2000 |
-| Güncel G1 hedefli doğrulama | 315 ilgili test + ek witness/parity testleri geçti | — | — |
+| Son tam test (e00c56d) | 1308 geçti, 0 hata/skip | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner odaklı 315 geçti; witness/parity testleri ve CI doğrulandı | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

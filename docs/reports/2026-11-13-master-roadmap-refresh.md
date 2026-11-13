@@ -126,8 +126,9 @@ negation için 8 idi.
 |---|---|
 | `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
 | Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
+| Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
-| GitHub Actions | Bu G1 düzeltmesi için henüz tetiklenmedi |
+| GitHub Actions | run `43433833667` (`e00c56d`) — **7/7 success** |
 
 ### Uygulama öncesi kabul ölçütleri
 
@@ -156,8 +157,9 @@ negation için 8 idi.
   anlatır.
 - `CHANGELOG.md`: düzeltilen rapor kanıtı hatası.
 
-Tam YARA pattern AST'si henüz yapılmadı; tam test paketi ve bu değişiklik için
-GitHub Actions sonucu bekliyor.
+Tam YARA pattern AST'si henüz yapılmadı. Bu G1 düzeltmesinin tam testi ve CI'si
+geçti; kural başına tek-witness API'sinin kapsamı ve occurrence semantiklerinin
+tam diferansiyel testi G1'de devam ediyor.
 
 ## Sıradaki iş
 

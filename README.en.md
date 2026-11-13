@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1297-blue.svg)](#last-full-verified-run)
+[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1308-blue.svg)](#last-full-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -593,22 +593,21 @@ Test-infrastructure notes:
 | Field | Value |
 |---|---|
 | Date | 13 November 2026 |
-| Commit | `a5a0018` |
+| Commit | `e00c56d` |
 | Command | `python -m pytest -q -rs` |
-| Result | **1297 passed, 0 failed, 0 skipped** |
+| Result | **1308 passed, 0 failed, 0 skipped** (1252.41 s) |
 | Environment | Linux x86_64; clang, wine, z3, and local `bin/axiomc` |
 
-This full local run was on commit `a5a0018`; a later G1 fix now reports the
-occurrence selected by positional conditions. The current working tree passed
-315 YARA/scanner-related tests plus additional witness/parity regressions; a
-full local suite and CI result for the new commit are pending. The next G1 task
-is to settle the open occurrence/alternation semantics against reference YARA
-(see [TODO.md](TODO.md)).
+This full local run includes the G1 positional-evidence fix. The focused
+YARA/scanner suite passed 315 tests, with additional witness/parity regressions
+also passing. GitHub Actions for the same commit passed all 7 jobs. The next G1
+task is to settle the remaining occurrence/alternation semantics against
+reference YARA (see [TODO.md](TODO.md)).
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest verified run for commit `a5a0018`:
+All 7 jobs passed in the latest verified run for commit `e00c56d`:
 
 | Job | Status |
 |---|---|
@@ -617,8 +616,8 @@ All 7 jobs passed in the latest verified run for commit `a5a0018`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43419634279` (13 November 2026, `master`, SHA
-`a5a0018d3fdf3ee43f843a4cc65239a553786fb8`).
+Last verified run: `43433833667` (13 November 2026, `master`, SHA
+`e00c56d19a0fd10578f436f58e24751638574bb0`).
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -633,8 +632,8 @@ Six root causes fixed on the way here (details: report §9–§12):
 
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
-The cited 1034-test run matched CI at that time; the latest full run is 1297
-tests at `a5a0018`, also verified by all 7 CI jobs.
+The cited 1034-test run matched CI at that time; the latest full run is 1308
+tests at `e00c56d`, also verified by all 7 CI jobs.
 
 ---
 

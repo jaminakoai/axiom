@@ -3,7 +3,7 @@
 [![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1297-blue.svg)](#son-tam-doğrulanmış-koşu)
+[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1308-blue.svg)](#son-tam-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -589,22 +589,21 @@ Test altyapısı notları:
 | Alan | Değer |
 |---|---|
 | Tarih | 13 Kasım 2026 |
-| Commit | `a5a0018` |
+| Commit | `e00c56d` |
 | Komut | `python -m pytest -q -rs` |
-| Sonuç | **1297 geçti, 0 başarısız, 0 atlandı** |
+| Sonuç | **1308 geçti, 0 başarısız, 0 atlandı** (1252,41 sn) |
 | Ortam | Linux x86_64; clang, wine, z3 ve yerel `bin/axiomc` |
 
-Bu tam yerel koşu `a5a0018` commit'indeydi; sonradan G1 kapsamında koşulun
-seçtiği occurrence'ı doğru raporlayan bir düzeltme eklendi. Güncel çalışma
-ağacında YARA/scanner ile ilgili 315 test ve ek witness/parity regresyonları
-geçti; tam yerel paket ile yeni commit'in CI sonucu henüz alınmadı. G1'in
-sıradaki işi açık occurrence/alternation semantiklerini referans YARA'ya karşı
+Bu tam yerel koşu G1'deki positional evidence düzeltmesini içerir. YARA/scanner
+ile ilgili odaklı paket 315 testi, ayrıca yeni witness/parity regresyonları
+geçti. Aynı commit'in GitHub Actions koşusu da 7/7 başarılıdır. G1'in sıradaki
+işi açık occurrence/alternation semantiklerini referans YARA'ya karşı
 kesinleştirmektir ([TODO.md](TODO.md)).
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`a5a0018` commit'indeki en güncel doğrulanmış koşuda 7 işin tamamı geçti:
+`e00c56d` commit'indeki en güncel doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -613,8 +612,8 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43419634279` (13 Kasım 2026, `master`, SHA
-`a5a0018d3fdf3ee43f843a4cc65239a553786fb8`).
+Son doğrulanan koşu: `43433833667` (13 Kasım 2026, `master`, SHA
+`e00c56d19a0fd10578f436f58e24751638574bb0`).
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -630,7 +629,7 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
 çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam koşu
-`a5a0018` üzerinde 1297 testtir. Aynı commit için CI'da da 7/7 iş başarılıdır.
+`e00c56d` üzerinde 1308 testtir. Aynı commit için CI'da da 7/7 iş başarılıdır.
 
 ---
 
