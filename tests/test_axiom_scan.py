@@ -126,6 +126,11 @@ def test_boolean_condition_subset(scanner, tmp_path, condition, target, expected
     ("all of ($a*, $b)", b"alpha beta gamma", 1),
     ("3 of ($a*, $a1, $b)", b"alpha beta gamma", 1),
     ("any of ($a*) or $b", b"gamma", 1),
+    ("any of them and filesize == 5", b"alpha", 1),
+    ("none of them or $b", b"gamma", 1),
+    ("2 of them and filesize == 10", b"alpha beta", 1),
+    ("0 of them", b"nothing", 1),
+    ("0 of them", b"alpha", 0),
 ])
 def test_pattern_group_conditions(scanner, tmp_path, condition, target, expected):
     rules = tmp_path / "pattern-groups.yar"

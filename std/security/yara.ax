@@ -5,7 +5,7 @@
 // - Hex wildcard maskeli bayt taraması (örn. "48 89 ?? 55 ?? 8b", "E8 ?? ?? ?? ??")
 // - Boyer-Moore-Horspool / Sunday Quick-Search bayt arama motoru
 // - Bayt kaydırma ve ofset kısıtlamaları (min_offset, max_offset, exact offset)
-// - Çoklu imza koşul mantığı (condition: 'all of them', 'any of them', 'N of them')
+// - YARA koşul alt kümesi: desen grupları, boolean ifadeler ve filesize
 // - YaraRule, YaraMatch, YaraRuleSet veri yapıları
 
 import "std:text:regex"
@@ -49,7 +49,8 @@ struct YaraRuleSet {
 
 /// Yeni bir kural olusturur.
 ///
-/// `condition`: `"any of them"`, `"all of them"` veya `"N of them"`.
+/// `condition`: `"any of them"`, `"all of them"`, `"N of them"` veya
+/// desteklenen YARA boolean koşullarından biri.
 fn yara_rule_new(name: str, condition: str) -> YaraRule {
     let p: str[] = [];
     let pn: str[] = [];
@@ -373,17 +374,10 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
     // Koşul Mantığının Değerlendirilmesi (Condition Evaluation)
     let mut is_rule_matched = false;
 
-    if (cond == "all" or cond == "all of them") {
+    if cond == "all" {
         is_rule_matched = (matched_count == total_patterns);
-    } else if (cond == "any" or cond == "any of them") {
+    } else if cond == "any" {
         is_rule_matched = (matched_count > 0);
-    } else if (cond == "none of them") {
-        is_rule_matched = (matched_count == 0);
-    } else if (str_ends_with(cond, "of them")) {
-        // Örn: "2 of them"
-        let parts = str_split(cond, " ");
-        let threshold = str_to_int(parts[0]);
-        is_rule_matched = (matched_count >= threshold);
     } else {
         is_rule_matched = yara_condition_matches(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, target, target_size);
     }

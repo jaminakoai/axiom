@@ -67,8 +67,10 @@ in their own language.
 **Honest limits (v0.2):**
 
 - `axiom-scan` is **not all of YARA**: subset patterns and conditions. It
-  accepts `any/all/none of them`, `N of them`, `any/all/none/N of ($a*)`
-  and explicit pattern sets such as `any of ($a,$b)`, `$a` pattern references,
+  accepts `any/all/none/N of them` (`0 of them` is true only when no string
+  matches), `any/all/none/N of ($a*)`
+  and explicit pattern sets such as `any of ($a,$b)`, composable with boolean
+  expressions, `$a` pattern references,
   `$a at N` / `$a in (N..M)` offset checks, `@a[i]` offsets, `!a[i]` match
   lengths, and `#a` occurrence counts,
   `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`

@@ -13,9 +13,10 @@
 //           any of them
 //   }
 //
-// Kosullar: `any/all/none of them` ve `N of them` (N tamsayi).
+// Kosullar: desen basvurulari, desen gruplari, `of them`, dosya boyutu,
+// boolean operatorleri ve parantezler.
 //
-// Desteklenmeyen YARA ozellikleri: meta/tags, birlesik condition ifadeleri,
+// Desteklenmeyen YARA ozellikleri: meta/tags,
 // at/in, wide ve gelismis hex operatorleri.
 // Desteklenmeyen ifadeler sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
@@ -288,20 +289,9 @@ fn _parse_condition(line: str) -> str {
 // Bu parser yalnizca bu condition alt kumesini dogru degerlendirir.
 // Diger ifadeler scanner tarafinda varsayilan `any` gibi ele alinmasin.
 fn _supported_condition(condition: str) -> bool {
-    if condition == "any" or condition == "all" or condition == "any of them" or condition == "all of them" or condition == "none of them" {
-        return true
-    }
-    if not str_ends_with(condition, " of them") {
-        return false
-    }
-    let number = str_trim(str_sub(condition, 0, len(condition) - len(" of them")))
-    if len(number) == 0 { return false }
-    let mut i = 0
-    while i < len(number) {
-        if not str_contains("0123456789", str_char_at(number, i)) { return false }
-        i = i + 1
-    }
-    return true
+    // Legacy shorthand used by the in-memory yara_rule API. Parsed YARA
+    // conditions, including `N of them`, go through the condition parser.
+    return condition == "any" or condition == "all"
 }
 
 // YARA'daki // yorumlarini string icinde kesme. # yorum imi degildir:

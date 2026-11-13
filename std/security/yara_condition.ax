@@ -1,5 +1,5 @@
-// YARA condition-expression subset: $pattern, filesize comparisons, constants,
-// not/and/or, and parentheses.
+// YARA condition-expression subset: pattern groups and references, filesize
+// comparisons, constants, not/and/or, and parentheses.
 // A precedence parser keeps operator semantics explicit and rejects unknown
 // identifiers instead of coercing them to an any-pattern condition.
 
@@ -178,6 +178,28 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
         return YaraConditionParse { value: false, position: cursor, valid: false }
     }
     cursor = _yc_skip_space(source, cursor + 2)
+    if _yc_keyword_at(source, cursor, "them") {
+        let end = cursor + 4
+        let mut selected = 0
+        let mut matched = 0
+        let mut p = 0
+        while p < len(pattern_names) {
+            selected = selected + 1
+            if p < len(pattern_values) {
+                if pattern_values[p] { matched = matched + 1 }
+            }
+            p = p + 1
+        }
+        let mut value = false
+        if mode == "any" { value = matched > 0 }
+        else if mode == "all" { value = matched == selected }
+        else if mode == "none" { value = matched == 0 }
+        else if mode == "count" {
+            if threshold == 0 { value = matched == 0 }
+            else { value = matched >= threshold }
+        }
+        return YaraConditionParse { value: value, position: end, valid: true }
+    }
     if cursor >= n or str_char_at(source, cursor) != "(" {
         return YaraConditionParse { value: false, position: cursor, valid: false }
     }
