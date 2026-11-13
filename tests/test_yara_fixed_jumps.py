@@ -79,7 +79,6 @@ def test_fixed_width_jumps_match_and_agree_with_yara(scanner, tmp_path, pattern,
     [
         "41 [0] 42",        # zero-width form is intentionally unsupported
         "41 [65] 42",       # per-jump cap is 64 bytes
-        "41 [1-2] 42",      # variable-width ranges are not in this subset
         "41 [1-] 42",        # unbounded jump
         "41 [] 42",
         "41 [abc] 42",

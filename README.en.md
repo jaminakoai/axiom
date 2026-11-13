@@ -81,12 +81,15 @@ in their own language.
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
   default). `wide` is explicitly rejected because the current text-reading
   path cannot represent target bytes containing NUL. Unknown conditions,
-  other unsupported modifiers, variable/unbounded hex jumps, alternation, and
-  negation are also rejected with a parse error. Hex patterns support nibble
-  wildcards and fixed `[N]` jumps (N=1..64); all-wildcard patterns are rejected
-  and the expanded pattern is limited to 8 KiB. `#a` supports text and hex patterns;
-  regex pattern counts are rejected. `at/in`, `@a[i]`, and `!a[i]` checks
-  support text and hex patterns.
+  other unsupported modifiers, unbounded/out-of-subset hex jumps, alternation,
+  and negation are also rejected with a parse error. Hex patterns support nibble
+  wildcards, fixed `[N]` jumps (N=1..64), and one bounded `[N-M]` jump per
+  pattern (`0<=N<=M<=64`, `M-N<=16`, with at least one byte on both sides).
+  All-wildcard patterns are rejected and the
+  encoded pattern is limited to 8 KiB. `#a` supports text and fixed-length hex
+  patterns; counts for regex and variable-length patterns are rejected.
+  `$a at/in` checks support text, hex, and bounded hex patterns; `@a[i]` / `!a[i]`
+  checks reject variable-length patterns.
   Offset and index checks reject regex patterns.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.

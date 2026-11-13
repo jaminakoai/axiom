@@ -125,6 +125,9 @@ fn _yc_pattern_matches_in_range(pattern: str, target: str, min_offset: int, max_
         let p = str_sub(pattern, 4, str_len(pattern) - 4)
         return rt_yara_find_hex_wildcard(target, p, min_offset, max_offset) >= 0
     }
+    if str_starts_with(pattern, "hexrange:") {
+        return rt_yara_find_hex_range(target, pattern, min_offset, max_offset) >= 0
+    }
     return false
 }
 

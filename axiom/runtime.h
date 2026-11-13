@@ -8816,6 +8816,165 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_stream(const char* hex_target, const
     return res;
 }
 
+typedef struct {
+    AxiomYaraCompiledPattern prefix;
+    AxiomYaraCompiledPattern suffix;
+    int min_gap;
+    int max_gap;
+} AxiomYaraHexRangePattern;
+
+AXIOM_RUNTIME_FN void axiom_yara_hex_range_free(AxiomYaraHexRangePattern* range) {
+    if (!range) return;
+    axiom_yara_pattern_free(&range->prefix);
+    axiom_yara_pattern_free(&range->suffix);
+    range->min_gap = 0;
+    range->max_gap = 0;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_parse_jump_bound(const char* value, size_t value_len, int* out) {
+    if (!value || !out || value_len == 0) return 0;
+    int parsed = 0;
+    for (size_t i = 0; i < value_len; i++) {
+        unsigned char ch = (unsigned char)value[i];
+        if (ch < '0' || ch > '9') return 0;
+        parsed = parsed * 10 + (ch - '0');
+        if (parsed > 64) return 0;
+    }
+    *out = parsed;
+    return 1;
+}
+
+// Internal encoding: hexrange:<prefix>|<min-gap>|<max-gap>|<suffix>
+AXIOM_RUNTIME_FN int axiom_yara_parse_hex_range_internal(const char* encoded, AxiomYaraHexRangePattern* range) {
+    if (!range) return 0;
+    range->prefix = (AxiomYaraCompiledPattern){NULL, NULL, 0};
+    range->suffix = (AxiomYaraCompiledPattern){NULL, NULL, 0};
+    range->min_gap = 0;
+    range->max_gap = 0;
+    if (!encoded) return 0;
+
+    size_t encoded_len = strlen(encoded);
+    static const char prefix_tag[] = "hexrange:";
+    const size_t tag_len = sizeof(prefix_tag) - 1;
+    if (encoded_len <= tag_len || encoded_len > AXIOM_YARA_MAX_HEX_PATTERN_TEXT ||
+        memcmp(encoded, prefix_tag, tag_len) != 0) return 0;
+
+    const char* fields[4] = {0};
+    size_t field_lens[4] = {0};
+    size_t field_index = 0;
+    const char* field_start = encoded + tag_len;
+    for (const char* p = field_start; ; p++) {
+        if (*p == '|' || *p == '\0') {
+            if (field_index >= 4) return 0;
+            fields[field_index] = field_start;
+            field_lens[field_index] = (size_t)(p - field_start);
+            field_index++;
+            if (*p == '\0') break;
+            field_start = p + 1;
+        }
+    }
+    if (field_index != 4 || field_lens[0] == 0 || field_lens[3] == 0) return 0;
+    if (!axiom_yara_parse_jump_bound(fields[1], field_lens[1], &range->min_gap) ||
+        !axiom_yara_parse_jump_bound(fields[2], field_lens[2], &range->max_gap)) goto invalid_range;
+    if (range->min_gap > range->max_gap || range->max_gap > 64 ||
+        range->max_gap - range->min_gap > 16) goto invalid_range;
+
+    char* prefix_text = (char*)malloc(field_lens[0] + 1);
+    char* suffix_text = (char*)malloc(field_lens[3] + 1);
+    if (!prefix_text || !suffix_text) {
+        if (prefix_text) free(prefix_text);
+        if (suffix_text) free(suffix_text);
+        goto invalid_range;
+    }
+    memcpy(prefix_text, fields[0], field_lens[0]);
+    prefix_text[field_lens[0]] = '\0';
+    memcpy(suffix_text, fields[3], field_lens[3]);
+    suffix_text[field_lens[3]] = '\0';
+
+    int prefix_len = axiom_yara_parse_hex_pattern_internal(prefix_text, &range->prefix);
+    int suffix_len = axiom_yara_parse_hex_pattern_internal(suffix_text, &range->suffix);
+    free(prefix_text);
+    free(suffix_text);
+    if (prefix_len <= 0 || suffix_len <= 0) goto invalid_range;
+    return 1;
+
+invalid_range:
+    axiom_yara_hex_range_free(range);
+    return 0;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_range_match_at(const uint8_t* target, size_t target_len,
+                                                    const AxiomYaraHexRangePattern* range,
+                                                    int64_t start, int* match_len_out) {
+    if (match_len_out) *match_len_out = -1;
+    if (!target || !range || start < 0 || range->prefix.len <= 0 || range->suffix.len <= 0) return 0;
+    if (target_len > (size_t)INT64_MAX) return 0;
+    int64_t remaining = (int64_t)target_len - start;
+    if ((int64_t)range->prefix.len > remaining) return 0;
+    if (axiom_yara_find_bytes(target, target_len, &range->prefix, start, start) != start) return 0;
+    remaining -= range->prefix.len;
+
+    for (int gap = range->min_gap; gap <= range->max_gap; gap++) {
+        if ((int64_t)gap > remaining) continue;
+        int64_t suffix_remaining = remaining - gap;
+        if ((int64_t)range->suffix.len > suffix_remaining) continue;
+        int64_t suffix_start = start + (int64_t)range->prefix.len + gap;
+        if (axiom_yara_find_bytes(target, target_len, &range->suffix, suffix_start, suffix_start) == suffix_start) {
+            if (match_len_out) *match_len_out = range->prefix.len + gap + range->suffix.len;
+            return 1;
+        }
+    }
+    return 0;
+}
+
+// Returns the lowest matching start offset. For the same start, the smallest
+// matching jump is tested first, so the selected match has the shortest length.
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_range(const char* target, const char* encoded,
+                                                   ax_int min_offset, ax_int max_offset) {
+    if (!target || !encoded) return -1;
+    AxiomYaraHexRangePattern range = {{NULL, NULL, 0}, {NULL, NULL, 0}, 0, 0};
+    if (!axiom_yara_parse_hex_range_internal(encoded, &range)) return -1;
+
+    size_t target_len = strlen(target);
+    if (target_len > (size_t)INT64_MAX) {
+        axiom_yara_hex_range_free(&range);
+        return -1;
+    }
+    int64_t minimum_len = (int64_t)range.prefix.len + range.min_gap + range.suffix.len;
+    int64_t last_start = (int64_t)target_len - minimum_len;
+    int64_t start = min_offset >= 0 ? min_offset : 0;
+    int64_t end = last_start;
+    if (max_offset >= 0 && max_offset < end) end = max_offset;
+    if (start > end) {
+        axiom_yara_hex_range_free(&range);
+        return -1;
+    }
+
+    ax_int result = -1;
+    for (int64_t candidate = start; candidate <= end; candidate++) {
+        if (axiom_yara_hex_range_match_at((const uint8_t*)target, target_len, &range, candidate, NULL)) {
+            result = (ax_int)candidate;
+            break;
+        }
+    }
+    axiom_yara_hex_range_free(&range);
+    return result;
+}
+
+// Returns the shortest matching total length at exactly exact_offset, or -1.
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_range_length(const char* target, const char* encoded,
+                                                         ax_int exact_offset) {
+    if (!target || !encoded || exact_offset < 0) return -1;
+    AxiomYaraHexRangePattern range = {{NULL, NULL, 0}, {NULL, NULL, 0}, 0, 0};
+    if (!axiom_yara_parse_hex_range_internal(encoded, &range)) return -1;
+    size_t target_len = strlen(target);
+    int match_len = -1;
+    int matched = axiom_yara_hex_range_match_at((const uint8_t*)target, target_len, &range,
+                                                exact_offset, &match_len);
+    axiom_yara_hex_range_free(&range);
+    return matched ? (ax_int)match_len : -1;
+}
+
 AXIOM_RUNTIME_FN ax_int axiom_yara_scan_buf_handle(ax_int handle, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {
     if (handle <= 0 || !hex_pattern) return -1;
     AxiomByteBuffer* b = (AxiomByteBuffer*)(uintptr_t)handle;

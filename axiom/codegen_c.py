@@ -394,6 +394,8 @@ BUILTIN_MAP = {
     'rt_yara_nth_hex_wildcard': 'axiom_yara_nth_hex_wildcard',
     'rt_yara_count_hex_wildcard': 'axiom_yara_count_hex_wildcard',
     'rt_yara_find_hex_wildcard': 'axiom_yara_find_hex_wildcard',
+    'rt_yara_find_hex_range': 'axiom_yara_find_hex_range',
+    'rt_yara_find_hex_range_length': 'axiom_yara_find_hex_range_length',
     'rt_yara_find_hex_wildcard_raw': 'axiom_yara_find_hex_wildcard_raw',
     'rt_yara_find_hex_stream': 'axiom_yara_find_hex_stream',
     'rt_yara_pattern_len': 'axiom_yara_pattern_len',

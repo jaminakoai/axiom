@@ -200,13 +200,35 @@ fn _is_hex_pattern_digit(ch: str) -> bool {
     return str_contains("0123456789abcdefABCDEF", ch)
 }
 
-// Normalize the supported fixed-width YARA hex subset. A jump `[N]` is
-// expanded to N full-byte wildcards so the existing fixed-length matcher can
-// handle it without changing runtime APIs. Per-jump expansion is deliberately
-// bounded to 1..64 bytes; ranges, open-ended jumps, and other operators fail
-// closed here.
+struct YaraJumpEndpoint {
+    value: int,
+    position: int,
+    valid: bool
+}
+
+fn _parse_yara_jump_endpoint(source: str, position: int) -> YaraJumpEndpoint {
+    let mut cursor = position
+    let mut value = 0
+    let mut digits = 0
+    while cursor < len(source) and str_contains("0123456789", str_char_at(source, cursor)) {
+        if digits >= 2 { return YaraJumpEndpoint { value: 0, position: cursor, valid: false } }
+        value = value * 10 + str_to_int(str_char_at(source, cursor))
+        digits = digits + 1
+        cursor = cursor + 1
+    }
+    return YaraJumpEndpoint { value: value, position: cursor, valid: digits > 0 }
+}
+
+// Normalize supported YARA hex jumps. Fixed `[N]` jumps expand to full-byte
+// wildcards; one bounded `[N-M]` jump is encoded for the variable-length
+// runtime matcher. Both forms and the compact range encoding are bounded to
+// keep parsing and scanning work predictable.
 fn _normalize_yara_hex_pattern(hex: str) -> str {
     let mut out = ""
+    let mut range_left = ""
+    let mut range_min = 0
+    let mut range_max = 0
+    let mut has_range = false
     let mut i = 0
     let mut has_constrained_byte = false
     while i < len(hex) {
@@ -217,29 +239,38 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
         }
 
         if ch == "[" {
-            let mut cursor = i + 1
-            let mut count = 0
-            let mut digits = 0
-            while cursor < len(hex) and str_contains("0123456789", str_char_at(hex, cursor)) {
-                if digits >= 2 { return "" }
-                let digit = str_to_int(str_char_at(hex, cursor))
-                if count > 6 or (count == 6 and digit > 4) { return "" }
-                count = count * 10 + digit
-                digits = digits + 1
-                cursor = cursor + 1
-            }
-            if digits == 0 or count < 1 or count > 64 { return "" }
-            if cursor >= len(hex) or str_char_at(hex, cursor) != "]" { return "" }
-            let mut required = count * 3 - 1
-            if len(out) > 0 { required = required + 1 }
-            // Keep normalized input within the runtime's 8 KiB hex-pattern
-            // limit; otherwise a parsed rule could silently fail at scan time.
-            if len(out) + required > 8192 { return "" }
-            let mut jump_index = 0
-            while jump_index < count {
-                if len(out) > 0 { out = out + " " }
-                out = out + "??"
-                jump_index = jump_index + 1
+            let lower = _parse_yara_jump_endpoint(hex, i + 1)
+            if not lower.valid { return "" }
+            let mut cursor = lower.position
+            if cursor < len(hex) and str_char_at(hex, cursor) == "-" {
+                if has_range { return "" }
+                let upper = _parse_yara_jump_endpoint(hex, cursor + 1)
+                if not upper.valid or upper.value < lower.value or upper.value > 64 {
+                    return ""
+                }
+                if lower.value > 64 or upper.value - lower.value > 16 { return "" }
+                cursor = upper.position
+                if cursor >= len(hex) or str_char_at(hex, cursor) != "]" { return "" }
+                has_range = true
+                range_left = out
+                range_min = lower.value
+                range_max = upper.value
+                out = ""
+            } else {
+                if lower.value < 1 or lower.value > 64 { return "" }
+                if cursor >= len(hex) or str_char_at(hex, cursor) != "]" { return "" }
+                let mut required = lower.value * 3 - 1
+                if len(out) > 0 { required = required + 1 }
+                // Keep normalized fixed-width input within the runtime's 8 KiB
+                // hex-pattern limit to avoid scan-time parse failure.
+                if len(out) + required > 8192 { return "" }
+                let mut jump_index = 0
+                while jump_index < lower.value {
+                    if len(out) > 0 { out = out + " " }
+                    out = out + "??"
+                    jump_index = jump_index + 1
+                }
+                cursor = lower.position
             }
             i = cursor + 1
             continue
@@ -256,10 +287,20 @@ fn _normalize_yara_hex_pattern(hex: str) -> str {
         if len(out) + required > 8192 { return "" }
         if first != "?" or second != "?" { has_constrained_byte = true }
         if len(out) > 0 { out = out + " " }
-        out = out + first + second
+        let mut canonical_first = first
+        let mut canonical_second = second
+        if first != "?" { canonical_first = to_upper_tr(first) }
+        if second != "?" { canonical_second = to_upper_tr(second) }
+        out = out + canonical_first + canonical_second
         i = i + 2
     }
     if not has_constrained_byte { return "" }
+    if has_range {
+        if len(range_left) == 0 or len(out) == 0 { return "" }
+        let encoded = "hexrange:" + range_left + "|" + int_to_str(range_min) + "|" + int_to_str(range_max) + "|" + out
+        if len(encoded) > 8192 { return "" }
+        return encoded
+    }
     return out
 }
 
@@ -320,6 +361,7 @@ fn _parse_string_def(line: str) -> str {
         if len(tail) > 0 {
             return ""
         }
+        if str_starts_with(hex, "hexrange:") { return id + "=" + hex }
         return id + "=hex:" + hex
     }
 
@@ -665,6 +707,11 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
                     if str_starts_with(rule.patterns[pattern_index], "regex:") {
                         return result_err_with<YaraRuleSet>(
                             "satir " + int_to_str(condition_line) + ": regex icin # desen sayimi desteklenmiyor",
+                            yara_ruleset_new())
+                    }
+                    if str_starts_with(rule.patterns[pattern_index], "hexrange:") {
+                        return result_err_with<YaraRuleSet>(
+                            "satir " + int_to_str(condition_line) + ": degisken uzunluklu desen icin # sayimi desteklenmiyor",
                             yara_ruleset_new())
                     }
                     pattern_index = pattern_index + 1

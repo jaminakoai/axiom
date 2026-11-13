@@ -5,6 +5,15 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Eklenen (13 Kasım — sınırlı değişken genişlikli YARA hex jump)
+- Hex kuralları artık her desende tek bir sınırlı `[N-M]` jump'ını kabul ediyor:
+  `0<=N<=M<=64`, aralık genişliği en fazla 16 bayt ve jump'ın iki yanında da
+  en az bir bayt gerekir. `$a at/in` bu desenlerde çalışır; `#a`, `@a[i]` ve
+  `!a[i]` açıkça reddedilir. Sınırsız ve kapsam dışı sözdizimi parse hatası verir.
+- Runtime, en erken offset'i ve aynı offset'teki en kısa eşleşmeyi döndürür;
+  runtime API'si kodlanmış aralık ve offset sınırlarını da doğrular.
+- YARA diferansiyel, parser ve runtime testleri eklendi.
+
 ### Eklenen (13 Kasım — güvenli sabit genişlikli YARA hex jump)
 - Hex kurallarında `[N]` artık `N=1..64` için joker bayt dizisine normalize
   edilerek destekleniyor. Değişken aralık, sınırsız jump, alternation,

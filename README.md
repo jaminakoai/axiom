@@ -79,13 +79,15 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
   okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
-  diğer desteklenmeyen modifier'lar, değişken/sınırsız hex jump'ları,
+  diğer desteklenmeyen modifier'lar, sınırsız ve destek dışı hex jump'ları,
   alternation ve negation da ayrıştırma hatasıyla reddedilir. Hex kalıpları
-  nibble jokerlerini ve sabit `[N]` atlamalarını (N=1..64) destekler; tümüyle
-  joker desenler reddedilir ve genişletilmiş kalıp 8 KiB'ı aşamaz.
-  `#a` sayımı metin ve hex desenlerinde desteklenir;
-  regex desenlerinde reddedilir.
-  `$a at/in` ve `@a[i]` / `!a[i]` metin ve hex desenlerinde desteklenir.
+  nibble jokerlerini, sabit `[N]` atlamalarını (N=1..64) ve her desende tek
+  sınırlı `[N-M]` atlamasını destekler (`0<=N<=M<=64`, `M-N<=16`, iki yanında
+  en az bir bayt bulunmalı). Tümüyle joker desenler reddedilir ve kodlanmış
+  kalıp 8 KiB'ı aşamaz. `#a` sayımı metin ve sabit uzunluklu hex desenlerinde
+  desteklenir; regex ve değişken uzunluklu desenlerde reddedilir.
+  `$a at/in` metin, hex ve sınırlı hex desenlerinde desteklenir; `@a[i]` / `!a[i]`
+  değişken uzunluklu desenlerde reddedilir.
   Regex desenlerinde ofset ve indeks kontrolleri reddedilir.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
