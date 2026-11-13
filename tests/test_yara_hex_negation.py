@@ -127,6 +127,25 @@ def test_negation_position_condition_reports_its_witness(scanner, tmp_path, cond
     assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
 
 
+def test_negation_default_report_matches_first_yara_instance(scanner, tmp_path):
+    pattern = "41 ~42 43"
+    target = b"ADC ABC AEC"
+    source = _rule(pattern)
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        instances = [
+            (instance.offset, instance.matched_length)
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert instances == [(0, 3), (8, 3)]
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (0, 3)
+
+
 @pytest.mark.parametrize(
     "pattern",
     [
@@ -148,11 +167,14 @@ def test_unsupported_or_malformed_negation_is_rejected(scanner, tmp_path, patter
 
 @pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 3"])
 def test_negated_pattern_occurrence_operators_fail_closed(scanner, tmp_path, condition):
+    source = _rule("41 ~42 43", condition)
+    if yara is not None:
+        assert yara.compile(source=source).match(data=b"ADC")
     result = _run(
         scanner,
         tmp_path,
         "rules",
-        _rule("41 ~42 43", condition),
+        source,
     )
     assert result.returncode == 1
     assert json.loads(result.stdout)["ok"] is False

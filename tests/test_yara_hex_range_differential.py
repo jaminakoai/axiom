@@ -91,6 +91,8 @@ def _reference_instance(pattern, target):
     [
         # A zero-width range is an exact adjacency check.
         ("41 [0-0] 42", b"xxAByy", (2, 2)),
+        # If two lengths match at the same start, YARA reports the shorter instance.
+        ("41 [1-3] 42", b"A1B2B", (0, 3)),
         # Both inclusive bounds are exercised; the reported length includes
         # the number of bytes selected by the range at the successful match.
         ("41 [2-4] 42", b"xxA12Byy", (2, 4)),
@@ -207,7 +209,11 @@ def test_valid_yara_ranges_outside_axiom_subset_are_explicitly_rejected(
 def test_range_jump_at_and_in_conditions(condition, target, expected_matches, scanner, tmp_path):
     rules_path = tmp_path / "hex-range-condition.yar"
     target_path = tmp_path / "target.bin"
-    rules_path.write_text(_rule("41 [2-4] 42", condition), encoding="utf-8")
+    source = _rule("41 [2-4] 42", condition)
+    if yara is not None:
+        reference = yara.compile(source=source).match(data=target)
+        assert bool(reference) is bool(expected_matches)
+    rules_path.write_text(source, encoding="utf-8")
     target_path.write_bytes(target)
     result = subprocess.run(
         [str(scanner), "scan", str(target_path), "--rules", str(rules_path)],
@@ -246,10 +252,32 @@ def test_range_condition_reports_the_occurrence_that_satisfied_it(
     assert (result["matches"][0]["offset"], result["matches"][0]["length"]) == expected
 
 
-@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 4"])
+def test_range_default_report_uses_first_yara_instance_when_many_exist(
+    scanner, tmp_path
+):
+    pattern = "41 [1-3] 42"
+    target = b"A1B A12B"
+    source = _rule(pattern)
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        instances = [
+            (instance.offset, instance.matched_length)
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert instances == [(0, 3), (4, 4)]
+    result = _scan(scanner, tmp_path, pattern, target)
+    assert result["match_count"] == 1
+    assert (result["matches"][0]["offset"], result["matches"][0]["length"]) == (0, 3)
+
+
+@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 1", "!a[1] == 4"])
 def test_occurrence_operators_for_range_jumps_fail_closed(condition, scanner, tmp_path):
+    source = _rule("41 [2-4] 42", condition)
+    if yara is not None:
+        assert yara.compile(source=source).match(data=b"xA12B")
     rules_path = tmp_path / "hex-range-occurrence.yar"
-    rules_path.write_text(_rule("41 [2-4] 42", condition), encoding="utf-8")
+    rules_path.write_text(source, encoding="utf-8")
     result = subprocess.run(
         [str(scanner), "rules", str(rules_path)],
         capture_output=True,

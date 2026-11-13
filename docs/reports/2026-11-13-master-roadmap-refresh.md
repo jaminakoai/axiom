@@ -116,6 +116,44 @@ Bu düzeltme kural başına tek witness modelini korur. `#`, `@`, `!` ve birden
 fazla koşulun ayrı ayrı ihtiyaç duyduğu instance listesini raporlama işi bu
 değişikliğin kapsamında değildir; G1'de karara bağlanmalıdır.
 
+## G1 diferansiyel semantik matrisi
+
+YARA 4.5.4 ile ek karşılaştırmalar aşağıdaki davranışı sabitledi:
+
+| Durum | Referans YARA | Axiom alt kümesi | Sonuç |
+|---|---|---|---|
+| Aynı bounded-jump başlangıcında birden çok olası uzunluk (`A1B2B`) | ilk instance `(0, 3)` | `(0, 3)` | aynı en kısa eşleşme |
+| Bounded-jump çoklu instance (`A1B A12B`) | `(0,3)`, `(4,4)` | varsayılan rapor ilkini verir; `at/in` ikinciyi seçebilir | aynı koşul davranışı; rapor başına tek kanıt |
+| Fixed hex `41 41` ve sabit `[1]` jump, hedefte örtüşme | `#/@/!` koşulları geçerli | sayım/ofset/uzunluk koşulları çalışır | örtüşen sonuçlar eşleşti |
+| Alternation farklı başlangıçlarda | `(0,3)`, `(4,3)` | varsayılan rapor `(0,3)` | ilk instance eşit |
+| İki alternation dalı aynı offset/uzunlukta (`(4? | ?2)`, `B`) | tek instance `(0,1)` | tek instance `(0,1)` | aynı konum deduplikasyonu |
+| Negated-byte çoklu eşleşme | `(0,3)`, `(8,3)` | varsayılan rapor `(0,3)`; `at/in` sonraki occurrence'ı seçebilir | ilk ve seçili witness eşit |
+| `#/@/!` + bounded jump/alternation/negation | YARA derler ve sentetik hedefte eşleşir | rules komutu açık hata verir | bilinçli, fail-closed alt küme sınırı |
+
+### Pattern bileşimi sınırı
+
+Parser/regresyon testlerinin tarif ettiği alt küme:
+
+- Tam bayt, `??` ve nibble wildcard'lar sıralı byte dizisinde kullanılabilir.
+- Sabit `[N]` (1–64) byte wildcard'lara normalize edilir; bounded jump ile
+  birlikte bir pattern'de bulunabilir.
+- Bir bounded `[N-M]` aralığı için constrained prefix/suffix gerekir; ikinci
+  bounded aralık ve sınırsız jump reddedilir.
+- Bir düz alternation 2–4 adet eşit sabit uzunluklu dal taşır; dal başına 1–16
+  byte vardır. Sabit jump alternation grubunun dışında olabilir; dal içinde
+  jump ve aynı pattern'de bounded jump reddedilir.
+- Bir negated byte normal dizinin ve fixed jump'ın yanında olabilir. İkinci
+  negation, `~??`, bounded jump ile aynı pattern ve alternation ile aynı pattern
+  reddedilir.
+
+Bu sınırlar destek matrisidir; yeni birleşim eklemek için değil, AST geçişinde
+regresyonları korumak için kaydedildi.
+
+Bu matrisin kapsamı genel YARA uyumluluk iddiası değildir. YARA özel hex
+pattern'lerinde occurrence operatörlerini desteklerken Axiom henüz tüm
+instance'ları aynı sonuç modelinde temsil etmiyor; bu nedenle sessiz yaklaşık
+hesap yerine parse hatası veriyor.
+
 ### Doğrulama
 
 Ön düzeltme regresyon koşusu altı yeni senaryonun tamamında hatayı gösterdi:
@@ -126,6 +164,7 @@ negation için 8 idi.
 |---|---|
 | `python -m pytest -q tests/test_axiom_scan.py tests/test_real_yara_engine.py tests/test_yara_fixed_jumps.py tests/test_yara_hex_alternation.py tests/test_yara_hex_negation.py tests/test_yara_hex_range_differential.py tests/test_yara_hex_ranges.py tests/test_yara_modifiers.py tests/test_yara_parser_escapes.py tests/test_yara_regex_safety.py tests/test_yara_runtime_hex_ranges.py tests/test_yara_runtime_hex_validation.py tests/test_yara_sigma_coverage.py tests/test_real_sigma_engine.py` | **315 passed**, 139.76 s |
 | Son witness/OR ve C/LLVM parity koşuları | **10 passed**, ardından **2 passed** (son koşuda bir hex senaryosu tekrarlandı; toplam 11 farklı yeni senaryo) |
+| G1 occurrence differential grubu | **110 passed**: fixed jumps, bounded ranges, alternation, negation ve C/LLVM positional witness |
 | Tam güncel paket (`e00c56d`) | `python -m pytest -q -rs` — **1308 passed, 0 failed, 0 skipped**, 1252.41 s |
 | `make fmt-check` | geçti |
 | GitHub Actions | run `43433833667` (`e00c56d`) — **7/7 success** |
@@ -163,7 +202,7 @@ tam diferansiyel testi G1'de devam ediyor.
 
 ## Sıradaki iş
 
-G1'in sıradaki işi açık occurrence/alternation semantiklerini YARA 4.5.4 ile
-diferansiyel test etmek ve tek-witness rapor sözleşmesini netleştirmek. Ardından
-typed modelin geriye uyumlu API tasarımını kesinleştir. Bu kapılar geçmeden yeni
-runtime/grammar sözdizimine geçilmez.
+G1'in sıradaki işi tek-witness rapor sözleşmesinin kullanıcıya sunulma kararını
+vermek, kalan target sınırı ve koşul birleşimlerini diferansiyel test etmek,
+ardından typed modelin geriye uyumlu API tasarımını kesinleştirmek. Bu kapılar
+geçmeden yeni runtime/grammar sözdizimine geçilmez.

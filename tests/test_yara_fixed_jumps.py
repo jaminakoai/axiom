@@ -34,10 +34,10 @@ def scanner(tmp_path_factory):
     return output
 
 
-def _rule(pattern):
+def _rule(pattern, condition="$a"):
     return (
         "rule FixedJump {\n strings:\n  $a = { " + pattern + " }\n"
-        " condition:\n  $a\n}\n"
+        " condition:\n  " + condition + "\n}\n"
     )
 
 
@@ -72,6 +72,38 @@ def test_fixed_width_jumps_match_and_agree_with_yara(scanner, tmp_path, pattern,
     if yara is not None:
         reference = yara.compile(source=source)
         assert bool(reference.match(data=target)) is axiom_match
+
+
+@pytest.mark.parametrize(
+    ("pattern", "target", "condition"),
+    [
+        ("41 41", b"AAAA", "#a == 3"),
+        ("41 41", b"AAAA", "@a[2] == 1"),
+        ("41 41", b"AAAA", "!a[3] == 2"),
+        ("41 [1] 41", b"AAAAA", "#a == 3"),
+        ("41 [1] 41", b"AAAAA", "@a[3] == 2"),
+        ("41 [1] 41", b"AAAAA", "!a[1] == 3"),
+    ],
+)
+def test_fixed_hex_occurrence_operators_count_overlapping_instances(
+    scanner, tmp_path, pattern, target, condition
+):
+    source = _rule(pattern, condition)
+    if yara is not None:
+        reference = yara.compile(source=source).match(data=target)
+        assert reference, f"reference YARA rejected a valid matching condition: {condition}"
+    rules = tmp_path / "fixed-jump-occurrence.yar"
+    rules.write_text(source, encoding="utf-8")
+    sample = tmp_path / "overlap-target.bin"
+    sample.write_bytes(target)
+    result = subprocess.run(
+        [str(scanner), "scan", str(sample), "--rules", str(rules)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads(result.stdout)["match_count"] == 1
 
 
 @pytest.mark.parametrize(

@@ -150,6 +150,44 @@ def test_alternation_position_condition_reports_its_witness(scanner, tmp_path, c
     assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == expected
 
 
+def test_alternation_default_report_matches_first_yara_instance(scanner, tmp_path):
+    pattern = "41 ( 42 | 44 ) 43"
+    target = b"ABC ADC"
+    source = _rule(pattern)
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        instances = [
+            (instance.offset, instance.matched_length)
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert instances == [(0, 3), (4, 3)]
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (0, 3)
+
+
+def test_same_offset_matching_alternation_branches_report_one_instance(scanner, tmp_path):
+    pattern = "( 4? | ?2 )"
+    target = b"B"  # 0x42 satisfies both one-byte branches at offset zero.
+    source = _rule(pattern)
+    if yara is not None:
+        matches = yara.compile(source=source).match(data=target)
+        instances = [
+            (instance.offset, instance.matched_length)
+            for string_match in matches[0].strings
+            for instance in getattr(string_match, "instances", [])
+        ]
+        assert instances == [(0, 1)]
+    result = _run(scanner, tmp_path, "scan", source, target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (0, 1)
+
+
 @pytest.mark.parametrize(
     "pattern",
     [
@@ -174,15 +212,18 @@ def test_unsupported_or_malformed_hex_alternation_is_rejected(
     assert json.loads(result.stdout)["ok"] is False
 
 
-@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 1", "!a[1] == 3"])
+@pytest.mark.parametrize("condition", ["#a == 1", "@a[1] == 0", "!a[1] == 3"])
 def test_occurrence_operators_for_hex_alternation_fail_closed(scanner, tmp_path, condition):
     # The scanner does not yet provide occurrence metadata for the union of
     # alternate branches, so these operators must not silently guess.
+    source = _rule("41 ( 42 | 44 ) 43", condition)
+    if yara is not None:
+        assert yara.compile(source=source).match(data=b"ABC")
     result = _run(
         scanner,
         tmp_path,
         "rules",
-        _rule("41 ( 42 | 44 ) 43", condition),
+        source,
     )
     assert result.returncode == 1
     assert json.loads(result.stdout)["ok"] is False

@@ -69,18 +69,46 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   semantiğini kesinleştir; nottaki açık kararları kapat.
 - [ ] Tek bir koşul birden fazla pozitif occurrence gerektirdiğinde raporun
   kanıt modelini belirle; mevcut çıktı kural başına tek bir witness taşır.
+- [x] YARA 4.5.4'e göre destek matrisini belirle ve özel hex türlerinde
+  `#/@/!` reddinin hem YARA'da geçerli bir eşleşme ürettiğini hem Axiom'un açık
+  hata verdiğini test et:
+
+  | Pattern türü | `$a at N` / `$a in (...)` | `#a` / `@a[i]` / `!a[i]` |
+  |---|---|---|
+  | Metin + desteklenen modifier'lar | desteklenir | desteklenir |
+  | Sabit hex, wildcard, `[N]` | desteklenir | desteklenir; overlap sayılır |
+  | Bounded `[N-M]` jump | desteklenir; seçilen occurrence raporlanır | açık hata |
+  | Tek düz, eşit uzunluklu alternation | desteklenir; aynı başlangıç tek instance | açık hata |
+  | Tek negated byte | desteklenir; seçilen occurrence raporlanır | açık hata |
+  | Regex | açık hata | açık hata |
+
+  Özel hex türlerinin fail-closed kararı mevcut alt küme sözleşmesidir; YARA'nın
+  bu sözdizimlerini desteklediği diferansiyel testlerde doğrulanır.
 - [ ] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle.
-- [ ] Desteklenen biçimlerin birleşimini belirle: normal bayt/nibble wildcard,
-  sabit ve bounded jump, alternation, negation. Her birleşim ya doğru
-  desteklensin ya da konumlu parse hatasıyla reddedilsin.
-- [ ] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
-  türünün davranış tablosunu yaz. Yanlış sayım/ofset/uzunluk üretmek yerine
-  destek dışı kullanımı açıkça reddet.
-- [ ] Testleri YARA 4.5.4'e sabitlenmiş diferansiyel karşılaştırmayla genişlet:
-  offset, match length, çoklu/örtüşen eşleşmeler, aynı konumdaki alternatifler,
-  sınırlar ve hatalı syntax.
+- [x] Mevcut desteklenen biçimlerin birleşimini ve ret sınırlarını belirle:
+  normal bayt/nibble wildcard, sabit ve bounded jump, alternation, negation.
+
+  | Yapı | Kabul edilen alt küme | Açık ret sınırı |
+  |---|---|---|
+  | Bayt dizisi | tam bayt, `??`, nibble wildcard | bozuk/tek nibble token |
+  | Sabit jump `[N]` | 1–64 bayt; diziye wildcard olarak eklenir | sıfır veya limit üstü |
+  | Bounded jump `[N-M]` | tek aralık; en çok 64, genişliği en çok 16; constrained prefix/suffix | ikinci aralık, bozuk/sınırsız aralık |
+  | Alternation `( ... \| ... )` | tek düz grup, 2–4 dal, her dal 1–16 sabit uzunluklu tam/nibble byte; sabit jump grup dışında olabilir | iç içe/ikinci grup, dal içinde jump, bounded jump ile aynı kalıp |
+  | Negation `~HH` / `~?H` / `~H?` | tek negated byte; sabit jump ve sıradan byte dizisiyle birleşebilir | ikinci negation, `~??`, bounded jump veya alternation ile aynı kalıp |
+
+  Bu tablo parser testlerinin tarif ettiği mevcut alt kümeyi kaydeder; YARA'nın
+  tamamı için uyumluluk iddiası değildir ve AST geçişinde regresyon testleriyle
+  korunmalıdır.
+- [x] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
+  türünün davranış tablosunu yaz; özel hex occurrence operatörlerinin YARA'da
+  geçerli, Axiom'da açık hata olduğunu karşılaştırmalı test et. Matris yukarıda.
+- [~] Testleri YARA 4.5.4'e sabitlenmiş diferansiyel karşılaştırmayla genişlet:
+  bounded jump uzunluk seçimi, çoklu/örtüşen fixed pattern'ler, aynı başlangıçta
+  eşleşen alternation dalları, özel hex occurrence fail-closed kararı ve
+  positional witness test edildi. Kalan sınırlara dair açık durum raporda;
+  eksik koşul birleşimleri ve target sınır matrisi tamamlanmalı.
 - [ ] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
   kodlamayı doğrudan C runtime testleriyle doğrula.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
