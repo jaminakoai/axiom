@@ -166,9 +166,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sınırı ve occurrence indeks taşması; `hexast:v1` için eksik/yanlış opcode,
   çoklu özel atom, hatalı/taşan jump ve fazla alternation dalı doğrudan test
   ediliyor. Ek olarak typed executor doğrudan çağrısında `INT64_MAX` üstü hedef
-  uzunluğunun ve uç `min_offset` değerinin fail-closed olduğu doğrulandı. Büyük
-  hedefteki adversarial performans ölçümünü typed executor geçişinden sonra tekrar
-  almak açık kalıyor.
+  uzunluğunun ve uç `min_offset` değerinin fail-closed olduğu doğrulandı. 64 MiB
+  yoğun prefix + geç tek eşleşme hedefi için regresyon testi eklendi (C runtime
+  çağrısı ölçümü 1,444 sn). 999-byte near-match adversarial fixture'ını typed
+  executor üzerinde yeniden ölçmek açık kalıyor.
 - [x] `axiom-scan` dosya ve PCAP yolları ByteBuffer gerçek uzunluğuyla taranıyor;
   NUL öncesi/sonrası ve NUL sınırını aşan text/hex eşleşmeleri YARA 4.5.4 ve
   C/LLVM parity testleriyle doğrulandı. NUL içeren hedefte regex, byte-span
@@ -230,9 +231,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 **G1 — YARA alt kümesinin kalan doğruluk ve runtime sınır kanıtları.** NUL
 korumalı dosya/PCAP scanner entegrasyonu tamamlandı; NUL içeren hedefte regex
 şimdilik açık yapılandırılmış hata veriyor. Sıradaki iş, `hexast:v1` typed atom
-executor'ının büyük hedefte adversarial çalışma maliyetini ölçmek (uç uzunluk ve
-`min_offset` overflow retleri doğrudan runtime testine eklendi) ve kalan
-desteklenen koşul birleşimlerini YARA 4.5.4 ile diferansiyel
+executor'ının 999-byte near-match adversarial fixture'ını typed path üzerinde
+yeniden ölçmek (uç uzunluk, uç `min_offset` reddi ve 64 MiB dense-prefix fixture
+testi eklendi) ve kalan desteklenen koşul birleşimlerini YARA 4.5.4 ile
+diferansiyel
 test etmektir. `4fe4d7d` CI'sinde dört Python matrix işi self-hosted derleyicinin
 `YaraBufferScanResult.matches` alanını yerel dizi alias'ında yanlış türlemesinden
 düştü; örnek doğrudan struct alanı kullanacak şekilde düzeltildi ve 378 odaklı

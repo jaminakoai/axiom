@@ -295,3 +295,39 @@ def test_occurrence_runtime_matches_yara_454_instance_semantics():
 
     # The assertions above pin the oracle cases. The direct C-runtime API is
     # exercised against the same target/pattern semantics in the test above.
+
+
+def test_typed_executor_scans_large_dense_prefix_target():
+    """Exercise a large target with dense prefixes and one late suffix match."""
+    source = r'''
+    #include "axiom/runtime.h"
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <string.h>
+
+    int main(void) {
+        const size_t n = (size_t)64 * 1024 * 1024;
+        uint8_t *target = (uint8_t*)malloc(n + 1);
+        if (!target) return 2;
+        memset(target, 'A', n);
+        // One valid match at the end; the preceding target is a dense prefix
+        // population that forces the typed executor through the full buffer.
+        target[n - 18] = 'A';
+        memset(target + n - 17, 'C', 16);
+        target[n - 1] = 'B';
+        target[n] = 0;
+
+        ax_int count = axiom_yara_count_hex_pattern(
+            (const char*)target, "hexast:v1:B41;J1-16;B42;");
+        free(target);
+        if (count != 1) {
+            fprintf(stderr, "expected one late match, got %lld\n", (long long)count);
+            return 1;
+        }
+        puts("YARA_TYPED_EXECUTOR_LARGE_TARGET_OK");
+        return 0;
+    }
+    '''
+    returncode, stdout, stderr = _compile_and_run(source)
+    assert returncode == 0, stderr
+    assert "YARA_TYPED_EXECUTOR_LARGE_TARGET_OK" in stdout
