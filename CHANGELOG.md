@@ -22,6 +22,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   eşleştiricisini kullanıyor; eski public runtime yardımcıları korunuyor.
 - Runtime'ın daraltılmış portability derlemesinde `INT_MAX` için gereken
   standart `<limits.h>` başlığı eklendi.
+- YARA hex occurrence API'sine ByteBuffer handle alan uzunluk-duyarlı
+  count/find/nth/length işlevleri eklendi; mevcut string API'leri korundu.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve

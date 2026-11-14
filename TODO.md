@@ -10,11 +10,11 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-13 |
+| Son güncelleme | 2026-11-14 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | 1361 geçti, 0 hata/skip; G1 runtime performans düzeltmesi dahil, `python -m pytest -q -rs`, 1214,75 sn |
-| Son G1 hedefli doğrulama | 373 YARA/scanner testi geçti; runtime/API, oracle ve C/LLVM parity dahil (139,62 sn) |
-| Son CI | `fbae263` SHA `43456582647` — **7/7 iş başarılı** (Python 3.10–3.13 dahil) |
+| Son tam test paketi | GitHub CI `8b2686a`: Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip; hata yok |
+| Son G1 hedefli doğrulama | Runtime occurrence/range/alternation/negation paketi: 118 geçti (36,44 sn); ByteBuffer API C/LLVM parity: 3 geçti (8,21 sn) |
+| Son CI | `8b2686a` — **7/7 iş başarılı** (Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, biçim) |
 
 ---
 
@@ -56,7 +56,7 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - **Kapı:** güncel test sonucu biliniyor; hata ve skip'ler açıklanmış; README ile
   kod arasındaki özellik iddiaları eşleşiyor.
 
-#### G1 — YARA alt kümesini tek bir güvenilir modele taşı `[ ]` — sıradaki iş
+#### G1 — YARA alt kümesini tek bir güvenilir modele taşı `[~]` — doğruluk kapıları açık
 
 Mevcut `hexrange:`, `hexalt:` ve `hexnot:` dahili etiketleri ayrı özel yollar
 oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
@@ -165,6 +165,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   çoklu özel atom, hatalı/taşan jump ve fazla alternation dalı doğrudan test
   ediliyor. Tek, birleşik typed-node executor'a geçiş sonrası overflow ve hedef
   boyutu stres kanıtı açık kalıyor.
+- [~] Hex occurrence API'leri artık ByteBuffer handle ile gerçek uzunluk
+  kullanabiliyor; NUL sonrası tarama C/LLVM parity testinde doğrulandı.
+  `axiom-scan` henüz bu yolu kullanmıyor: `cmd_scan` hedefi `read_file` ile
+  `str` olarak alıyor ve string sahipliği/runtime `strlen` kullandığı için ilk
+  NUL'dan sonraki baytlar kayboluyor. Binary taramada sessiz yanlış negatif
+  riski sürüyor. Dosyayı buffer'a okuma, text matcher ve scanner entegrasyonu,
+  regex'in NUL politikası ve YARA oracle testleri tamamlanmalı.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
   diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
   atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.
@@ -218,12 +225,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G1 — Hex pattern semantiğini tek modele hazırla.** Positional witness hatası
-`e00c56d` üzerinde düzeltildi. Bounded jump, alternation ve negation için ortak
-occurrence API'si eklendi; `fbae263` için 1358/1358 ve CI 7/7 geçti. Sonraki
-runtime hardening değişikliği uzun suffix yakın-eşleşmelerini 64 MiB'de 1,321 sn
-içinde saydı; güncel tam yerel paket 1361/1361 geçti. Sıradaki iş typed pattern
-AST geçişi ve bozuk bytecode/overflow testleridir.
+**G1 — Binary hedef uzunluğunu uçtan uca koru.** Hex AST ve occurrence
+eşleştiricisi typed atom modelini kullanıyor; eski runtime `find`/`match_at`
+girişleri adapter olarak aynı yürütücüye bağlı. `8b2686a` CI'si 7/7 başarılı;
+Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip. Son yerel YARA runtime
+grubu 118/118 geçti. Yeni ByteBuffer API'si C/LLVM parity testinde NUL sonrası
+eşleşmeyi buldu, ancak mevcut `axiom-scan` string tabanlı dosya okuduğu için
+ikili dosyanın NUL sonrası kısmını hâlâ taramıyor. Dosya okuma, text/hex tarama,
+regex için açık NUL davranışı ve scanner oracle testleri tamamlanmadan G1 veya
+binary scanner doğrulandı sayılmamalı.
 
 ---
 
@@ -1104,8 +1114,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (G1 occurrence değişiklikleri dahil) | 1358 geçti, 0 hata/skip | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner odaklı 370 geçti; occurrence, oracle ve C/LLVM parity dahil | — | — |
+| Son tam test (CI `8b2686a`) | Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip, 0 hata | — | 2000 |
+| Güncel G1 hedefli doğrulama | 118 YARA runtime/range/alternation/negation testi; yeni ByteBuffer C/LLVM parity grubunda 3 test geçti | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

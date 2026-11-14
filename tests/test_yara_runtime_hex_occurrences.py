@@ -10,6 +10,7 @@ import pytest
 from axiom.cli import find_c_compiler
 
 ROOT = Path(__file__).resolve().parent.parent
+AXIOM = ROOT / "bin" / "axiom"
 
 
 def _compile_and_run(source: str) -> tuple[int, str, str]:
@@ -144,6 +145,81 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
     returncode, stdout, stderr = _compile_and_run(source)
     assert returncode == 0, stderr
     assert "YARA_HEX_OCCURRENCE_RUNTIME_OK" in stdout
+
+
+def test_length_aware_occurrence_api_scans_bytes_after_embedded_nul():
+    source = r'''
+    #include "axiom/runtime.h"
+    #include <stdio.h>
+
+    #define CHECK(expr) do { if (!(expr)) { \
+        fprintf(stderr, "failed at line %d: %s\n", __LINE__, #expr); return 1; \
+    } } while (0)
+
+    int main(void) {
+        ax_int buffer = axiom_buf_create(8);
+        CHECK(buffer > 0);
+        axiom_buf_write_u8(buffer, 'A');
+        axiom_buf_write_u8(buffer, 0);
+        axiom_buf_write_u8(buffer, 'B');
+        axiom_buf_write_u8(buffer, 'C');
+
+        const char* after_nul = "hexast:v1:B42;";
+        const char* crossing_nul = "hexast:v1:B41 00 42;";
+        CHECK(axiom_yara_count_hex_pattern_buf_handle(buffer, after_nul) == 1);
+        CHECK(axiom_yara_find_hex_pattern_buf_handle(buffer, after_nul, -1, -1) == 2);
+        CHECK(axiom_yara_hex_pattern_length_at_buf_handle(buffer, after_nul, 2) == 1);
+        CHECK(axiom_yara_nth_hex_pattern_offset_buf_handle(buffer, after_nul, 1) == 2);
+        CHECK(axiom_yara_nth_hex_pattern_length_buf_handle(buffer, after_nul, 1) == 1);
+        CHECK(axiom_yara_count_hex_pattern_buf_handle(buffer, crossing_nul) == 1);
+        CHECK(axiom_yara_find_hex_pattern_buf_handle(buffer, crossing_nul, -1, -1) == 0);
+        CHECK(axiom_yara_nth_hex_pattern_length_buf_handle(buffer, crossing_nul, 1) == 3);
+
+        axiom_buf_free(buffer);
+        CHECK(axiom_yara_count_hex_pattern_buf_handle(buffer, after_nul) == -1);
+        puts("YARA_LENGTH_AWARE_BUFFER_OCCURRENCES_OK");
+        return 0;
+    }
+    '''
+    returncode, stdout, stderr = _compile_and_run(source)
+    assert returncode == 0, stderr
+    assert "YARA_LENGTH_AWARE_BUFFER_OCCURRENCES_OK" in stdout
+
+
+@pytest.mark.parametrize("backend", ["c", "llvm"])
+def test_length_aware_yara_buffer_api_has_backend_parity(backend, tmp_path):
+    source = r'''
+    import "std/io/binary"
+    import "std/security/yara"
+
+    fn main() -> int {
+        let buffer = buf_create(8)
+        buf_write_u8(buffer, 65)
+        buf_write_u8(buffer, 0)
+        buf_write_u8(buffer, 66)
+        verify yara_count_hex_pattern_buf(buffer, "hexast:v1:B42;") == 1
+        verify yara_find_hex_pattern_buf(buffer, "hexast:v1:B42;", -1, -1) == 2
+        verify yara_hex_pattern_length_at_buf(buffer, "hexast:v1:B41 00 42;", 0) == 3
+        verify yara_nth_hex_pattern_offset_buf(buffer, "hexast:v1:B42;", 1) == 2
+        verify yara_nth_hex_pattern_length_buf(buffer, "hexast:v1:B41 00 42;", 1) == 3
+        buf_free(buffer)
+        print("YARA_BUFFER_API_PARITY_OK")
+        return 0
+    }
+    '''
+    source_path = tmp_path / "yara_buffer.ax"
+    output_path = tmp_path / "yara_buffer"
+    source_path.write_text(source, encoding="utf-8")
+    env = os.environ.copy()
+    env["PYTHONPATH"] = str(ROOT)
+    command = [str(AXIOM), "build", str(source_path), "-o", str(output_path)]
+    if backend == "llvm":
+        command.insert(2, "--backend=llvm")
+    built = subprocess.run(command, capture_output=True, text=True, timeout=300, env=env)
+    assert built.returncode == 0, built.stdout + built.stderr
+    result = subprocess.run([str(output_path)], capture_output=True, text=True, timeout=120)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "YARA_BUFFER_API_PARITY_OK" in result.stdout
 
 
 def test_occurrence_runtime_matches_yara_454_instance_semantics():

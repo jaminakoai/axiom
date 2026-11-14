@@ -9651,7 +9651,8 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_next_candidate(const uint8_t* tar
 // Shared occurrence executor for supported hex-pattern encodings. A distinct
 // start offset contributes at most one instance; scanning every byte permits
 // overlap, while each matcher selects its canonical instance length.
-AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* target,
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const uint8_t* target,
+                                                                    size_t target_len,
                                                                     const char* encoded,
                                                                     ax_int occurrence,
                                                                     int return_length,
@@ -9659,7 +9660,6 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
                                                                     ax_int max_offset) {
     if (!target || !encoded || occurrence < 0 || min_offset < -1 || max_offset < -1 ||
         (min_offset >= 0 && max_offset >= 0 && min_offset > max_offset)) return -1;
-    size_t target_len = strlen(target);
     if (target_len > (size_t)INT64_MAX) return -1;
 
     AxiomYaraHexPattern pattern;
@@ -9674,7 +9674,7 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
         axiom_yara_hex_pattern_free(&pattern);
         return occurrence == 0 && !return_length ? 0 : -1;
     }
-    if (!axiom_yara_hex_pattern_prepare((const uint8_t*)target, target_len, &pattern)) goto invalid_pattern;
+    if (!axiom_yara_hex_pattern_prepare(target, target_len, &pattern)) goto invalid_pattern;
     for (size_t i = 0; i < pattern.count; i++) {
         const AxiomYaraHexAtom* atom = &pattern.atoms[i];
         if (atom->kind == AXIOM_YARA_ATOM_JUMP && atom->as.jump.suffix_anchor >= 0 &&
@@ -9690,11 +9690,11 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
     ax_int seen = 0;
     int64_t selected_length = -1;
     while (cursor <= last_start) {
-        int64_t start = axiom_yara_hex_pattern_next_candidate((const uint8_t*)target, target_len,
+        int64_t start = axiom_yara_hex_pattern_next_candidate(target, target_len,
                                                                &pattern, cursor, last_start);
         if (start < 0) break;
         int64_t match_length = -1;
-        int matched = axiom_yara_hex_pattern_match_at((const uint8_t*)target, target_len,
+        int matched = axiom_yara_hex_pattern_match_at(target, target_len,
                                                        &pattern, start, &match_length);
         if (matched) {
             seen++;
@@ -9721,30 +9721,87 @@ invalid_pattern:
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_count_hex_pattern(const char* target, const char* pattern) {
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 0, 0, -1, -1);
+    if (!target) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal((const uint8_t*)target, strlen(target),
+                                                       pattern, 0, 0, -1, -1);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_pattern(const char* target, const char* pattern,
                                                      ax_int min_offset, ax_int max_offset) {
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 1, 0, min_offset, max_offset);
+    if (!target) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal((const uint8_t*)target, strlen(target),
+                                                       pattern, 1, 0, min_offset, max_offset);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_length_at(const char* target, const char* pattern,
                                                           ax_int offset) {
     if (offset < 0) return -1;
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, 1, 1, offset, offset);
+    if (!target) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal((const uint8_t*)target, strlen(target),
+                                                       pattern, 1, 1, offset, offset);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_offset(const char* target, const char* pattern,
                                                             ax_int occurrence) {
     if (occurrence <= 0) return -1;
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 0, -1, -1);
+    if (!target) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal((const uint8_t*)target, strlen(target),
+                                                       pattern, occurrence, 0, -1, -1);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_length(const char* target, const char* pattern,
                                                             ax_int occurrence) {
     if (occurrence <= 0) return -1;
-    return axiom_yara_hex_pattern_occurrence_internal(target, pattern, occurrence, 1, -1, -1);
+    if (!target) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal((const uint8_t*)target, strlen(target),
+                                                       pattern, occurrence, 1, -1, -1);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_hex_pattern_buf_handle(ax_int handle, const char* pattern) {
+    if (handle <= 0 || !pattern) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(buffer->data, buffer->len,
+                                                       pattern, 0, 0, -1, -1);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_pattern_buf_handle(ax_int handle, const char* pattern,
+                                                                 ax_int min_offset, ax_int max_offset) {
+    if (handle <= 0 || !pattern) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(buffer->data, buffer->len,
+                                                       pattern, 1, 0, min_offset, max_offset);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_offset_buf_handle(ax_int handle,
+                                                                       const char* pattern,
+                                                                       ax_int occurrence) {
+    if (handle <= 0 || !pattern || occurrence <= 0) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(buffer->data, buffer->len,
+                                                       pattern, occurrence, 0, -1, -1);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_hex_pattern_length_buf_handle(ax_int handle,
+                                                                       const char* pattern,
+                                                                       ax_int occurrence) {
+    if (handle <= 0 || !pattern || occurrence <= 0) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(buffer->data, buffer->len,
+                                                       pattern, occurrence, 1, -1, -1);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_length_at_buf_handle(ax_int handle,
+                                                                      const char* pattern,
+                                                                      ax_int offset) {
+    if (handle <= 0 || !pattern || offset < 0) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_hex_pattern_occurrence_internal(buffer->data, buffer->len,
+                                                       pattern, 1, 1, offset, offset);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_scan_buf_handle(ax_int handle, const char* hex_pattern, ax_int min_offset, ax_int max_offset) {
