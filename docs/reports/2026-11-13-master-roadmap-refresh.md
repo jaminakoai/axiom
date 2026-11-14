@@ -315,3 +315,10 @@ arama ve legacy tag compatibility parse yolları korundu. Çekirdek C/oracle
 testlerinde **115/115**, YARA/scanner paketinde **373/373** ve tam proje
 paketinde **1361/1361** geçti (1219,92 sn). Biçim ve diff kontrolleri temiz.
 Bu atom-array değişikliğinin CI doğrulaması commit/push sonrasında çalışacak.
+
+Eski `find_hex_range`, `find_hex_alternation` ve `find_hex_negation` public
+runtime girişleri daha sonra ortak atom executor'ına yönlendirildi; eski
+encoding'i doğrudan veren kullanıcılar için parser adapter'ları kaldı. Wrapper
+değişikliğinden sonra oracle/runtime kümesi **133/133**, YARA/scanner paketi
+**373/373** ve tam proje paketi **1361/1361** geçti (1211,80 sn). Biçim
+kontrolü ve `git diff --check` de temiz.

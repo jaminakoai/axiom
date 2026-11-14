@@ -16,6 +16,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - Occurrence executor sabit byte, bounded jump, alternation ve negation'ı
   `AxiomYaraHexAtom[]` sıralı modelinden yürütüyor. Legacy tag girişleri de
   önce aynı atom modeline çevriliyor; jump suffix anchor hızlandırması korundu.
+- Eski range/alternation/negation find API'leri ortak atom executor'ına
+  yönlendirildi; doğrudan çağıranlar için fonksiyon imzaları korundu.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve

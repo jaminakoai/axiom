@@ -108,10 +108,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   C runtime'da tek doğrulayıcı/yürütücü; find/count/nth API'leri aynı
   occurrence motorunu kullansın. Mevcut `hexrange:`/`hexalt:`/`hexnot:`
   kodlamaları geçiş testlerinde adapter olarak okunup sonra iç akıştan kaldırılsın.
-  Tek `Byte/Jump/Alternation/NotByte` atom dizisi executor'ı tamamlandı. Sonraki
-  alt adım, doğrudan legacy runtime API adapter'larını kaldırmak veya açıkça
-  compatibility katmanına taşımak; sonra kalan YARA limitleri ve gerçek kural
-  uyumluluğunu doğrulamaktır.
+  Tek `Byte/Jump/Alternation/NotByte` atom dizisi executor'ı tamamlandı. Eski
+  `find_hex_range/alternation/negation` giriş noktaları artık bu ortak executor'a
+  yönleniyor; `hexrange:`/`hexalt:`/`hexnot:` doğrudan girdi biçimleri parse
+  adapter'ı olarak destekleniyor. Sonraki alt adım, artık kullanılmayan tür-özel
+  runtime helper'larını güvenle kaldırıp kalan limit/oracle kanıtlarını kapatmaktır.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
