@@ -600,9 +600,10 @@ Bu tam yerel koşu positional evidence düzeltmesi ve bounded jump, alternation,
 negation için yeni `#/@/!` desteği ve bounded-range yakın-eşleşme performans
 düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary scanner
 kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
-En son GitHub Actions `4fe4d7d` için Python 3.10–3.13 self-hosted örnek derleme
-testleri başarısız oldu; ASan/UBSan, LLVM/DWARF ve biçim işleri geçti. Düzeltme
-push edildiğinde yeni CI çalışacaktır.
+İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
+Düzeltilmiş ağaçta `python -m pytest -q -rs`: **1370 geçti, 0 hata/skip**
+(1253,81 sn); YARA/scanner + self-hosted hedefli paket **378 geçti**. GitHub
+Actions `8fe6315` için **7/7 iş başarılı**.
 
 ### CI durumu
 

@@ -28,13 +28,14 @@
 - İlk push `4fe4d7d` GitHub CI'sinde 4 Python matrix işi self-hosted `axiom-scan` derlemesinde başarısız oldu: `let matches = result.matches` yerel alias'ı array alanını `int` olarak üretti. ASan/UBSan, LLVM/DWARF ve format işleri başarılıydı. Alias kaldırılıp `result.matches` doğrudan kullanıldı.
 - Düzeltme sonrası `./bin/axiomc build examples/21_axiom_scan.ax` — başarılı.
 - Düzeltme sonrası self-hosted derleme/parity ile YARA/scanner paketi — **378 geçti** (169,14 sn).
-- Tam proje testi `4fe4d7d` üzerinde iki self-hosted testte aynı kusuru yakaladı; koşu 271 testten sonra durduruldu. Düzeltmeden sonraki tam proje paketi henüz tamamlanmadı.
+- İlk `4fe4d7d` tam koşusu aynı self-hosted kusuru yakaladı; bu koşu düzeltme yapılmadan durduruldu. Düzeltme commit’i `8fe6315` sonrasında `python -m pytest -q -rs` — **1370 geçti, 0 hata, 0 atlandı** (1253,81 sn).
+- `8fe6315` GitHub Actions — **7/7 başarılı** (Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, biçim).
 
 ## Sınırlar ve riskler
 
 - Regex NUL içeren hedeflerde hâlâ desteklenmiyor; şu an açık hata veriyor. Regex'i buffer uzunluğuyla taramak ve gerçek eşleşme offset/uzunluklarını üretmek ayrı runtime tasarımı gerektiriyor.
 - Bu entegrasyon YARA'nın tamamına uyumluluk anlamına gelmez; yalnız belgelenmiş alt kümeyi kapsar.
-- `4fe4d7d` CI başarısızlığı giderildi ve hedefli doğrulandı; düzeltme için yeni GitHub CI sonucu bekleniyor.
+- `4fe4d7d` CI kusuru giderildi; `8fe6315` için tam yerel paket ve GitHub CI 7/7 başarılı.
 
 ## Sıradaki adım
 

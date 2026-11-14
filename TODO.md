@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-14 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Yerel `python -m pytest -q -rs`: 1370 geçti (önceki scanner entegrasyon adımı); son tip düzeltmesinden sonra YARA/scanner paketi 376 geçti |
-| Son G1 hedefli doğrulama | YARA/scanner/gerçek-YARA paketi: 376 geçti (154,49 sn) |
-| Son CI | `4fe4d7d` — 4 Python matrix işi başarısız (self-hosted `axiom-scan` örnek derlemesi); ASan/UBSan, LLVM/DWARF ve format başarılı. Düzeltme yerelde hedefli doğrulandı; yeni CI bekleniyor |
+| Son tam test paketi | Commit `8fe6315`: `python -m pytest -q -rs` — 1370 geçti, 0 hata, 0 atlandı (1253,81 sn) |
+| Son G1 hedefli doğrulama | Self-hosted scan compile/parity + YARA/scanner/real-YARA: 378 geçti (169,14 sn) |
+| Son CI | `8fe6315` — **7/7 başarılı** (Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, biçim) |
 
 ---
 
@@ -233,7 +233,7 @@ kanıtlamak ve kalan desteklenen koşul birleşimlerini YARA 4.5.4 ile diferansi
 test etmektir. `4fe4d7d` CI'sinde dört Python matrix işi self-hosted derleyicinin
 `YaraBufferScanResult.matches` alanını yerel dizi alias'ında yanlış türlemesinden
 düştü; örnek doğrudan struct alanı kullanacak şekilde düzeltildi ve 378 odaklı
-test geçti. Yeni CI ve bu düzeltmeden sonraki tam proje testi bekleniyor. G1 ancak kalan testler, açık ret davranışları ve C/LLVM
+test geçti. Commit `8fe6315` tam paketinde 1370 test geçti, CI 7/7 başarılı. G1 ancak kalan testler, açık ret davranışları ve C/LLVM
 paritesi raporlandığında kapanır.
 
 ---
@@ -271,8 +271,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | 1358 geçti, 0 hata/skip; occurrence değişiklikleri dahil | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner paketi 370 geçti; yeni runtime occurrence ve C/LLVM parity dahil | G1 raporundaki komutlar |
+| Son tam test paketi | Commit `8fe6315`: 1370 geçti, 0 hata, 0 atlandı | `python -m pytest -q -rs` |
+| G1 hedefli testler | Self-hosted scan compile/parity + YARA/scanner/real-YARA 378 geçti | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1115,8 +1115,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (CI `8b2686a`) | Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip, 0 hata | — | 2000 |
-| Güncel G1 hedefli doğrulama | 118 YARA runtime/range/alternation/negation testi; yeni ByteBuffer C/LLVM parity grubunda 3 test geçti | — | — |
+| Son tam test (commit `8fe6315`) | Yerel 1370 geçti, 0 hata/skip; CI Python 3.10–3.13 ve tüm diğer işler başarılı | — | 2000 |
+| Güncel G1 hedefli doğrulama | Self-hosted scan compile/parity + YARA/scanner/real-YARA 378 geçti | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |
