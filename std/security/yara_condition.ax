@@ -106,7 +106,7 @@ fn _yc_parse_number(source: str, position: int) -> YaraConditionNumber {
     }
 }
 
-fn _yc_pattern_find_in_range(pattern: str, target: str, min_offset: int, max_offset: int) -> int {
+fn _yc_pattern_find_in_range(pattern: str, target: str, min_offset: int, max_offset: int, target_buffer: int) -> int {
     if str_starts_with(pattern, "regex:") { return -1 }
     if str_starts_with(pattern, "str:") {
         let mut p = str_sub(pattern, 4, str_len(pattern) - 4)
@@ -121,16 +121,22 @@ fn _yc_pattern_find_in_range(pattern: str, target: str, min_offset: int, max_off
             flags = str_to_int(str_sub(rest, 0, separator))
             p = str_sub(rest, separator + 1, str_len(rest) - separator - 1)
         }
+        if target_buffer > 0 {
+            return rt_yara_find_text_buf_handle(target_buffer, p, flags, min_offset, max_offset)
+        }
         return rt_yara_find_text(target, p, flags, min_offset, max_offset)
     }
     if str_starts_with(pattern, "hexast:v1:") or str_starts_with(pattern, "hex:") or str_starts_with(pattern, "hexrange:") or str_starts_with(pattern, "hexalt:") or str_starts_with(pattern, "hexnot:") {
+        if target_buffer > 0 {
+            return rt_yara_find_hex_pattern_buf_handle(target_buffer, pattern, min_offset, max_offset)
+        }
         return rt_yara_find_hex_pattern(target, pattern, min_offset, max_offset)
     }
     return -1
 }
 
-fn _yc_pattern_matches_in_range(pattern: str, target: str, min_offset: int, max_offset: int) -> bool {
-    return _yc_pattern_find_in_range(pattern, target, min_offset, max_offset) >= 0
+fn _yc_pattern_matches_in_range(pattern: str, target: str, min_offset: int, max_offset: int, target_buffer: int) -> bool {
+    return _yc_pattern_find_in_range(pattern, target, min_offset, max_offset, target_buffer) >= 0
 }
 
 fn _yc_text_pattern_parts(pattern: str) -> YaraConditionTextPattern {
@@ -198,13 +204,13 @@ fn _yc_parse_range_suffix(source: str, position: int) -> YaraConditionRange {
     return YaraConditionRange { min_offset: 0, max_offset: 0, position: position, restricted: false, valid: true }
 }
 
-fn _yc_group_pattern_matches(pattern: str, is_present: bool, restricted: bool, min_offset: int, max_offset: int, target: str, target_size: int) -> bool {
+fn _yc_group_pattern_matches(pattern: str, is_present: bool, restricted: bool, min_offset: int, max_offset: int, target: str, target_size: int, target_buffer: int) -> bool {
     if not restricted { return is_present }
     if target_size < 0 { return false }
-    return _yc_pattern_matches_in_range(pattern, target, min_offset, max_offset)
+    return _yc_pattern_matches_in_range(pattern, target, min_offset, max_offset, target_buffer)
 }
 
-fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
+fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
     let n = str_byte_len(source)
     let mut mode = ""
     let mut threshold = 0
@@ -251,7 +257,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
                 if range.restricted and str_starts_with(pattern_patterns[group_pattern_index], "regex:") {
                     return YaraConditionParse { value: false, position: cursor, valid: false, witness_name: "", witness_offset: -1 }
                 }
-                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size) {
+                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size, target_buffer) {
                     group_match_count = group_match_count + 1
                 }
             }
@@ -381,7 +387,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
                 if range.restricted and str_starts_with(pattern_patterns[group_pattern_index], "regex:") {
                     return YaraConditionParse { value: false, position: close, valid: false, witness_name: "", witness_offset: -1 }
                 }
-                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size) {
+                if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size, target_buffer) {
                     group_match_count = group_match_count + 1
                 }
             }
@@ -402,7 +408,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
     return YaraConditionParse { value: group_result, position: range.position, valid: true, witness_name: "", witness_offset: -1 }
 }
 
-fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
+fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
     let i = _yc_skip_space(source, position)
     let n = str_byte_len(source)
     if i >= n {
@@ -411,7 +417,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
 
     let ch = str_char_at(source, i)
     if ch == "(" {
-        let inner = _yc_parse_or(source, i + 1, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+        let inner = _yc_parse_or(source, i + 1, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
         if not inner.valid { return inner }
         let close = _yc_skip_space(source, inner.position)
         if close >= n or str_char_at(source, close) != ")" {
@@ -421,7 +427,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
     }
 
     if _yc_keyword_at(source, i, "any") or _yc_keyword_at(source, i, "all") or _yc_keyword_at(source, i, "none") or str_contains("0123456789", ch) {
-        return _yc_parse_group(source, i, pattern_names, pattern_values, pattern_patterns, target, target_size)
+        return _yc_parse_group(source, i, pattern_names, pattern_values, pattern_patterns, target, target_size, target_buffer)
     }
 
     if ch == "@" or ch == "!" {
@@ -485,15 +491,32 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
         if target_size >= 0 {
             let mut offset = -1
             if is_text {
-                offset = rt_yara_nth_text_offset(target, text_pattern.text, text_pattern.flags, occurrence.value)
+                if target_buffer > 0 {
+                    offset = rt_yara_nth_text_offset_buf_handle(target_buffer, text_pattern.text, text_pattern.flags, occurrence.value)
+                } else {
+                    offset = rt_yara_nth_text_offset(target, text_pattern.text, text_pattern.flags, occurrence.value)
+                }
             } else {
-                offset = rt_yara_nth_hex_pattern_offset(target, pattern_source, occurrence.value)
+                if target_buffer > 0 {
+                    offset = rt_yara_nth_hex_pattern_offset_buf_handle(target_buffer, pattern_source, occurrence.value)
+                } else {
+                    offset = rt_yara_nth_hex_pattern_offset(target, pattern_source, occurrence.value)
+                }
             }
             if offset >= 0 {
                 actual = offset
                 if get_length {
-                    if is_text { actual = str_byte_len(text_pattern.text) }
-                    else { actual = rt_yara_nth_hex_pattern_length(target, pattern_source, occurrence.value) }
+                    if is_text {
+                        if target_buffer > 0 {
+                            actual = rt_yara_nth_text_length_buf_handle(target_buffer, text_pattern.text, text_pattern.flags, occurrence.value)
+                        } else {
+                            actual = str_byte_len(text_pattern.text)
+                        }
+                    } else if target_buffer > 0 {
+                        actual = rt_yara_nth_hex_pattern_length_buf_handle(target_buffer, pattern_source, occurrence.value)
+                    } else {
+                        actual = rt_yara_nth_hex_pattern_length(target, pattern_source, occurrence.value)
+                    }
                 }
             }
         }
@@ -527,7 +550,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
             if _yc_keyword_at(source, suffix, "at") {
                 let offset = _yc_parse_number(source, suffix + 2)
                 if not offset.valid { return YaraConditionParse { value: false, position: offset.position, valid: false, witness_name: "", witness_offset: -1 } }
-                let witness_offset = _yc_pattern_find_in_range(pattern_patterns[found], target, offset.value, offset.value)
+                let witness_offset = _yc_pattern_find_in_range(pattern_patterns[found], target, offset.value, offset.value, target_buffer)
                 let matched = target_size >= 0 and witness_offset >= 0
                 let mut witness_name = ""
                 if matched { witness_name = name }
@@ -551,7 +574,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
             if close >= n or str_char_at(source, close) != ")" {
                 return YaraConditionParse { value: false, position: close, valid: false, witness_name: "", witness_offset: -1 }
             }
-            let witness_offset = _yc_pattern_find_in_range(pattern_patterns[found], target, lower.value, upper.value)
+            let witness_offset = _yc_pattern_find_in_range(pattern_patterns[found], target, lower.value, upper.value, target_buffer)
             let matched = target_size >= 0 and witness_offset >= 0
             let mut witness_name = ""
             if matched { witness_name = name }
@@ -655,22 +678,22 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
     return YaraConditionParse { value: false, position: i, valid: false, witness_name: "", witness_offset: -1 }
 }
 
-fn _yc_parse_unary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
+fn _yc_parse_unary(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
     let i = _yc_skip_space(source, position)
     if _yc_keyword_at(source, i, "not") {
-        let inner = _yc_parse_unary(source, i + 3, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+        let inner = _yc_parse_unary(source, i + 3, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
         if not inner.valid { return inner }
         return YaraConditionParse { value: not inner.value, position: inner.position, valid: true, witness_name: "", witness_offset: -1 }
     }
-    return _yc_parse_primary(source, i, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+    return _yc_parse_primary(source, i, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
 }
 
-fn _yc_parse_and(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
-    let mut left = _yc_parse_unary(source, position, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+fn _yc_parse_and(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
+    let mut left = _yc_parse_unary(source, position, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
     if not left.valid { return left }
     let mut next = _yc_skip_space(source, left.position)
     while _yc_keyword_at(source, next, "and") {
-        let right = _yc_parse_unary(source, next + 3, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+        let right = _yc_parse_unary(source, next + 3, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
         if not right.valid { return right }
         let combined_value = left.value and right.value
         let mut witness_name = left.witness_name
@@ -685,12 +708,12 @@ fn _yc_parse_and(source: str, position: int, pattern_names: str[], pattern_value
     return left
 }
 
-fn _yc_parse_or(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
-    let mut left = _yc_parse_and(source, position, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+fn _yc_parse_or(source: str, position: int, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
+    let mut left = _yc_parse_and(source, position, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
     if not left.valid { return left }
     let mut next = _yc_skip_space(source, left.position)
     while _yc_keyword_at(source, next, "or") {
-        let right = _yc_parse_and(source, next + 2, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+        let right = _yc_parse_and(source, next + 2, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
         if not right.valid { return right }
         let combined_value = left.value or right.value
         let mut witness_name = left.witness_name
@@ -710,7 +733,7 @@ fn _yc_parse_or(source: str, position: int, pattern_names: str[], pattern_values
 fn yara_condition_validate(condition: str, pattern_names: str[], pattern_patterns: str[]) -> str {
     let empty_values: bool[] = []
     let empty_counts: int[] = []
-    let parsed = _yc_parse_or(condition, 0, pattern_names, empty_values, empty_counts, pattern_patterns, "", -1)
+    let parsed = _yc_parse_or(condition, 0, pattern_names, empty_values, empty_counts, pattern_patterns, "", -1, 0)
     if not parsed.valid {
         return "gecersiz veya desteklenmeyen condition ifadesi (byte " + int_to_str(parsed.position) + ")"
     }
@@ -721,13 +744,24 @@ fn yara_condition_validate(condition: str, pattern_names: str[], pattern_pattern
     return ""
 }
 
-fn yara_condition_evaluate(condition: str, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
-    let parsed = _yc_parse_or(condition, 0, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size)
+fn _yc_evaluate_with_target_buffer(condition: str, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int, target_buffer: int) -> YaraConditionParse {
+    let parsed = _yc_parse_or(condition, 0, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, target_buffer)
     if not parsed.valid { return parsed }
     if _yc_skip_space(condition, parsed.position) != str_byte_len(condition) {
         return YaraConditionParse { value: false, position: _yc_skip_space(condition, parsed.position), valid: false, witness_name: "", witness_offset: -1 }
     }
     return parsed
+}
+
+fn yara_condition_evaluate(condition: str, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> YaraConditionParse {
+    return _yc_evaluate_with_target_buffer(condition, pattern_names, pattern_values, pattern_counts, pattern_patterns, target, target_size, 0)
+}
+
+fn yara_condition_evaluate_buffer(condition: str, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target_buffer: int, target_size: int) -> YaraConditionParse {
+    if target_buffer <= 0 {
+        return YaraConditionParse { value: false, position: 0, valid: false, witness_name: "", witness_offset: -1 }
+    }
+    return _yc_evaluate_with_target_buffer(condition, pattern_names, pattern_values, pattern_counts, pattern_patterns, "", target_size, target_buffer)
 }
 
 fn yara_condition_matches(condition: str, pattern_names: str[], pattern_values: bool[], pattern_counts: int[], pattern_patterns: str[], target: str, target_size: int) -> bool {

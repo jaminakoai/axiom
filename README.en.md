@@ -101,9 +101,11 @@ in their own language.
 - Text patterns support `\\`, `\"`, `\n`, `\r`, `\t`, and `\xNN` escapes.
   `\x00` is rejected because Axiom represents strings as NUL-terminated text.
   `//` inside a pattern is preserved; `#` is not a YARA comment marker.
-- `scan` is text-based: a file containing a NUL byte **is truncated at the
-  first NUL**. `target_sha256` still covers the whole file; `scanned_bytes`
-  shows only the readable prefix.
+- File and PCAP scanning uses the ByteBuffer actual length. Matches can be
+  found before, after, or across NUL bytes, and `scanned_bytes` reports the full
+  scanned length. If a target containing NUL also uses a regex pattern, the
+  scanner returns an explicit error instead of a potentially incorrect result.
+  Regex on targets without NUL continues to use the existing POSIX ERE path.
 - PCAP packets are scanned individually; there is **no TCP reassembly**.
 - The DFIR tool is Linux `/proc` based; no process/port collection on
   Windows/macOS. It is not a policy engine: it produces a risk score but does
@@ -601,9 +603,11 @@ Test-infrastructure notes:
 
 This full local run includes the positional-evidence fix and the new `#/@/!`
 support for bounded jumps, alternation, and negation, plus the bounded-range
-near-match performance fix. The focused YARA/scanner suite passed 373 tests.
-The latest completed GitHub Actions run was for `fbae263` (7/7); CI for this fix
-will run after push.
+near-match performance fix. That test summary is historical; current evidence
+for binary scanner integration is in
+[`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
+The latest completed GitHub Actions run was for `d04e0a8` (7/7); CI for this
+integration will run after push.
 
 ### CI status
 

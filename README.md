@@ -100,9 +100,11 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
 - Metin kalıplarında `\\`, `\"`, `\n`, `\r`, `\t` ve `\xNN` kaçışları
   desteklenir. `\x00`, Axiom'un NUL ile sonlanan metin gösterimi nedeniyle
   reddedilir. `//` kalıp içinde korunur; `#` YARA yorum işareti değildir.
-- `scan` metin tabanlıdır: NUL baytı içeren dosya **ilk NUL'da kesilir**.
-  `target_sha256` yine tüm dosyayı kapsar; `scanned_bytes` yalnız okunabilen
-  öneki gösterir.
+- Dosya ve PCAP taraması ByteBuffer'ın gerçek uzunluğunu kullanır; eşleşmeler
+  NUL baytından önce, sonra ve bayt sınırını aşarak bulunabilir. `scanned_bytes`
+  taranan tam bayt uzunluğunu gösterir. NUL içeren hedefte regex deseni varsa
+  tarayıcı yanlış sonuç vermek yerine açık hata döndürür; NUL içermeyen hedefte
+  regex mevcut POSIX ERE yolunu kullanır.
 - PCAP'te her paket ayrı taranır; **akış yeniden birleştirme (TCP reassembly) yoktur**.
 - DFIR aracı Linux `/proc` tabanlıdır; Windows/macOS'ta süreç ve port toplama
   yoktur. Bir tespit/politika motoru değildir: risk skoru üretir, exit kodunu
@@ -596,9 +598,10 @@ Test altyapısı notları:
 
 Bu tam yerel koşu positional evidence düzeltmesi ve bounded jump, alternation,
 negation için yeni `#/@/!` desteği ve bounded-range yakın-eşleşme performans
-düzeltmesini içerir. YARA/scanner odaklı paket 373 testte geçti. Son tamamlanmış
-GitHub Actions `fbae263` için 7/7 idi; bu düzeltmenin CI sonucu push sonrasında
-çalışacaktır.
+düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary scanner
+kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
+Son tamamlanmış GitHub Actions `d04e0a8` için 7/7 idi; yeni entegrasyonun CI
+sonucu push sonrasında çalışacaktır.
 
 ### CI durumu
 

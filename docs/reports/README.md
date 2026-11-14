@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 46 rapor** · 47 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 47 rapor** · 48 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -88,6 +88,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 - [YARA ByteBuffer uzunluk-duyarlı occurrence API'si](2026-11-14-yara-buffer-length-api.md)
 - [NUL korumalı ByteBuffer dosya okuma](2026-11-14-yara-buffer-file-reader.md)
+- [YARA binary hedef tarama entegrasyonu](2026-11-14-yara-binary-scanner-integration.md)
 
 ## Okuma sırası (yeni gelen için)
 

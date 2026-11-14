@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-14 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | GitHub CI `8b2686a`: Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip; hata yok |
-| Son G1 hedefli doğrulama | Runtime occurrence/range/alternation/negation paketi: 118 geçti (36,44 sn); ByteBuffer API C/LLVM parity: 3 geçti (8,21 sn) |
-| Son CI | `8b2686a` — **7/7 iş başarılı** (Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, biçim) |
+| Son tam test paketi | Yerel `python -m pytest -q -rs`: 1370 geçti (önceki scanner entegrasyon adımı); son tip düzeltmesinden sonra YARA/scanner paketi 376 geçti |
+| Son G1 hedefli doğrulama | YARA/scanner/gerçek-YARA paketi: 376 geçti (154,49 sn) |
+| Son CI | `d04e0a8` — **7/7 iş başarılı**; bu çalışma ağacının CI'si push sonrası bekleniyor |
 
 ---
 
@@ -165,14 +165,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   çoklu özel atom, hatalı/taşan jump ve fazla alternation dalı doğrudan test
   ediliyor. Tek, birleşik typed-node executor'a geçiş sonrası overflow ve hedef
   boyutu stres kanıtı açık kalıyor.
-- [~] Hex occurrence API'leri artık ByteBuffer handle ile gerçek uzunluk
-  kullanabiliyor; `read_file_bytes` dosyayı NUL koruyarak bu buffer'a okuyor.
-  NUL sonrası tarama C/LLVM parity testinde doğrulandı.
-  `axiom-scan` henüz bu yolu kullanmıyor: `cmd_scan` hedefi `read_file` ile
-  `str` olarak alıyor ve string sahipliği/runtime `strlen` kullandığı için ilk
-  NUL'dan sonraki baytlar kayboluyor. Binary taramada sessiz yanlış negatif
-  riski sürüyor. Text matcher ve scanner entegrasyonu, regex'in NUL politikası
-  ve YARA oracle testleri tamamlanmalı.
+- [x] `axiom-scan` dosya ve PCAP yolları ByteBuffer gerçek uzunluğuyla taranıyor;
+  NUL öncesi/sonrası ve NUL sınırını aşan text/hex eşleşmeleri YARA 4.5.4 ve
+  C/LLVM parity testleriyle doğrulandı. NUL içeren hedefte regex, byte-span
+  regex desteği bulunmadığı için açık yapılandırılmış hatayla reddediliyor.
+  Kanıt: `docs/reports/2026-11-14-yara-binary-scanner-integration.md`.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
   diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
   atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.

@@ -10,6 +10,8 @@
 
 import "std:text:regex"
 import "std:encoding:hex"
+import "std/io/binary"
+import "std/core/error"
 import "std/security/yara_condition"
 
 // -----------------------------------------------------------------------------
@@ -45,6 +47,12 @@ struct YaraRule {
 /// Birden cok `YaraRule` barindiran kural seti.
 struct YaraRuleSet {
     rules: YaraRule[]
+}
+
+struct YaraBufferScanResult {
+    ok: bool,
+    matches: YaraMatch[],
+    error: str
 }
 
 // -----------------------------------------------------------------------------
@@ -283,13 +291,15 @@ fn yara_validate_pattern(pattern_str: str) -> str {
 ///
 /// `min_offset`/`max_offset` `-1` ise sinir yoktur.
 /// Desen turleri: `str:`, `hex:` (wildcard/jump/alternation/negation), `regex:`.
-fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
+fn _yara_scan_single_pattern(target: str, buffer_handle: int, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
     // 1. Regex Deseni
     if (str_starts_with(pattern_str, "regex:")) {
         let p = str_sub(pattern_str, 6, str_len(pattern_str) - 6);
         // Eski YARA runtime cagrisi regex_validate kapisini atliyordu.
         // regex_is_match_result once guvenlik/sozdizimi kontrolu yapar.
-        let result = yara_scan_regex_result(target, p);
+        let mut regex_target = target
+        if buffer_handle > 0 { regex_target = buf_to_str(buffer_handle) }
+        let result = yara_scan_regex_result(regex_target, p);
         let ok = result.is_ok and result.value;
         if (ok) {
             return YaraMatch {
@@ -312,9 +322,19 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     // All supported hex forms share one occurrence matcher. This keeps
     // bounded jumps, alternation, negation and fixed bytes on the same path.
     if str_starts_with(pattern_str, "hexast:v1:") or str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
-        let off = rt_yara_find_hex_pattern(target, pattern_str, min_offset, max_offset)
+        let mut off = -1
+        if buffer_handle > 0 {
+            off = rt_yara_find_hex_pattern_buf_handle(buffer_handle, pattern_str, min_offset, max_offset)
+        } else {
+            off = rt_yara_find_hex_pattern(target, pattern_str, min_offset, max_offset)
+        }
         if off >= 0 {
-            let match_len = rt_yara_hex_pattern_length_at(target, pattern_str, off)
+            let mut match_len = -1
+            if buffer_handle > 0 {
+                match_len = rt_yara_hex_pattern_length_at_buf_handle(buffer_handle, pattern_str, off)
+            } else {
+                match_len = rt_yara_hex_pattern_length_at(target, pattern_str, off)
+            }
             if match_len > 0 {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: off, matched_len: match_len, matched: true }
             }
@@ -346,7 +366,11 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         let mut idx = -1;
         let mut match_len = str_byte_len(p);
         if nocase { flags = 1 }
-        idx = rt_yara_find_text(target, p, flags, min_offset, max_offset);
+        if buffer_handle > 0 {
+            idx = rt_yara_find_text_buf_handle(buffer_handle, p, flags, min_offset, max_offset)
+        } else {
+            idx = rt_yara_find_text(target, p, flags, min_offset, max_offset)
+        }
         if (idx >= 0) {
             if (min_offset >= 0 and idx < min_offset) {
                 return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
@@ -375,9 +399,15 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
         if (str_starts_with(clean_p, "hex:")) {
             clean_p = str_sub(clean_p, 4, str_len(clean_p) - 4);
         }
-        let mut off = rt_yara_find_hex_wildcard(target, clean_p, min_offset, max_offset);
+        let mut off = -1
+        if buffer_handle > 0 {
+            off = rt_yara_find_hex_pattern_buf_handle(buffer_handle, "hex:" + clean_p, min_offset, max_offset)
+        } else {
+            off = rt_yara_find_hex_wildcard(target, clean_p, min_offset, max_offset)
+        }
         if (off < 0) {
-            let stream_off = rt_yara_find_hex_stream(target, clean_p);
+            let mut stream_off = -1
+            if buffer_handle == 0 { stream_off = rt_yara_find_hex_stream(target, clean_p) }
             if (stream_off >= 0) {
                 let mut valid = true;
                 if (min_offset >= 0 and stream_off < min_offset) { valid = false; }
@@ -399,7 +429,12 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     }
 
     // 4. Varsayılan Metin ve Hex Fallback
-    let sub_idx = str_index_of(target, pattern_str);
+    let mut sub_idx = -1
+    if buffer_handle > 0 {
+        sub_idx = rt_yara_find_text_buf_handle(buffer_handle, pattern_str, 0, min_offset, max_offset)
+    } else {
+        sub_idx = str_index_of(target, pattern_str)
+    }
     if (sub_idx >= 0) {
         if (min_offset >= 0 and sub_idx < min_offset) {
             return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
@@ -417,9 +452,15 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     }
 
     // Düz hex bayt deseni olabilir mi?
-    let mut fallback_off = rt_yara_find_hex_wildcard(target, pattern_str, min_offset, max_offset);
+    let mut fallback_off = -1
+    if buffer_handle > 0 {
+        fallback_off = rt_yara_find_hex_pattern_buf_handle(buffer_handle, "hex:" + pattern_str, min_offset, max_offset)
+    } else {
+        fallback_off = rt_yara_find_hex_wildcard(target, pattern_str, min_offset, max_offset)
+    }
     if (fallback_off < 0) {
-        let stream_off = rt_yara_find_hex_stream(target, pattern_str);
+        let mut stream_off = -1
+        if buffer_handle == 0 { stream_off = rt_yara_find_hex_stream(target, pattern_str) }
         if (stream_off >= 0) {
             let mut valid = true;
             if (min_offset >= 0 and stream_off < min_offset) { valid = false; }
@@ -441,11 +482,20 @@ fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_
     return YaraMatch { rule_name: "", pattern_id: pattern_id, offset: -1, matched_len: 0, matched: false };
 }
 
+fn yara_scan_single_pattern(target: str, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
+    return _yara_scan_single_pattern(target, 0, pattern_id, pattern_str, min_offset, max_offset)
+}
+
+fn yara_scan_single_pattern_buf(buffer_handle: int, pattern_id: str, pattern_str: str, min_offset: int, max_offset: int) -> YaraMatch {
+    return _yara_scan_single_pattern("", buffer_handle, pattern_id, pattern_str, min_offset, max_offset)
+}
+
 // Counts text and hex-pattern hits in one runtime pass, including overlaps.
 // Regex counts remain unsupported because the regex API exposes no instances.
-fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
+fn _yara_count_single_pattern(target: str, buffer_handle: int, pattern_str: str) -> int {
     if str_starts_with(pattern_str, "regex:") { return -1 }
     if str_starts_with(pattern_str, "hexast:v1:") or str_starts_with(pattern_str, "hex:") or str_starts_with(pattern_str, "hexrange:") or str_starts_with(pattern_str, "hexalt:") or str_starts_with(pattern_str, "hexnot:") {
+        if buffer_handle > 0 { return rt_yara_count_hex_pattern_buf_handle(buffer_handle, pattern_str) }
         return rt_yara_count_hex_pattern(target, pattern_str)
     }
     if str_starts_with(pattern_str, "str:") {
@@ -462,9 +512,18 @@ fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
             p = str_sub(rest, sep + 1, str_len(rest) - sep - 1)
         }
         if flags < 0 or not _yara_text_flags_supported(flags) { return -1 }
+        if buffer_handle > 0 { return rt_yara_count_text_buf_handle(buffer_handle, p, flags) }
         return rt_yara_count_text(target, p, flags)
     }
     return -1
+}
+
+fn yara_count_single_pattern(target: str, pattern_str: str) -> int {
+    return _yara_count_single_pattern(target, 0, pattern_str)
+}
+
+fn yara_count_single_pattern_buf(buffer_handle: int, pattern_str: str) -> int {
+    return _yara_count_single_pattern("", buffer_handle, pattern_str)
 }
 
 /// Kuralin tum desenlerini tarar ve kosulunu uygular.
@@ -473,6 +532,14 @@ fn yara_scan_rule(target: str, rule: YaraRule) -> YaraMatch {
 }
 
 fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -> YaraMatch {
+    return _yara_scan_rule_internal(target, 0, rule, target_size)
+}
+
+fn yara_scan_rule_buffer_with_filesize(buffer_handle: int, rule: YaraRule, target_size: int) -> YaraMatch {
+    return _yara_scan_rule_internal("", buffer_handle, rule, target_size)
+}
+
+fn _yara_scan_rule_internal(target: str, buffer_handle: int, rule: YaraRule, target_size: int) -> YaraMatch {
     let total_patterns = len(rule.patterns);
     let cond = rule.condition;
     let mut matched_count = 0;
@@ -486,11 +553,15 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
     while (i < total_patterns) {
         let pid = rule.pattern_names[i];
         let pstr = rule.patterns[i];
-        let m = yara_scan_single_pattern(target, pid, pstr, rule.min_offset, rule.max_offset);
+        let mut m = yara_scan_single_pattern(target, pid, pstr, rule.min_offset, rule.max_offset)
+        if buffer_handle > 0 {
+            m = yara_scan_single_pattern_buf(buffer_handle, pid, pstr, rule.min_offset, rule.max_offset)
+        }
         pattern_values = array_push(pattern_values, m.matched);
         let mut occurrence_count = -1
         if str_contains(cond, "#") {
-            occurrence_count = yara_count_single_pattern(target, pstr)
+            if buffer_handle > 0 { occurrence_count = yara_count_single_pattern_buf(buffer_handle, pstr) }
+            else { occurrence_count = yara_count_single_pattern(target, pstr) }
         }
         pattern_counts = array_push(pattern_counts, occurrence_count);
         if (m.matched) {
@@ -514,7 +585,10 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
     } else if cond == "any" {
         is_rule_matched = (matched_count > 0);
     } else {
-        let condition_result = yara_condition_evaluate(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, target, target_size);
+        let mut condition_result = yara_condition_evaluate(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, target, target_size)
+        if buffer_handle > 0 {
+            condition_result = yara_condition_evaluate_buffer(cond, rule.pattern_names, pattern_values, pattern_counts, rule.patterns, buffer_handle, target_size)
+        }
         is_rule_matched = condition_result.value;
         condition_witness_name = condition_result.witness_name;
         condition_witness_offset = condition_result.witness_offset;
@@ -527,13 +601,22 @@ fn yara_scan_rule_with_filesize(target: str, rule: YaraRule, target_size: int) -
         let mut witness_index = 0;
         while witness_index < total_patterns {
             if rule.pattern_names[witness_index] == condition_witness_name {
-                let witness = yara_scan_single_pattern(
+                let mut witness = yara_scan_single_pattern(
                     target,
                     condition_witness_name,
                     rule.patterns[witness_index],
                     condition_witness_offset,
                     condition_witness_offset
                 );
+                if buffer_handle > 0 {
+                    witness = yara_scan_single_pattern_buf(
+                        buffer_handle,
+                        condition_witness_name,
+                        rule.patterns[witness_index],
+                        condition_witness_offset,
+                        condition_witness_offset
+                    )
+                }
                 if witness.matched {
                     first_matched_pid = witness.pattern_id;
                     first_offset = witness.offset;
@@ -588,6 +671,46 @@ fn yara_ruleset_scan_with_filesize(target: str, ruleset: YaraRuleSet, target_siz
         i = i + 1;
     }
     return matches;
+}
+
+fn _yara_ruleset_uses_regex(ruleset: YaraRuleSet) -> bool {
+    let mut rule_index = 0
+    while rule_index < len(ruleset.rules) {
+        let rule = ruleset.rules[rule_index]
+        let mut pattern_index = 0
+        while pattern_index < len(rule.patterns) {
+            if str_starts_with(rule.patterns[pattern_index], "regex:") { return true }
+            pattern_index = pattern_index + 1
+        }
+        rule_index = rule_index + 1
+    }
+    return false
+}
+
+fn yara_ruleset_scan_buffer(buffer_handle: int, ruleset: YaraRuleSet) -> YaraBufferScanResult {
+    return yara_ruleset_scan_buffer_with_filesize(buffer_handle, ruleset, buf_len(buffer_handle))
+}
+
+fn yara_ruleset_scan_buffer_with_filesize(buffer_handle: int, ruleset: YaraRuleSet, target_size: int) -> YaraBufferScanResult {
+    let empty: YaraMatch[] = []
+    if not buf_is_valid(buffer_handle) {
+        return YaraBufferScanResult { ok: false, matches: empty, error: "gecersiz byte buffer handle" }
+    }
+    if buf_find_byte(buffer_handle, 0) >= 0 and _yara_ruleset_uses_regex(ruleset) {
+        return YaraBufferScanResult {
+            ok: false,
+            matches: empty,
+            error: "regex taramasi gomulu NUL baytli binary hedeflerde desteklenmiyor"
+        }
+    }
+    let mut matches: YaraMatch[] = []
+    let mut i = 0
+    while i < len(ruleset.rules) {
+        let m = yara_scan_rule_buffer_with_filesize(buffer_handle, ruleset.rules[i], target_size)
+        if m.matched { matches = array_push(matches, m) }
+        i = i + 1
+    }
+    return YaraBufferScanResult { ok: true, matches: matches, error: "" }
 }
 
 /// Kural setinde en az bir eslesme var mi?

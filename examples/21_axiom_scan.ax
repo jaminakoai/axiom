@@ -34,6 +34,7 @@ import "std/security/integrity"
 import "std/cli/args"
 import "std/encoding/hex"
 import "std/encoding/json"
+import "std/io/binary"
 import "std/io/file"
 import "std/net/pcap"
 import "std/security/yara"
@@ -168,10 +169,15 @@ fn cmd_rules(rule_path: str) -> Result<int, str> {
 
 fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
     let sets = _load_rules(rule_path)?
-    let content = read_file(target)?
-    let target_size = file_size_result(target)?
+    let content_buffer = read_file_bytes(target)?
+    let target_size = buf_len(content_buffer)
 
-    let matches = yara_ruleset_scan_with_filesize(content, sets, target_size)
+    let scan_result = yara_ruleset_scan_buffer_with_filesize(content_buffer, sets, target_size)
+    if not scan_result.ok {
+        buf_free(content_buffer)
+        return result_err_int(scan_result.error)
+    }
+    let matches = scan_result.matches
 
     // Kanit butunlugu: TUM dosyanin SHA-256'si (metin kesilse bile).
     let target_hash = fim_calculate_hash(target)
@@ -179,7 +185,7 @@ fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
     let mut out = "{" + _meta(len(sets.rules))
     out = out + ",\"ok\":true,\"target\":\"" + _json_escape(target) + "\""
     out = out + ",\"target_sha256\":\"" + target_hash + "\""
-    out = out + ",\"scanned_bytes\":" + int_to_str(str_byte_len(content))
+    out = out + ",\"scanned_bytes\":" + int_to_str(target_size)
     out = out + ",\"match_count\":" + int_to_str(len(matches))
     out = out + ",\"matches\":["
     let mut i = 0
@@ -204,6 +210,7 @@ fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
     }
     out = out + "]}"
     print(out)
+    buf_free(content_buffer)
     return result_ok<int>(_exit_code(len(matches)))
 }
 
@@ -234,9 +241,19 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
         if len(pkt_hex) == 0 {
             break
         }
-        // PCAP API paketi hex dondurur; metin desenleri icin coz.
-        let pkt_raw = hex_decode(pkt_hex)
-        let matches = yara_ruleset_scan(pkt_raw, sets)
+        // Paketi uzunlugu korunan buffer'a decode et; payload NUL icerebilir.
+        let pkt_raw = buf_from_hex(pkt_hex)
+        if pkt_raw <= 0 {
+            pcap_file_close(handle)
+            return result_err_int("pcap paketi byte buffer'a decode edilemedi")
+        }
+        let packet_result = yara_ruleset_scan_buffer_with_filesize(pkt_raw, sets, buf_len(pkt_raw))
+        if not packet_result.ok {
+            buf_free(pkt_raw)
+            pcap_file_close(handle)
+            return result_err_int(packet_result.error)
+        }
+        let matches = packet_result.matches
         if len(matches) > 0 {
             if written > 0 {
                 out = out + ","
@@ -255,6 +272,7 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
             written = written + 1
             matches_total = matches_total + len(matches)
         }
+        buf_free(pkt_raw)
         packet_index = packet_index + 1
     }
 

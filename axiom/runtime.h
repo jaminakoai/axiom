@@ -1603,51 +1603,52 @@ static inline int axiom_yara_is_alnum_ascii(unsigned char c) {
 }
 
 /* Flags: 1=nocase, 2=ascii, 8=fullword. */
-AXIOM_RUNTIME_FN ax_int axiom_yara_find_text(const char* s, const char* needle,
-                                              ax_int flags, ax_int min_offset,
-                                              ax_int max_offset) {
-    if (!s || !needle) return -1;
-    const unsigned char* hay = (const unsigned char*)s;
-    const unsigned char* pat = (const unsigned char*)needle;
-    size_t hay_len = strlen(s);
-    size_t pat_len = strlen(needle);
-    if (pat_len == 0) return -1;
-    int nocase = (flags & 1) != 0;
-    int ascii = 1; /* ASCII is YARA's default; the modifier is explicit but optional. */
-    int fullword = (flags & 8) != 0;
-    ax_int ascii_best = -1;
-
-    if (ascii && pat_len <= hay_len) {
-        size_t last = hay_len - pat_len;
-        if (max_offset >= 0 && (size_t)max_offset < last) last = (size_t)max_offset;
-        size_t first = min_offset > 0 ? (size_t)min_offset : 0;
-        for (size_t i = first; i <= last; i++) {
-            size_t j = 0;
-            while (j < pat_len) {
-                unsigned char a = hay[i + j];
-                unsigned char b = pat[j];
-                if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
-                if (a != b) break;
-                j++;
-            }
-            if (j != pat_len) continue;
-            if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
-                             (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
-            ascii_best = (ax_int)i;
-            break;
-        }
+AXIOM_RUNTIME_FN int axiom_yara_text_match_at(const unsigned char* hay, size_t hay_len,
+                                               const unsigned char* pat, size_t pat_len,
+                                               size_t offset, int nocase, int fullword) {
+    if (!hay || !pat || pat_len == 0 || offset > hay_len || pat_len > hay_len - offset) return 0;
+    size_t j = 0;
+    while (j < pat_len) {
+        unsigned char a = hay[offset + j];
+        unsigned char b = pat[j];
+        if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
+        if (a != b) return 0;
+        j++;
     }
-
-    return ascii_best;
+    // Fullword checks use the actual adjacent bytes. An embedded NUL is a
+    // non-alphanumeric boundary, just like any other non-word byte.
+    if (fullword && ((offset > 0 && axiom_yara_is_alnum_ascii(hay[offset - 1])) ||
+                     (offset + pat_len < hay_len &&
+                      axiom_yara_is_alnum_ascii(hay[offset + pat_len])))) return 0;
+    return 1;
 }
 
-/* Count text hits in one pass; overlapping occurrences are included.
- * Flags: 1=nocase, 8=fullword. */
-AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle, ax_int flags) {
-    if (!s || !needle) return 0;
-    const unsigned char* hay = (const unsigned char*)s;
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_text_raw(const unsigned char* hay, size_t hay_len,
+                                                   const char* needle, ax_int flags,
+                                                   ax_int min_offset, ax_int max_offset) {
+    if (!hay || !needle || hay_len > (size_t)INT64_MAX) return -1;
     const unsigned char* pat = (const unsigned char*)needle;
-    size_t hay_len = strlen(s);
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0 || pat_len > hay_len) return -1;
+    int nocase = (flags & 1) != 0;
+    int fullword = (flags & 8) != 0;
+    size_t last = hay_len - pat_len;
+    if (max_offset >= 0 && (uint64_t)max_offset < (uint64_t)last) last = (size_t)max_offset;
+    size_t first = 0;
+    if (min_offset > 0) {
+        if ((uint64_t)min_offset > (uint64_t)SIZE_MAX) return -1;
+        first = (size_t)min_offset;
+    }
+    for (size_t i = first; i <= last; i++) {
+        if (axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) return (ax_int)i;
+    }
+    return -1;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_text_raw(const unsigned char* hay, size_t hay_len,
+                                                   const char* needle, ax_int flags) {
+    if (!hay || !needle || hay_len > (size_t)INT64_MAX) return -1;
+    const unsigned char* pat = (const unsigned char*)needle;
     size_t pat_len = strlen(needle);
     if (pat_len == 0 || pat_len > hay_len) return 0;
     int nocase = (flags & 1) != 0;
@@ -1655,29 +1656,16 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle,
     ax_int count = 0;
     size_t last = hay_len - pat_len;
     for (size_t i = 0; i <= last; i++) {
-        size_t j = 0;
-        while (j < pat_len) {
-            unsigned char a = hay[i + j];
-            unsigned char b = pat[j];
-            if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
-            if (a != b) break;
-            j++;
-        }
-        if (j != pat_len) continue;
-        if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
-                         (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
-        count++;
+        if (axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) count++;
     }
     return count;
 }
 
-/* Return the 1-based nth text match offset, including overlapping hits. */
-AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset(const char* s, const char* needle,
-                                                    ax_int flags, ax_int occurrence) {
-    if (!s || !needle || occurrence <= 0) return -1;
-    const unsigned char* hay = (const unsigned char*)s;
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset_raw(const unsigned char* hay, size_t hay_len,
+                                                        const char* needle, ax_int flags,
+                                                        ax_int occurrence) {
+    if (!hay || !needle || occurrence <= 0 || hay_len > (size_t)INT64_MAX) return -1;
     const unsigned char* pat = (const unsigned char*)needle;
-    size_t hay_len = strlen(s);
     size_t pat_len = strlen(needle);
     if (pat_len == 0 || pat_len > hay_len) return -1;
     int nocase = (flags & 1) != 0;
@@ -1685,21 +1673,34 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset(const char* s, const char* ne
     ax_int seen = 0;
     size_t last = hay_len - pat_len;
     for (size_t i = 0; i <= last; i++) {
-        size_t j = 0;
-        while (j < pat_len) {
-            unsigned char a = hay[i + j];
-            unsigned char b = pat[j];
-            if (nocase) { a = axiom_yara_fold_ascii(a); b = axiom_yara_fold_ascii(b); }
-            if (a != b) break;
-            j++;
-        }
-        if (j != pat_len) continue;
-        if (fullword && ((i > 0 && axiom_yara_is_alnum_ascii(hay[i - 1])) ||
-                         (i + pat_len < hay_len && axiom_yara_is_alnum_ascii(hay[i + pat_len])))) continue;
+        if (!axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) continue;
         seen++;
         if (seen == occurrence) return (ax_int)i;
     }
     return -1;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_text(const char* s, const char* needle,
+                                              ax_int flags, ax_int min_offset,
+                                              ax_int max_offset) {
+    if (!s || !needle) return -1;
+    return axiom_yara_find_text_raw((const unsigned char*)s, strlen(s), needle,
+                                     flags, min_offset, max_offset);
+}
+
+/* Count text hits in one pass; overlapping occurrences are included.
+ * Flags: 1=nocase, 8=fullword. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle, ax_int flags) {
+    if (!s || !needle) return 0;
+    return axiom_yara_count_text_raw((const unsigned char*)s, strlen(s), needle, flags);
+}
+
+/* Return the 1-based nth text match offset, including overlapping hits. */
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset(const char* s, const char* needle,
+                                                    ax_int flags, ax_int occurrence) {
+    if (!s || !needle || occurrence <= 0) return -1;
+    return axiom_yara_nth_text_offset_raw((const unsigned char*)s, strlen(s), needle,
+                                           flags, occurrence);
 }
 
 AXIOM_RUNTIME_FN ax_str axiom_str_replace(const char* s, const char* old_s, const char* new_s) {
@@ -4757,6 +4758,11 @@ AXIOM_RUNTIME_FN bool axiom_buf_is_valid(AxiomByteBuffer* b) {
     return false;
 }
 
+AXIOM_RUNTIME_FN ax_int axiom_buf_is_valid_handle(ax_int handle) {
+    if (handle <= 0) return 0;
+    return axiom_buf_is_valid((AxiomByteBuffer*)(uintptr_t)handle) ? 1 : 0;
+}
+
 AXIOM_RUNTIME_FN bool axiom_buf_unregister(AxiomByteBuffer* b) {
     if (!b) return false;
     for (int i = 0; i < AXIOM_MAX_BUFFERS; i++) {
@@ -4914,6 +4920,14 @@ AXIOM_RUNTIME_FN ax_int axiom_buf_len(ax_int handle) {
     return (ax_int)b->len;
 }
 
+AXIOM_RUNTIME_FN ax_int axiom_buf_find_byte(ax_int handle, ax_int value) {
+    if (handle <= 0) return -1;
+    AxiomByteBuffer* b = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(b) || !b->data) return -1;
+    const uint8_t* found = (const uint8_t*)memchr(b->data, (uint8_t)(value & 0xFF), b->len);
+    return found ? (ax_int)(found - b->data) : -1;
+}
+
 AXIOM_RUNTIME_FN ax_int axiom_buf_from_hex(const char* hex_str) {
     if (!hex_str) return axiom_buf_create(16);
     size_t slen = strlen(hex_str);
@@ -5065,6 +5079,50 @@ AXIOM_RUNTIME_FN ax_int axiom_buf_read_file(const char* path) {
         return 0;
     }
     return handle;
+}
+
+// Length-aware YARA text matching for registered byte buffers. The handles
+// are checked before dereference; invalid handles return -1 (including count)
+// so callers can distinguish failure from a valid zero-hit scan.
+AXIOM_RUNTIME_FN ax_int axiom_yara_find_text_buf_handle(ax_int handle, const char* needle,
+                                                         ax_int flags, ax_int min_offset,
+                                                         ax_int max_offset) {
+    if (handle <= 0 || !needle) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_find_text_raw(buffer->data, buffer->len, needle, flags,
+                                     min_offset, max_offset);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_count_text_buf_handle(ax_int handle, const char* needle,
+                                                           ax_int flags) {
+    if (handle <= 0 || !needle) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_count_text_raw(buffer->data, buffer->len, needle, flags);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset_buf_handle(ax_int handle, const char* needle,
+                                                                ax_int flags,
+                                                                ax_int occurrence) {
+    if (handle <= 0 || !needle || occurrence <= 0) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_nth_text_offset_raw(buffer->data, buffer->len, needle, flags,
+                                           occurrence);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_length_buf_handle(ax_int handle, const char* needle,
+                                                                ax_int flags,
+                                                                ax_int occurrence) {
+    if (handle <= 0 || !needle || occurrence <= 0) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    ax_int offset = axiom_yara_nth_text_offset_raw(buffer->data, buffer->len, needle,
+                                                    flags, occurrence);
+    if (offset < 0) return -1;
+    size_t length = strlen(needle);
+    return length > (size_t)INT64_MAX ? -1 : (ax_int)length;
 }
 
 /* -------------------------------------------------------------------------

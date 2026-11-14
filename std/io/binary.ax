@@ -20,6 +20,10 @@ fn buf_create(cap: int) -> int {
     return rt_buf_create(cap)
 }
 
+fn buf_is_valid(handle: int) -> bool {
+    return rt_buf_is_valid_handle(handle) != 0
+}
+
 fn buf_write_u8(b: int, val: int) -> void {
     rt_buf_write_u8(b, val)
 }
@@ -62,6 +66,10 @@ fn buf_to_str(b: int) -> str {
 
 fn buf_len(b: int) -> int {
     return rt_buf_len(b)
+}
+
+fn buf_find_byte(b: int, value: int) -> int {
+    return rt_buf_find_byte(b, value)
 }
 
 fn buf_from_hex(hex_str: str) -> int {

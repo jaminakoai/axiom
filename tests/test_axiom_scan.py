@@ -462,7 +462,7 @@ def test_filesize_comparisons(scanner, tmp_path, expression, expected):
     assert json.loads(res.stdout)["match_count"] == expected
 
 
-def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, tmp_path):
+def test_filesize_and_scanned_bytes_use_full_file_length_with_nul(scanner, tmp_path):
     rules = tmp_path / "filesize-nul.yar"
     rules.write_text(
         'rule FullLength {\n condition:\n  filesize == 5\n}\n',
@@ -474,7 +474,7 @@ def test_filesize_uses_full_file_length_when_scanning_truncates_at_nul(scanner, 
     assert res.returncode == 0, res.stdout + res.stderr
     report = json.loads(res.stdout)
     assert report["match_count"] == 1
-    assert report["scanned_bytes"] == 1
+    assert report["scanned_bytes"] == 5
 
 
 @pytest.mark.parametrize(("pattern", "target", "condition", "expected"), [
@@ -867,6 +867,26 @@ def test_scan_pcap_packet(scanner, tmp_path):
     assert data["packets"][0]["rules"] == ["Suspicious_Powershell"]
 
 
+def test_scan_pcap_binary_payload_matches_after_nul(scanner, tmp_path):
+    rules = tmp_path / "pcap-binary.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "binary-payload.pcap"
+    payload = b"prefix\x00NEEDLE"
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    record = struct.pack("<IIII", 1700000000, 0, len(payload), len(payload)) + payload
+    pcap.write_bytes(header + record)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["packet_count"] == 1
+    assert report["match_count"] == 1
+    assert report["packets"][0]["rules"] == ["PacketNeedle"]
+
+
 @pytest.mark.parametrize("args,expect", [
     (("scan", "/tmp/yok_boyle_dosya_xyz", "--rules", "r.yar"), "bulunamadi"),
     (("scan", "somefile"), "--rules"),
@@ -938,6 +958,97 @@ def test_llvm_scanner_matches_c(scanner, scanner_llvm, tmp_path):
     l_bin = _run(scanner_llvm, "scan", str(bin_target), "--rules", str(r))
     assert json.loads(c_bin.stdout) == json.loads(l_bin.stdout)
     assert json.loads(l_bin.stdout)["matches"][0]["rule"] == "Hex_Shellcode"
+
+
+def test_binary_nul_text_hex_and_crossing_matches_have_c_llvm_parity(
+    scanner, scanner_llvm, tmp_path
+):
+    rules = tmp_path / "binary-nul.yar"
+    rules.write_text(
+        'rule TextAfterNul {\n strings:\n  $t = "needle"\n condition:\n  $t\n}\n'
+        'rule HexCrossesNul {\n strings:\n  $x = { 41 00 42 }\n condition:\n  $x\n}\n'
+        'rule HexAfterNul {\n strings:\n  $h = { 42 43 }\n condition:\n  $h\n}\n'
+        'rule HexAtAfterNul {\n strings:\n  $h = { 42 43 }\n condition:\n  $h at 13\n}\n'
+        'rule TextInAfterNul {\n strings:\n  $t = "needle"\n condition:\n  $t in (0..8)\n}\n'
+        'rule NulCrossingOccurrence {\n strings:\n  $x = { 41 00 42 }\n condition:\n  #x == 1 and @x[1] == 10 and !x[1] == 3\n}\n',
+        encoding="utf-8",
+    )
+    payload = b"PRE\x00needleA\x00BBC"
+    target = tmp_path / "binary-nul.bin"
+    target.write_bytes(payload)
+
+    c_res = _run(scanner, "scan", str(target), "--rules", str(rules))
+    llvm_res = _run(scanner_llvm, "scan", str(target), "--rules", str(rules))
+    assert c_res.returncode == llvm_res.returncode == 0
+    c_data = json.loads(c_res.stdout)
+    llvm_data = json.loads(llvm_res.stdout)
+    assert c_data == llvm_data
+    assert c_data["scanned_bytes"] == len(payload)
+    assert c_data["match_count"] == 6
+    assert {
+        item["rule"]: (item["pattern"], item["offset"], item["length"])
+        for item in c_data["matches"]
+    } == {
+        "TextAfterNul": ("$t", 4, 6),
+        "HexCrossesNul": ("$x", 10, 3),
+        "HexAfterNul": ("$h", 13, 2),
+        "HexAtAfterNul": ("$h", 13, 2),
+        "TextInAfterNul": ("$t", 4, 6),
+        "NulCrossingOccurrence": ("$x", 10, 3),
+    }
+
+    try:
+        import yara
+    except ImportError:
+        yara = None
+    if yara is not None:
+        reference_matches = yara.compile(source=rules.read_text(encoding="utf-8")).match(data=payload)
+        reference = {}
+        for rule_match in reference_matches:
+            for string_match in rule_match.strings:
+                for instance in getattr(string_match, "instances", []):
+                    reference[rule_match.rule] = (
+                        string_match.identifier,
+                        instance.offset,
+                        instance.matched_length,
+                    )
+        assert reference == {
+            "TextAfterNul": ("$t", 4, 6),
+            "HexCrossesNul": ("$x", 10, 3),
+            "HexAfterNul": ("$h", 13, 2),
+            "HexAtAfterNul": ("$h", 13, 2),
+            "TextInAfterNul": ("$t", 4, 6),
+            "NulCrossingOccurrence": ("$x", 10, 3),
+        }
+
+
+def test_regex_scan_with_embedded_nul_is_structured_error_and_text_control(
+    scanner, scanner_llvm, tmp_path
+):
+    rules = tmp_path / "regex-binary.yar"
+    rules.write_text(
+        'rule RegexRule {\n strings:\n  $r = /[0-9]+/\n condition:\n  $r\n}\n',
+        encoding="utf-8",
+    )
+    text_target = tmp_path / "regex-text.bin"
+    text_target.write_bytes(b"prefix 123 suffix")
+    binary_target = tmp_path / "regex-binary.bin"
+    binary_target.write_bytes(b"prefix\x00 123 suffix")
+
+    for executable in (scanner, scanner_llvm):
+        text_res = _run(executable, "scan", str(text_target), "--rules", str(rules))
+        assert text_res.returncode == 0, text_res.stdout + text_res.stderr
+        text_data = json.loads(text_res.stdout)
+        assert text_data["ok"] is True
+        assert text_data["match_count"] == 1
+        assert text_data["matches"][0]["rule"] == "RegexRule"
+
+        binary_res = _run(executable, "scan", str(binary_target), "--rules", str(rules))
+        assert binary_res.returncode == 1
+        error_data = json.loads(binary_res.stdout)
+        assert error_data["ok"] is False
+        assert error_data["schema_version"] == "1"
+        assert "regex" in error_data["error"].lower()
 
 
 def test_llvm_scanner_rules_count(scanner_llvm, tmp_path):
