@@ -5,6 +5,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Düzeltilen
+- `N of ($a*, $a1)` gibi üst üste binen YARA pattern selector’larında Axiom
+  eşleşen selector katkılarını eksik sayıyordu ve sessiz yanlış negatif üretiyordu.
+  Selector başına sayım YARA 4.5.4 ile karşılaştırmalı test edildi.
+
 ### Değiştirilen
 - `axiom-scan` dosya ve PCAP hedeflerini ByteBuffer uzunluğuyla tarar; NUL
   baytından sonraki içerik ve bayt sınırını aşan eşleşmeler korunur. NUL içeren
@@ -35,6 +40,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- Geliştirme bağımlılıklarına `yara-python==4.5.4` eklendi; koşul diferansiyel
+  testleri artık bu YARA oracle sürümünü zorunlu olarak doğrular.
+- Typed hex executor için 64 MiB/999-byte suffix near-match stres testi eklendi.
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
   taşan/bozuk bounded-range ile alternation kodlamalarını kapsıyor; geçersiz
   girdiler eşleşme üretmeden reddedilmeli.

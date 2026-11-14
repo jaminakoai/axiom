@@ -39,7 +39,7 @@
 
 ## Sıradaki adım
 
-Değişiklikleri commit/push edip CI sonucunu doğrula; ardından G1 içinde regex için byte-span desteğinin maliyetini ve değerini değerlendir. Regex kapsamı şimdilik açık hata ile sınırlı kalmalıdır.
+Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini commit/push edip CI sonucunu doğrula. Ardından G1 içinde daha geniş condition/pattern birleşimlerini ve C/LLVM sınır paritesini tamamla. Regex NUL kapsamı şimdilik açık hata ile sınırlı kalmalıdır.
 
 
 ## Devam doğrulaması — runtime sınırları
@@ -50,3 +50,13 @@ Değişiklikleri commit/push edip CI sonucunu doğrula; ardından G1 içinde reg
 - Kalan: typed executor için büyük hedefte adversarial çalışma maliyetini ölçüp önceki 64 MiB benchmarkını yeni typed path üzerinde tekrarla.
 
 - 64 MiB typed-executor dense-prefix regresyonu: `python -m pytest -q tests/test_yara_runtime_hex_occurrences.py::test_typed_executor_scans_large_dense_prefix_target` — **1 geçti** (2,83 sn; süre C derlemesini de içerir). Aynı C runtime çağrısının tarama süresi **1,443 sn**, 64 MiB hedefte tek geç occurrence. Fixture'ın tüm hedefi `A`, sondaki tek eşleşme `A [16 × C] B` biçimindedir; bu yoğun prefix tarama kontrolüdür, 999-byte near-match adversarial benchmarkının yerine geçmez.
+
+
+## G1 paralel doğrulaması — selector semantiği ve typed stress
+
+- Read-only test audit’i kesin bir sessiz yanlış negatif yakaladı: YARA 4.5.4, `2 of ($a*, $a1)` koşulunu `$a1="alpha"`, `$a2="beta"`, hedef `alpha` için true sayıyor; Axiom önce false veriyordu. Nedeni, evaluator'ın selected toplamında selector overlap'i iki sayıp matched toplamında aynı pattern'i yalnız bir saymasıydı. Değerlendirici artık her pattern için eşleşen selector adedini hem toplam hem match count'a ekliyor.
+- `tests/test_yara_condition_differential.py` grup overlap, and/or/not önceliği, parantez, `at/in` sınırları ve filesize birleşimini yara-python oracle'ına karşı kapsıyor. `python -m pytest -q tests/test_yara_condition_differential.py` — **13 geçti** (6,95 sn).
+- `yara-python==4.5.4` geliştirme bağımlılığına eklendi ve differential fixture sürümü doğruluyor; CI `.[dev]` kurduğu için bu oracle artık CI'da isteğe bağlı skip değildir.
+- `tests/test_yara_typed_executor_stress.py` 64 MiB hedefte 999-byte suffix, 16 near-match ve tek geç suffix kuruyor. 17 occurrence doğrulandı; typed runtime ölçümü **1,455 sn**, derleme hariç. Bu önceki rapordaki benchmarkın birebir aynısı değil; benzer typed-AST near-match yüküdür.
+- Birleşik YARA/scanner/real-YARA/differential/stress paketi: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **391 geçti** (167,23 sn).
+- Selector düzeltmesi sonrası `python -m pytest -q -rs` — **1385 geçti, 0 hata, 0 atlandı** (1265,62 sn). Bu değişiklik henüz commit edilmediğinde alınan sonuçtur; kod değişikliğini içeren yeni CI bekleniyor.

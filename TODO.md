@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-14 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Commit `8fe6315`: `python -m pytest -q -rs` — 1370 geçti, 0 hata, 0 atlandı (1253,81 sn) |
-| Son G1 hedefli doğrulama | Self-hosted scan compile/parity + YARA/scanner/real-YARA: 378 geçti (169,14 sn) |
-| Son CI | `8fe6315` — **7/7 başarılı** (Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, biçim) |
+| Son tam test paketi | Mevcut selector düzeltmesiyle `python -m pytest -q -rs` — 1385 geçti, 0 hata, 0 atlandı (1265,62 sn); değişiklikler henüz commit edilmedi |
+| Son G1 hedefli doğrulama | YARA/scanner/real-YARA + selector differential + typed 64 MiB stress: 391 geçti; hedefli koşu: 13 oracle testi ve 999-byte stres testi ayrıca geçti |
+| Son başarılı CI | `b10ddc8` — **7/7 başarılı**; selector düzeltmesi ve pinned oracle sonrası CI henüz çalışmadı |
 
 ---
 
@@ -34,10 +34,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
-- İlk güvenilir public release hedefine göre yaklaşık **%66** ilerleme tahmini
+- İlk güvenilir public release hedefine göre yaklaşık **%67** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir; NUL korumalı dosya/PCAP taramasının
-  uçtan uca tamamlanması önceki tahmine göre sınırlı ilerleme sağladı. G1
-  doğruluğunun kalan kanıtları, bu commit için CI, dış kullanıcı doğrulaması ve
+  uçtan uca tamamlanması ve selector-overlap sessiz yanlış negatifinin YARA 4.5.4
+  diferansiyel testiyle bulunup düzeltilmesi ilerleme sağladı. G1'in kalan kanıtları,
+  güncel değişikliklerin CI doğrulaması, dış kullanıcı doğrulaması ve
   dağıtım hazırlığı hâlâ eksik.
 
 ### İş sırası ve kabul kapıları
@@ -68,8 +69,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sağlandığında raporda koşulu sağlayan occurrence'ın offset/uzunluğunu ver;
   range/alternation/negation ve C/LLVM için regresyon ekle.
 - [~] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
-  semantiğini kesinleştir; temel occurrence matrisini kapat, sınır/runtime
-  limitleri ve daha geniş koşul birleşimleri için ek kanıt gerekiyor.
+  semantiğini kesinleştir; selector-overlap, boolean precedence/parantez, filesize
+  birleşimi ve group at/in için YARA 4.5.4 oracle testleri eklendi (13 geçti).
+  `yara-python==4.5.4` dev bağımlılığıyla oracle CI testlerinin atlanmaması sağlandı;
+  daha geniş koşul birleşimleri ve occurrence sınırları için ek kanıt gerekiyor.
 - [x] `axiom-scan` schema v1 kanıt kapsamını belirle: `matches` ve
   `match_count` kural başına kalır; her eşleşen kural için tek bir temsilî
   witness döner. `at/in` varsa koşulun seçtiği occurrence raporlanır. Bu alanlar
@@ -167,9 +170,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   çoklu özel atom, hatalı/taşan jump ve fazla alternation dalı doğrudan test
   ediliyor. Ek olarak typed executor doğrudan çağrısında `INT64_MAX` üstü hedef
   uzunluğunun ve uç `min_offset` değerinin fail-closed olduğu doğrulandı. 64 MiB
-  yoğun prefix + geç tek eşleşme hedefi için regresyon testi eklendi (C runtime
-  çağrısı ölçümü 1,444 sn). 999-byte near-match adversarial fixture'ını typed
-  executor üzerinde yeniden ölçmek açık kalıyor.
+  yoğun prefix + geç tek eşleşme testi eklendi. 999-byte suffix, 16 near-match ve
+  17 occurrence içeren typed-executor stres fixture'ı 64 MiB'de 1,455 sn ölçüldü;
+  bu önceki benchmarkla aynı fikirde, birebir fixture eşitliği iddia etmiyor.
 - [x] `axiom-scan` dosya ve PCAP yolları ByteBuffer gerçek uzunluğuyla taranıyor;
   NUL öncesi/sonrası ve NUL sınırını aşan text/hex eşleşmeleri YARA 4.5.4 ve
   C/LLVM parity testleriyle doğrulandı. NUL içeren hedefte regex, byte-span
@@ -228,18 +231,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G1 — YARA alt kümesinin kalan doğruluk ve runtime sınır kanıtları.** NUL
-korumalı dosya/PCAP scanner entegrasyonu tamamlandı; NUL içeren hedefte regex
-şimdilik açık yapılandırılmış hata veriyor. Sıradaki iş, `hexast:v1` typed atom
-executor'ının 999-byte near-match adversarial fixture'ını typed path üzerinde
-yeniden ölçmek (uç uzunluk, uç `min_offset` reddi ve 64 MiB dense-prefix fixture
-testi eklendi) ve kalan desteklenen koşul birleşimlerini YARA 4.5.4 ile
-diferansiyel
-test etmektir. `4fe4d7d` CI'sinde dört Python matrix işi self-hosted derleyicinin
-`YaraBufferScanResult.matches` alanını yerel dizi alias'ında yanlış türlemesinden
-düştü; örnek doğrudan struct alanı kullanacak şekilde düzeltildi ve 378 odaklı
-test geçti. Commit `8fe6315` tam paketinde 1370 test geçti, CI 7/7 başarılı. G1 ancak kalan testler, açık ret davranışları ve C/LLVM
-paritesi raporlandığında kapanır.
+**G1 — Kalan YARA differential ve runtime limit kanıtları.** NUL
+korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
+testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1385 geçti, 0 hata/skip**
+(1265,62 sn) verdi. YARA/scanner/differential/stress paketi **391 geçti**. Bu
+değişiklikleri push edip pinned `yara-python==4.5.4` oracle testlerinin CI'da
+çalıştığını doğrula. Sonra daha geniş pattern/condition birleşimleri ve C/LLVM
+sınır paritesini tamamla. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
+diğer durumlar açıkça reddedildiğinde ve oracle skip kalmadığında kapanır.
 
 ---
 
@@ -277,7 +277,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
 | Son tam test paketi | Commit `8fe6315`: 1370 geçti, 0 hata, 0 atlandı | `python -m pytest -q -rs` |
-| G1 hedefli testler | Self-hosted scan compile/parity + YARA/scanner/real-YARA 378 geçti | G1 raporundaki komutlar |
+| G1 hedefli testler | YARA/scanner/real-YARA + differential + stress: 391 geçti; condition oracle 13/13, corrected stress 1/1 | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1120,8 +1120,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (commit `8fe6315`) | Yerel 1370 geçti, 0 hata/skip; CI Python 3.10–3.13 ve tüm diğer işler başarılı | — | 2000 |
-| Güncel G1 hedefli doğrulama | Self-hosted scan compile/parity + YARA/scanner/real-YARA 378 geçti | — | — |
+| Son tam test (güncel çalışma ağacı) | 1385 geçti, 0 hata/skip (1265,62 sn); push/CI bekliyor | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress 391 geçti; condition oracle 13/13 | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

@@ -68,7 +68,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   desteklenir. Koşul olarak `any/all/none/N of them` (`0 of them` yalnızca
   hiç desen eşleşmediğinde doğrudur),
   `any/all/none/N of ($a*)` ve açık desen kümeleri (`any of ($a,$b)`) gibi
-  desen grupları; bunlar boolean ifadelerde birleştirilebilir. `$a` desen
+  desen grupları; selector’lar ayrı sayılır, dolayısıyla aynı `$a1` hem `$a*` hem
+  `$a1` ile seçilirse iki katkı yapar (YARA 4.5.4 semantiği). Gruplar boolean
+  ifadelerde birleştirilebilir. `$a` desen
   başvuruları, `$a at N` / `$a in (N..M)` ofset kontrolleri, `@a[i]` ofseti,
   desen grupları için `at N` / `in (N..M)` aralıkları, `meta:` string/bool/
   tamsayı değerleri ve kural etiketleri scan JSON raporunda sunulur;

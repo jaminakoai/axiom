@@ -69,8 +69,9 @@ in their own language.
 - `axiom-scan` is **not all of YARA**: subset patterns and conditions. It
   accepts `any/all/none/N of them` (`0 of them` is true only when no string
   matches), `any/all/none/N of ($a*)`
-  and explicit pattern sets such as `any of ($a,$b)`, composable with boolean
-  expressions, `$a` pattern references,
+  and explicit pattern sets such as `any of ($a,$b)`. Selector entries are
+  counted independently: `$a1` selected by both `$a*` and `$a1` contributes
+  twice, matching YARA 4.5.4. Groups compose with boolean expressions, `$a` pattern references,
   `$a at N` / `$a in (N..M)` offset checks, `@a[i]` offsets, `!a[i]` match
   lengths, pattern-group `at N` / `in (N..M)` ranges, `#a` occurrence counts,
   and rule `meta:` string, boolean, integer values and tags in scan JSON reports,

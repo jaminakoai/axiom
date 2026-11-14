@@ -309,9 +309,10 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
         return YaraConditionParse { value: false, position: close, valid: false, witness_name: "", witness_offset: -1 }
     }
 
-    // Every selector must resolve to at least one declared pattern. The
-    // second pass computes the union, so overlapping wildcard selectors never
-    // count the same pattern twice.
+    // Every selector must resolve to at least one declared pattern. Selector
+    // entries are counted independently: an identifier selected by both a
+    // wildcard and an explicit selector contributes once for each selector,
+    // matching YARA's `N of ($a*, $a1)` semantics.
     let mut selector_cursor = selector_start
     let mut resolved_selector_count = 0
     while resolved_selector_count < selectors {
@@ -354,7 +355,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
     let mut group_match_count = 0
     let mut group_pattern_index = 0
     while group_pattern_index < len(pattern_names) {
-        let mut included = false
+        let mut selector_match_count = 0
         selector_cursor = selector_start
         let mut selector_index_in_group = 0
         while selector_index_in_group < selectors {
@@ -370,15 +371,15 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
                 matches = str_starts_with(pattern_names[group_pattern_index], selector)
                 selector_cursor = selector_cursor + 1
             }
-            if matches { included = true }
+            if matches { selector_match_count = selector_match_count + 1 }
             selector_cursor = _yc_skip_space(source, selector_cursor)
             if selector_cursor < n and str_char_at(source, selector_cursor) == "," {
                 selector_cursor = selector_cursor + 1
             }
             selector_index_in_group = selector_index_in_group + 1
         }
-        if included {
-            group_selected_count = group_selected_count + 1
+        if selector_match_count > 0 {
+            group_selected_count = group_selected_count + selector_match_count
             // Keep the bounds check separate: the LLVM backend may evaluate
             // both sides of `and`, which would index an empty/short array.
             if group_pattern_index < len(pattern_patterns) {
@@ -388,7 +389,7 @@ fn _yc_parse_group(source: str, position: int, pattern_names: str[], pattern_val
                     return YaraConditionParse { value: false, position: close, valid: false, witness_name: "", witness_offset: -1 }
                 }
                 if _yc_group_pattern_matches(pattern_patterns[group_pattern_index], present, range.restricted, range.min_offset, range.max_offset, target, target_size, target_buffer) {
-                    group_match_count = group_match_count + 1
+                    group_match_count = group_match_count + selector_match_count
                 }
             }
         }
