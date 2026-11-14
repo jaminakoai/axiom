@@ -322,3 +322,8 @@ encoding'i doğrudan veren kullanıcılar için parser adapter'ları kaldı. Wra
 değişikliğinden sonra oracle/runtime kümesi **133/133**, YARA/scanner paketi
 **373/373** ve tam proje paketi **1361/1361** geçti (1211,80 sn). Biçim
 kontrolü ve `git diff --check` de temiz.
+
+Sonraki tekilleştirme adımında parse edilmiş legacy range/negation
+`match_at` yardımcıları typed atom matcher'ına bağlandı. İlgili runtime ve
+diferansiyel testler **73/73** geçti; bu küçük follow-up için tam paket henüz
+tekrar çalıştırılmadı.

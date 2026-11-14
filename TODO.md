@@ -111,8 +111,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Tek `Byte/Jump/Alternation/NotByte` atom dizisi executor'ı tamamlandı. Eski
   `find_hex_range/alternation/negation` giriş noktaları artık bu ortak executor'a
   yönleniyor; `hexrange:`/`hexalt:`/`hexnot:` doğrudan girdi biçimleri parse
-  adapter'ı olarak destekleniyor. Sonraki alt adım, artık kullanılmayan tür-özel
-  runtime helper'larını güvenle kaldırıp kalan limit/oracle kanıtlarını kapatmaktır.
+  adapter'ı olarak destekleniyor. Parse edilmiş range/negation `match_at`
+  yardımcıları da typed atom matcher'ına yönlendirildi. Tür-özel parser ve
+  anchor yardımcıları hâlâ adapter/optimizasyon olarak kullanılıyor; kaldırma
+  öncesi kalan doğrudan runtime erişimleri ve limit/oracle kanıtları denetlenmeli.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic

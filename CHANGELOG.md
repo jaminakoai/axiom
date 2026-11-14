@@ -18,6 +18,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   önce aynı atom modeline çevriliyor; jump suffix anchor hızlandırması korundu.
 - Eski range/alternation/negation find API'leri ortak atom executor'ına
   yönlendirildi; doğrudan çağıranlar için fonksiyon imzaları korundu.
+- Parse edilmiş range ve negation `match_at` girişleri de aynı atom
+  eşleştiricisini kullanıyor; eski public runtime yardımcıları korunuyor.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve

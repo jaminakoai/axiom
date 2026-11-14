@@ -8969,43 +8969,7 @@ invalid_range:
 
 AXIOM_RUNTIME_FN int axiom_yara_hex_range_match_at(const uint8_t* target, size_t target_len,
                                                     const AxiomYaraHexRangePattern* range,
-                                                    int64_t start, int* match_len_out) {
-    if (match_len_out) *match_len_out = -1;
-    if (!target || !range || start < 0 || range->prefix.len <= 0 || range->suffix.len <= 0) return 0;
-    if (target_len > (size_t)INT64_MAX) return 0;
-    int64_t remaining = (int64_t)target_len - start;
-    if ((int64_t)range->prefix.len > remaining) return 0;
-    if (axiom_yara_find_bytes(target, target_len, &range->prefix, start, start) != start) return 0;
-    remaining -= range->prefix.len;
-
-    int max_valid_gap = range->max_gap;
-    int64_t last_gap_with_suffix = remaining - range->suffix.len;
-    if (last_gap_with_suffix < range->min_gap) return 0;
-    if (last_gap_with_suffix < max_valid_gap) max_valid_gap = (int)last_gap_with_suffix;
-    if (range->suffix_anchor >= 0 && range->suffix_anchor_bits) {
-        size_t first_anchor = (size_t)(start + range->prefix.len + range->min_gap + range->suffix_anchor);
-        size_t last_anchor = (size_t)(start + range->prefix.len + max_valid_gap + range->suffix_anchor);
-        if (!axiom_yara_hex_range_anchor_in_window(range, first_anchor, last_anchor)) return 0;
-    }
-
-    for (int gap = range->min_gap; gap <= max_valid_gap; gap++) {
-        if ((int64_t)gap > remaining) continue;
-        int64_t suffix_remaining = remaining - gap;
-        if ((int64_t)range->suffix.len > suffix_remaining) continue;
-        int64_t suffix_start = start + (int64_t)range->prefix.len + gap;
-        if (range->suffix_anchor >= 0) {
-            int anchor = range->suffix_anchor;
-            if (((target[suffix_start + anchor] & range->suffix.masks[anchor]) !=
-                 range->suffix.vals[anchor])) continue;
-        }
-        if (range->suffix_anchor < 0 ||
-            axiom_yara_find_bytes(target, target_len, &range->suffix, suffix_start, suffix_start) == suffix_start) {
-            if (match_len_out) *match_len_out = range->prefix.len + gap + range->suffix.len;
-            return 1;
-        }
-    }
-    return 0;
-}
+                                                    int64_t start, int* match_len_out);
 
 // Returns the lowest matching start offset. For the same start, the smallest
 // matching jump is tested first, so the selected match has the shortest length.
@@ -9116,20 +9080,7 @@ invalid_negation:
 
 AXIOM_RUNTIME_FN int axiom_yara_hex_negation_match_at(const uint8_t* target, size_t target_len,
                                                        const AxiomYaraHexNegation* negation,
-                                                       int64_t start) {
-    if (!target || !negation || start < 0 || target_len > (size_t)INT64_MAX) return 0;
-    int total_len = negation->prefix.len + 1 + negation->suffix.len;
-    int64_t remaining = (int64_t)target_len - start;
-    if (remaining < total_len) return 0;
-    if (negation->prefix.len > 0 &&
-        axiom_yara_find_bytes(target, target_len, &negation->prefix, start, start) != start) return 0;
-    int64_t negated_offset = start + negation->prefix.len;
-    if (((uint8_t)target[negated_offset] & negation->excluded_mask) == negation->excluded_value) return 0;
-    int64_t suffix_offset = negated_offset + 1;
-    if (negation->suffix.len > 0 &&
-        axiom_yara_find_bytes(target, target_len, &negation->suffix, suffix_offset, suffix_offset) != suffix_offset) return 0;
-    return 1;
-}
+                                                       int64_t start);
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_hex_negation(const char* target, const char* encoded,
                                                        ax_int min_offset, ax_int max_offset) {
@@ -9623,6 +9574,58 @@ AXIOM_RUNTIME_FN int axiom_yara_hex_pattern_match_at(const uint8_t* target, size
     }
     if (match_length) *match_length = position - start;
     return position > start;
+}
+
+// Keep legacy parsed-pattern entry points, but execute their matches with the
+// same typed atom matcher used by AST and occurrence APIs.
+AXIOM_RUNTIME_FN int axiom_yara_hex_range_match_at(const uint8_t* target, size_t target_len,
+                                                    const AxiomYaraHexRangePattern* range,
+                                                    int64_t start, int* match_len_out) {
+    if (match_len_out) *match_len_out = -1;
+    if (!range || range->prefix.len <= 0 || range->suffix.len <= 0 ||
+        range->min_gap < 0 || range->max_gap < range->min_gap || range->max_gap > 64) return 0;
+
+    AxiomYaraHexPattern pattern = {0};
+    pattern.count = 3;
+    pattern.atoms[0].kind = AXIOM_YARA_ATOM_BYTES;
+    pattern.atoms[0].as.bytes = range->prefix;
+    pattern.atoms[1].kind = AXIOM_YARA_ATOM_JUMP;
+    pattern.atoms[1].as.jump.min_gap = range->min_gap;
+    pattern.atoms[1].as.jump.max_gap = range->max_gap;
+    pattern.atoms[1].as.jump.suffix_anchor = range->suffix_anchor;
+    pattern.atoms[1].as.jump.suffix_anchor_matches = range->suffix_anchor_matches;
+    pattern.atoms[1].as.jump.suffix_anchor_bits = range->suffix_anchor_bits;
+    pattern.atoms[1].as.jump.suffix_anchor_bits_len = range->suffix_anchor_bits_len;
+    pattern.atoms[2].kind = AXIOM_YARA_ATOM_BYTES;
+    pattern.atoms[2].as.bytes = range->suffix;
+
+    int64_t match_length = -1;
+    int matched = axiom_yara_hex_pattern_match_at(target, target_len, &pattern, start, &match_length);
+    if (matched && match_len_out) {
+        if (match_length > INT_MAX) return 0;
+        *match_len_out = (int)match_length;
+    }
+    return matched;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_negation_match_at(const uint8_t* target, size_t target_len,
+                                                       const AxiomYaraHexNegation* negation,
+                                                       int64_t start) {
+    if (!negation || negation->prefix.len < 0 || negation->suffix.len < 0 ||
+        (negation->excluded_mask == 0 && negation->excluded_value != 0)) return 0;
+    AxiomYaraHexPattern pattern = {0};
+    if (negation->prefix.len > 0) {
+        pattern.atoms[pattern.count].kind = AXIOM_YARA_ATOM_BYTES;
+        pattern.atoms[pattern.count++].as.bytes = negation->prefix;
+    }
+    pattern.atoms[pattern.count].kind = AXIOM_YARA_ATOM_NOT_BYTE;
+    pattern.atoms[pattern.count].as.not_byte.mask = negation->excluded_mask;
+    pattern.atoms[pattern.count++].as.not_byte.value = negation->excluded_value;
+    if (negation->suffix.len > 0) {
+        pattern.atoms[pattern.count].kind = AXIOM_YARA_ATOM_BYTES;
+        pattern.atoms[pattern.count++].as.bytes = negation->suffix;
+    }
+    return axiom_yara_hex_pattern_match_at(target, target_len, &pattern, start, NULL);
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_next_candidate(const uint8_t* target, size_t target_len,

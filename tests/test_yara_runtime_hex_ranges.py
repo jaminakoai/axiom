@@ -52,6 +52,15 @@ def test_range_finds_lowest_offset_and_shortest_gap_at_ties():
         CHECK(axiom_yara_find_hex_range_length(later_shorter, encoded, 4) == 3);
         CHECK(axiom_yara_find_hex_range_length(later_shorter, encoded, 1) == -1);
 
+        AxiomYaraHexRangePattern parsed_range = {0};
+        CHECK(axiom_yara_parse_hex_range_internal(encoded, &parsed_range));
+        int direct_match_length = -1;
+        CHECK(axiom_yara_hex_range_match_at((const uint8_t*)later_shorter,
+                                             sizeof(later_shorter) - 1,
+                                             &parsed_range, 0, &direct_match_length));
+        CHECK(direct_match_length == 4);
+        axiom_yara_hex_range_free(&parsed_range);
+
         const char two_gaps[] = {'A', 'x', 'D', 'x', 'D', '\0'};
         CHECK(axiom_yara_find_hex_range_length(two_gaps, encoded, 0) == 3);
 

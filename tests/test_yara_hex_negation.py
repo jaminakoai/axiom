@@ -223,6 +223,14 @@ def test_hex_negation_runtime_full_and_nibble_masks():
         CHECK(axiom_yara_find_hex_negation("xADCy", encoded, 2, -1) == -1);
         CHECK(axiom_yara_hex_negation_len(encoded) == 3);
 
+        AxiomYaraHexNegation parsed_negation;
+        CHECK(axiom_yara_parse_hex_negation_internal(encoded, &parsed_negation));
+        CHECK(axiom_yara_hex_negation_match_at((const uint8_t*)"xADCy", 5,
+                                                &parsed_negation, 1));
+        CHECK(!axiom_yara_hex_negation_match_at((const uint8_t*)"xABCy", 5,
+                                                 &parsed_negation, 1));
+        axiom_yara_hex_negation_free(&parsed_negation);
+
         CHECK(axiom_yara_find_hex_negation("A", "hexnot:|?2|", -1, -1) == 0);
         CHECK(axiom_yara_find_hex_negation("B", "hexnot:|?2|", -1, -1) == -1);
         CHECK(axiom_yara_find_hex_negation("B", "hexnot:|A?|", -1, -1) == 0);
