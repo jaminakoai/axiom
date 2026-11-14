@@ -603,14 +603,15 @@ negation için yeni `#/@/!` desteği ve bounded-range yakın-eşleşme performan
 düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary scanner
 kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
-Düzeltilmiş ağaçta `python -m pytest -q -rs`: **1370 geçti, 0 hata/skip**
-(1253,81 sn); YARA/scanner + self-hosted hedefli paket **378 geçti**. GitHub
-Actions `8fe6315` için **7/7 iş başarılı**.
+Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
+**1403 geçti, 0 hata/skip** (1273,68 sn). Güncel YARA/scanner/differential/stress
+paketi **409 geçti** (174,73 sn). GitHub Actions `4fa4dcc` için **7/7 iş başarılı**;
+Python 3.10–3.13 matrix'inde yara-python 4.5.4 kuruldu ve oracle testleri çalıştı.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`fbae263` commit'indeki doğrulanmış koşuda 7 işin tamamı geçti:
+`4fa4dcc` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -619,8 +620,8 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43456582647` (13 Kasım 2026, `master`, SHA
-`fbae26377819ae535524a969ec3d35f7322872a4`).
+Son doğrulanan koşu: `43609623527` (`master`, SHA `4fa4dcc`); Python 3.10–3.13
+matrisindeki her iş 1358 test geçti, 27 test atlandı (genel ortam skip’leri).
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 

@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-14 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Mevcut selector düzeltmesiyle `python -m pytest -q -rs` — 1385 geçti, 0 hata, 0 atlandı (1265,62 sn); değişiklikler henüz commit edilmedi |
-| Son G1 hedefli doğrulama | YARA/scanner/real-YARA + selector differential + typed 64 MiB stress: 391 geçti; hedefli koşu: 13 oracle testi ve 999-byte stres testi ayrıca geçti |
-| Son başarılı CI | `b10ddc8` — **7/7 başarılı**; selector düzeltmesi ve pinned oracle sonrası CI henüz çalışmadı |
+| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1403 geçti, 0 hata, 0 atlandı (1273,68 sn) |
+| Son G1 hedefli doğrulama | YARA/scanner/real-YARA + condition/selector differential + stress/AST limits: 409 geçti (174,73 sn) |
+| Son başarılı CI | `4fa4dcc` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1358 geçti, 27 atlandı; YARA 4.5.4 oracle kuruldu |
 
 ---
 
@@ -234,11 +234,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 **G1 — Kalan YARA differential ve runtime limit kanıtları.** NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1385 geçti, 0 hata/skip**
-(1265,62 sn) verdi. YARA/scanner/differential/stress paketi **391 geçti**. Bu
-değişiklikleri push edip pinned `yara-python==4.5.4` oracle testlerinin CI'da
-çalıştığını doğrula. Sonra daha geniş pattern/condition birleşimleri ve C/LLVM
-sınır paritesini tamamla. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1403 geçti, 0 hata/skip**
+(1273,68 sn) verdi. YARA/scanner/differential/stress/AST-limits paketi **409 geçti**. CI `4fa4dcc` için 7/7 geçti; bu turdaki iki ek test dosyası için CI push sonrası çalışacak. Sonraki iş daha geniş pattern/condition birleşimleri ve C/LLVM sınır paritesini doğrulamaktır. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
 diğer durumlar açıkça reddedildiğinde ve oracle skip kalmadığında kapanır.
 
 ---
@@ -1120,8 +1117,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (güncel çalışma ağacı) | 1385 geçti, 0 hata/skip (1265,62 sn); push/CI bekliyor | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress 391 geçti; condition oracle 13/13 | — | — |
+| Son tam test (güncel çalışma ağacı) | 1403 geçti, 0 hata/skip (1273,68 sn); GitHub CI 4fa4dcc 7/7, yeni test-only değişiklikler CI bekliyor | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits 409 geçti (174,73 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

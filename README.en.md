@@ -608,14 +608,15 @@ near-match performance fix. That test summary is historical; current evidence
 for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
-in `8fe6315`. On the corrected tree, `python -m pytest -q -rs`: **1370 passed,
-0 failed/skipped** (1253.81 s); the focused YARA/scanner + self-hosted suite
-passed **378 tests**. GitHub Actions for `8fe6315` passed **7/7 jobs**.
+in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
+**1403 passed, 0 failed/skipped** (1273.68 s). The current YARA/scanner/differential/stress
+suite passed **409 tests** (174.73 s). GitHub Actions for `4fa4dcc` passed **7/7 jobs**;
+YARA-Python 4.5.4 was installed and the oracle tests ran in the Python 3.10–3.13 matrix.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `fbae263`:
+All 7 jobs passed in the latest completed run for commit `4fa4dcc`:
 
 | Job | Status |
 |---|---|
@@ -624,8 +625,8 @@ All 7 jobs passed in the latest completed run for commit `fbae263`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43456582647` (13 November 2026, `master`, SHA
-`fbae26377819ae535524a969ec3d35f7322872a4`).
+Last verified run: `43609623527` (`master`, SHA `4fa4dcc`); each Python 3.10–3.13
+job passed 1358 tests and reported 27 general environment skips.
 
 Six root causes fixed on the way here (details: report §9–§12):
 

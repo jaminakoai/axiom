@@ -60,3 +60,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - `tests/test_yara_typed_executor_stress.py` 64 MiB hedefte 999-byte suffix, 16 near-match ve tek geç suffix kuruyor. 17 occurrence doğrulandı; typed runtime ölçümü **1,455 sn**, derleme hariç. Bu önceki rapordaki benchmarkın birebir aynısı değil; benzer typed-AST near-match yüküdür.
 - Birleşik YARA/scanner/real-YARA/differential/stress paketi: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **391 geçti** (167,23 sn).
 - Selector düzeltmesi sonrası `python -m pytest -q -rs` — **1385 geçti, 0 hata, 0 atlandı** (1265,62 sn). Bu değişiklik henüz commit edilmediğinde alınan sonuçtur; kod değişikliğini içeren yeni CI bekleniyor.
+
+
+## G1 ikinci paralel turu — CI, selector ve AST limitleri
+
+- CI ajanı `4fa4dcc` GitHub Actions run `43609623527`'yi doğruladı: **7/7 başarılı**. Python 3.10–3.13 işlerinin her birinde `yara-python==4.5.4` kuruldu; her iş 1358 geçti ve 27 genel test skip'i raporladı. YARA oracle koşulları skip olmadı.
+- Selector differential ajanı `tests/test_yara_selector_differential.py` ekledi: wildcard/explicit overlap, explicit duplicate selector, any/all/none/N, hedef varyantları ve `at/in`. `python -m pytest -q tests/test_yara_selector_differential.py` — **17 geçti** (7,17 sn); ek mismatch bulunmadı.
+- Typed AST limits ajanı `tests/test_yara_typed_ast_limits.py` ekledi: bozuk/eksik opcode, operand, jump, alternation, negation ve 8192-byte encoded text sınırı. 8192 byte kabul edilip kısa hedefte 0 occurrence; 8193 byte encoding açıkça reddediliyor. Hedefli test — **1 geçti** (1,50 sn).
+- Birleşik son YARA/scanner/differential/stress/AST-limits paketi: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **409 geçti** (174,73 sn).
+- Tam yerel paket: `python -m pytest -q -rs` — **1403 geçti, 0 hata, 0 atlandı** (1273,68 sn).
+- `make fmt-check` ve `git diff --check` — temiz. Yeni test dosyaları ve güncel rapor bu tur commit’ine dahil edilecek; yeni commit için CI push sonrası doğrulanmalı.
