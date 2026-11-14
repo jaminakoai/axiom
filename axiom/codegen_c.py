@@ -211,6 +211,7 @@ BUILTIN_MAP = {
     'rt_buf_read_u64_be': 'axiom_buf_read_u64_be',
     'rt_buf_read_u64_le': 'axiom_buf_read_u64_le',
     'rt_buf_free': 'axiom_buf_free',
+    'rt_buf_read_file': 'axiom_buf_read_file',
     'rt_process_exec_output': 'axiom_process_exec_output',
     'rt_process_get_pid': 'axiom_process_get_pid',
     'rt_process_kill': 'axiom_process_kill',

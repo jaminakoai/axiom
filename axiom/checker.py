@@ -251,6 +251,7 @@ BUILTIN_FUNCTIONS = {
     'rt_buf_read_u64_be': (['int', 'int'], 'int'),
     'rt_buf_read_u64_le': (['int', 'int'], 'int'),
     'rt_buf_free': (['int'], 'void'),
+    'rt_buf_read_file': (['str'], 'int'),
     'rt_process_exec_output': (['str'], 'str'),
     'rt_process_get_pid': ([], 'int'),
     'rt_process_kill': (['int', 'int'], 'int'),

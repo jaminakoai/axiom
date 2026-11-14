@@ -1,5 +1,6 @@
 """Direct runtime coverage for YARA hex occurrence enumeration."""
 
+import json
 import os
 import subprocess
 import tempfile
@@ -188,24 +189,36 @@ def test_length_aware_occurrence_api_scans_bytes_after_embedded_nul():
 
 @pytest.mark.parametrize("backend", ["c", "llvm"])
 def test_length_aware_yara_buffer_api_has_backend_parity(backend, tmp_path):
-    source = r'''
+    binary_path = tmp_path / "nul-target.bin"
+    binary_path.write_bytes(b"A" * 4095 + b"\x00B")
+    empty_path = tmp_path / "empty-target.bin"
+    empty_path.write_bytes(b"")
+    source = f'''
     import "std/io/binary"
     import "std/security/yara"
 
-    fn main() -> int {
-        let buffer = buf_create(8)
-        buf_write_u8(buffer, 65)
-        buf_write_u8(buffer, 0)
-        buf_write_u8(buffer, 66)
+    fn main() -> int {{
+        let loaded = read_file_bytes({json.dumps(str(binary_path))})
+        verify loaded.is_ok
+        let buffer = loaded.value
+        verify buf_len(buffer) == 4097
         verify yara_count_hex_pattern_buf(buffer, "hexast:v1:B42;") == 1
-        verify yara_find_hex_pattern_buf(buffer, "hexast:v1:B42;", -1, -1) == 2
-        verify yara_hex_pattern_length_at_buf(buffer, "hexast:v1:B41 00 42;", 0) == 3
-        verify yara_nth_hex_pattern_offset_buf(buffer, "hexast:v1:B42;", 1) == 2
+        verify yara_find_hex_pattern_buf(buffer, "hexast:v1:B42;", -1, -1) == 4096
+        verify yara_hex_pattern_length_at_buf(buffer, "hexast:v1:B42;", 4096) == 1
+        verify yara_nth_hex_pattern_offset_buf(buffer, "hexast:v1:B42;", 1) == 4096
+        verify yara_find_hex_pattern_buf(buffer, "hexast:v1:B41 00 42;", -1, -1) == 4094
         verify yara_nth_hex_pattern_length_buf(buffer, "hexast:v1:B41 00 42;", 1) == 3
         buf_free(buffer)
+
+        let empty = read_file_bytes({json.dumps(str(empty_path))})
+        verify empty.is_ok
+        verify buf_len(empty.value) == 0
+        buf_free(empty.value)
+        let invalid = read_file_bytes("")
+        verify not invalid.is_ok
         print("YARA_BUFFER_API_PARITY_OK")
         return 0
-    }
+    }}
     '''
     source_path = tmp_path / "yara_buffer.ax"
     output_path = tmp_path / "yara_buffer"

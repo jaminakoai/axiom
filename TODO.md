@@ -166,12 +166,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   ediliyor. Tek, birleşik typed-node executor'a geçiş sonrası overflow ve hedef
   boyutu stres kanıtı açık kalıyor.
 - [~] Hex occurrence API'leri artık ByteBuffer handle ile gerçek uzunluk
-  kullanabiliyor; NUL sonrası tarama C/LLVM parity testinde doğrulandı.
+  kullanabiliyor; `read_file_bytes` dosyayı NUL koruyarak bu buffer'a okuyor.
+  NUL sonrası tarama C/LLVM parity testinde doğrulandı.
   `axiom-scan` henüz bu yolu kullanmıyor: `cmd_scan` hedefi `read_file` ile
   `str` olarak alıyor ve string sahipliği/runtime `strlen` kullandığı için ilk
   NUL'dan sonraki baytlar kayboluyor. Binary taramada sessiz yanlış negatif
-  riski sürüyor. Dosyayı buffer'a okuma, text matcher ve scanner entegrasyonu,
-  regex'in NUL politikası ve YARA oracle testleri tamamlanmalı.
+  riski sürüyor. Text matcher ve scanner entegrasyonu, regex'in NUL politikası
+  ve YARA oracle testleri tamamlanmalı.
 - **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
   diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
   atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.
@@ -231,8 +232,9 @@ girişleri adapter olarak aynı yürütücüye bağlı. `8b2686a` CI'si 7/7 baş
 Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip. Son yerel YARA runtime
 grubu 118/118 geçti. Yeni ByteBuffer API'si C/LLVM parity testinde NUL sonrası
 eşleşmeyi buldu, ancak mevcut `axiom-scan` string tabanlı dosya okuduğu için
-ikili dosyanın NUL sonrası kısmını hâlâ taramıyor. Dosya okuma, text/hex tarama,
-regex için açık NUL davranışı ve scanner oracle testleri tamamlanmadan G1 veya
+ikili dosyanın NUL sonrası kısmını hâlâ taramıyor. Dosya ByteBuffer'a okunuyor;
+şimdi text/hex scanner entegrasyonu, regex için açık NUL davranışı ve scanner
+oracle testleri tamamlanmadan G1 veya
 binary scanner doğrulandı sayılmamalı.
 
 ---

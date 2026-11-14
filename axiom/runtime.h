@@ -5018,6 +5018,55 @@ AXIOM_RUNTIME_FN void axiom_buf_free(ax_int handle) {
     axiom_safe_free(b);
 }
 
+// Read a file into a registered byte buffer without treating NUL as a string
+// terminator. Returns 0 on I/O, allocation, or representable-size failure.
+AXIOM_RUNTIME_FN ax_int axiom_buf_read_file(const char* path) {
+    if (!path || !path[0]) return 0;
+    FILE* file = fopen(path, "rb");
+    if (!file) return 0;
+
+    ax_int handle = axiom_buf_create(4096);
+    if (handle <= 0) {
+        fclose(file);
+        return 0;
+    }
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    int failed = 0;
+    while (!failed) {
+        if (buffer->len == buffer->cap) {
+            if (buffer->cap == 0 || buffer->cap > SIZE_MAX / 2) {
+                failed = 1;
+                break;
+            }
+            size_t new_cap = buffer->cap * 2;
+            uint8_t* grown = (uint8_t*)realloc(buffer->data, new_cap);
+            if (!grown) {
+                failed = 1;
+                break;
+            }
+            buffer->data = grown;
+            buffer->cap = new_cap;
+        }
+        size_t available = buffer->cap - buffer->len;
+        size_t read_count = fread(buffer->data + buffer->len, 1, available, file);
+        if (read_count > (size_t)INT64_MAX - buffer->len) {
+            failed = 1;
+            break;
+        }
+        buffer->len += read_count;
+        if (read_count == 0) {
+            if (ferror(file)) failed = 1;
+            break;
+        }
+    }
+    if (fclose(file) != 0) failed = 1;
+    if (failed) {
+        axiom_buf_free(handle);
+        return 0;
+    }
+    return handle;
+}
+
 /* -------------------------------------------------------------------------
  * 12. std:os:process (Alt Süreç ve Sinyal Yönetimi)
  * ------------------------------------------------------------------------- */

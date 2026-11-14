@@ -1,6 +1,21 @@
 // Axiom Standard Library - Binary Buffer & Byte Manipulation
 // std:io:binary
 
+import "std/core/error"
+
+/// Dosyayi ham byte buffer'a okur; NUL baytlari ve dosya uzunlugu korunur.
+/// Basarisizlikta Err, basarili bos dosyada len=0 olan bir handle doner.
+fn read_file_bytes(path: str) -> Result<int, str> {
+    if len(path) == 0 {
+        return result_err_int("bos dosya yolu")
+    }
+    let buffer = rt_buf_read_file(path)
+    if buffer <= 0 {
+        return result_err_int("dosya byte buffer'a okunamadi: " + path)
+    }
+    return result_ok<int>(buffer)
+}
+
 fn buf_create(cap: int) -> int {
     return rt_buf_create(cap)
 }

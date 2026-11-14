@@ -24,6 +24,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   standart `<limits.h>` başlığı eklendi.
 - YARA hex occurrence API'sine ByteBuffer handle alan uzunluk-duyarlı
   count/find/nth/length işlevleri eklendi; mevcut string API'leri korundu.
+- `std/io/binary.read_file_bytes` dosyayı NUL baytlarını koruyarak ByteBuffer'a
+  okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
