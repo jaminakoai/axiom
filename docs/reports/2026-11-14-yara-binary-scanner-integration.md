@@ -40,3 +40,11 @@
 ## Sıradaki adım
 
 Değişiklikleri commit/push edip CI sonucunu doğrula; ardından G1 içinde regex için byte-span desteğinin maliyetini ve değerini değerlendir. Regex kapsamı şimdilik açık hata ile sınırlı kalmalıdır.
+
+
+## Devam doğrulaması — runtime sınırları
+
+- `tests/test_yara_runtime_hex_occurrences.py` içinde ortak typed executor'ın `INT64_MAX` üstü byte-span hedef uzunluğunu ve `INT64_MAX` min offset'i güvenli biçimde reddettiği doğrudan C runtime testi eklendi. Bu korumalar offset hesaplamasında signed taşmayı ve hedef belleğine erişmeden reddetmeyi doğrular.
+- `python -m pytest -q tests/test_yara_runtime_hex_occurrences.py::test_occurrence_runtime_handles_indices_masks_and_malformed_patterns` — **1 geçti** (1,24 sn).
+- `make fmt-check` ve `git diff --check` — temiz.
+- Kalan: typed executor için büyük hedefte adversarial çalışma maliyetini ölçüp önceki 64 MiB benchmarkını yeni typed path üzerinde tekrarla.

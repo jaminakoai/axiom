@@ -117,6 +117,15 @@ def test_occurrence_runtime_handles_indices_masks_and_malformed_patterns():
         // fail closed without wrapping into an earlier occurrence.
         CHECK(axiom_yara_nth_hex_pattern_offset("ABC", "hex:41", INT64_MAX) == -1);
         CHECK(axiom_yara_nth_hex_pattern_length("ABC", "hex:41", INT64_MAX) == -1);
+        CHECK(axiom_yara_hex_pattern_occurrence_internal(
+            (const uint8_t*)"A", 1, "hexast:v1:B41;", 1, 0, INT64_MAX, -1) == -1);
+#if SIZE_MAX > INT64_MAX
+        // The internal byte-span API must reject lengths it cannot represent
+        // in the signed 64-bit public offset model before touching the target.
+        CHECK(axiom_yara_hex_pattern_occurrence_internal(
+            (const uint8_t*)"A", (size_t)INT64_MAX + (size_t)1,
+            "hexast:v1:B41;", 0, 0, -1, -1) == -1);
+#endif
 
         const char overlapping[] = {(char)0xAA, (char)0xAB, (char)0xAC, '\0'};
         const char* masked = "hex:A? A?";
