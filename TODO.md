@@ -14,7 +14,7 @@
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tam test paketi | Yerel `python -m pytest -q -rs`: 1370 geçti (önceki scanner entegrasyon adımı); son tip düzeltmesinden sonra YARA/scanner paketi 376 geçti |
 | Son G1 hedefli doğrulama | YARA/scanner/gerçek-YARA paketi: 376 geçti (154,49 sn) |
-| Son CI | `d04e0a8` — **7/7 iş başarılı**; bu çalışma ağacının CI'si push sonrası bekleniyor |
+| Son CI | `4fe4d7d` — 4 Python matrix işi başarısız (self-hosted `axiom-scan` örnek derlemesi); ASan/UBSan, LLVM/DWARF ve format başarılı. Düzeltme yerelde hedefli doğrulandı; yeni CI bekleniyor |
 
 ---
 
@@ -34,9 +34,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
-- İlk güvenilir public release hedefine göre yaklaşık **%65** ilerleme tahmini
-  kullanılıyor. Bu ölçülmüş KPI değildir: güncel test/CI kanıtı tamamlandı,
-  fakat dış kullanıcı doğrulaması ve dağıtım hazırlığı hâlâ eksik.
+- İlk güvenilir public release hedefine göre yaklaşık **%66** ilerleme tahmini
+  kullanılıyor. Bu ölçülmüş KPI değildir; NUL korumalı dosya/PCAP taramasının
+  uçtan uca tamamlanması önceki tahmine göre sınırlı ilerleme sağladı. G1
+  doğruluğunun kalan kanıtları, bu commit için CI, dış kullanıcı doğrulaması ve
+  dağıtım hazırlığı hâlâ eksik.
 
 ### İş sırası ve kabul kapıları
 
@@ -223,16 +225,16 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G1 — Binary hedef uzunluğunu uçtan uca koru.** Hex AST ve occurrence
-eşleştiricisi typed atom modelini kullanıyor; eski runtime `find`/`match_at`
-girişleri adapter olarak aynı yürütücüye bağlı. `8b2686a` CI'si 7/7 başarılı;
-Python 3.10–3.13'ün her birinde 1326 geçti, 35 skip. Son yerel YARA runtime
-grubu 118/118 geçti. Yeni ByteBuffer API'si C/LLVM parity testinde NUL sonrası
-eşleşmeyi buldu, ancak mevcut `axiom-scan` string tabanlı dosya okuduğu için
-ikili dosyanın NUL sonrası kısmını hâlâ taramıyor. Dosya ByteBuffer'a okunuyor;
-şimdi text/hex scanner entegrasyonu, regex için açık NUL davranışı ve scanner
-oracle testleri tamamlanmadan G1 veya
-binary scanner doğrulandı sayılmamalı.
+**G1 — YARA alt kümesinin kalan doğruluk ve runtime sınır kanıtları.** NUL
+korumalı dosya/PCAP scanner entegrasyonu tamamlandı; NUL içeren hedefte regex
+şimdilik açık yapılandırılmış hata veriyor. Sıradaki iş, `hexast:v1` typed atom
+executor'ının hedef boyutu/overflow/işletim maliyetini doğrudan runtime testleriyle
+kanıtlamak ve kalan desteklenen koşul birleşimlerini YARA 4.5.4 ile diferansiyel
+test etmektir. `4fe4d7d` CI'sinde dört Python matrix işi self-hosted derleyicinin
+`YaraBufferScanResult.matches` alanını yerel dizi alias'ında yanlış türlemesinden
+düştü; örnek doğrudan struct alanı kullanacak şekilde düzeltildi ve 378 odaklı
+test geçti. Yeni CI ve bu düzeltmeden sonraki tam proje testi bekleniyor. G1 ancak kalan testler, açık ret davranışları ve C/LLVM
+paritesi raporlandığında kapanır.
 
 ---
 

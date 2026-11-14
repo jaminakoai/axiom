@@ -10,7 +10,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   baytından sonraki içerik ve bayt sınırını aşan eşleşmeler korunur. NUL içeren
   hedefte regex kullanımı, byte-span regex desteği olmadığı için yapılandırılmış
   açık hatayla reddedilir. YARA koşulundaki `at/in`, occurrence ofseti ve
-  uzunluğu buffer tabanlı eşleştiricileri kullanır.
+  uzunluğu buffer tabanlı eşleştiricileri kullanır. Self-hosted derleyicinin
+  sonuç yapısındaki dizi alanını yanlış yerel değişken türlemesi, örnekte alanı
+  doğrudan kullanarak giderildi.
 - YARA sabit ve özel hex biçimlerinin arama, sayım ve seçili occurrence
   uzunluğu tek runtime occurrence yürütücüsünü kullanıyor. C ve LLVM için yeni
   ortak find API'si offset sınırlarını aynı yerde uyguluyor.

@@ -606,8 +606,9 @@ support for bounded jumps, alternation, and negation, plus the bounded-range
 near-match performance fix. That test summary is historical; current evidence
 for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
-The latest completed GitHub Actions run was for `d04e0a8` (7/7); CI for this
-integration will run after push.
+The latest GitHub Actions run for `4fe4d7d` failed in the Python 3.10–3.13
+self-hosted example compilation tests; ASan/UBSan, LLVM/DWARF, and formatting
+jobs passed. CI for the correction will run after push.
 
 ### CI status
 

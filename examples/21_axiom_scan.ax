@@ -177,20 +177,18 @@ fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
         buf_free(content_buffer)
         return result_err_int(scan_result.error)
     }
-    let matches = scan_result.matches
-
-    // Kanit butunlugu: TUM dosyanin SHA-256'si (metin kesilse bile).
+    // Kanit butunlugu: TUM dosyanin SHA-256'si.
     let target_hash = fim_calculate_hash(target)
 
     let mut out = "{" + _meta(len(sets.rules))
     out = out + ",\"ok\":true,\"target\":\"" + _json_escape(target) + "\""
     out = out + ",\"target_sha256\":\"" + target_hash + "\""
     out = out + ",\"scanned_bytes\":" + int_to_str(target_size)
-    out = out + ",\"match_count\":" + int_to_str(len(matches))
+    out = out + ",\"match_count\":" + int_to_str(len(scan_result.matches))
     out = out + ",\"matches\":["
     let mut i = 0
-    while i < len(matches) {
-        let m = matches[i]
+    while i < len(scan_result.matches) {
+        let m = scan_result.matches[i]
         if i > 0 {
             out = out + ","
         }
@@ -211,7 +209,7 @@ fn cmd_scan(rule_path: str, target: str) -> Result<int, str> {
     out = out + "]}"
     print(out)
     buf_free(content_buffer)
-    return result_ok<int>(_exit_code(len(matches)))
+    return result_ok<int>(_exit_code(len(scan_result.matches)))
 }
 
 fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
@@ -253,24 +251,23 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
             pcap_file_close(handle)
             return result_err_int(packet_result.error)
         }
-        let matches = packet_result.matches
-        if len(matches) > 0 {
+        if len(packet_result.matches) > 0 {
             if written > 0 {
                 out = out + ","
             }
             out = out + "{\"index\":" + int_to_str(packet_index)
             out = out + ",\"rules\":["
             let mut j = 0
-            while j < len(matches) {
+            while j < len(packet_result.matches) {
                 if j > 0 {
                     out = out + ","
                 }
-                out = out + "\"" + _json_escape(matches[j].rule_name) + "\""
+                out = out + "\"" + _json_escape(packet_result.matches[j].rule_name) + "\""
                 j = j + 1
             }
             out = out + "]}"
             written = written + 1
-            matches_total = matches_total + len(matches)
+            matches_total = matches_total + len(packet_result.matches)
         }
         buf_free(pkt_raw)
         packet_index = packet_index + 1
