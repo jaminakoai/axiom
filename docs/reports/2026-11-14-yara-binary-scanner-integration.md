@@ -70,3 +70,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Birleşik son YARA/scanner/differential/stress/AST-limits paketi: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **409 geçti** (174,73 sn).
 - Tam yerel paket: `python -m pytest -q -rs` — **1403 geçti, 0 hata, 0 atlandı** (1273,68 sn).
 - `make fmt-check` ve `git diff --check` — temiz. Yeni test dosyaları ve güncel rapor bu tur commit’ine dahil edilecek; yeni commit için CI push sonrası doğrulanmalı.
+
+
+## G1 üçüncü paralel turu — koşul birleşimleri ve backend sınır paritesi
+
+- CI denetimi: `20d3fa6` run `43618282310` **7/7 başarılı**; Python 3.10–3.13’te `yara-python==4.5.4` kuruldu ve her matrix 1376 geçti / 27 genel testi atladı.
+- `tests/test_yara_condition_combinations.py`: 19 YARA 4.5.4 differential vaka; zero-of, any/all/none, `them`/wildcard grupları, filesize, Boolean/not ve inclusive `at/in` sınırları. Tekil koşu 19/19 geçti; birleşik son pakette de geçti.
+- `tests/test_yara_condition_backend_parity.py`: embedded-NUL hedefte text/hex occurrence ve offset sınırları, filesize ve koşul birleşimleri için C/LLVM rapor eşitliği + YARA oracle. 1/1 geçti (13,29 sn).
+- Son birleşik odaklı paket: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **429 geçti** (212,34 sn).
+- Son tam yerel paket: `python -m pytest -q -rs` — **1423 geçti, 0 hata, 0 atlandı** (1322,14 sn).
+- `20d3fa6` CI, bu turdaki iki yeni test dosyası eklenmeden önce 7/7 başarılıydı. Yeni test commit’inin CI’si push sonrasında doğrulanmalı.
