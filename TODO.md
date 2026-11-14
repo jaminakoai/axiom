@@ -93,15 +93,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   tek API'de uygula ve seçilen offset'in canonical uzunluğunu ortak API'den al.
   Eski `hexrange:`/`hexalt:`/`hexnot:` etiketleri AST geçişi bitene kadar parser
   ile runtime arasındaki geçici uyumluluk kodlamalarıdır.
-- [~] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
+- [x] Bir pattern AST/modeli kullanıp özel `hex*:` string etiketlerinin
   çoğalmasını durdur; geçişte mevcut public fonksiyon imzalarını koru veya
   gerekiyorsa uyumluluk katmanı ekle. Parser artık byte/mask, bounded jump,
   alternation ve negation atomlarını `hexast:v1:` programına yazar. Runtime bu
-  programı fail-closed doğrulayıp doğrudan occurrence yürütücüsünün typed
-  fixed/range/alternation/negation modeline parse eder. Eski doğrudan runtime
-  API'leri için legacy etiket adaptörleri tutuluyor. Executor artık tür ve
-  kaynak ömrünü tek `AxiomYaraHexPattern` discriminated union'ında tutuyor;
-  dağınık kind + dört ayrı yerel matcher değişkeni kaldırıldı.
+  programı fail-closed doğrulayıp `AxiomYaraHexAtom[]` dizisine parse eder. Tek
+  occurrence executor Byte/Jump/Alternation/NotByte atomlarını sıralı yürütür;
+  eski doğrudan runtime API'leri aynı modele çeviren legacy adapter olarak kalır.
 
   **G1 geçiş tasarımı:** `YaraRule` alanlarını ve `yara_rule_add_pattern`
   imzasını koru; kaynak pattern'i parser aşamasında `hexast:v1:` adlı tek,
@@ -110,10 +108,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   C runtime'da tek doğrulayıcı/yürütücü; find/count/nth API'leri aynı
   occurrence motorunu kullansın. Mevcut `hexrange:`/`hexalt:`/`hexnot:`
   kodlamaları geçiş testlerinde adapter olarak okunup sonra iç akıştan kaldırılsın.
-  AST parser ve ortak typed pattern sahipliği tamamlandı. Bir sonraki alt adım
-  pattern içeriğini tek `AxiomYaraHexPattern` atom dizisiyle (`Byte`, `Jump`,
-  `Alternation`, `NotByte`) temsil edip range/alt/negation matcher dallarını bu
-  dizi üzerinden yürütmek ve eski doğrudan runtime API adapter'larını azaltmaktır.
+  Tek `Byte/Jump/Alternation/NotByte` atom dizisi executor'ı tamamlandı. Sonraki
+  alt adım, doğrudan legacy runtime API adapter'larını kaldırmak veya açıkça
+  compatibility katmanına taşımak; sonra kalan YARA limitleri ve gerçek kural
+  uyumluluğunu doğrulamaktır.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic

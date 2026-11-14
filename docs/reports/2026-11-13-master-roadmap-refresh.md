@@ -308,12 +308,10 @@ paketi yeniden **373 geçti**, tam `python -m pytest -q -rs` **1361 geçti**
 (1220,96 sn); malformed AST regresyonları da bu koşularda dahil edildi. Bu
 runtime refaktörünün CI doğrulaması commit/push sonrasında çalışacak.
 
-Ardından matcher'ın lifetime/kind yönetimi `AxiomYaraHexPattern` adlı tek
-discriminated union'a toplandı. Bir ara test koşusu bu union'da başka üyeye
-yazılmış bir başlangıç sentinel'inin alternation pointer'ını bozdu (`free():
-invalid pointer`); sentinel kaldırıldı. Doğrudan C testlerinde **92/92**, tam
-YARA/scanner paketinde **373/373** ve tam proje testinde **1361/1361** geçti
-(1213,16 sn); `make fmt-check` ve `git diff --check` temiz. Tek
-`Byte/Jump/Alternation/NotByte` atom dizisi executor ve legacy API adapter
-sadeleştirmesi hâlâ açık. Bu union refaktörünün CI doğrulaması commit/push
-sonrasında çalışacak.
+Ardından union ara modeli sıralı `AxiomYaraHexAtom[]` ile değiştirildi. Fixed,
+jump, alternation ve negation find/count/nth işlemleri artık ortak atom
+executor'ından geçiyor. Bounded jump için anchor bitset, fixed bytes için hızlı
+arama ve legacy tag compatibility parse yolları korundu. Çekirdek C/oracle
+testlerinde **115/115**, YARA/scanner paketinde **373/373** ve tam proje
+paketinde **1361/1361** geçti (1219,92 sn). Biçim ve diff kontrolleri temiz.
+Bu atom-array değişikliğinin CI doğrulaması commit/push sonrasında çalışacak.

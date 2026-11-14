@@ -9366,23 +9366,68 @@ AXIOM_RUNTIME_FN int axiom_yara_hex_ast_append(char* dst, size_t cap, size_t* us
     return 1;
 }
 
+enum {
+    AXIOM_YARA_ATOM_BYTES = 1,
+    AXIOM_YARA_ATOM_JUMP = 2,
+    AXIOM_YARA_ATOM_ALTERNATION = 3,
+    AXIOM_YARA_ATOM_NOT_BYTE = 4
+};
+
 typedef struct {
-    int kind; // 0=fixed, 1=bounded jump, 2=alternation, 3=negated byte
+    int kind;
     union {
-        AxiomYaraCompiledPattern fixed;
-        AxiomYaraHexRangePattern range;
+        AxiomYaraCompiledPattern bytes;
+        struct {
+            int min_gap;
+            int max_gap;
+            int suffix_anchor;
+            size_t suffix_anchor_matches;
+            uint8_t* suffix_anchor_bits;
+            size_t suffix_anchor_bits_len;
+        } jump;
         AxiomYaraHexAlternation alternation;
-        AxiomYaraHexNegation negation;
+        struct { uint8_t mask; uint8_t value; } not_byte;
     } as;
+} AxiomYaraHexAtom;
+
+typedef struct {
+    size_t count;
+    AxiomYaraHexAtom atoms[3];
 } AxiomYaraHexPattern;
 
 AXIOM_RUNTIME_FN void axiom_yara_hex_pattern_free(AxiomYaraHexPattern* pattern) {
     if (!pattern) return;
-    if (pattern->kind == 0) axiom_yara_pattern_free(&pattern->as.fixed);
-    else if (pattern->kind == 1) axiom_yara_hex_range_free(&pattern->as.range);
-    else if (pattern->kind == 2) axiom_yara_hex_alternation_free(&pattern->as.alternation);
-    else if (pattern->kind == 3) axiom_yara_hex_negation_free(&pattern->as.negation);
+    for (size_t i = 0; i < pattern->count && i < 3; i++) {
+        AxiomYaraHexAtom* atom = &pattern->atoms[i];
+        if (atom->kind == AXIOM_YARA_ATOM_BYTES) axiom_yara_pattern_free(&atom->as.bytes);
+        else if (atom->kind == AXIOM_YARA_ATOM_JUMP && atom->as.jump.suffix_anchor_bits) {
+            free(atom->as.jump.suffix_anchor_bits);
+        } else if (atom->kind == AXIOM_YARA_ATOM_ALTERNATION) {
+            axiom_yara_hex_alternation_free(&atom->as.alternation);
+        }
+    }
     memset(pattern, 0, sizeof(*pattern));
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_pattern_add_bytes(AxiomYaraHexPattern* pattern, const char* source) {
+    if (!pattern || !source || pattern->count >= 3) return 0;
+    AxiomYaraHexAtom* atom = &pattern->atoms[pattern->count];
+    memset(atom, 0, sizeof(*atom));
+    atom->kind = AXIOM_YARA_ATOM_BYTES;
+    if (axiom_yara_parse_hex_pattern_internal(source, &atom->as.bytes) <= 0) return 0;
+    pattern->count++;
+    return 1;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_pattern_add_bytes_move(AxiomYaraHexPattern* pattern,
+                                                             AxiomYaraCompiledPattern* source) {
+    if (!pattern || !source || source->len <= 0 || pattern->count >= 3) return 0;
+    AxiomYaraHexAtom* atom = &pattern->atoms[pattern->count++];
+    memset(atom, 0, sizeof(*atom));
+    atom->kind = AXIOM_YARA_ATOM_BYTES;
+    atom->as.bytes = *source;
+    *source = (AxiomYaraCompiledPattern){NULL, NULL, 0};
+    return 1;
 }
 
 // Parse hexast:v1 directly into the occurrence matcher's typed model. This
@@ -9430,75 +9475,274 @@ AXIOM_RUNTIME_FN int axiom_yara_parse_hex_ast_internal(const char* encoded,
         }
     }
 
-    if (special_kind == 0) {
-        pattern->kind = 0;
-        if (prefix_len == 0 || axiom_yara_parse_hex_pattern_internal(prefix, &pattern->as.fixed) <= 0) return 0;
-        return 1;
-    }
+    if (special_kind == 0) return prefix_len > 0 && axiom_yara_hex_pattern_add_bytes(pattern, prefix);
     if (special_kind == 1) {
-        pattern->kind = 1;
         char* dash = strchr(special, '-');
         int min_gap = 0, max_gap = 0;
         if (!prefix_len || !suffix_len || !dash || strchr(dash + 1, '-') ||
             !axiom_yara_parse_jump_bound(special, (size_t)(dash - special), &min_gap) ||
             !axiom_yara_parse_jump_bound(dash + 1, strlen(dash + 1), &max_gap) ||
-            min_gap > max_gap || max_gap - min_gap > 16 ||
-            axiom_yara_parse_hex_pattern_internal(prefix, &pattern->as.range.prefix) <= 0 ||
-            axiom_yara_parse_hex_pattern_internal(suffix, &pattern->as.range.suffix) <= 0) return 0;
-        pattern->as.range.min_gap = min_gap;
-        pattern->as.range.max_gap = max_gap;
-        pattern->as.range.suffix_anchor = -1;
-        pattern->as.range.suffix_anchor_matches = 0;
-        pattern->as.range.suffix_anchor_bits = NULL;
-        pattern->as.range.suffix_anchor_bits_len = 0;
+            min_gap > max_gap || max_gap - min_gap > 16) return 0;
+        if (!axiom_yara_hex_pattern_add_bytes(pattern, prefix)) return 0;
+        AxiomYaraHexAtom* jump = &pattern->atoms[pattern->count++];
+        memset(jump, 0, sizeof(*jump));
+        jump->kind = AXIOM_YARA_ATOM_JUMP;
+        jump->as.jump.min_gap = min_gap;
+        jump->as.jump.max_gap = max_gap;
+        jump->as.jump.suffix_anchor = -1;
+        if (!axiom_yara_hex_pattern_add_bytes(pattern, suffix)) return 0;
         int constrained = 0;
-        for (int i = 0; i < pattern->as.range.prefix.len; i++) if (pattern->as.range.prefix.masks[i] != 0) constrained = 1;
-        for (int i = 0; i < pattern->as.range.suffix.len; i++) if (pattern->as.range.suffix.masks[i] != 0) constrained = 1;
+        AxiomYaraCompiledPattern* left = &pattern->atoms[0].as.bytes;
+        AxiomYaraCompiledPattern* right = &pattern->atoms[2].as.bytes;
+        for (int i = 0; i < left->len; i++) if (left->masks[i] != 0) constrained = 1;
+        for (int i = 0; i < right->len; i++) if (right->masks[i] != 0) constrained = 1;
         if (!constrained) return 0;
         return 1;
     }
     if (special_kind == 3) {
-        pattern->kind = 3;
         if (strlen(special) != 2 || (special[0] == '?' && special[1] == '?')) return 0;
         uint8_t mask_hi = 0, value_hi = 0, mask_lo = 0, value_lo = 0;
         if (!axiom_yara_negated_hex_nibble(special[0], &mask_hi, &value_hi, 0xF0, 4) ||
             !axiom_yara_negated_hex_nibble(special[1], &mask_lo, &value_lo, 0x0F, 0)) return 0;
-        pattern->as.negation.excluded_mask = (uint8_t)(mask_hi | mask_lo);
-        pattern->as.negation.excluded_value = (uint8_t)(value_hi | value_lo);
-        if (!pattern->as.negation.excluded_mask) return 0;
-        if ((prefix_len && axiom_yara_parse_hex_pattern_internal(prefix, &pattern->as.negation.prefix) <= 0) ||
-            (suffix_len && axiom_yara_parse_hex_pattern_internal(suffix, &pattern->as.negation.suffix) <= 0)) return 0;
+        if (prefix_len && !axiom_yara_hex_pattern_add_bytes(pattern, prefix)) return 0;
+        AxiomYaraHexAtom* negated = &pattern->atoms[pattern->count++];
+        memset(negated, 0, sizeof(*negated));
+        negated->kind = AXIOM_YARA_ATOM_NOT_BYTE;
+        negated->as.not_byte.mask = (uint8_t)(mask_hi | mask_lo);
+        negated->as.not_byte.value = (uint8_t)(value_hi | value_lo);
+        if (!negated->as.not_byte.mask) return 0;
+        if (suffix_len && !axiom_yara_hex_pattern_add_bytes(pattern, suffix)) return 0;
         return 1;
     }
 
-    pattern->kind = 2;
+    if (prefix_len && !axiom_yara_hex_pattern_add_bytes(pattern, prefix)) return 0;
+    if (pattern->count >= 3) return 0;
+    AxiomYaraHexAtom* alt_atom = &pattern->atoms[pattern->count++];
+    memset(alt_atom, 0, sizeof(*alt_atom));
+    alt_atom->kind = AXIOM_YARA_ATOM_ALTERNATION;
     const char* branch = special;
     int has_constrained_byte = 0;
     while (1) {
         const char* separator = strchr(branch, '|');
         size_t branch_len = separator ? (size_t)(separator - branch) : strlen(branch);
-        if (!branch_len || pattern->as.alternation.branch_count >= 4) return 0;
+        if (!branch_len || alt_atom->as.alternation.branch_count >= 4) return 0;
         char branch_text[AXIOM_YARA_MAX_HEX_PATTERN_TEXT + 1] = {0};
         size_t used = 0;
-        if ((prefix_len && (!axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, prefix, prefix_len) ||
-                            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, " ", 1))) ||
-            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, branch, branch_len) ||
-            (suffix_len && (!axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, " ", 1) ||
-                            !axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, suffix, suffix_len)))) return 0;
-        AxiomYaraCompiledPattern* compiled = &pattern->as.alternation.branches[pattern->as.alternation.branch_count];
+        if (!axiom_yara_hex_ast_append(branch_text, sizeof(branch_text), &used, branch, branch_len)) return 0;
+        AxiomYaraCompiledPattern* compiled = &alt_atom->as.alternation.branches[alt_atom->as.alternation.branch_count];
         int parsed_len = axiom_yara_parse_hex_pattern_internal(branch_text, compiled);
         if (parsed_len <= 0 || parsed_len > 16) return 0;
-        if (pattern->as.alternation.branch_count == 0) pattern->as.alternation.common_len = parsed_len;
-        else if (parsed_len != pattern->as.alternation.common_len) return 0;
+        if (alt_atom->as.alternation.branch_count == 0) alt_atom->as.alternation.common_len = parsed_len;
+        else if (parsed_len != alt_atom->as.alternation.common_len) return 0;
         for (int i = 0; i < parsed_len; i++) {
             if (compiled->masks[i] != 0) has_constrained_byte = 1;
         }
-        pattern->as.alternation.branch_count++;
+        alt_atom->as.alternation.branch_count++;
         if (!separator) break;
         branch = separator + 1;
     }
-    if (pattern->as.alternation.branch_count < 2 || !has_constrained_byte) return 0;
+    if (alt_atom->as.alternation.branch_count < 2 || !has_constrained_byte) return 0;
+    if (suffix_len && !axiom_yara_hex_pattern_add_bytes(pattern, suffix)) return 0;
     return 1;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_parse_hex_legacy_pattern(const char* encoded,
+                                                          AxiomYaraHexPattern* pattern) {
+    if (!encoded || !pattern || strlen(encoded) > AXIOM_YARA_MAX_HEX_PATTERN_TEXT) return 0;
+    if (strncmp(encoded, "hex:", 4) == 0) return axiom_yara_hex_pattern_add_bytes(pattern, encoded + 4);
+    if (strncmp(encoded, "hexrange:", 9) == 0) {
+        AxiomYaraHexRangePattern range = {{NULL, NULL, 0}, {NULL, NULL, 0}, 0, 0, -1, 0, NULL, 0};
+        if (!axiom_yara_parse_hex_range_internal(encoded, &range)) return 0;
+        if (!axiom_yara_hex_pattern_add_bytes_move(pattern, &range.prefix) || pattern->count >= 3) {
+            axiom_yara_hex_range_free(&range);
+            return 0;
+        }
+        AxiomYaraHexAtom* jump = &pattern->atoms[pattern->count++];
+        memset(jump, 0, sizeof(*jump));
+        jump->kind = AXIOM_YARA_ATOM_JUMP;
+        jump->as.jump.min_gap = range.min_gap;
+        jump->as.jump.max_gap = range.max_gap;
+        jump->as.jump.suffix_anchor = range.suffix_anchor;
+        jump->as.jump.suffix_anchor_matches = range.suffix_anchor_matches;
+        jump->as.jump.suffix_anchor_bits = range.suffix_anchor_bits;
+        jump->as.jump.suffix_anchor_bits_len = range.suffix_anchor_bits_len;
+        range.suffix_anchor_bits = NULL;
+        range.suffix_anchor_bits_len = 0;
+        if (!axiom_yara_hex_pattern_add_bytes_move(pattern, &range.suffix)) {
+            axiom_yara_hex_range_free(&range);
+            return 0;
+        }
+        axiom_yara_hex_range_free(&range);
+        return 1;
+    }
+    if (strncmp(encoded, "hexalt:", 7) == 0) {
+        if (pattern->count >= 3) return 0;
+        AxiomYaraHexAtom* atom = &pattern->atoms[pattern->count];
+        memset(atom, 0, sizeof(*atom));
+        atom->kind = AXIOM_YARA_ATOM_ALTERNATION;
+        if (!axiom_yara_parse_hex_alternation_internal(encoded, &atom->as.alternation)) return 0;
+        pattern->count++;
+        return 1;
+    }
+    if (strncmp(encoded, "hexnot:", 7) == 0) {
+        AxiomYaraHexNegation negation;
+        if (!axiom_yara_parse_hex_negation_internal(encoded, &negation)) return 0;
+        if (negation.prefix.len && !axiom_yara_hex_pattern_add_bytes_move(pattern, &negation.prefix)) {
+            axiom_yara_hex_negation_free(&negation);
+            return 0;
+        }
+        if (pattern->count >= 3) { axiom_yara_hex_negation_free(&negation); return 0; }
+        AxiomYaraHexAtom* atom = &pattern->atoms[pattern->count++];
+        memset(atom, 0, sizeof(*atom));
+        atom->kind = AXIOM_YARA_ATOM_NOT_BYTE;
+        atom->as.not_byte.mask = negation.excluded_mask;
+        atom->as.not_byte.value = negation.excluded_value;
+        if (negation.suffix.len && !axiom_yara_hex_pattern_add_bytes_move(pattern, &negation.suffix)) {
+            axiom_yara_hex_negation_free(&negation);
+            return 0;
+        }
+        axiom_yara_hex_negation_free(&negation);
+        return 1;
+    }
+    return 0;
+}
+
+AXIOM_RUNTIME_FN int64_t axiom_yara_hex_pattern_min_length(const AxiomYaraHexPattern* pattern) {
+    if (!pattern || pattern->count == 0 || pattern->count > 3) return -1;
+    int64_t total = 0;
+    for (size_t i = 0; i < pattern->count; i++) {
+        const AxiomYaraHexAtom* atom = &pattern->atoms[i];
+        if (atom->kind == AXIOM_YARA_ATOM_BYTES) total += atom->as.bytes.len;
+        else if (atom->kind == AXIOM_YARA_ATOM_JUMP) total += atom->as.jump.min_gap;
+        else if (atom->kind == AXIOM_YARA_ATOM_ALTERNATION) total += atom->as.alternation.common_len;
+        else if (atom->kind == AXIOM_YARA_ATOM_NOT_BYTE) total++;
+        else return -1;
+        if (total > INT64_MAX) return -1;
+    }
+    return total;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_pattern_prepare(const uint8_t* target, size_t target_len,
+                                                     AxiomYaraHexPattern* pattern) {
+    if (!target || !pattern || target_len > (size_t)INT64_MAX) return 0;
+    for (size_t i = 0; i < pattern->count; i++) {
+        AxiomYaraHexAtom* atom = &pattern->atoms[i];
+        if (atom->kind != AXIOM_YARA_ATOM_JUMP) continue;
+        if (i == 0 || i + 1 >= pattern->count ||
+            pattern->atoms[i - 1].kind != AXIOM_YARA_ATOM_BYTES ||
+            pattern->atoms[i + 1].kind != AXIOM_YARA_ATOM_BYTES) return 0;
+        AxiomYaraHexRangePattern view = {
+            pattern->atoms[i - 1].as.bytes,
+            pattern->atoms[i + 1].as.bytes,
+            atom->as.jump.min_gap,
+            atom->as.jump.max_gap,
+            -1, 0, NULL, 0
+        };
+        int suffix_constrained = 0;
+        for (int b = 0; b < view.suffix.len; b++) {
+            if (view.suffix.masks[b] != 0) { suffix_constrained = 1; break; }
+        }
+        if (suffix_constrained) atom->as.jump.suffix_anchor = axiom_yara_hex_range_choose_anchor(target, target_len, &view);
+        atom->as.jump.suffix_anchor_matches = view.suffix_anchor_matches;
+        atom->as.jump.suffix_anchor_bits = view.suffix_anchor_bits;
+        atom->as.jump.suffix_anchor_bits_len = view.suffix_anchor_bits_len;
+    }
+    return 1;
+}
+
+AXIOM_RUNTIME_FN int axiom_yara_hex_pattern_match_at(const uint8_t* target, size_t target_len,
+                                                      const AxiomYaraHexPattern* pattern,
+                                                      int64_t start, int64_t* match_length) {
+    if (!target || !pattern || start < 0 || target_len > (size_t)INT64_MAX ||
+        start > (int64_t)target_len) return 0;
+    int64_t position = start;
+    for (size_t i = 0; i < pattern->count; i++) {
+        const AxiomYaraHexAtom* atom = &pattern->atoms[i];
+        if (atom->kind == AXIOM_YARA_ATOM_BYTES) {
+            if (!axiom_yara_hex_compiled_match_at(target, target_len, &atom->as.bytes, position)) return 0;
+            position += atom->as.bytes.len;
+        } else if (atom->kind == AXIOM_YARA_ATOM_JUMP) {
+            if (i == 0 || i + 1 >= pattern->count ||
+                pattern->atoms[i - 1].kind != AXIOM_YARA_ATOM_BYTES ||
+                pattern->atoms[i + 1].kind != AXIOM_YARA_ATOM_BYTES) return 0;
+            const AxiomYaraCompiledPattern* prefix = &pattern->atoms[i - 1].as.bytes;
+            const AxiomYaraCompiledPattern* suffix = &pattern->atoms[i + 1].as.bytes;
+            if (atom->as.jump.suffix_anchor >= 0 && atom->as.jump.suffix_anchor_matches == 0) return 0;
+            if (atom->as.jump.suffix_anchor >= 0 && atom->as.jump.suffix_anchor_bits &&
+                position <= INT64_MAX - atom->as.jump.max_gap - atom->as.jump.suffix_anchor) {
+                AxiomYaraHexRangePattern view = {
+                    *prefix, *suffix,
+                    atom->as.jump.min_gap, atom->as.jump.max_gap,
+                    atom->as.jump.suffix_anchor, atom->as.jump.suffix_anchor_matches,
+                    atom->as.jump.suffix_anchor_bits, atom->as.jump.suffix_anchor_bits_len
+                };
+                size_t first = (size_t)(position + atom->as.jump.min_gap + atom->as.jump.suffix_anchor);
+                size_t last = (size_t)(position + atom->as.jump.max_gap + atom->as.jump.suffix_anchor);
+                if (!axiom_yara_hex_range_anchor_in_window(&view, first, last)) return 0;
+            }
+            int suffix_constrained = 0;
+            for (int b = 0; b < suffix->len; b++) {
+                if (suffix->masks[b] != 0) { suffix_constrained = 1; break; }
+            }
+            int found_gap = -1;
+            if (!suffix_constrained) {
+                if (position <= INT64_MAX - atom->as.jump.min_gap &&
+                    position + atom->as.jump.min_gap <= (int64_t)target_len - suffix->len) {
+                    found_gap = atom->as.jump.min_gap;
+                }
+            } else {
+                for (int gap = atom->as.jump.min_gap; gap <= atom->as.jump.max_gap; gap++) {
+                    if (position > INT64_MAX - gap) break;
+                    int64_t suffix_start = position + gap;
+                    if (suffix_start <= (int64_t)target_len - suffix->len &&
+                        axiom_yara_hex_compiled_match_at(target, target_len, suffix, suffix_start)) {
+                        found_gap = gap;
+                        break;
+                    }
+                }
+            }
+            if (found_gap < 0) return 0;
+            position += found_gap;
+        } else if (atom->kind == AXIOM_YARA_ATOM_ALTERNATION) {
+            int matched = 0;
+            for (int branch = 0; branch < atom->as.alternation.branch_count; branch++) {
+                if (axiom_yara_hex_compiled_match_at(target, target_len,
+                        &atom->as.alternation.branches[branch], position)) {
+                    matched = 1;
+                    break;
+                }
+            }
+            if (!matched) return 0;
+            position += atom->as.alternation.common_len;
+        } else if (atom->kind == AXIOM_YARA_ATOM_NOT_BYTE) {
+            if (position >= (int64_t)target_len ||
+                ((target[position] & atom->as.not_byte.mask) == atom->as.not_byte.value)) return 0;
+            position++;
+        } else {
+            return 0;
+        }
+    }
+    if (match_length) *match_length = position - start;
+    return position > start;
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_next_candidate(const uint8_t* target, size_t target_len,
+                                                                const AxiomYaraHexPattern* pattern,
+                                                                int64_t cursor, int64_t last_start) {
+    if (!target || !pattern || pattern->count == 0 || cursor < 0 || cursor > last_start) return -1;
+    const AxiomYaraHexAtom* first = &pattern->atoms[0];
+    if (first->kind == AXIOM_YARA_ATOM_BYTES) {
+        return axiom_yara_find_next_compiled(target, target_len, &first->as.bytes, cursor, last_start);
+    }
+    if (first->kind == AXIOM_YARA_ATOM_NOT_BYTE && pattern->count > 1 &&
+        pattern->atoms[1].kind == AXIOM_YARA_ATOM_BYTES) {
+        int64_t suffix_start = cursor + 1;
+        int64_t suffix_end = last_start + 1;
+        ax_int found = axiom_yara_find_next_compiled(target, target_len,
+            &pattern->atoms[1].as.bytes, suffix_start, suffix_end);
+        return found < 0 ? -1 : found - 1;
+    }
+    return cursor;
 }
 
 // Shared occurrence executor for supported hex-pattern encodings. A distinct
@@ -9514,101 +9758,51 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_hex_pattern_occurrence_internal(const char* t
         (min_offset >= 0 && max_offset >= 0 && min_offset > max_offset)) return -1;
     size_t target_len = strlen(target);
     if (target_len > (size_t)INT64_MAX) return -1;
-    const uint8_t* bytes = (const uint8_t*)target;
 
     AxiomYaraHexPattern pattern;
     memset(&pattern, 0, sizeof(pattern));
-
-    int parsed = 0;
-    if (strncmp(encoded, "hexast:v1:", 10) == 0) {
-        parsed = axiom_yara_parse_hex_ast_internal(encoded, &pattern);
-    } else if (strncmp(encoded, "hexrange:", 9) == 0) {
-        pattern.kind = 1;
-        parsed = axiom_yara_parse_hex_range_internal(encoded, &pattern.as.range);
-    } else if (strncmp(encoded, "hexalt:", 7) == 0) {
-        pattern.kind = 2;
-        parsed = axiom_yara_parse_hex_alternation_internal(encoded, &pattern.as.alternation);
-    } else if (strncmp(encoded, "hexnot:", 7) == 0) {
-        pattern.kind = 3;
-        parsed = axiom_yara_parse_hex_negation_internal(encoded, &pattern.as.negation);
-    } else if (strncmp(encoded, "hex:", 4) == 0) {
-        parsed = axiom_yara_parse_hex_pattern_internal(encoded + 4, &pattern.as.fixed) > 0;
-    }
+    int parsed = strncmp(encoded, "hexast:v1:", 10) == 0
+        ? axiom_yara_parse_hex_ast_internal(encoded, &pattern)
+        : axiom_yara_parse_hex_legacy_pattern(encoded, &pattern);
     if (!parsed) goto invalid_pattern;
 
-    if (pattern.kind == 1) {
-        pattern.as.range.suffix_anchor = axiom_yara_hex_range_choose_anchor(bytes, target_len, &pattern.as.range);
-        if (pattern.as.range.suffix_anchor >= 0 && pattern.as.range.suffix_anchor_matches == 0) {
+    int64_t min_len = axiom_yara_hex_pattern_min_length(&pattern);
+    if (min_len <= 0 || min_len > (int64_t)target_len) {
+        axiom_yara_hex_pattern_free(&pattern);
+        return occurrence == 0 && !return_length ? 0 : -1;
+    }
+    if (!axiom_yara_hex_pattern_prepare((const uint8_t*)target, target_len, &pattern)) goto invalid_pattern;
+    for (size_t i = 0; i < pattern.count; i++) {
+        const AxiomYaraHexAtom* atom = &pattern.atoms[i];
+        if (atom->kind == AXIOM_YARA_ATOM_JUMP && atom->as.jump.suffix_anchor >= 0 &&
+            atom->as.jump.suffix_anchor_matches == 0) {
             axiom_yara_hex_pattern_free(&pattern);
             return occurrence == 0 && !return_length ? 0 : -1;
         }
     }
 
+    int64_t last_start = (int64_t)target_len - min_len;
+    if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
+    int64_t cursor = min_offset > 0 ? (int64_t)min_offset : 0;
     ax_int seen = 0;
     int64_t selected_length = -1;
-    int64_t cursor = min_offset > 0 ? (int64_t)min_offset : 0;
-    while (cursor < (int64_t)target_len) {
-        int64_t start = cursor;
-        if (pattern.kind == 0) {
-            int64_t last_start = (int64_t)target_len - pattern.as.fixed.len;
-            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
-            start = axiom_yara_find_next_compiled(bytes, target_len, &pattern.as.fixed, cursor, last_start);
-        } else if (pattern.kind == 1) {
-            int64_t last_start = (int64_t)target_len - pattern.as.range.prefix.len - pattern.as.range.min_gap - pattern.as.range.suffix.len;
-            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
-            start = axiom_yara_find_next_compiled(bytes, target_len, &pattern.as.range.prefix, cursor, last_start);
-        } else if (pattern.kind == 2) {
-            int64_t last_start = (int64_t)target_len - pattern.as.alternation.common_len;
-            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
-            start = cursor <= last_start ? cursor : -1;
-        } else if (pattern.kind == 3 && pattern.as.negation.prefix.len > 0) {
-            int64_t last_start = (int64_t)target_len - pattern.as.negation.prefix.len - 1 - pattern.as.negation.suffix.len;
-            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
-            start = axiom_yara_find_next_compiled(bytes, target_len, &pattern.as.negation.prefix, cursor, last_start);
-        } else if (pattern.kind == 3 && pattern.as.negation.suffix.len > 0) {
-            int64_t last_start = (int64_t)target_len - pattern.as.negation.prefix.len - 1 - pattern.as.negation.suffix.len;
-            if (max_offset >= 0 && last_start > (int64_t)max_offset) last_start = (int64_t)max_offset;
-            if (cursor > (int64_t)target_len - pattern.as.negation.prefix.len - 1) {
-                start = -1;
-            } else {
-                int64_t suffix_start = cursor + pattern.as.negation.prefix.len + 1;
-                int64_t found_suffix = axiom_yara_find_next_compiled(bytes, target_len, &pattern.as.negation.suffix,
-                                                                      suffix_start,
-                                                                      last_start + pattern.as.negation.prefix.len + 1);
-                start = found_suffix < 0 ? -1 : found_suffix - pattern.as.negation.prefix.len - 1;
-                if (start >= 0 && start < cursor) start = -1;
-            }
-        }
+    while (cursor <= last_start) {
+        int64_t start = axiom_yara_hex_pattern_next_candidate((const uint8_t*)target, target_len,
+                                                               &pattern, cursor, last_start);
         if (start < 0) break;
-        int matched = 0;
-        int match_length = -1;
-        if (pattern.kind == 0) {
-            matched = axiom_yara_hex_compiled_match_at(bytes, target_len, &pattern.as.fixed, start);
-            if (matched) match_length = pattern.as.fixed.len;
-        } else if (pattern.kind == 1) {
-            matched = axiom_yara_hex_range_match_at(bytes, target_len, &pattern.as.range, start, &match_length);
-        } else if (pattern.kind == 2) {
-            for (int branch = 0; branch < pattern.as.alternation.branch_count; branch++) {
-                if (axiom_yara_hex_compiled_match_at(bytes, target_len, &pattern.as.alternation.branches[branch], start)) {
-                    matched = 1;
-                    match_length = pattern.as.alternation.common_len;
-                    break;
-                }
-            }
-        } else {
-            matched = axiom_yara_hex_negation_match_at(bytes, target_len, &pattern.as.negation, start);
-            if (matched) match_length = pattern.as.negation.prefix.len + 1 + pattern.as.negation.suffix.len;
-        }
+        int64_t match_length = -1;
+        int matched = axiom_yara_hex_pattern_match_at((const uint8_t*)target, target_len,
+                                                       &pattern, start, &match_length);
         if (matched) {
             seen++;
-        }
-        if (matched && occurrence > 0 && seen == occurrence) {
-            selected_length = match_length;
-            if (!return_length) {
-                axiom_yara_hex_pattern_free(&pattern);
-                return (ax_int)start;
+            if (occurrence > 0 && seen == occurrence) {
+                selected_length = match_length;
+                if (!return_length) {
+                    axiom_yara_hex_pattern_free(&pattern);
+                    return (ax_int)start;
+                }
+                break;
             }
-            break;
         }
         cursor = start + 1;
     }

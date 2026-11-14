@@ -13,9 +13,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   kalıplarını `hexast:v1` sürümlü bytecode'a normalize ediyor. C runtime programı
   sınırlarıyla doğrulayıp opcode'lardan occurrence modelini doğrudan kuruyor;
   eski doğrudan runtime API'leri için tag adaptörleri korunuyor.
-- Occurrence executor'ın kaynak sahipliği ve pattern türü tek
-  `AxiomYaraHexPattern` discriminated union'ında toplandı; dört ayrı local
-  matcher objesinin temizliği tek noktadan yürütülüyor.
+- Occurrence executor sabit byte, bounded jump, alternation ve negation'ı
+  `AxiomYaraHexAtom[]` sıralı modelinden yürütüyor. Legacy tag girişleri de
+  önce aynı atom modeline çevriliyor; jump suffix anchor hızlandırması korundu.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
