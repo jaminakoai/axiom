@@ -11,6 +11,7 @@
 #define AXIOM_RUNTIME_H
 
 #include "platform.h"
+#include <limits.h>
 
 /* ==== Linux'a özgü çekirdek arayüzleri (yalnızca Katman 3) ==== */
 #if defined(AXIOM_OS_LINUX)

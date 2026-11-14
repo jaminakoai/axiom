@@ -327,3 +327,8 @@ Sonraki tekilleştirme adımında parse edilmiş legacy range/negation
 `match_at` yardımcıları typed atom matcher'ına bağlandı. İlgili runtime ve
 diferansiyel testler **73/73** geçti; bu küçük follow-up için tam paket henüz
 tekrar çalıştırılmadı.
+
+`b0a86a6` CI'si portability derlemesinde eksik `<limits.h>` bağımlılığını
+buldu; standart başlık eklendi. Hata veren Windows-code-path portability testi
+**1/1**, ilişkili YARA runtime/diferansiyel testleri **73/73** geçti. Düzeltme
+sonrası tam CI yeniden çalıştırılacak.

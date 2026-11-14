@@ -20,6 +20,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   yönlendirildi; doğrudan çağıranlar için fonksiyon imzaları korundu.
 - Parse edilmiş range ve negation `match_at` girişleri de aynı atom
   eşleştiricisini kullanıyor; eski public runtime yardımcıları korunuyor.
+- Runtime'ın daraltılmış portability derlemesinde `INT_MAX` için gereken
+  standart `<limits.h>` başlığı eklendi.
 
 ### Testler
 - YARA occurrence runtime testleri signed 64-bit uç occurrence indekslerini ve
