@@ -95,6 +95,12 @@ def _compare(scanner, tmp_path, condition: str, target: bytes):
             b"P\x00A\x00BQ A\x00B".replace(b" ", b""),
         ),
         ("#a == 0 and filesize == 5", b"P\x00ABC"),
+        # Hexadecimal integer literals must behave like decimal values in
+        # occurrence, file-size, and offset expressions.
+        ("#a >= 0x2 and filesize == 0x6", b"A\x00BA\x00B"),
+        ("#a < 0x2 and filesize == 0x6", b"A\x00BA\x00B"),
+        ("$a in (0x1..0x2) and @a[1] == 0x1", b"zA\x00B"),
+        ("$a at 0x0", b"zA\x00B"),
     ],
 )
 def test_binary_occurrence_and_range_conditions_match_yara_454(

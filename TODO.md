@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-15 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1459 geçti, 0 hata, 0 atlandı (1336,18 sn) |
-| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: 465 geçti (232,78 sn) |
-| Son başarılı CI | `fe36b31` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1414 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti. Bu çalışma ağacındaki son 18 test CI için commit/push bekliyor |
+| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1468 geçti, 0 hata, 0 atlandı (1345,33 sn) |
+| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: 474 geçti (230,29 sn) |
+| Son başarılı CI | `0aff466` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1432 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti. Bu turdaki 9 yeni test CI için commit/push bekliyor |
 
 ---
 
@@ -234,8 +234,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 **G1 — Kalan YARA differential ve runtime limit kanıtları.** NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1459 geçti, 0 hata/skip**
-(1336,18 sn) verdi. YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **465 geçti** (232,78 sn). Yeni test dosyaları 18/18 geçti; tek satırlık geçerli YARA kural biçiminin Axiom tarafından reddedildiği ayrıca görüldü ve bu durum satır tabanlı parser sınırı olarak kaydedildi. `fe36b31` CI 7/7 başarılı (her Python matrix 1414 geçti/27 genel ortam skip’i; doküman testleri 55 geçti); mevcut çalışma ağacındaki yeni testler henüz bu CI’ya dahil değil. Daha geniş pattern/condition birleşimleri için kalan YARA diferansiyel kanıtı G1’de açık. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1468 geçti, 0 hata/skip**
+(1345,33 sn) verdi. YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **474 geçti** (230,29 sn). Bu turdaki 9 ilave oracle vakası 9/9 geçti: hexadecimal koşul tamsayıları ve bounded hex jump’ların NUL/overlap occurrence sınırları. Tek satırlık geçerli YARA kural biçiminin Axiom tarafından reddedildiği önceki turda belirlenip satır tabanlı parser sınırı olarak kaydedilmişti. `0aff466` CI 7/7 başarılı (her Python matrix 1432 geçti/27 genel ortam skip’i; doküman testleri 55 geçti); bu turdaki 9 test CI’ya henüz dahil değil. Daha geniş pattern/condition birleşimleri için kalan YARA diferansiyel kanıtı G1’de açık. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
 diğer durumlar açıkça reddedildiğinde ve oracle skip kalmadığında kapanır.
 
 ---
@@ -273,8 +273,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | Güncel çalışma ağacı: 1459 geçti, 0 hata, 0 atlandı (1336,18 sn) | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 465 geçti (232,78 sn) | G1 raporundaki komutlar |
+| Son tam test paketi | Güncel çalışma ağacı: 1468 geçti, 0 hata, 0 atlandı (1345,33 sn) | `python -m pytest -q -rs` |
+| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 474 geçti (230,29 sn) | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1117,8 +1117,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (güncel çalışma ağacı) | 1459 geçti, 0 hata/skip (1336,18 sn); CI fe36b31 7/7; son 18 çalışma ağacı testi CI bekliyor | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 465 geçti (232,78 sn) | — | — |
+| Son tam test (güncel çalışma ağacı) | 1468 geçti, 0 hata/skip (1345,33 sn); CI 0aff466 7/7; bu turdaki 9 yeni test CI bekliyor | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 474 geçti (230,29 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

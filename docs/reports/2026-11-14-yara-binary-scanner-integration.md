@@ -102,3 +102,16 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Önceki commit `fe36b31`, GitHub Actions run `43688747130` **7/7 başarılı**; her Python 3.10–3.13 işi 1414 geçti/27 genel ortam testi skip etti ve 55 doküman testi geçti. Bu run yeni 18 test eklenmeden önce oluştu; yeni değişikliklerin CI sonucu commit/push sonrasında doğrulanmalı.
 - `git diff --check` ve `make fmt-check` bu rapor güncellemesinden sonra tekrar çalıştırılacak.
 - G1 açık: daha geniş pattern/condition birleşimleri ve parser’ın tek satırlı yapı sınırı için çalışma devam etmeli.
+
+
+## G1 altıncı paralel turu — integer ve bounded-jump occurrence sınırları
+
+- Koşul denetim ajanı dört YARA 4.5.4 vakası önerdi: `0x` sayılarının `#a`, `filesize`, `@a[i]`, `at/in` içinde kullanımı; embedded-NUL binary hedeflerle eşleşmeler. `tests/test_yara_binary_condition_differential.py` bu dört vakayla genişletildi ve hedefli koşu geçti.
+- Hex denetim ajanı bounded jump + embedded NUL, bounded jump + overlap ve aynı başlangıçta en kısa geçerli instance seçimlerini doğruladı. `tests/test_yara_hex_typed_differential.py` beş vaka ile genişletildi; YARA oracle instance ofseti/uzunluğu ve Axiom witness sonucu karşılaştırıldı.
+- İki test grubundaki yeni vakalar **9/9 geçti**; hedefli birleşik iki dosya **35 geçti** (14,42 sn).
+- Birleşik odaklı YARA/scanner paketi: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **474 geçti** (230,29 sn).
+- Tam yerel paket: `python -m pytest -q -rs` — **1468 geçti, 0 hata, 0 atlandı** (1345,33 sn).
+- Son commit `0aff466`, GitHub Actions run `43691677198` **7/7 başarılı**; Python 3.10–3.13’de her iş 1432 geçti/27 genel ortam testi skip etti, doküman blokları 55 geçti. Bu turdaki 9 yeni test henüz CI’da değil; sonraki push sonrası doğrulanmalı.
+- README/doküman kontrolü: `python -m pytest -q tests/test_docs_en.py tests/test_docgen.py` — **25 geçti** (11,42 sn).
+- `git diff --check` ve `make fmt-check` — temiz.
+- G1 açık: desteklenen YARA davranışları için geniş diferansiyel kanıt, parser sınırları ve runtime maliyet limitleri tamamlanmalı.

@@ -123,3 +123,31 @@ def test_alternation_with_trailing_jump_occurrence_operators_match_yara(
     report = _axiom_scan(engines, tmp_path, source, target)
     assert report["match_count"] == (1 if expected_match else 0)
 
+
+@pytest.mark.parametrize(
+    ("pattern", "target", "condition", "expected_instances"),
+    [
+        # Bounded jumps over binary data must retain all occurrences and spans.
+        ("41 [1-2] 42", b"A\x00B A1B", "#a == 2", [(0, 3), (4, 3)]),
+        ("41 [1-2] 42", b"A\x00B A1B", "@a[2] == 4", [(0, 3), (4, 3)]),
+        # Overlapping variable-range matches use the same occurrence rules.
+        ("41 [1-2] 41", b"A1A1A", "#a == 2", [(0, 3), (2, 3)]),
+        ("41 [1-2] 41", b"A1A1A", "!a[2] == 3", [(0, 3), (2, 3)]),
+        # For multiple valid lengths at one start, both engines choose the
+        # shortest instance for the occurrence witness.
+        ("41 [1-3] 42", b"A1B2B", "#a == 1", [(0, 3)]),
+    ],
+)
+def test_bounded_jump_occurrences_match_yara_on_binary_and_overlap(
+    engines, tmp_path, pattern, target, condition, expected_instances
+):
+    source = _rule(pattern, condition)
+    reference = yara.compile(source=source).match(data=target)
+    assert _yara_instances(reference) == expected_instances
+
+    report = _axiom_scan(engines, tmp_path, source, target)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (
+        expected_instances[0]
+    )
+

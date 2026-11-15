@@ -40,7 +40,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
-- YARA 4.5.4 differential kapsamına binary condition/NUL sınırları için 14 vaka ve parser metadata, tag, yorum, literal/modifier davranışı için 4 vaka eklendi. Yeni 18 vaka ve birleşik 465 testlik YARA/scanner paketi geçti; tam yerel paket 1459 testte hatasız tamamlandı.
+- YARA 4.5.4 diferansiyel kapsamı hexadecimal tamsayılarla filesize/occurrence/ofset koşullarını ve bounded hex jump’ların NUL içeren/örtüşen hedeflerde occurrence sayısı, ofseti ve uzunluğunu kapsayacak şekilde genişletildi. Bu turdaki 9 yeni vaka ve toplam 474 YARA/scanner testi geçti.
+- Önceki turda YARA 4.5.4 differential kapsamına binary condition/NUL sınırları için 14 vaka ve parser metadata, tag, yorum, literal/modifier davranışı için 4 vaka eklendi. Yeni 18 vaka ve birleşik 465 testlik YARA/scanner paketi geçti; tam yerel paket 1459 testte hatasız tamamlandı.
 - Parser kapsam notu: geçerli tek satırlık inline YARA kuralı biçimi, satır tabanlı parser nedeniyle reddediliyor; multiline kural biçimi destekleniyor.
 - Grup selector overlap/duplicate ve `at/in` sınırları için YARA 4.5.4 differential testleri; typed AST opcode, jump, alternation, negation ve 8 KiB encoding sınır testleri; birleşik filesize/boolean koşulları, C/LLVM buffer sınır paritesi, typed hex AST ve NUL/yüksek-byte metin edge differential vakaları eklendi.
 - Geliştirme bağımlılıklarına `yara-python==4.5.4` eklendi; koşul diferansiyel
