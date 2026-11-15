@@ -90,3 +90,15 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Son birleşik odaklı paket: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **447 geçti** (237,45 sn).
 - Son tam yerel paket: `python -m pytest -q -rs` — **1441 geçti, 0 hata, 0 atlandı** (1343,27 sn).
 - `git diff --check` ve `make fmt-check` temiz. Yeni test dosyaları için CI, commit push sonrasında doğrulanmalı.
+
+
+## G1 beşinci paralel turu — binary condition ve parser yapısı
+
+- `tests/test_yara_binary_condition_differential.py`: 14 YARA 4.5.4 oracle vakası; embedded-NUL binary pattern, `#a`, `@a[i]`, `!a[i]`, `at/in`, filesize ve boolean birleşimleri. **14/14 geçti**.
+- `tests/test_yara_parser_structure_differential.py`: metadata/tags ve satır sonu yorumları için 1 vaka; literal ve modifier davranışı için 3 vaka. **4/4 geçti**. İki yeni test dosyası birlikte **18/18 geçti**.
+- Test tasarımı sırasında YARA’nın kabul ettiği `rule Inline { strings: ... condition: ... }` biçiminin Axiom’da `gecersiz rule etiketi` hatasıyla reddedildiği bulundu. Kök neden parser’ın satır tabanlı olması; yalnızca etiket kontrolünü değiştirmek sonraki bölümlerin/kapama ayrıştırmasının sorununu çözmez. Bozuk olabilecek bir normalizasyon eklenmedi. Inline tek satırlık kural biçimi mevcut destek sınırı olarak kaydedildi.
+- Birleşik odaklı paket: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **465 geçti** (232,78 sn).
+- Tam yerel paket: `python -m pytest -q -rs` — **1459 geçti, 0 hata, 0 atlandı** (1336,18 sn).
+- Önceki commit `fe36b31`, GitHub Actions run `43688747130` **7/7 başarılı**; her Python 3.10–3.13 işi 1414 geçti/27 genel ortam testi skip etti ve 55 doküman testi geçti. Bu run yeni 18 test eklenmeden önce oluştu; yeni değişikliklerin CI sonucu commit/push sonrasında doğrulanmalı.
+- `git diff --check` ve `make fmt-check` bu rapor güncellemesinden sonra tekrar çalıştırılacak.
+- G1 açık: daha geniş pattern/condition birleşimleri ve parser’ın tek satırlı yapı sınırı için çalışma devam etmeli.

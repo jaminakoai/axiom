@@ -604,15 +604,17 @@ düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary s
 kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
-**1441 geçti, 0 hata/skip** (1343,27 sn). Güncel YARA/scanner/differential/stress/
-backend parity paketi **447 geçti** (237,45 sn). Son tamamlanan GitHub Actions
-`3c5668e` için **7/7 iş başarılı**; Python 3.10–3.13 matrix’inde yara-python
-4.5.4 kuruldu ve oracle testleri çalıştı. Bu turdaki yeni testler için CI bekleniyor.
+**1459 geçti, 0 hata/skip** (1336,18 sn). Güncel YARA/scanner/differential/stress/
+backend parity paketi **465 geçti** (232,78 sn). Son tamamlanan GitHub Actions
+`fe36b31` için **7/7 iş başarılı**; Python 3.10–3.13 matrix’inde her işte 1414 test
+geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti. Bu çalışma ağacındaki
+yeni 18 test henüz bu CI koşusuna dahil değil; commit/push sonrası doğrulanacak.
+YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`3c5668e` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`fe36b31` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -621,8 +623,9 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43634432087` (`master`, SHA `3c5668e`); Python 3.10–3.13
-matrisindeki her iş 1396 test geçti, 27 genel ortam testi atlandı.
+Son doğrulanan koşu: `43688747130` (`master`, SHA `fe36b31`); Python 3.10–3.13
+matrisindeki her iş 1414 test geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti.
+Bu koşu çalışma ağacındaki son 18 diferansiyel test eklenmeden önce tamamlandı.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 

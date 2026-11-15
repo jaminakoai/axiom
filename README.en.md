@@ -609,15 +609,17 @@ for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
-**1441 passed, 0 failed/skipped** (1343.27 s). The current YARA/scanner/differential/stress/backend-parity
-suite passed **447 tests** (237.45 s). The latest completed GitHub Actions run for
-`3c5668e` passed **7/7 jobs**; yara-python 4.5.4 was installed and the oracle tests ran
-in the Python 3.10–3.13 matrix. CI for this round’s new tests is pending push.
+**1459 passed, 0 failed/skipped** (1336.18 s). The current YARA/scanner/differential/stress/backend-parity
+suite passed **465 tests** (232.78 s). The latest completed GitHub Actions run for
+`fe36b31` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1414 tests, skipped 27
+general environment tests, and passed 55 documentation tests. The 18 tests in the current
+working tree are not part of that run and need CI verification after commit/push.
+The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `3c5668e`:
+All 7 jobs passed in the latest completed run for commit `fe36b31`:
 
 | Job | Status |
 |---|---|
@@ -626,8 +628,9 @@ All 7 jobs passed in the latest completed run for commit `3c5668e`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43634432087` (`master`, SHA `3c5668e`); each Python 3.10–3.13
-job passed 1396 tests and reported 27 general environment skips.
+Last verified run: `43688747130` (`master`, SHA `fe36b31`); each Python 3.10–3.13
+job passed 1414 tests, skipped 27 general environment tests, and passed 55 documentation tests.
+That run completed before the 18 new differential tests in the current working tree were added.
 
 Six root causes fixed on the way here (details: report §9–§12):
 
