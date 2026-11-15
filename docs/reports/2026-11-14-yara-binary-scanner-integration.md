@@ -154,3 +154,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Birleşik YARA/scanner paketi **486 geçti** (232,88 sn); tam yerel paket **1480 geçti, 0 hata, 0 atlandı** (1486,83 sn).
 - Önceki commit `342b21d`, GitHub Actions run `43710390385` **7/7 başarılı**; Python 3.10–3.13’de her iş 1450 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki 3 test henüz CI’da değil.
 - G1 açık: geniş diferansiyel kanıt ve bilinen multiline parser kısıtları/runtime limit çalışmaları sürüyor.
+
+
+## G1 on birinci paralel turu — escaped metadata ve alternation parity
+
+- Parser ajanı escaped metadata değerlerini doğruladı: quote (`\"`), Windows path backslash’ları ve `\n` newline metadata’sı YARA 4.5.4 ile aynı JSON değerlerine çözülüyor. `tests/test_yara_parser_structure_differential.py` içine eklendi.
+- Runtime ajanı `{ 4? ( 42 | 44 ) [1] 45 }` pattern’ini NUL içeren hedefte `#/@/!` koşullarıyla doğruladı. YARA iki instance `(0,4),(4,4)` buluyor; C ve LLVM raporları eşit. `tests/test_yara_condition_backend_parity.py` içine eklendi.
+- İki hedefli dosya **9 geçti** (18,12 sn); yeni vakalar **2/2 geçti**.
+- Birleşik YARA/scanner paketi **488 geçti** (222,70 sn); tam yerel paket **1482 geçti, 0 hata/skip** (1345,34 sn).
+- Önceki commit `b923830`, GitHub Actions run `43727336970` **7/7 başarılı**; her Python 3.10–3.13 işi 1453 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki iki test henüz CI’da çalışmadı.
+- G1 açık: test kapsamı, parser layout sınırları ve runtime limit kanıtları devam ediyor.

@@ -169,3 +169,44 @@ rule MaskJumpOccurrence {
         assert (witness["offset"], witness["length"]) == (0, 3)
 
     assert reports["c"] == reports["llvm"]
+
+
+def test_alternation_gap_nul_occurrences_have_backend_parity(scanners, tmp_path):
+    rules_source = '''
+rule AlternationGapNul {
+ strings:
+  $a = { 4? ( 42 | 44 ) [1] 45 }
+ condition:
+  #a == 2 and @a[2] == 4 and !a[2] == 4
+}
+'''
+    payload = bytes.fromhex("4A 42 00 45 4B 44 FF 45")
+    reference = yara.compile(source=rules_source).match(data=payload)
+    assert len(reference) == 1
+    assert [
+        (instance.offset, instance.matched_length)
+        for item in reference[0].strings
+        for instance in getattr(item, "instances", [])
+    ] == [(0, 4), (4, 4)]
+
+    rules_path = tmp_path / "alternation-gap-nul.yar"
+    target_path = tmp_path / "alternation-gap-nul.bin"
+    rules_path.write_text(rules_source, encoding="utf-8")
+    target_path.write_bytes(payload)
+
+    reports = {}
+    for backend, executable in scanners.items():
+        scanned = subprocess.run(
+            [str(executable), "scan", str(target_path), "--rules", str(rules_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert scanned.returncode == 0, scanned.stdout + scanned.stderr
+        reports[backend] = json.loads(scanned.stdout)
+        assert reports[backend]["match_count"] == 1
+        assert reports[backend]["scanned_bytes"] == len(payload)
+        match = reports[backend]["matches"][0]
+        assert (match["offset"], match["length"]) == (0, 4)
+
+    assert reports["c"] == reports["llvm"]

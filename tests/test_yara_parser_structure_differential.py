@@ -99,6 +99,29 @@ rule MetaNumbers : triage {
     assert match["meta"] == {"negative": -7, "hexadecimal": 42}
 
 
+def test_escaped_metadata_strings_match_yara(scanner, tmp_path):
+    source = r'''
+rule MetaEscapes : triage {
+  meta:
+    quoted = "say: \"hello\""
+    path = "C:\\Windows\\System32"
+    multiline = "first\nsecond"
+  strings:
+    $a = "needle"
+  condition:
+    $a
+}
+'''
+    report = _compare(scanner, tmp_path, source, b"needle")
+    match = report["matches"][0]
+    assert match["tags"] == ["triage"]
+    assert match["meta"] == {
+        "quoted": 'say: "hello"',
+        "path": "C:\\Windows\\System32",
+        "multiline": "first\nsecond",
+    }
+
+
 @pytest.mark.parametrize(
     ("pattern", "target"),
     [
