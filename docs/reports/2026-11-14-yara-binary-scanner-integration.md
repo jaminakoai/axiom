@@ -124,3 +124,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Tam yerel paket: `python -m pytest -q -rs` — **1471 geçti, 0 hata, 0 atlandı** (1353,33 sn).
 - Önceki commit `3a6b42c`, GitHub Actions run `43700896871` **7/7 başarılı**; her Python 3.10–3.13 işi 1441 geçti/27 genel ortam skip’i verdi, doküman testleri 55 geçti. Bu turdaki 3 yeni test henüz CI’da değil.
 - G1 açık: test kapsamı genişletiliyor; bilinen inline-rule parser sınırı ve runtime bütçeleri kapatılmadı.
+
+
+## G1 sekizinci paralel turu — mask/jump birleşimi ve fail-closed koşul
+
+- Hex denetim ajanı `4? [0-1] ?2` pattern’ini üç hedefte doğruladı: nibble wildcard + bounded jump + embedded NUL eşleşmesi, sıfır uzunluklu jump eşleşmesi ve yanlış nibble near-miss. YARA 4.5.4 instance offset/length değerleri Axiom ile aynı; üç vaka eklendi.
+- Condition denetimi YARA’nın kabul ettiği negatif sayı (`filesize > -1`) sözdiziminin Axiom alt kümesinde desteklenmediğini not etti. Sessiz yanlış karar olmaması için mevcut unsupported-condition ret testine bu koşul eklendi.
+- Bu turdaki dört yeni test **4/4 geçti**; hedefli test dosyaları **23 geçti** (15,42 sn).
+- Birleşik YARA/scanner paketi: **481 geçti** (224,32 sn). Tam yerel paket: **1475 geçti, 0 hata, 0 atlandı** (1349,95 sn).
+- Önceki commit `25dd23a`, GitHub Actions run `43704119797` **7/7 başarılı**; Python 3.10–3.13’de her iş 1444 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki dört test CI’da henüz çalışmadı.
+- G1 açık: yeni testler ve açık kapsam retleri devam ediyor; tek satırlı kural parser desteği ve runtime limit bütçeleri hâlâ çözülmedi.

@@ -74,6 +74,9 @@ def test_rules_command_counts(scanner, tmp_path):
 @pytest.mark.parametrize("condition", [
     "entrypoint",
     "uint16(0) == 0x5A4D",
+    # YARA accepts signed integer literals, but this subset deliberately
+    # rejects unary numeric operators instead of silently mis-evaluating them.
+    "filesize > -1",
 ])
 def test_unsupported_conditions_are_rejected_instead_of_defaulting_to_any(scanner, tmp_path, condition):
     rules = tmp_path / "unsupported.yar"

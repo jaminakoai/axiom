@@ -151,3 +151,26 @@ def test_bounded_jump_occurrences_match_yara_on_binary_and_overlap(
         expected_instances[0]
     )
 
+
+@pytest.mark.parametrize(
+    ("target", "expected_instances"),
+    [
+        (bytes.fromhex("4A 00 52"), [(0, 3)]),
+        (bytes.fromhex("4A 52"), [(0, 2)]),
+        (bytes.fromhex("3A 00 52"), []),
+    ],
+)
+def test_nibble_masks_around_bounded_jump_match_yara(
+    engines, tmp_path, target, expected_instances
+):
+    source = _rule("4? [0-1] ?2")
+    reference = yara.compile(source=source).match(data=target)
+    assert _yara_instances(reference) == expected_instances
+
+    report = _axiom_scan(engines, tmp_path, source, target)
+    assert report["match_count"] == (1 if expected_instances else 0)
+    if expected_instances:
+        assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (
+            expected_instances[0]
+        )
+
