@@ -115,3 +115,12 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - README/doküman kontrolü: `python -m pytest -q tests/test_docs_en.py tests/test_docgen.py` — **25 geçti** (11,42 sn).
 - `git diff --check` ve `make fmt-check` — temiz.
 - G1 açık: desteklenen YARA davranışları için geniş diferansiyel kanıt, parser sınırları ve runtime maliyet limitleri tamamlanmalı.
+
+
+## G1 yedinci paralel turu — negated range ve boş hedef
+
+- Condition denetim ajanı `not $a at 0`, `not $a in (0..0)` ve `filesize == 0 and #a == 0` için üç vaka önerdi. Bunlar binary pattern ve sıfır baytlı target ile `tests/test_yara_binary_condition_differential.py` içine eklendi; `yara-python==4.5.4` oracle ile **3/3 geçti**.
+- Hedefli condition dosyası **21 geçti** (8,99 sn); birleşik YARA/scanner paketi **477 geçti** (231,34 sn).
+- Tam yerel paket: `python -m pytest -q -rs` — **1471 geçti, 0 hata, 0 atlandı** (1353,33 sn).
+- Önceki commit `3a6b42c`, GitHub Actions run `43700896871` **7/7 başarılı**; her Python 3.10–3.13 işi 1441 geçti/27 genel ortam skip’i verdi, doküman testleri 55 geçti. Bu turdaki 3 yeni test henüz CI’da değil.
+- G1 açık: test kapsamı genişletiliyor; bilinen inline-rule parser sınırı ve runtime bütçeleri kapatılmadı.

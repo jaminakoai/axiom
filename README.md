@@ -604,17 +604,17 @@ düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary s
 kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
-**1468 geçti, 0 hata/skip** (1345,33 sn). Güncel YARA/scanner/differential/stress/
-backend parity paketi **474 geçti** (230,29 sn). Son tamamlanan GitHub Actions
-`0aff466` için **7/7 iş başarılı**; Python 3.10–3.13 matrix’inde her işte 1432 test
-geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti. Bu turdaki 9 yeni
+**1471 geçti, 0 hata/skip** (1353,33 sn). Güncel YARA/scanner/differential/stress/
+backend parity paketi **477 geçti** (231,34 sn). Son tamamlanan GitHub Actions
+`3a6b42c` için **7/7 iş başarılı**; Python 3.10–3.13 matrix’inde her işte 1441 test
+geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti. Bu turdaki 3 yeni
 diferansiyel test henüz bu CI koşusuna dahil değil; commit/push sonrası doğrulanacak.
 YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`0aff466` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`3a6b42c` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -623,9 +623,9 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43691677198` (`master`, SHA `0aff466`); Python 3.10–3.13
-matrisindeki her iş 1432 test geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti.
-Bu koşu bu turdaki 9 ek diferansiyel test eklenmeden önce tamamlandı.
+Son doğrulanan koşu: `43700896871` (`master`, SHA `3a6b42c`); Python 3.10–3.13
+matrisindeki her iş 1441 test geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti.
+Bu koşu bu turdaki 3 ek diferansiyel test eklenmeden önce tamamlandı.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 

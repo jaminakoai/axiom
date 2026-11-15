@@ -101,6 +101,11 @@ def _compare(scanner, tmp_path, condition: str, target: bytes):
         ("#a < 0x2 and filesize == 0x6", b"A\x00BA\x00B"),
         ("$a in (0x1..0x2) and @a[1] == 0x1", b"zA\x00B"),
         ("$a at 0x0", b"zA\x00B"),
+        # Unary negation composes with offset-restricted pattern terms.
+        ("not $a at 0 and filesize == 4", b"zA\x00B"),
+        ("not $a in (0..0) and filesize == 4", b"zA\x00B"),
+        # A zero-byte target is still a valid scan input for filesize/count.
+        ("filesize == 0 and #a == 0", b""),
     ],
 )
 def test_binary_occurrence_and_range_conditions_match_yara_454(

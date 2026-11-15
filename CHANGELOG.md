@@ -40,6 +40,7 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- `not` + `at/in` koşul bileşimleri ve sıfır baytlı hedef için üç YARA 4.5.4 oracle vakası eklendi; üçü de geçti.
 - YARA 4.5.4 diferansiyel kapsamı hexadecimal tamsayılarla filesize/occurrence/ofset koşullarını ve bounded hex jump’ların NUL içeren/örtüşen hedeflerde occurrence sayısı, ofseti ve uzunluğunu kapsayacak şekilde genişletildi. Bu turdaki 9 yeni vaka ve toplam 474 YARA/scanner testi geçti.
 - Önceki turda YARA 4.5.4 differential kapsamına binary condition/NUL sınırları için 14 vaka ve parser metadata, tag, yorum, literal/modifier davranışı için 4 vaka eklendi. Yeni 18 vaka ve birleşik 465 testlik YARA/scanner paketi geçti; tam yerel paket 1459 testte hatasız tamamlandı.
 - Parser kapsam notu: geçerli tek satırlık inline YARA kuralı biçimi, satır tabanlı parser nedeniyle reddediliyor; multiline kural biçimi destekleniyor.
