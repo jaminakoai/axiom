@@ -98,6 +98,8 @@ def _compare(scanner, tmp_path, condition: str, target: bytes) -> bool:
         ("all of ($a*) in (6..10) and filesize == 16", b"xxxxxxalpha beta", False),
         ("2 of ($a*) in (6..15) and filesize == 16", b"xxxxxxalpha beta", True),
         ("2 of ($a*) in (7..15) and filesize == 16", b"xxxxxxalpha beta", False),
+        # Selector overlap counting remains correct under an offset suffix.
+        ("2 of ($a*, $a1) at 6", b"xxxxxxalpha", True),
         # `them` selectors and zero-of edge behavior remain composable too.
         ("none of them and filesize == 5", b"delta", True),
         ("0 of them or filesize == 5", b"alpha", True),

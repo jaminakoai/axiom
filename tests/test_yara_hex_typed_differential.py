@@ -174,3 +174,21 @@ def test_nibble_masks_around_bounded_jump_match_yara(
             expected_instances[0]
         )
 
+
+def test_negated_byte_occurrences_after_embedded_nul_match_yara(
+    engines, tmp_path
+):
+    pattern = "41 00 ~42 44"
+    target = bytes.fromhex("41 00 43 44 41 00 42 44 41 00 45 44")
+    condition = "#a == 2 and @a[2] == 8 and !a[2] == 4"
+    source = _rule(pattern, condition)
+    reference = yara.compile(source=source).match(data=target)
+    assert _yara_instances(reference) == [(0, 4), (8, 4)]
+
+    report = _axiom_scan(engines, tmp_path, source, target)
+    assert report["match_count"] == 1
+    assert (report["matches"][0]["offset"], report["matches"][0]["length"]) == (
+        0,
+        4,
+    )
+

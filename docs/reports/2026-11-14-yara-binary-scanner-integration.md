@@ -164,3 +164,12 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Birleşik YARA/scanner paketi **488 geçti** (222,70 sn); tam yerel paket **1482 geçti, 0 hata/skip** (1345,34 sn).
 - Önceki commit `b923830`, GitHub Actions run `43727336970` **7/7 başarılı**; her Python 3.10–3.13 işi 1453 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki iki test henüz CI’da çalışmadı.
 - G1 açık: test kapsamı, parser layout sınırları ve runtime limit kanıtları devam ediyor.
+
+
+## G1 on ikinci paralel turu — selector overlap ve NUL/negation
+
+- Condition denetim ajanı `2 of ($a*, $a1) at 6` koşulunu doğruladı: overlap sayımı offset suffix’iyle birlikte YARA 4.5.4 ve Axiom’da true. `tests/test_yara_condition_combinations.py` içine diferansiyel vaka eklendi.
+- Hex denetim ajanı `{ 41 00 ~42 44 }` pattern’ini embedded-NUL hedefte doğruladı: YARA instance’ları `(0,4),(8,4)`; orta aday negated byte nedeniyle eleniyor. `#a/@a[i]/!a[i]` koşullarıyla Axiom witness sonucu YARA ile aynı. `tests/test_yara_hex_typed_differential.py` içine eklendi.
+- İki yeni vaka ve hedefli test dosyaları **43/43 geçti** (13,92 sn). Birleşik YARA/scanner paketi **490 geçti** (225,68 sn), tam yerel paket **1484 geçti, 0 hata/skip** (1348,87 sn).
+- Önceki commit `a4f3166`, CI run `43738079067` **7/7 başarılı**; Python 3.10–3.13 her biri 1455 geçti/27 genel ortam testi atladı; doküman blokları 55 geçti. Bu turdaki iki yeni test henüz CI’da değil.
+- G1 açık: diferansiyel kapsam genişletiliyor; YARA parser’ın bilinen tek satırlı rule sınırı ve runtime limit kanıtları sürüyor.

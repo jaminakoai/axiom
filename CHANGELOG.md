@@ -40,6 +40,7 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- YARA selector-overlap sayımının offset suffix’iyle birleşimi ve NUL içeren hedeflerde negated-byte occurrence semantiği için iki differential testi eklendi; ikisi de geçti.
 - YARA metadata içindeki quote/backslash/newline kaçışlarının çözülmesi ve embedded-NUL alternation occurrence’larında C/LLVM eşitliği için iki oracle testi eklendi; ikisi de geçti.
 - `nocase + fullword` occurrence taramasının high-byte/NUL sınırlarında doğru kalması ve `not` ile gruplu `at` koşulunun precedence davranışı için üç YARA 4.5.4 differential testi eklendi; üçü de geçti.
 - Typed hex’in embedded-NUL occurrence koşullarında C/LLVM parity’si ve signed/hex metadata değerleri için iki yeni diferansiyel test eklendi; ikisi de geçti.
