@@ -89,6 +89,10 @@ def _compare(scanner, tmp_path, condition: str, target: bytes) -> bool:
         # checked on the same target.
         ("not (any of ($a*) at 0) and filesize == 11", b"xxxxxxalpha", True),
         ("not (any of ($a*) at 6) and filesize == 11", b"xxxxxxalpha", False),
+        # Unary not directly wraps a selector whose offset suffix is applied
+        # after the group expression.
+        ("not any of ($a*) at 0 and filesize == 11", b"xxxxxxalpha", True),
+        ("not any of ($a*) at 6 and filesize == 11", b"xxxxxxalpha", False),
         ("all of ($a*) in (6..15) and filesize == 16", b"xxxxxxalpha beta", True),
         ("all of ($a*) in (6..10) or filesize == 16", b"xxxxxxalpha beta", True),
         ("all of ($a*) in (6..10) and filesize == 16", b"xxxxxxalpha beta", False),

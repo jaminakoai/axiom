@@ -144,3 +144,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Birleşik YARA/scanner paketi **483 geçti** (223,16 sn); tam yerel paket **1477 geçti, 0 hata/skip** (1338,52 sn).
 - Önceki commit `4098a19`, CI run `43706653949` **7/7 başarılı**; Python 3.10–3.13’de her biri 1448 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki iki yeni test henüz CI’da değil.
 - G1 açık kalıyor; bilinen tek satırlı rule parser sınırı, daha geniş destek matrisi ve runtime limit kanıtları sonraki işlerde ele alınacak.
+
+
+## G1 onuncu paralel turu — modifier occurrence ve negated group offset
+
+- Modifier denetim ajanı `$a = "aba" nocase fullword`, `#a == 2 and @a[2] == 5 and !a[2] == 3` koşulunu yüksek byte/NUL içeren hedefte doğruladı. YARA 4.5.4 iki instance `(1,3),(5,3)` buluyor; Axiom aynı sayıyı ve byte witness offset/length’ini raporluyor. `tests/test_yara_text_buffer_edges.py` içine eklendi.
+- Condition denetim ajanı unary `not` altında doğrudan `at` suffix’i olan selector grubunu doğruladı: offset 0 için true, offset 6 için false. İki YARA 4.5.4 vakası `tests/test_yara_condition_combinations.py` içine eklendi.
+- Yeni vakalar **3/3 geçti**; iki hedefli dosya **28 geçti** (13,86 sn).
+- Birleşik YARA/scanner paketi **486 geçti** (232,88 sn); tam yerel paket **1480 geçti, 0 hata, 0 atlandı** (1486,83 sn).
+- Önceki commit `342b21d`, GitHub Actions run `43710390385` **7/7 başarılı**; Python 3.10–3.13’de her iş 1450 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki 3 test henüz CI’da değil.
+- G1 açık: geniş diferansiyel kanıt ve bilinen multiline parser kısıtları/runtime limit çalışmaları sürüyor.

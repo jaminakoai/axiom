@@ -105,6 +105,14 @@ def _compare(scanner, tmp_path, pattern: str, condition: str, target: bytes):
         ),
         # UTF-8 bytes before the match must not be counted as one character.
         ("needle", "ascii nocase", "$a at 2", b"\xc3\xa9NEEDLE\x00"),
+        # Combined nocase/fullword instances retain byte offsets across high
+        # bytes and NUL boundaries; the trailing digit blocks a third match.
+        (
+            "aba",
+            "nocase fullword",
+            "#a == 2 and @a[2] == 5 and !a[2] == 3",
+            bytes.fromhex("FF 41 42 61 00 61 42 61 FF 41 61 62 61 39"),
+        ),
     ],
 )
 def test_binary_text_edges_match_yara_454(
