@@ -100,4 +100,14 @@ def test_typed_executor_64mib_near_match_suffix_stress():
     assert returncode == 0, stdout + stderr
     assert "count=17" in stdout
     assert "suffix_bytes=999" in stdout
-    print(stdout.strip())
+    # Keep this adversarial fixture as a bounded performance regression gate.
+    # The baseline is about 1.5 s on the reference development machine; the
+    # 15 s ceiling leaves room for slower CI hosts while catching a major
+    # candidate × suffix rescanning regression. The subprocess also has a
+    # 30 s hard timeout as a final guard.
+    measured = next(
+        (field.split("=", 1)[1] for field in stdout.split() if field.startswith("seconds=")),
+        None,
+    )
+    assert measured is not None, stdout
+    assert float(measured) <= 15.0, stdout

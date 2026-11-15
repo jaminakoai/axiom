@@ -40,6 +40,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- 64 MiB/999-byte suffix YARA typed-executor near-match regresyonuna 15 saniyelik
+  ölçülen runtime eşiği eklendi (30 saniyelik subprocess timeout korunur).
 - Hex occurrence doğrudan runtime harness’i `INT64_MIN` min ve max offset sınırlarını da kapsıyor; ikisi de signed offset aritmetiğine ulaşmadan fail-closed biçimde reddediliyor.
 - YARA selector-overlap sayımının offset suffix’iyle birleşimi ve NUL içeren hedeflerde negated-byte occurrence semantiği için iki differential testi eklendi; ikisi de geçti.
 - YARA metadata içindeki quote/backslash/newline kaçışlarının çözülmesi ve embedded-NUL alternation occurrence’larında C/LLVM eşitliği için iki oracle testi eklendi; ikisi de geçti.
