@@ -40,7 +40,7 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
-- Grup selector overlap/duplicate ve `at/in` sınırları için YARA 4.5.4 differential testleri; typed AST opcode, jump, alternation, negation ve 8 KiB encoding sınır testleri; birleşik filesize/boolean koşulları ve C/LLVM buffer sınır paritesi eklendi.
+- Grup selector overlap/duplicate ve `at/in` sınırları için YARA 4.5.4 differential testleri; typed AST opcode, jump, alternation, negation ve 8 KiB encoding sınır testleri; birleşik filesize/boolean koşulları, C/LLVM buffer sınır paritesi, typed hex AST ve NUL/yüksek-byte metin edge differential vakaları eklendi.
 - Geliştirme bağımlılıklarına `yara-python==4.5.4` eklendi; koşul diferansiyel
   testleri artık bu YARA oracle sürümünü zorunlu olarak doğrular.
 - Typed hex executor için 64 MiB/999-byte suffix near-match stres testi eklendi.

@@ -80,3 +80,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Son birleşik odaklı paket: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **429 geçti** (212,34 sn).
 - Son tam yerel paket: `python -m pytest -q -rs` — **1423 geçti, 0 hata, 0 atlandı** (1322,14 sn).
 - `20d3fa6` CI, bu turdaki iki yeni test dosyası eklenmeden önce 7/7 başarılıydı. Yeni test commit’inin CI’si push sonrasında doğrulanmalı.
+
+
+## G1 dördüncü paralel turu — typed hex ve text buffer edge’leri
+
+- CI ajanı `3c5668e` run `43634432087` **7/7 başarılı** olarak doğruladı; Python 3.10–3.13’te her job 1396 geçti / 27 genel ortam skip’i raporladı.
+- `tests/test_yara_hex_typed_differential.py`: 12 YARA 4.5.4 karşılaştırması; alternation öncesi/sonrası sabit gap, wrong-gap near miss, çoklu occurrence ve `#/@/!`. **12 geçti**, mismatch yok.
+- `tests/test_yara_text_buffer_edges.py`: 6 YARA 4.5.4 karşılaştırması; NUL/yüksek-byte sınırları, `nocase`, `fullword`, overlap count/offset ve UTF-8 prefix sonrası byte offset’i. **6 geçti**, mismatch yok.
+- Son birleşik odaklı paket: `python -m pytest -q tests/test_yara_*.py tests/test_axiom_scan.py tests/test_real_yara_engine.py` — **447 geçti** (237,45 sn).
+- Son tam yerel paket: `python -m pytest -q -rs` — **1441 geçti, 0 hata, 0 atlandı** (1343,27 sn).
+- `git diff --check` ve `make fmt-check` temiz. Yeni test dosyaları için CI, commit push sonrasında doğrulanmalı.
