@@ -173,3 +173,11 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - İki yeni vaka ve hedefli test dosyaları **43/43 geçti** (13,92 sn). Birleşik YARA/scanner paketi **490 geçti** (225,68 sn), tam yerel paket **1484 geçti, 0 hata/skip** (1348,87 sn).
 - Önceki commit `a4f3166`, CI run `43738079067` **7/7 başarılı**; Python 3.10–3.13 her biri 1455 geçti/27 genel ortam testi atladı; doküman blokları 55 geçti. Bu turdaki iki yeni test henüz CI’da değil.
 - G1 açık: diferansiyel kapsam genişletiliyor; YARA parser’ın bilinen tek satırlı rule sınırı ve runtime limit kanıtları sürüyor.
+
+
+## G1 on üçüncü tur — signed alt sınır
+
+- G1 runtime denetimi doğrudan occurrence C harness’inde `INT64_MIN` için min offset ve max offset ret kanıtının eksik olduğunu buldu. `tests/test_yara_runtime_hex_occurrences.py` içine iki kontrol eklendi: her iki giriş de `-1` sentinel’inden ayrı değerlendirilip offset aritmetiği yapılmadan `-1` olarak reddediliyor.
+- Hedefli runtime testi: **1 geçti** (1,24 sn). Birleşik YARA/scanner paketi **490 geçti** (223,89 sn); tam yerel paket **1484 geçti, 0 hata/skip** (1344,44 sn).
+- Önceki commit `058484e`, CI run `43742268638` **7/7 başarılı**; Python 3.10–3.13 her biri 1457 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. `INT64_MIN` eklemesi bu CI koşusundan sonra geldi.
+- G2 için paralel denetim, Trellix Yara-Rules Apache-2.0 sabit kaynaklı corpus önerisi hazırladı; G1 kapısı kapanmadan G2 uygulamasına geçilmedi.

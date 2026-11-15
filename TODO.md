@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-15 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1484 geçti, 0 hata, 0 atlandı (1348,87 sn) |
-| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: 490 geçti (225,68 sn) |
-| Son başarılı CI | `a4f3166` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1455 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti. Bu turdaki 2 yeni test CI için commit/push bekliyor |
+| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1484 geçti, 0 hata, 0 atlandı (1344,44 sn) |
+| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: 490 geçti (223,89 sn) |
+| Son başarılı CI | `058484e` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1457 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti. Bu turdaki runtime sınır kontrolü CI için commit/push bekliyor |
 
 ---
 
@@ -122,7 +122,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   öncesi kalan doğrudan runtime erişimleri ve limit/oracle kanıtları denetlenmeli.
   Mevcut sınırlar (`8 KiB`, jump 64, span 16, alternation 4×16) korunmalı;
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
-  doğrulanmalı. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
+  doğrulanmalı. `INT64_MIN` min/max offset de doğrudan C runtime testinde
+  `-1` sentinel değerinden ayrı olarak açıkça reddedildi. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
   API içinde optimizasyon olarak korunabilir. Performance bütçesi benchmark ile
   belirlenecek; hedefe göre sınırsız `candidate × atom × gap` taraması kabul
   edilmez.
@@ -235,7 +236,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
 overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1484 geçti, 0 hata/skip**
-(1348,87 sn) verdi. YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti** (225,68 sn). Bu turda selector overlap’in `at` suffix’iyle birlikte değerlendirilmesi ve NUL içeren hedefte negated-byte occurrence sayımı/ofseti/uzunluğu için iki YARA 4.5.4 testi eklendi; **2/2 geçti**. Tek satırlık geçerli YARA kural biçiminin Axiom tarafından reddedildiği önceki turda belirlenip satır tabanlı parser sınırı olarak kaydedilmişti. `a4f3166` CI 7/7 başarılı (her Python matrix 1455 geçti/27 genel ortam skip’i; doküman testleri 55 geçti); bu turdaki 2 test CI’ya henüz dahil değil. Daha geniş pattern/condition birleşimleri için kalan YARA diferansiyel kanıtı G1’de açık. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
+(1344,44 sn) verdi. YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti** (223,89 sn). Bu turda doğrudan C runtime testine `INT64_MIN` min ve max offset sınırları eklendi; iki değer de sentinel `-1` ile karıştırılmadan `-1` sonuçla reddedildi. Hedefli runtime testi **1/1 geçti**. Tek satırlık geçerli YARA kural biçiminin Axiom tarafından reddedildiği önceki turda belirlenip satır tabanlı parser sınırı olarak kaydedilmişti. `058484e` CI 7/7 başarılı (her Python matrix 1457 geçti/27 genel ortam skip’i; doküman testleri 55 geçti); bu runtime regresyonu CI’ya henüz dahil değil. Daha geniş pattern/condition birleşimleri için kalan YARA diferansiyel kanıtı G1’de açık. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
 diğer durumlar açıkça reddedildiğinde ve oracle skip kalmadığında kapanır.
 
 ---
@@ -273,8 +274,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | Güncel çalışma ağacı: 1484 geçti, 0 hata, 0 atlandı (1348,87 sn) | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti (225,68 sn) | G1 raporundaki komutlar |
+| Son tam test paketi | Güncel çalışma ağacı: 1484 geçti, 0 hata, 0 atlandı (1344,44 sn) | `python -m pytest -q -rs` |
+| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti (223,89 sn) | G1 raporundaki komutlar |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1117,8 +1118,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (güncel çalışma ağacı) | 1484 geçti, 0 hata/skip (1348,87 sn); CI a4f3166 7/7; bu turdaki 2 yeni test CI bekliyor | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti (225,68 sn) | — | — |
+| Son tam test (güncel çalışma ağacı) | 1484 geçti, 0 hata/skip (1344,44 sn); CI 058484e 7/7; bu turdaki runtime regression CI bekliyor | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti (223,89 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |

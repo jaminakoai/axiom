@@ -609,17 +609,17 @@ for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
-**1484 passed, 0 failed/skipped** (1348.87 s). The current YARA/scanner/differential/stress/backend-parity
-suite passed **490 tests** (225.68 s). The latest completed GitHub Actions run for
-`a4f3166` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1455 tests, skipped 27
-general environment tests, and passed 55 documentation tests. The 2 new tests from this
-round are not part of that run and need CI verification after commit/push.
+**1484 passed, 0 failed/skipped** (1344.44 s). The current YARA/scanner/differential/stress/backend-parity
+suite passed **490 tests** (223.89 s). The latest completed GitHub Actions run for
+`058484e` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1457 tests, skipped 27
+general environment tests, and passed 55 documentation tests. This round’s runtime-boundary
+regression is not part of that run and needs CI verification after commit/push.
 The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `a4f3166`:
+All 7 jobs passed in the latest completed run for commit `058484e`:
 
 | Job | Status |
 |---|---|
@@ -628,9 +628,9 @@ All 7 jobs passed in the latest completed run for commit `a4f3166`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43738079067` (`master`, SHA `a4f3166`); each Python 3.10–3.13
-job passed 1455 tests, skipped 27 general environment tests, and passed 55 documentation tests.
-That run completed before this round’s 2 additional tests were added.
+Last verified run: `43742268638` (`master`, SHA `058484e`); each Python 3.10–3.13
+job passed 1457 tests, skipped 27 general environment tests, and passed 55 documentation tests.
+That run completed before this round’s `INT64_MIN` boundary check was added.
 
 Six root causes fixed on the way here (details: report §9–§12):
 
