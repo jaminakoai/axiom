@@ -76,7 +76,7 @@ in their own language.
   lengths, pattern-group `at N` / `in (N..M)` ranges, `#a` occurrence counts,
   and rule `meta:` string, boolean, integer values and tags in scan JSON reports,
   while `\xNN` escapes in metadata strings are explicitly rejected,
-  `filesize` comparisons, `true`/`false`, parentheses, and `not`/`and`/`or`
+  `filesize` comparisons (decimal constants with `KB` = 1024 and `MB` = 1024²), `true`/`false`, parentheses, and `not`/`and`/`or`
   (`not` > `and` > `or` precedence). Offset bounds are decimal or `0x` hex
   integer literals.
   Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
@@ -113,6 +113,26 @@ in their own language.
   not change the exit code.
 - These tools are not "production-proven"; they are alpha prototypes verified
   by tests and examples.
+
+### Pinned real YARA rule sample
+
+CI pins this small sample from [Trellix Yara-Rules](https://github.com/advanced-threat-research/Yara-Rules)
+to Apache-2.0 and commit `1919562a59f190bda60c982424f6a24c542ee3e0`. The
+comparison oracle is `yara-python 4.5.4`; targets are synthetic and harmless,
+with no real malware files. Source SHA-256 values and per-rule rationale are
+in [`manifest.json`](tests/fixtures/yara_corpus/trellix-atr-2025-03-18/manifest.json).
+
+| Rule | Status | Verified scope / rejection reason |
+|---|---|---|
+| `malw_eicar` | Supported | `fullword ascii`, `any of them`; positive and negative synthetic text |
+| `BackdoorFCKG` | Supported | `3 of them`; positive and negative synthetic text |
+| `malw_browser_fox_adware` | Explicitly unsupported | `uint16(0)` integer-read condition is not implemented |
+| `clop_ransom_note` | Explicitly unsupported | `uint16(0)` integer-read condition is not implemented |
+| `ransomware_sodinokibi` | Explicitly unsupported | Requires the PE module, `pe.imphash()`, and integer reads; file-level import is rejected |
+| `Sodinokobi` | Explicitly unsupported | Its condition is simpler, but the whole file is rejected because it contains `import "pe"` |
+
+This table proves syntax/result compatibility only for these six pinned rules;
+it does not claim general YARA compatibility or threat-detection effectiveness.
 
 Detailed usage: [axiom-scan v0.2](#13-axiom-scan-v02--security-evidence-scanning)
 and [DFIR triage](#12-dfir-triage-single-json-report-phase-1-closing-tool).

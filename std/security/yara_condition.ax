@@ -106,6 +106,44 @@ fn _yc_parse_number(source: str, position: int) -> YaraConditionNumber {
     }
 }
 
+// YARA's filesize comparisons allow decimal KB and MB suffixes. Keep other
+// numeric contexts on the plain integer parser so offsets and occurrence
+// indexes do not accidentally accept size units.
+fn _yc_parse_filesize_limit(source: str, position: int) -> YaraConditionNumber {
+    let number = _yc_parse_number(source, position)
+    if not number.valid { return number }
+
+    // YARA requires the unit suffix to be adjacent to the decimal literal
+    // (`1KB`); accepting `1 KB` would diverge from the reference parser.
+    let unit_start = number.position
+    let mut multiplier = 1
+    let mut unit_len = 0
+    if _yc_keyword_at(source, unit_start, "KB") {
+        multiplier = 1024
+        unit_len = 2
+    } else if _yc_keyword_at(source, unit_start, "MB") {
+        multiplier = 1048576
+        unit_len = 2
+    }
+    if unit_len == 0 {
+        return number
+    }
+
+    let number_start = _yc_skip_space(source, position)
+    if number_start + 2 <= str_byte_len(source) and
+        (str_sub(source, number_start, 2) == "0x" or str_sub(source, number_start, 2) == "0X") {
+        return YaraConditionNumber { value: 0, position: unit_start + unit_len, valid: false }
+    }
+    if number.value > 9223372036854775807 / multiplier {
+        return YaraConditionNumber { value: 0, position: unit_start + unit_len, valid: false }
+    }
+    return YaraConditionNumber {
+        value: number.value * multiplier,
+        position: unit_start + unit_len,
+        valid: true
+    }
+}
+
 fn _yc_pattern_find_in_range(pattern: str, target: str, min_offset: int, max_offset: int, target_buffer: int) -> int {
     if str_starts_with(pattern, "regex:") { return -1 }
     if str_starts_with(pattern, "str:") {
@@ -661,7 +699,7 @@ fn _yc_parse_primary(source: str, position: int, pattern_names: str[], pattern_v
             return YaraConditionParse { value: false, position: op_start, valid: false, witness_name: "", witness_offset: -1 }
         }
         let number_start = _yc_skip_space(source, op_start + op_len)
-        let limit_number = _yc_parse_number(source, number_start)
+        let limit_number = _yc_parse_filesize_limit(source, number_start)
         if not limit_number.valid {
             return YaraConditionParse { value: false, position: limit_number.position, valid: false, witness_name: "", witness_offset: -1 }
         }

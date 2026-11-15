@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "corpus": "Trellix Advanced Research Center Yara-Rules",
+  "source_url": "https://github.com/advanced-threat-research/Yara-Rules",
+  "source_commit": "1919562a59f190bda60c982424f6a24c542ee3e0",
+  "source_date": "2025-03-18",
+  "license": "Apache-2.0",
+  "license_file": "LICENSE",
+  "oracle": "yara-python==4.5.4",
+  "samples": "Synthetic harmless byte/text targets only; no malware samples",
+  "rules": [
+    {
+      "id": "malw_eicar",
+      "file": "malware/MALW_Eicar.yar",
+      "sha256": "e85ab1728819e54c4cc2997ebcf51bd931bd7498fa31910c01012608693cc417",
+      "classification": "supported",
+      "constructs": ["fullword", "ascii", "any of them"],
+      "target": "eicar_text"
+    },
+    {
+      "id": "BackdoorFCKG",
+      "file": "ransomware/RANSOM_CTBLocker.yar",
+      "sha256": "3d9ad3302f07c91540fba364688bf392514cf410b12d5ab4ec7b790027f62118",
+      "classification": "supported",
+      "constructs": ["3 of them", "text strings"],
+      "target": "ctb_three_of_four_strings"
+    },
+    {
+      "id": "malw_browser_fox_adware",
+      "file": "malware/MALW_browser_fox_adware.yar",
+      "sha256": "c31d708b16719742845c3ecfd29e538ac47283138d66fd48d09a5a9813b417c7",
+      "classification": "explicitly unsupported",
+      "constructs": ["uint16(0)"],
+      "reason": "The current YARA condition subset does not implement integer read functions.",
+      "target": "browser_fox_marker"
+    },
+    {
+      "id": "clop_ransom_note",
+      "file": "ransomware/RANSOM_ClopRansomNote.yar",
+      "sha256": "1be4c047b37956059fe8ec4457b327a37826590b578ab5ca1484c65c166c8d99",
+      "classification": "explicitly unsupported",
+      "constructs": ["uint16(0)"],
+      "reason": "The current YARA condition subset does not implement integer read functions.",
+      "target": "clop_note"
+    },
+    {
+      "id": "ransomware_sodinokibi",
+      "file": "ransomware/RANSOM_Sodinokibi.yar",
+      "sha256": "c293b0f7e2a69dfa84eca928e08736020ff39d684af6d00f8608a4cb7efd51c7",
+      "classification": "explicitly unsupported",
+      "constructs": ["import \"pe\"", "pe.imphash()", "uint16(0)"],
+      "reason": "The source file imports the PE module; Axiom rejects the whole file instead of partially evaluating its rules.",
+      "target": null
+    },
+    {
+      "id": "Sodinokobi",
+      "file": "ransomware/RANSOM_Sodinokibi.yar",
+      "sha256": "c293b0f7e2a69dfa84eca928e08736020ff39d684af6d00f8608a4cb7efd51c7",
+      "classification": "explicitly unsupported",
+      "constructs": ["file-level import \"pe\""],
+      "reason": "Although this rule's own condition is simpler, the source file's PE import is rejected at file scope; no rule is silently dropped.",
+      "target": null
+    }
+  ],
+  "license_sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+}

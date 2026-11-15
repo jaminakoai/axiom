@@ -76,7 +76,7 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   tamsayı değerleri ve kural etiketleri scan JSON raporunda sunulur;
   meta stringlerde `\xNN` kaçışları açık hata verir;
   `!a[i]` eşleşme uzunluğu, `#a` desen sayımı,
-  `filesize` karşılaştırmaları, `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
+  `filesize` karşılaştırmaları (onluk sabitlerde `KB` = 1024 ve `MB` = 1024²), `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
   (`at/in` sınırları onluk veya `0x` hex sayısal sabitlerdir).
   (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
   (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
@@ -113,6 +113,28 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   değiştirmez.
 - Araçlar henüz "üretimde kanıtlanmış" değildir; testler ve örneklerle
   doğrulanmış alfa prototiplerdir.
+
+### Sabitlenmiş gerçek YARA kural örneklemi
+
+CI, aşağıdaki küçük [Trellix Yara-Rules](https://github.com/advanced-threat-research/Yara-Rules)
+örneklemini Apache-2.0 lisansı ve `1919562a59f190bda60c982424f6a24c542ee3e0`
+commit'iyle sabitler. Karşılaştırma oracle'ı `yara-python 4.5.4`; hedefler
+sentetik ve zararsızdır, gerçek zararlı dosyalar kullanılmaz. Kaynak dosya
+SHA-256'ları ve kural başına gerekçeler
+[`manifest.json`](tests/fixtures/yara_corpus/trellix-atr-2025-03-18/manifest.json)
+içindedir.
+
+| Kural | Durum | Kanıtlanan kapsam / ret nedeni |
+|---|---|---|
+| `malw_eicar` | Destekleniyor | `fullword ascii`, `any of them`; pozitif ve negatif sentetik metin |
+| `BackdoorFCKG` | Destekleniyor | `3 of them`; pozitif ve negatif sentetik metin |
+| `malw_browser_fox_adware` | Açıkça destek dışı | `uint16(0)` tamsayı okuma koşulu uygulanmıyor |
+| `clop_ransom_note` | Açıkça destek dışı | `uint16(0)` tamsayı okuma koşulu uygulanmıyor |
+| `ransomware_sodinokibi` | Açıkça destek dışı | PE modülü, `pe.imphash()` ve tamsayı okuma gerektiriyor; dosya düzeyindeki import reddediliyor |
+| `Sodinokobi` | Açıkça destek dışı | Kural koşulu daha basit olsa da aynı dosyadaki `import "pe"` nedeniyle dosyanın tamamı reddediliyor |
+
+Bu tablo yalnızca sabitlenmiş altı kuralın sözdizimi/sonuç uyumluluğunu
+kanıtlar; genel YARA uyumluluğu veya tehdit tespit etkinliği iddiası değildir.
 
 Ayrıntılı kullanım: [axiom-scan v0.2](#13-axiom-scan-v02--güvenlik-kanıtı-taraması)
 ve [DFIR triyajı](#12-dfir-triyajı-tek-json-rapor-faz-1-kapanış-aracı).

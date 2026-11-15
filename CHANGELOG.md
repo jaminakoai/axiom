@@ -6,6 +6,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Düzeltilen
+- YARA koşulları artık geçerli çok satırlı ifadeleri toplar; `filesize` için
+  YARA 4.5.4 ile uyumlu onluk `KB`/`MB` birimleri desteklenir. Lisansı ve kaynak
+  commit'i sabitlenmiş gerçek kural örneklemi CI'da YARA ile karşılaştırılır;
+  altı kuraldan ikisi sentetik hedeflerle desteklenir, diğerleri destek dışı
+  yapıları nedeniyle açıkça reddedilir.
 - `N of ($a*, $a1)` gibi üst üste binen YARA pattern selector’larında Axiom
   eşleşen selector katkılarını eksik sayıyordu ve sessiz yanlış negatif üretiyordu.
   Selector başına sayım YARA 4.5.4 ile karşılaştırmalı test edildi.

@@ -94,6 +94,10 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 - [G1 — YARA alt kümesi doğrulama kapanışı](2026-11-15-g1-yara-subset-closure.md)
 
+## 16 Kasım 2026
+
+- [G2 — Sabitlenmiş gerçek YARA corpus doğrulaması](2026-11-16-g2-yara-real-rule-corpus.md)
+
 ## Okuma sırası (yeni gelen için)
 
 1. `P1-03c-axiom-scan-v02-dfir-readiness-2026-11-12.md` — ürün yönü + v0.2 sözleşmesi

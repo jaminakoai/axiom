@@ -64,7 +64,8 @@ def _compare(engines, tmp_path, rule_source: str, target: bytes):
 
 
 def _rule(strings: str, condition: str) -> str:
-    return f"rule ConditionDiff {{\n strings:\n{strings} condition:\n  {condition}\n}}\n"
+    strings_section = f" strings:\n{strings}" if strings else ""
+    return f"rule ConditionDiff {{\n{strings_section}\n condition:\n  {condition}\n}}\n"
 
 
 def test_explicit_selector_overlapping_wildcard_matches_yara_counting(engines, tmp_path):
@@ -115,3 +116,39 @@ def test_pattern_group_ranges_and_filesize_composition_match_yara(
         condition,
     )
     _compare(engines, tmp_path, source, target)
+
+
+@pytest.mark.parametrize(
+    ("condition", "target"),
+    [
+        ("filesize == 1KB", b"x" * 1024),
+        ("filesize < 1KB", b"x" * 1023),
+        ("filesize < 1KB", b"x" * 1024),
+        ("filesize == 2MB", b"x" * (2 * 1024 * 1024)),
+        ("filesize >= 2MB", b"x" * (2 * 1024 * 1024)),
+    ],
+    ids=["exact-1-KiB", "below-1-KiB", "at-1-KiB", "exact-2-MiB", "unit-boundary"],
+)
+def test_filesize_decimal_units_match_yara(engines, tmp_path, condition, target):
+    source = _rule("", condition)
+    _compare(engines, tmp_path, source, target)
+
+
+@pytest.mark.parametrize("condition", ["filesize >= 2 MB", "filesize >= 0x2MB"])
+def test_filesize_units_reject_non_yara_numeric_forms(engines, tmp_path, condition):
+    source = _rule("", condition)
+    with pytest.raises(yara.SyntaxError):
+        yara.compile(source=source)
+
+    rules_path = tmp_path / "invalid-filesize-unit.yar"
+    rules_path.write_text(source, encoding="utf-8")
+    result = subprocess.run(
+        [str(engines), "rules", str(rules_path)],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 1
+    report = json.loads(result.stdout)
+    assert report["ok"] is False
+    assert "condition" in report["error"]

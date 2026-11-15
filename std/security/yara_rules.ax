@@ -763,7 +763,9 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
             let c = _parse_condition(trimmed)
             if len(c) > 0 {
                 condition = c
-                in_condition = false
+                // The expression may continue on following physical lines;
+                // the closing rule brace terminates collection below.
+                in_condition = true
             } else {
                 // Deger alt satirda: bir sonraki bos olmayan satiri al.
                 in_condition = true
@@ -773,12 +775,21 @@ fn parse_yara_rules(text: str) -> Result<YaraRuleSet, str> {
         }
 
         if in_condition {
-            if not _is_blank(trimmed) {
-                condition = trimmed
-                in_condition = false
+            if trimmed != "}" {
+                if not _is_blank(trimmed) {
+                    if len(condition) == 0 {
+                        // Preserve the original split-line string for the
+                        // common single-line condition path. Concatenate only
+                        // when a real continuation follows.
+                        condition = trimmed
+                    } else {
+                        condition = condition + " " + trimmed
+                    }
+                }
+                i = i + 1
+                continue
             }
-            i = i + 1
-            continue
+            in_condition = false
         }
 
         if in_meta {

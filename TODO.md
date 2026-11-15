@@ -191,15 +191,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   `43758677082` **7/7 başarılı**; Python 3.10–3.13 testleri 1457 geçti/27 genel
   ortam skip’i, doküman testleri 55 geçti.
 
-#### G2 — Gerçek kural dosyalarıyla uyumluluk kanıtı `[ ]`
+#### G2 — Gerçek kural dosyalarıyla uyumluluk kanıtı `[x]` — 16 Kasım 2026
 
-- [ ] Lisansı ve sürümü kayıtlı, küçük ve yeniden dağıtılabilir bir YARA kural
+- [x] Lisansı ve sürümü kayıtlı, küçük ve yeniden dağıtılabilir bir YARA kural
   örnek kümesi seç; zararlı örnek indirmeden sentetik/zararsız hedef dosyaları
   kullan.
-- [ ] Her kuralı `supported`, `explicitly unsupported` veya `mismatch` olarak
+- [x] Her kuralı `supported`, `explicitly unsupported` veya `mismatch` olarak
   sınıflandır; sessiz mismatch kabul etme.
-- [ ] Kuralların destek durumunu README'de sürümlü özellik matrisiyle göster.
-- [ ] Bu matrisi CI'da koşan diferansiyel/regresyon testine bağla.
+- [x] Kuralların destek durumunu README'de sürümlü özellik matrisiyle göster.
+- [x] Bu matrisi CI'da koşan diferansiyel/regresyon testine bağla.
 - **Kapı:** örnek kümesindeki her kural ya doğru eşleşiyor ya neden destek
   dışında olduğu açıkça raporlanıyor.
 
@@ -240,10 +240,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G2 — Sabitlenmiş gerçek YARA kural corpus'u.** G1 kapandı: NUL
+**G3 — Dış kullanıcı doğrulaması.** G1 ve G2 kapandı. G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. **G1 kapandı; sıradaki iş G2 gerçek-kural corpus doğrulamasıdır.**
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir; sıradaki ürün kapısı G3 bağımsız kullanıcı doğrulamasıdır.
 
 ---
 
@@ -1165,5 +1165,5 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 4. **G4:** gerçek Windows/macOS CI ve temiz ortamda dağıtım doğrulaması.
 5. **G5:** kullanıcı kanıtı ve bakım kapasitesinden sonra 1.0/ekosistem hedefleri.
 
-**G0 ve G1 kapandı. Şimdiki iş G2 corpus doğrulamasıdır.** Yeni YARA sözdizimi
+**G0, G1 ve G2 kapandı. Şimdiki iş G3 dış kullanıcı doğrulamasıdır.** Yeni YARA sözdizimi
 differential kanıt ve açık kapsam sınırlarıyla eklenir.
