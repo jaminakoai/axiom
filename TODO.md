@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-15 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | Güncel test ağacı: `python -m pytest -q -rs` — 1484 geçti, 0 hata, 0 atlandı (1344,44 sn) |
-| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: 490 geçti (223,89 sn) |
-| Son başarılı CI | `058484e` — **7/7 başarılı**; Python 3.10–3.13’te her biri 1457 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti. Bu turdaki runtime sınır kontrolü CI için commit/push bekliyor |
+| Son tam test paketi | GitHub Actions `53839c3`: Python 3.10–3.13’de her biri 1457 geçti, 27 genel ortam testi atlandı; doküman blokları 55 geçti |
+| Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
+| Son başarılı CI | `53839c3` — [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082), **7/7 başarılı**; Python 3.10–3.13’de her biri 1457 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti |
 
 ---
 
@@ -34,12 +34,13 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
+- G1 kapandı: YARA 4.5.4 differential, C/LLVM parity, runtime limit kontrolleri
+  ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
+  değildir.
 - İlk güvenilir public release hedefine göre yaklaşık **%67** ilerleme tahmini
-  kullanılıyor. Bu ölçülmüş KPI değildir; NUL korumalı dosya/PCAP taramasının
-  uçtan uca tamamlanması ve selector-overlap sessiz yanlış negatifinin YARA 4.5.4
-  diferansiyel testiyle bulunup düzeltilmesi ilerleme sağladı. G1'in kalan kanıtları,
-  güncel değişikliklerin CI doğrulaması, dış kullanıcı doğrulaması ve
-  dağıtım hazırlığı hâlâ eksik.
+  kullanılıyor. Bu ölçülmüş KPI değildir; G1 kapanışı teknik güveni artırdı.
+  G2 gerçek kural dosyası corpus'u, G3 dış kullanıcı doğrulaması ve G4
+  dağıtım/platform kanıtı hâlâ eksik.
 
 ### İş sırası ve kabul kapıları
 
@@ -59,7 +60,7 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - **Kapı:** güncel test sonucu biliniyor; hata ve skip'ler açıklanmış; README ile
   kod arasındaki özellik iddiaları eşleşiyor.
 
-#### G1 — YARA alt kümesini tek bir güvenilir modele taşı `[~]` — doğruluk kapıları açık
+#### G1 — YARA alt kümesini tek bir güvenilir modele taşı `[x]` — 15 Kasım 2026 kapandı
 
 Mevcut `hexrange:`, `hexalt:` ve `hexnot:` dahili etiketleri ayrı özel yollar
 oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
@@ -68,11 +69,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `$a at N` / `$a in (...)` kuralı daha sonraki bir occurrence ile
   sağlandığında raporda koşulu sağlayan occurrence'ın offset/uzunluğunu ver;
   range/alternation/negation ve C/LLVM için regresyon ekle.
-- [~] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
+- [x] Diferansiyel testlerle kalan eşleşme/ofset/uzunluk ve alternatif eşitlik
   semantiğini kesinleştir; selector-overlap, boolean precedence/parantez, filesize
   birleşimi ve group at/in için YARA 4.5.4 oracle testleri eklendi (13 geçti).
   `yara-python==4.5.4` dev bağımlılığıyla oracle CI testlerinin atlanmaması sağlandı;
-  daha geniş koşul birleşimleri ve occurrence sınırları için ek kanıt gerekiyor.
+  daha geniş condition/pattern birleşimleri, occurrence sınırları ve ret durumları
+  için ek kanıt eklendi; son hedefli paket 490 geçti, oracle skip olmadı.
 - [x] `axiom-scan` schema v1 kanıt kapsamını belirle: `matches` ve
   `match_count` kural başına kalır; her eşleşen kural için tek bir temsilî
   witness döner. `at/in` varsa koşulun seçtiği occurrence raporlanır. Bu alanlar
@@ -124,9 +126,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   parser/overflow/bozuk bytecode doğrudan runtime testleriyle fail-closed
   doğrulanmalı. `INT64_MIN` min/max offset de doğrudan C runtime testinde
   `-1` sentinel değerinden ayrı olarak açıkça reddedildi. Basit sabit byte dizileri için mevcut hızlı arama yolu generic
-  API içinde optimizasyon olarak korunabilir. Performance bütçesi benchmark ile
-  belirlenecek; hedefe göre sınırsız `candidate × atom × gap` taraması kabul
-  edilmez.
+  API içinde optimizasyon olarak korunabilir. 64 MiB/999-byte suffix near-match
+  fixture'ı için ölçülen runtime bütçesi 15 sn olarak belirlendi ve CI regression
+  assertion'ı ile uygulanıyor; bu sınır yalnız tarifli fixture için geçerlidir.
+  Genel kod yolu hedefe göre sınırsız `candidate × atom × gap` taramasına
+  bırakılmaz.
 - [x] Ortak occurrence yürütücüsüyle `#/@/!` desteğini bounded jump,
   alternation ve negation için aç. YARA oracle'ına göre her
   başlangıç offset'i en çok bir instance üretir, farklı başlangıçlar overlap
@@ -158,13 +162,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `#a`, `@a[i]`, `!a[i]`, `$a at N` ve `$a in (N..M)` için her pattern
   türünün davranış tablosunu yaz; özel hex occurrence operatörlerini YARA ile
   karşılaştırmalı test et. Matris yukarıda.
-- [~] YARA 4.5.4 diferansiyel testleri:
+- [x] YARA 4.5.4 diferansiyel testleri:
   bounded jump uzunluk seçimi, çoklu/örtüşen fixed pattern'ler, aynı başlangıçta
   eşleşen alternation dalları, bounded/alternation/negation `#/@/!`, positional
   witness ve tüm desteklenen türlerde ilk/son start sınırları test edildi.
-  Kalan sınırlara dair açık durum raporda; eksik koşul birleşimleri ve dahili
-  runtime limitleri tamamlanmalı.
-- [~] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
+  Destek matrisindeki pattern/condition birleşimleri, occurrence sınırları,
+  binary hedefler ve backend paritesi YARA oracle'ına karşı test edildi. Bilinçli
+  destek dışı örnekler açık ret testlerine bağlıdır.
+- [x] Parser limitleri, overflow, hedef boyutu, çalışma maliyeti ve bozuk dahili
   kodlamayı doğrudan C runtime testleriyle doğrula. Legacy kodlamalar için
   malformed range/alternation/negation, 8 KiB pattern limiti, signed offset
   sınırı ve occurrence indeks taşması; `hexast:v1` için eksik/yanlış opcode,
@@ -172,16 +177,19 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   ediliyor. Ek olarak typed executor doğrudan çağrısında `INT64_MAX` üstü hedef
   uzunluğunun ve uç `min_offset` değerinin fail-closed olduğu doğrulandı. 64 MiB
   yoğun prefix + geç tek eşleşme testi eklendi. 999-byte suffix, 16 near-match ve
-  17 occurrence içeren typed-executor stres fixture'ı 64 MiB'de 1,455 sn ölçüldü;
-  bu önceki benchmarkla aynı fikirde, birebir fixture eşitliği iddia etmiyor.
+  17 occurrence içeren typed-executor stres fixture'ında 15 sn regresyon eşiği
+  belirlendi (30 sn process timeout ayrıca korunur); hedefli test geçti. Bu eşik
+  yalnızca tarifli fixture'a aittir, tüm hedefler için süre garantisi değildir.
 - [x] `axiom-scan` dosya ve PCAP yolları ByteBuffer gerçek uzunluğuyla taranıyor;
   NUL öncesi/sonrası ve NUL sınırını aşan text/hex eşleşmeleri YARA 4.5.4 ve
   C/LLVM parity testleriyle doğrulandı. NUL içeren hedefte regex, byte-span
   regex desteği bulunmadığı için açık yapılandırılmış hatayla reddediliyor.
   Kanıt: `docs/reports/2026-11-14-yara-binary-scanner-integration.md`.
-- **Kapı:** desteklenen her test YARA ile aynı sonuç/ofset/uzunluğu veriyor;
-  diğer tüm durumlar açık hata veriyor; C ve LLVM çıktısı eşit. Ortam nedeniyle
-  atlanan referans testler ayrıca raporlanır ve G1 tek başına kapanmaz.
+- **Kapı (kapandı):** destek matrisinin differential/regresyon vakaları YARA ile
+  eşleşti; destek dışı durumlar açıkça reddedildi; C ve LLVM raporları eşit.
+  Yerel oracle paketi 490 geçti, skip olmadı. `53839c3` GitHub Actions run
+  `43758677082` **7/7 başarılı**; Python 3.10–3.13 testleri 1457 geçti/27 genel
+  ortam skip’i, doküman testleri 55 geçti.
 
 #### G2 — Gerçek kural dosyalarıyla uyumluluk kanıtı `[ ]`
 
@@ -232,12 +240,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Şimdi çalışılacak tek madde
 
-**G1 — Kalan YARA differential ve runtime limit kanıtları.** NUL
+**G2 — Sabitlenmiş gerçek YARA kural corpus'u.** G1 kapandı: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam proje doğrulaması `python -m pytest -q -rs` ile **1484 geçti, 0 hata/skip**
-(1344,44 sn) verdi. YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti** (223,89 sn). Bu turda doğrudan C runtime testine `INT64_MIN` min ve max offset sınırları eklendi; iki değer de sentinel `-1` ile karıştırılmadan `-1` sonuçla reddedildi. Hedefli runtime testi **1/1 geçti**. Tek satırlık geçerli YARA kural biçiminin Axiom tarafından reddedildiği önceki turda belirlenip satır tabanlı parser sınırı olarak kaydedilmişti. `058484e` CI 7/7 başarılı (her Python matrix 1457 geçti/27 genel ortam skip’i; doküman testleri 55 geçti); bu runtime regresyonu CI’ya henüz dahil değil. Daha geniş pattern/condition birleşimleri için kalan YARA diferansiyel kanıtı G1’de açık. G1 ancak desteklenen sonuçlar YARA ile eşleştiğinde,
-diğer durumlar açıkça reddedildiğinde ve oracle skip kalmadığında kapanır.
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. **G1 kapandı; sıradaki iş G2 gerçek-kural corpus doğrulamasıdır.**
 
 ---
 
@@ -274,8 +280,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | Güncel çalışma ağacı: 1484 geçti, 0 hata, 0 atlandı (1344,44 sn) | `python -m pytest -q -rs` |
-| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti (223,89 sn) | G1 raporundaki komutlar |
+| Son tam test paketi | CI `53839c3`: Python 3.10–13’te 1457 geçti/27 genel ortam testi atlandı; tüm 7 job başarılı | GitHub Actions run 43758677082 |
+| G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
 | Örnek | 21 | `ls examples/*.ax \| wc -l` |
@@ -1118,8 +1124,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (güncel çalışma ağacı) | 1484 geçti, 0 hata/skip (1344,44 sn); CI 058484e 7/7; bu turdaki runtime regression CI bekliyor | — | 2000 |
-| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti (223,89 sn) | — | — |
+| Son tam test (güncel çalışma ağacı) | CI `53839c3`: Python 3.10–13’te 1457 geçti/27 genel ortam skip’i; 7/7 job başarılı | — | 2000 |
+| Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
 | Paket (registry) | 0 → altyapı hazır | 10 | 250 |
@@ -1159,5 +1165,5 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 4. **G4:** gerçek Windows/macOS CI ve temiz ortamda dağıtım doğrulaması.
 5. **G5:** kullanıcı kanıtı ve bakım kapasitesinden sonra 1.0/ekosistem hedefleri.
 
-**G0 kapandı. Şimdiki iş G1 doğrulamasıdır.** Tasarım notu ve kabul ölçütleri
-tamamlandı; yeni YARA sözdizimi diferansiyel kanıt ve açık kapsam sınırlarıyla eklenir.
+**G0 ve G1 kapandı. Şimdiki iş G2 corpus doğrulamasıdır.** Yeni YARA sözdizimi
+differential kanıt ve açık kapsam sınırlarıyla eklenir.
