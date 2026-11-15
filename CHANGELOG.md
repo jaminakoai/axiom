@@ -40,6 +40,7 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- Typed hex’in embedded-NUL occurrence koşullarında C/LLVM parity’si ve signed/hex metadata değerleri için iki yeni diferansiyel test eklendi; ikisi de geçti.
 - Nibble wildcard’ların bounded jump ve NUL byte’larıyla bileşimi için üç YARA 4.5.4 differential vakası eklendi. Desteklenmeyen negatif tamsayı koşulunun açık reddi de test edildi; dört vaka geçti.
 - `not` + `at/in` koşul bileşimleri ve sıfır baytlı hedef için üç YARA 4.5.4 oracle vakası eklendi; üçü de geçti.
 - YARA 4.5.4 diferansiyel kapsamı hexadecimal tamsayılarla filesize/occurrence/ofset koşullarını ve bounded hex jump’ların NUL içeren/örtüşen hedeflerde occurrence sayısı, ofseti ve uzunluğunu kapsayacak şekilde genişletildi. Bu turdaki 9 yeni vaka ve toplam 474 YARA/scanner testi geçti.

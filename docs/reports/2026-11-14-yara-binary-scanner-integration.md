@@ -134,3 +134,13 @@ Selector düzeltmesini, YARA 4.5.4 pinini ve yeni differential/stress testlerini
 - Birleşik YARA/scanner paketi: **481 geçti** (224,32 sn). Tam yerel paket: **1475 geçti, 0 hata, 0 atlandı** (1349,95 sn).
 - Önceki commit `25dd23a`, GitHub Actions run `43704119797` **7/7 başarılı**; Python 3.10–3.13’de her iş 1444 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki dört test CI’da henüz çalışmadı.
 - G1 açık: yeni testler ve açık kapsam retleri devam ediyor; tek satırlı kural parser desteği ve runtime limit bütçeleri hâlâ çözülmedi.
+
+
+## G1 dokuzuncu paralel turu — backend parity ve numeric metadata
+
+- C/LLVM parity denetimi `$a = { 4? [0-1] ?2 }`, embedded-NUL hedef ve `#a/@a[i]/!a[i]` koşullarını doğruladı. YARA 4.5.4 iki instance `(0,3),(3,2)` buluyor; C ve LLVM aynı match count ve schema v1 witness raporunu verdi. `tests/test_yara_condition_backend_parity.py` içine test eklendi.
+- Parser metadata denetimi `meta` içindeki negatif decimal `-7` ve hex `0x2A` değerlerinin YARA ile aynı şekilde JSON’da `-7` ve `42` raporlandığını doğruladı; `tests/test_yara_parser_structure_differential.py` içine test eklendi.
+- Yeni iki test birlikte **2/2 geçti**; iki hedefli dosya **7 geçti** (18,14 sn).
+- Birleşik YARA/scanner paketi **483 geçti** (223,16 sn); tam yerel paket **1477 geçti, 0 hata/skip** (1338,52 sn).
+- Önceki commit `4098a19`, CI run `43706653949` **7/7 başarılı**; Python 3.10–3.13’de her biri 1448 geçti/27 genel ortam testi atladı, doküman testleri 55 geçti. Bu turdaki iki yeni test henüz CI’da değil.
+- G1 açık kalıyor; bilinen tek satırlı rule parser sınırı, daha geniş destek matrisi ve runtime limit kanıtları sonraki işlerde ele alınacak.

@@ -128,3 +128,44 @@ rule WrongOffsetAfterNul {
         assert actual == expected
 
     assert reports["c"] == reports["llvm"]
+
+
+def test_nibble_jump_occurrences_with_nul_have_backend_parity(scanners, tmp_path):
+    rules_source = '''
+rule MaskJumpOccurrence {
+ strings:
+  $a = { 4? [0-1] ?2 }
+ condition:
+  #a == 2 and @a[2] == 3 and !a[2] == 2
+}
+'''
+    payload = bytes.fromhex("4A 00 52 4B 52")
+    reference = yara.compile(source=rules_source).match(data=payload)
+    assert len(reference) == 1
+    assert [
+        (instance.offset, instance.matched_length)
+        for item in reference[0].strings
+        for instance in getattr(item, "instances", [])
+    ] == [(0, 3), (3, 2)]
+
+    rules_path = tmp_path / "mask-jump-parity.yar"
+    target_path = tmp_path / "mask-jump-parity.bin"
+    rules_path.write_text(rules_source, encoding="utf-8")
+    target_path.write_bytes(payload)
+
+    reports = {}
+    for backend, executable in scanners.items():
+        scanned = subprocess.run(
+            [str(executable), "scan", str(target_path), "--rules", str(rules_path)],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        assert scanned.returncode == 0, scanned.stdout + scanned.stderr
+        reports[backend] = json.loads(scanned.stdout)
+        assert reports[backend]["match_count"] == 1
+        assert reports[backend]["scanned_bytes"] == len(payload)
+        witness = reports[backend]["matches"][0]
+        assert (witness["offset"], witness["length"]) == (0, 3)
+
+    assert reports["c"] == reports["llvm"]

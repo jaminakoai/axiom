@@ -609,17 +609,17 @@ for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
-**1475 passed, 0 failed/skipped** (1349.95 s). The current YARA/scanner/differential/stress/backend-parity
-suite passed **481 tests** (224.32 s). The latest completed GitHub Actions run for
-`25dd23a` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1444 tests, skipped 27
-general environment tests, and passed 55 documentation tests. The 4 new tests from this
+**1477 passed, 0 failed/skipped** (1338.52 s). The current YARA/scanner/differential/stress/backend-parity
+suite passed **483 tests** (223.16 s). The latest completed GitHub Actions run for
+`4098a19` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1448 tests, skipped 27
+general environment tests, and passed 55 documentation tests. The 2 new tests from this
 round are not part of that run and need CI verification after commit/push.
 The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `25dd23a`:
+All 7 jobs passed in the latest completed run for commit `4098a19`:
 
 | Job | Status |
 |---|---|
@@ -628,9 +628,9 @@ All 7 jobs passed in the latest completed run for commit `25dd23a`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43704119797` (`master`, SHA `25dd23a`); each Python 3.10–3.13
-job passed 1444 tests, skipped 27 general environment tests, and passed 55 documentation tests.
-That run completed before this round’s 4 additional tests were added.
+Last verified run: `43706653949` (`master`, SHA `4098a19`); each Python 3.10–3.13
+job passed 1448 tests, skipped 27 general environment tests, and passed 55 documentation tests.
+That run completed before this round’s 2 additional tests were added.
 
 Six root causes fixed on the way here (details: report §9–§12):
 

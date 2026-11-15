@@ -81,6 +81,24 @@ rule StructureMeta : malware triage_2 // tags remain attached to the rule
     }
 
 
+def test_signed_and_hex_metadata_match_yara(scanner, tmp_path):
+    source = '''
+rule MetaNumbers : triage {
+  meta:
+    negative = -7
+    hexadecimal = 0x2A
+  strings:
+    $a = "needle" ascii
+  condition:
+    $a
+}
+'''
+    report = _compare(scanner, tmp_path, source, b"needle")
+    match = report["matches"][0]
+    assert match["tags"] == ["triage"]
+    assert match["meta"] == {"negative": -7, "hexadecimal": 42}
+
+
 @pytest.mark.parametrize(
     ("pattern", "target"),
     [
