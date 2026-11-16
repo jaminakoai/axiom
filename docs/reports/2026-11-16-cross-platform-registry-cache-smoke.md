@@ -1,8 +1,11 @@
 # Cross-platform registry cache smoke test
 
 **Date:** 2026-11-16  
-**Status:** Test and workflow change implemented locally. Linux targeted tests
-pass; the updated Windows/macOS/Linux workflow has not run yet.
+**Status:** Test and workflow change pushed in `ecc770d`. Native platform
+smoke run 43871931643 passed on Linux, Windows, and macOS (3/3); the focused
+registry cache-hit step passed on all three runners. Full CI run 43871931757
+also passed (7/7 jobs): Python 3.10–3.13 each reported 1496 passed / 27
+skipped, and documentation blocks reported 55 passed.
 
 ## Change
 
@@ -27,9 +30,10 @@ python -m pytest -q tests/test_registry.py tests/test_package_manager.py
 76 passed in 10.53s
 ```
 
-`make fmt-check` and `git diff --check` must pass before commit. The previous
-native smoke run 43871163733 predates this workflow edit, so it is not evidence
-for the new registry step. A new platform smoke run is required after push.
+`make fmt-check` and `git diff --check` passed before commit. The previous
+native smoke run 43871163733 predates this workflow edit and was not counted as
+evidence. The new workflow result for 43871931643 is the cross-platform evidence;
+full CI result 43871931757 is the full-project Linux test evidence.
 
 ## Remaining gates
 

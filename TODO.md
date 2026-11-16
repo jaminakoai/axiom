@@ -12,10 +12,11 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `720a6ab`: Python 3.10–3.13'te her biri 1495 geçti / 27 skip; doküman blokları 55 geçti |
-| Son platform smoke | `aaf7eee`, Linux/Windows/macOS run 43871163733 **3/3 başarılı**; registry cache adımı sonraki workflow değişikliğinde eklendi |
+| Son tamamlanmış tam test paketi | GitHub Actions `ecc770d`: Python 3.10–3.13'te her biri 1496 geçti / 27 skip; doküman blokları 55 geçti |
+| Son tam CI koşusu | `ecc770d` [run 43871931757](https://github.com/jaminakoai/axiom/actions/runs/43871931757), **7/7 başarılı** |
+| Son platform smoke | `ecc770d`, gerçek registry cache hit + native build/run Linux/Windows/macOS run 43871931643 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `720a6ab` — [run 43868658792](https://github.com/jaminakoai/axiom/actions/runs/43868658792), **7/7 başarılı**; Python 3.10–3.13'te her biri 1495 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `ecc770d` — [run 43871931757](https://github.com/jaminakoai/axiom/actions/runs/43871931757), **7/7 başarılı**; Python 3.10–3.13'te her biri 1496 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -234,9 +235,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `.github/workflows/platform-smoke.yml` ile gerçek Linux, Windows ve
   macOS runner'larında temiz Python kurulumu, native derleme ve çalıştırma
   doğrulandı; Wine kullanılmadı. Sonradan registry cache hit testi de native
-  dosya izinleriyle çalışacak şekilde eklendi. Eski workflow sürümünün
-  [CI run 43871163733](https://github.com/jaminakoai/axiom/actions/runs/43871163733)
-  derleme smoke'u 3/3 geçti; cache testli yeni workflow henüz CI'da koşmadı.
+  dosya izinleriyle çalışacak şekilde eklendi. [CI run 43871931643](https://github.com/jaminakoai/axiom/actions/runs/43871931643)
+  içinde gerçek cache testi ve native build/run Linux, Windows ve macOS'ta 3/3 geçti.
   Bu tam pytest paketinin üç işletim sisteminde çalıştığı anlamına gelmez; tam
   paket CI'si Linux'ta kalıyor.
 - [x] Temiz runner'larda kurulum/yerel örnek derle-çalıştır akışını doğrula;
@@ -248,14 +248,17 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
   paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
   klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **76 geçti**
-  (56 registry, 20 paket yöneticisi). Platform smoke'a eklenecek gerçek cache
-  hit testi Linux/Windows/macOS'ta mevcut işletim sistemi izinlerini doğrular.
+  (56 registry, 20 paket yöneticisi). Gerçek cache hit testi de platform smoke'da
+  Linux/Windows/macOS dosya izinleriyle geçti.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
   yok. `packages/axiom-scan-report` kaynak örneği ve gerçek path bağımlılık testi
   hazır, ancak bunlar resmi yayın sayılmaz. Bunlar çözülüp örnek paket gerçekten
   yayınlanmadan bu madde kapanmaz.
+  Yerel teknik akış uçtan uca doğrulandı: imzalı `pack`, Ed25519 doğrulaması,
+  geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
+  kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
   unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden
@@ -321,8 +324,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `720a6ab`: Python 3.10–13’te her biri 1495 geçti/27 skip; tüm 7 job başarılı | GitHub Actions run 43868658792 |
-| Son native platform smoke | `aaf7eee` derleme smoke'u Linux/Windows/macOS 3/3 geçti; cache testli workflow henüz çalışmadı | GitHub Actions run 43871163733 |
+| Son tamamlanmış tam test paketi | CI `ecc770d`: Python 3.10–13’te her biri 1496 geçti/27 skip; tüm 7 job başarılı | GitHub Actions run 43871931757 |
+| Son native platform smoke | `ecc770d`: gerçek registry cache hit + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43871931643 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -331,8 +334,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | LLVM backend örnek | 21/21 | `... --backend=llvm` |
 | Self-hosted (`bin/axiomc`) | **21/21** ✅ | `./bin/axiomc build examples/$f.ax` |
 | Paket kayıt defteri | **v1 var** (ed25519, semver, transitive) | `tests/test_registry.py` |
-| Windows desteği | **21/21 cross-compile + Wine**; native build smoke geçti, registry cache smoke bekliyor | P2-19b ve run 43871163733 |
-| macOS | native build smoke geçti; tam pytest/`axiom-scan` ve cache smoke doğrulanmamış | run 43871163733 ve README sınırları |
+| Windows desteği | **21/21 cross-compile + Wine**; native build + registry cache smoke geçti | P2-19b ve run 43871931643 |
+| macOS | native build + registry cache smoke geçti; tam pytest/`axiom-scan` doğrulanmamış | run 43871931643 ve README sınırları |
 | Doküman dili | TR + EN (tam) | `docs/en/TUTORIAL.md` |
 | LSP | 10 metod (refs, rename, format, semantic tokens, signature help) | `tests/test_lsp_full_features.py` |
 | API dokümanı | `axiom doc` → `docs/api/` | `axiom doc std/` |
@@ -1167,8 +1170,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `720a6ab`: Python 3.10–13'te 1495 geçti/27 skip; 7/7 job başarılı | — | 2000 |
-| Son native platform smoke | `aaf7eee`: derleme Linux/Windows/macOS 3/3 başarılı; cache testi workflow değişikliğinden sonra bekliyor | — | — |
+| Son tam CI | `ecc770d`: Python 3.10–13'te 1496 geçti/27 skip; 7/7 job başarılı | — | 2000 |
+| Son native platform smoke | `ecc770d`: registry cache hit + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1212,6 +1215,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    hedeflerini kararlaştır.
 
 **G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`720a6ab` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
+`ecc770d` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
 doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
 kanıt ve açık kapsam sınırlarıyla eklenir.
