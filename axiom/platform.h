@@ -69,6 +69,12 @@ typedef SSIZE_T ssize_t;
 #  ifndef strncasecmp
 #    define strncasecmp _strnicmp
 #  endif
+#  ifndef popen
+#    define popen _popen
+#  endif
+#  ifndef pclose
+#    define pclose _pclose
+#  endif
 #  ifndef F_OK
 #    define F_OK 0
 #  endif
