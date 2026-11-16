@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `089ffde`: [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
-| Son CI denemesi | `089ffde` [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
-| Son başarılı tam CI | `089ffde` [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
-| Son platform smoke | `089ffde`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43948302925 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `23a0aca`: [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
+| Son CI denemesi | `23a0aca` [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
+| Son başarılı tam CI | `23a0aca` [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
+| Son platform smoke | `23a0aca`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43962051589 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `089ffde` — [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
-| Son tam yerel test paketi | `089ffde` üzerine imzalı Registry v2 çalışma ağacı: **1565 geçti, 0 başarısız** (1331,91 sn); commit sonrası GitHub CI bekleniyor |
+| Son kaydedilmiş başarılı CI | `23a0aca` — [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
+| Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
 
 ---
 
@@ -405,7 +405,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `089ffde`: tüm 7 job başarılı; bu çalışma ağacında ayrıca 1565 yerel test geçti | GitHub Actions run 43948302993; `python3 -m pytest -q` |
+| Son tamamlanmış tam test paketi | CI `23a0aca`: tüm 7 job başarılı; 1565 yerel test geçti | GitHub Actions run 43962051440; `python3 -m pytest -q` |
 | Son native platform smoke | `468e3d9`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43936054928 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |

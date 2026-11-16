@@ -1,8 +1,8 @@
 # G4 — Signed Registry index v2
 
 **Date:** 17 November 2026  
-**Base commit:** `089ffde`  
-**Status:** Signed index generation and client verification implemented and locally tested. Official hosting, production trust-key lifecycle, and initial-use freshness remain open.
+**Base commit:** `089ffde` · **Implementation commit:** `23a0aca`
+**Status:** Signed index generation and client verification implemented. Local full suite and GitHub CI passed. Official hosting, production trust-key lifecycle, and initial-use freshness remain open.
 
 ## What changed
 
@@ -41,6 +41,14 @@ passed
 
 python3 -m py_compile axiom/registry.py axiom/package_manager.py
 passed
+
+GitHub Actions CI on `23a0aca`
+7/7 jobs passed: Python 3.10–3.13, ASan/UBSan, LLVM/DWARF, format.
+https://github.com/jaminakoai/axiom/actions/runs/43962051440
+
+Native platform smoke on `23a0aca`
+Linux, Windows, macOS: 3/3 jobs passed.
+https://github.com/jaminakoai/axiom/actions/runs/43962051589
 ```
 
 The tests cover signature validation, tampering, expiry, sequence rollback,
@@ -64,6 +72,7 @@ consumer installing and testing the sample package through a signed index.
 
 ## Next
 
-Run GitHub CI on the committed change. Then decide and document production key
-custody/rotation and registry hosting; keep the first-use replay limitation
-visible in the release policy.
+Decide and document production key custody/rotation and registry hosting; keep
+the first-use replay limitation visible in the release policy. Run the signed
+index path on native Windows/macOS before treating its file-lock behavior as
+cross-platform verified.
