@@ -816,7 +816,8 @@ Notes:
 
 - Local (`--path`) and Git (`--git`, `--rev`) dependencies are supported.
 - The SHA-256 checksums in `axiom.lock` are checked with `verify`.
-- There is not yet a central package registry; for registry dependencies, `install` gives an explicit error.
+- The Registry v1 client downloads, verifies, and installs signed packages; configure its URL and public key in the `[registry]` section of `axiom.toml`.
+- `axpm pack --signing-key <key.pem>` prepares a signed package from a clean Git commit but does not upload it. An official hosted registry and `publish` command are not available yet. See [Registry v1](../REGISTRY.md).
 
 ### Language server
 
@@ -944,7 +945,7 @@ Known limitation: in some expressions that **do not assign**, such as `print(f(x
 
 ### Package registry
 
-`axpm` really clones and SHA-256 locks local (`--path`) and Git (`--git`, `--rev`) dependencies. However, there is not yet a central package registry; for registry dependencies, `install` gives an explicit error.
+`axpm` installs local (`--path`), Git (`--git`, `--rev`), and configured Registry v1 dependencies. Registry packages are checked with SHA-256 and Ed25519 signatures, and their archives are safely extracted. `axpm pack` creates a signed artifact from a clean commit, but there is no automatic `publish` command or official hosted registry yet. See [Registry v1](../REGISTRY.md) for current support and limits.
 
 ### WASM target
 

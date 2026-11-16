@@ -816,7 +816,8 @@ Notlar:
 
 - Yerel (`--path`) ve Git (`--git`, `--rev`) bağımlılıkları desteklenir.
 - `axiom.lock` içindeki SHA-256 sağlama toplamları `verify` ile denetlenir.
-- Merkezi bir paket havuzu (registry) henüz yoktur; registry bağımlılıklarında `install` açık hata verir.
+- Registry v1 istemcisi imzalı paketleri indirir, doğrular ve kurar; registry adresi ve açık anahtarı `axiom.toml` içindeki `[registry]` bölümünde yapılandırılır.
+- `axpm pack --signing-key <anahtar.pem>` temiz Git commit'inden imzalı paket çıktısı hazırlar; bu komut registry'ye yükleme yapmaz. Resmi barındırılan paket havuzu ve `publish` komutu henüz yoktur. Ayrıntı: [Registry v1](REGISTRY.md).
 
 ### Dil sunucusu
 
@@ -944,7 +945,7 @@ Bilinen sınır: `print(f(x))` gibi **atama yapılmayan** bazı ifadelerde üret
 
 ### Paket registry'si
 
-`axpm` yerel (`--path`) ve Git (`--git`, `--rev`) bağımlılıklarını gerçekten klonlar ve SHA-256 ile kilitler. Ancak merkezi bir paket havuzu (registry) henüz yoktur; registry bağımlılıklarında `install` açık hata verir.
+`axpm` yerel (`--path`), Git (`--git`, `--rev`) ve yapılandırılmış Registry v1 bağımlılıklarını kurar. Registry paketlerinde SHA-256 ve Ed25519 imzası doğrulanır; paket arşivleri güvenli biçimde açılır. `axpm pack` temiz commit'ten imzalı registry artefaktı üretir, ancak otomatik `publish` veya resmi barındırılan registry yoktur. Güncel destek ve sınırlar: [Registry v1](REGISTRY.md).
 
 ### WASM hedefi
 

@@ -11,6 +11,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   deposu dışında olmak zorundadır.
 
 ### Düzeltilen
+- Türkçe ve İngilizce tutorial'ların artık eski “registry yok” açıklaması
+  yerine Registry v1 ve `axpm pack` sınırlarını anlatması sağlandı.
 - Registry paketleri artık tar içindeki symlink/hardlink, özel dosya ve Windows
   tarzı kaçış yollarını açmadan reddediyor; dosyalar doğrulanmış hedeflere tek tek
   yazılıyor.
