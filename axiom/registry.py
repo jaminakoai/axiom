@@ -28,11 +28,63 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional, Tuple
 
 SCHEMA_VERSION = 1
 DEFAULT_REGISTRY = "https://registry.axiom-lang.org"
+
+
+def _extract_package_archive(raw: bytes, destination: Path) -> None:
+    """Extract only regular files/directories from an untrusted package tarball.
+
+    Python's extraction filters are not available on every supported Python
+    version. Validate the complete member list before writing anything, reject
+    links/special files, then copy file contents into paths below destination.
+    This prevents a symlink member from redirecting a later member outside the
+    extraction root.
+    """
+    root = destination.resolve()
+    with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive:
+        members = archive.getmembers()
+        normalized = []
+        for member in members:
+            name = member.name
+            path = PurePosixPath(name)
+            parts = path.parts
+            if (
+                not name
+                or "\\" in name
+                or path.is_absolute()
+                or any(part in ("..", "") for part in parts)
+                or (parts and ":" in parts[0])
+            ):
+                raise RuntimeError(f"güvensiz arşiv yolu: {name}")
+            if member.issym() or member.islnk() or not (member.isdir() or member.isfile()):
+                raise RuntimeError(f"desteklenmeyen arşiv girdisi: {name}")
+            if member.isfile() and not parts:
+                raise RuntimeError(f"geçersiz arşiv dosya yolu: {name}")
+            target = root.joinpath(*parts).resolve()
+            try:
+                target.relative_to(root)
+            except ValueError:
+                raise RuntimeError(f"güvensiz arşiv yolu: {name}") from None
+            if target == root / "pkg.tar.gz":
+                raise RuntimeError("paket arşivi ayrılmış bir cache yolunu kullanıyor: pkg.tar.gz")
+            normalized.append((member, target))
+
+        for member, target in normalized:
+            if member.isdir():
+                target.mkdir(parents=True, exist_ok=True)
+                target.chmod(0o755)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source = archive.extractfile(member)
+            if source is None:
+                raise RuntimeError(f"arşiv girdisi okunamadı: {member.name}")
+            with source, target.open("xb") as output:
+                shutil.copyfileobj(source, output)
+            target.chmod(0o755 if member.mode & 0o111 else 0o644)
 
 # ---------------------------------------------------------------------------
 # Semver
@@ -354,12 +406,7 @@ class RegistryClient:
         try:
             # Tarball'i cache'te sakla: sonraki isabetlerde yeniden doğrulanır.
             (tmp / "pkg.tar.gz").write_bytes(raw)
-            with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as tf:
-                for member in tf.getmembers():
-                    target = (tmp / member.name).resolve()
-                    if not str(target).startswith(str(tmp.resolve())):
-                        raise RuntimeError(f"güvensiz arşiv yolu: {member.name}")
-                tf.extractall(tmp)
+            _extract_package_archive(raw, tmp)
             if cache_dir.exists():
                 shutil.rmtree(cache_dir, ignore_errors=True)
             tmp.rename(cache_dir)

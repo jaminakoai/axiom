@@ -113,13 +113,13 @@ axpm verify           # kilit vs. yerel içerik
 | Sahte paket (index ele geçirildi) | İmza tarball baytları üzerinden doğrulanır | `test_download_rejects_bad_signature` |
 | İmzasız paket | Varsayılan **red**; `allow_unsigned` açıkça istenmeli | `test_download_rejects_unsigned_by_default` |
 | Bozuk önbellek | Her isabette yeniden doğrulanır, bozuksa atılıp indirilir | `test_download_heals_corrupted_cache` |
-| Arşivde `../` (path traversal) | Üyelere `resolve()` kontrolü, dışına çıkarsa red | `test_download_rejects_path_traversal` |
+| Arşiv path traversal ve link kaçışı | Bütün üyeler önceden doğrulanır; yalnız normal dosya/dizin açılır, symlink/hardlink ve özel dosyalar reddedilir | `test_download_rejects_path_traversal`, `test_download_rejects_archive_links_before_extracting_children`, `test_download_rejects_windows_style_archive_paths` |
 | Bağımlılık döngüsü | `visiting` yığını ile tespit | `test_resolve_detects_cycle` |
 | Sürüm çakışması | Daha yüksek sürüm seçilir, kısıt yeniden doğrulanır | `test_resolve_*` |
 | Yanked sürüm | Çözümlemede atlanır | `test_resolve_skips_yanked` |
 
 **Kritik not:** Doğrulama *indirme sırasında* değil, **tam indirme sonrasında** yapılır ve
-*önce doğrula, sonra aç* sırası korunur (`_fetch` → `verify_sha256` → imza → `extractall`).
+*önce doğrula, sonra aç* sırası korunur (`_fetch` → `verify_sha256` → imza → güvenli üye doğrulama/açma).
 
 ---
 

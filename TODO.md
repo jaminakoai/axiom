@@ -242,7 +242,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm` şu an registry
   istemcisi; `pack`/`publish` komutu veya barındırılan registry yayın yolu yok.
   Paket imzalama ve indeks barındırma yöntemi seçilmeden örnek paket
-  yayınlanmış sayılmaz.
+  yayınlanmış sayılmaz. İndirme tarafında tar symlink/hardlink ve özel dosya
+  kaçışları reddediliyor; kötü niyetli arşiv regresyonları test edildi.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
   taahhüdü özellikle 1.0 kararı öncesine bırakıldı; README'ler ARM64 durumunu

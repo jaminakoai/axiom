@@ -6,6 +6,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Düzeltilen
+- Registry paketleri artık tar içindeki symlink/hardlink, özel dosya ve Windows
+  tarzı kaçış yollarını açmadan reddediyor; dosyalar doğrulanmış hedeflere tek tek
+  yazılıyor.
 - Linux ARM64 artık doğrulanmış tam test/`axiom-scan` ortamı olarak tanıtılmıyor;
   sürüm politikası ve kanıta dayalı platform matrisi Türkçe/İngilizce belgelendi.
 - `axpm install`, registry bağımlılığı sürümü değiştiğinde eski yerel kopyayı

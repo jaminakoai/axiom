@@ -11,6 +11,7 @@ Kapsam:
 """
 import base64
 import hashlib
+import io
 import json
 import os
 import shutil
@@ -322,6 +323,57 @@ def test_download_rejects_path_traversal(tmp_path):
     client = RegistryClient(cfg)
     with pytest.raises(RuntimeError, match="güvensiz arşiv yolu"):
         client.download("evil", "1.0.0", sha256_bytes(data), "")
+
+
+def _download_untrusted_members(tmp_path, members):
+    registry = tmp_path / "registry"
+    package_dir = registry / "evil"
+    package_dir.mkdir(parents=True)
+    tarball = package_dir / "1.0.0.tar.gz"
+    with tarfile.open(tarball, "w:gz") as archive:
+        for info, contents in members:
+            if contents is None:
+                archive.addfile(info)
+            else:
+                info.size = len(contents)
+                archive.addfile(info, io.BytesIO(contents))
+    raw = tarball.read_bytes()
+    (registry / "index.json").write_text(json.dumps({
+        "schema": 1,
+        "packages": {"evil": [{
+            "version": "1.0.0", "sha256": sha256_bytes(raw), "dependencies": {}
+        }]},
+    }), encoding="utf-8")
+    client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    client.download("evil", "1.0.0", sha256_bytes(raw), "")
+
+
+@pytest.mark.parametrize("link_type", [tarfile.SYMTYPE, tarfile.LNKTYPE])
+def test_download_rejects_archive_links_before_extracting_children(tmp_path, link_type):
+    link = tarfile.TarInfo("pivot")
+    link.type = link_type
+    link.linkname = "../outside"
+    child = tarfile.TarInfo("pivot/escaped.txt")
+    with pytest.raises(RuntimeError, match="desteklenmeyen arşiv girdisi"):
+        _download_untrusted_members(tmp_path, [(link, None), (child, b"pwned")])
+    assert not (tmp_path / "cache" / "sha256" / "outside" / "escaped.txt").exists()
+
+
+def test_download_rejects_archive_special_files(tmp_path):
+    fifo = tarfile.TarInfo("named-pipe")
+    fifo.type = tarfile.FIFOTYPE
+    with pytest.raises(RuntimeError, match="desteklenmeyen arşiv girdisi"):
+        _download_untrusted_members(tmp_path, [(fifo, None)])
+
+
+@pytest.mark.parametrize("member_name", [r"..\escaped.txt", "C:payload.txt"])
+def test_download_rejects_windows_style_archive_paths(tmp_path, member_name):
+    member = tarfile.TarInfo(member_name)
+    with pytest.raises(RuntimeError, match="güvensiz arşiv yolu"):
+        _download_untrusted_members(tmp_path, [(member, b"pwned")])
+    assert not (tmp_path / "escaped.txt").exists()
 
 
 # ---------------------------------------------------------------------------
