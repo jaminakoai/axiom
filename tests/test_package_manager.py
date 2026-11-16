@@ -222,6 +222,99 @@ def test_sample_scan_report_package_runs_and_installs_as_path_dependency(tmp_pat
     assert run.returncode == 0, run.stdout + run.stderr
 
 
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
+    """Exercise the committed sample through pack, registry install, and tests.
+
+    The source is copied into a temporary monorepo and committed there so this
+    preflight also works while the main checkout has unrelated local changes.
+    Its signing key and registry are ephemeral and never leave tmp_path.
+    """
+    source_package = Path(__file__).resolve().parent.parent / "packages" / "axiom-scan-report"
+    repo = tmp_path / "sample-monorepo"
+    package = repo / "packages" / "axiom-scan-report"
+    package.parent.mkdir(parents=True)
+    shutil.copytree(source_package, package, ignore=shutil.ignore_patterns(
+        ".git", "target", ".axiom", "__pycache__", "*.pyc"
+    ))
+
+    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Axiom Test"], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-m", "release preflight fixture"],
+                   check=True, capture_output=True)
+
+    signing_key = tmp_path / "ephemeral-registry-ed25519.pem"
+    public_key_path = tmp_path / "ephemeral-registry-ed25519.pub.pem"
+    subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(signing_key)],
+                   check=True, capture_output=True)
+    subprocess.run(["openssl", "pkey", "-in", str(signing_key), "-pubout", "-out",
+                    str(public_key_path)], check=True, capture_output=True)
+
+    packed = PackageManager(package).pack(signing_key, tmp_path / "packed-output")
+    tarball = packed / "0.1.0.tar.gz"
+    index_entry = json.loads(
+        (packed / "0.1.0.index-entry.json").read_text(encoding="utf-8")
+    )
+    assert index_entry["version"] == "0.1.0"
+    assert index_entry["sha256"] == hashlib.sha256(tarball.read_bytes()).hexdigest()
+
+    registry = tmp_path / "local-registry"
+    package_registry_dir = registry / "axiom-scan-report"
+    package_registry_dir.mkdir(parents=True)
+    shutil.copyfile(tarball, package_registry_dir / "0.1.0.tar.gz")
+    (registry / "index.json").write_text(json.dumps({
+        "schema": 1,
+        "packages": {"axiom-scan-report": [index_entry]},
+    }), encoding="utf-8")
+
+    app = tmp_path / "clean-consumer"
+    init = subprocess.run(
+        [str(AXPM_BIN), "init", str(app)], cwd=AXPM_BIN.parent.parent,
+        capture_output=True, text=True,
+    )
+    assert init.returncode == 0, init.stdout + init.stderr
+    public_key = public_key_path.read_text(encoding="utf-8")
+    (app / "axiom.toml").write_text(
+        '[package]\nname = "scan-report-consumer"\nversion = "0.1.0"\n'
+        'entry = "src/main.ax"\n\n[dependencies]\n'
+        'axiom-scan-report = "^0.1"\n\n[registry]\n'
+        f'url = "{registry.as_uri()}"\npublic_key = """{public_key}"""\n',
+        encoding="utf-8",
+    )
+    env = os.environ.copy()
+    for variable in ("AXIOM_REGISTRY", "AXIOM_REGISTRY_KEY", "AXIOM_ALLOW_UNSIGNED"):
+        env.pop(variable, None)
+    env["AXIOM_CACHE_DIR"] = str(tmp_path / "consumer-cache")
+
+    install = subprocess.run(
+        [str(AXPM_BIN), "install"], cwd=app, env=env,
+        capture_output=True, text=True,
+    )
+    assert install.returncode == 0, install.stdout + install.stderr
+    installed = app / ".axiom" / "deps" / "axiom-scan-report"
+    assert (installed / "src" / "lib.ax").is_file()
+    lock = (app / "axiom.lock").read_text(encoding="utf-8")
+    assert 'name = "axiom-scan-report"' in lock
+    assert 'version = "0.1.0"' in lock
+
+    (app / "tests" / "test_main.ax").write_text(
+        'import "axiom-scan-report"\n\n'
+        'fn main() -> void {\n'
+        '    verify report_label(0, 0) == "no_findings"\n'
+        '    verify report_label(3, 1) == "high_severity_findings"\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    package_tests = subprocess.run(
+        [str(AXPM_BIN), "test"], cwd=app, env=env,
+        capture_output=True, text=True,
+    )
+    assert package_tests.returncode == 0, package_tests.stdout + package_tests.stderr
+    assert "1/1 test başarılı" in package_tests.stdout
+
+
 def test_lockfile_generation_and_tamper_detection(tmp_path):
     dep_dir = tmp_path / "dep_lib"
     dep_dir.mkdir()

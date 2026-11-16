@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 52 rapor** · 53 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 53 rapor** · 54 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -102,6 +102,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 - [Registry index SHA path sınırı ve Windows cache modu](2026-11-16-registry-index-and-windows-cache.md)
 - [Linux/Windows/macOS registry cache smoke testi](2026-11-16-cross-platform-registry-cache-smoke.md)
 - [`axpm pack` → imza → yerel registry → paket testi](2026-11-16-axpm-pack-local-registry-smoke.md)
+- [Örnek paket için imzalı registry yayın ön kontrolü](2026-11-16-axpm-signed-release-preflight.md)
 
 ## Okuma sırası (yeni gelen için)
 

@@ -263,6 +263,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Yerel teknik akış uçtan uca doğrulandı: imzalı `pack`, Ed25519 doğrulaması,
   geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
   kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
+  CI'da gerçek `axiom-scan-report` örneğini geçici anahtarla paketleyip imzalayan,
+  yerel registry'den temiz tüketiciye kuran ve `axpm test` çalıştıran yayın ön
+  kontrolü eklendi; bu da resmi yayın sayılmaz. Kanıt:
+  `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
   unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden

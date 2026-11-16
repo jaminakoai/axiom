@@ -6,6 +6,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Eklendi
+- CI'da `axiom-scan-report` örneği için geçici Ed25519 anahtarıyla paketleme,
+  yerel registry'den temiz tüketiciye kurulum ve `axpm test` akışını birleştiren
+  yayın ön kontrolü eklendi; gerçek yayın yapılmaz.
 - `axpm pack`, temiz Git commit'inden deterministik tarball ve Ed25519 imzalı
   registry index girdisi hazırlar; monorepo altındaki paketleri de destekler ve
   otomatik yükleme yapmaz. İmza anahtarı Git deposu dışında olmak zorundadır.
