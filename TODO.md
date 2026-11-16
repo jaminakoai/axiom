@@ -12,12 +12,12 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `b874434`: Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman blokları 55 geçti |
-| Son CI denemesi | `b874434` [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı**; her Python sürümünde 1508 geçti / 27 skip, doküman blokları 55 geçti |
-| Son başarılı tam CI | `b874434` [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı** |
-| Son platform smoke | `b874434`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43895118939 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `a7cfe09`: Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman blokları 55 geçti |
+| Son CI denemesi | `a7cfe09` [run 43899281052](https://github.com/jaminakoai/axiom/actions/runs/43899281052), **7/7 başarılı**; her Python sürümünde 1508 geçti / 27 skip, doküman blokları 55 geçti |
+| Son başarılı tam CI | `a7cfe09` [run 43899281052](https://github.com/jaminakoai/axiom/actions/runs/43899281052), **7/7 başarılı** |
+| Son platform smoke | `a7cfe09`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43899280754 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `b874434` — [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı**; Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `a7cfe09` — [run 43899281052](https://github.com/jaminakoai/axiom/actions/runs/43899281052), **7/7 başarılı**; Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -366,8 +366,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `b874434`: Python 3.10–13’te her biri 1508 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43895118917 |
-| Son native platform smoke | `b874434`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43895118939 |
+| Son tamamlanmış tam test paketi | CI `a7cfe09`: Python 3.10–13’te her biri 1508 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43899281052 |
+| Son native platform smoke | `a7cfe09`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43899280754 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1212,8 +1212,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `b874434`: Python 3.10–13’te her biri 1508 geçti/27 skip; 7/7 başarılı | Run 43895118917 | 2000 |
-| Son native platform smoke | `b874434`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43895118939 | — |
+| Son tam CI | `a7cfe09`: Python 3.10–13’te her biri 1508 geçti/27 skip; 7/7 başarılı | Run 43899281052 | 2000 |
+| Son native platform smoke | `a7cfe09`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43899280754 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
