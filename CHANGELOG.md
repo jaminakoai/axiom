@@ -6,6 +6,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Düzeltilen
+- Linux ARM64 artık doğrulanmış tam test/`axiom-scan` ortamı olarak tanıtılmıyor;
+  sürüm politikası ve kanıta dayalı platform matrisi Türkçe/İngilizce belgelendi.
 - `axpm install`, registry bağımlılığı sürümü değiştiğinde eski yerel kopyayı
   korumak yerine doğrulanmış yeni içeriği atomik olarak kuruyor; terfi başarısız
   olursa önceki kopyayı geri yüklüyor. `axpm remove` artık erişilemeyen registry

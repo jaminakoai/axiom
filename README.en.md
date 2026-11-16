@@ -161,15 +161,19 @@ design*; measurements and caveats are in "Claims and evidence" below:
 ## 🚀 Quick Start
 
 ### Requirements
-* **Linux (x86_64 / ARM64):** Verified for the full test suite and
-  `axiom-scan`. Requires Python 3.10+, `clang` or `gcc`, and OpenSSL/zlib
-  development headers (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`).
+* **Linux x86_64:** Verified for the full test suite and `axiom-scan`. Requires
+  Python 3.10+, `clang` or `gcc`, and OpenSSL/zlib development headers
+  (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`). **ARM64 is experimental and
+  unverified.**
 * **Windows:** A clean install and native example build/run smoke test pass in
   CI with Python 3.12, LLVM `clang`, and the MSVC/Windows SDK toolchain. The full
   suite, `axiom-scan`, and manual installation steps are not yet verified.
 * **macOS:** The same smoke test passes in CI with Python 3.12 and Xcode Command
   Line Tools `clang`. The full suite, `axiom-scan`, and manual installation
   steps are not yet verified.
+
+See [docs/VERSIONING.md](docs/VERSIONING.md) for versioning and the verified
+platform support matrix.
 
 ### Installation and CLI Access
 ```bash
@@ -710,7 +714,7 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338));
+  on a real Windows runner ([CI run 43857903071](https://github.com/jaminakoai/axiom/actions/runs/43857903071));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.

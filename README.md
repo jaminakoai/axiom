@@ -161,15 +161,18 @@ bölümündedir:
 ## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
-* **Linux (x86_64 / ARM64):** Tam test paketi ve `axiom-scan` için doğrulanmış
-  ortam. Python 3.10+, `clang` veya `gcc`, OpenSSL ve zlib geliştirme başlıkları
-  gerekir (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`).
+* **Linux x86_64:** Tam test paketi ve `axiom-scan` için doğrulanmış ortam.
+  Python 3.10+, `clang` veya `gcc`, OpenSSL ve zlib geliştirme başlıkları
+  gerekir (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`). **ARM64 deneysel olup
+  doğrulanmamıştır.**
 * **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile temiz kurulum +
   native örnek derle/çalıştır duman testi CI'da geçti. Tam test paketi,
   `axiom-scan` ve el ile kurulum adımları henüz doğrulanmadı.
 * **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı duman
   testi geçti. Tam test paketi, `axiom-scan` ve el ile kurulum adımları henüz
   doğrulanmadı.
+
+Sürümleme ve doğrulanmış platform kapsamı: [docs/VERSIONING.md](docs/VERSIONING.md).
 
 ### Kurulum ve CLI Erişimi
 ```bash
