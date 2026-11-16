@@ -91,9 +91,7 @@ def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
     other_package = repo / "packages" / "other-package"
     other_package.mkdir(parents=True)
     (other_package / "not-in-this-package.txt").write_text("other\n", encoding="utf-8")
-    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.invalid"], check=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Axiom Test"], check=True)
+    _init_test_git_repo(repo, tmp_path / "empty-git-hooks")
     subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
     subprocess.run(["git", "-C", str(repo), "commit", "-m", "package fixture"], check=True,
                    capture_output=True)
@@ -104,6 +102,16 @@ def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
     subprocess.run(["openssl", "pkey", "-in", str(key), "-pubout", "-out", str(public_key)],
                    check=True, capture_output=True)
     return root, key, public_key
+
+
+def _init_test_git_repo(repo, hooks_dir):
+    """Initialize a repo without inheriting host hooks or commit signing."""
+    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Axiom Test"], check=True)
+    hooks_dir.mkdir()
+    subprocess.run(["git", "-C", str(repo), "config", "core.hooksPath", str(hooks_dir)], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "commit.gpgsign", "false"], check=True)
 
 
 @pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
@@ -238,9 +246,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
         ".git", "target", ".axiom", "__pycache__", "*.pyc"
     ))
 
-    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.invalid"], check=True)
-    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Axiom Test"], check=True)
+    _init_test_git_repo(repo, tmp_path / "empty-sample-git-hooks")
     subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True, capture_output=True)
     subprocess.run(["git", "-C", str(repo), "commit", "-m", "release preflight fixture"],
                    check=True, capture_output=True)
@@ -295,9 +301,17 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     assert install.returncode == 0, install.stdout + install.stderr
     installed = app / ".axiom" / "deps" / "axiom-scan-report"
     assert (installed / "src" / "lib.ax").is_file()
+    assert (installed / "tests" / "test_report.ax").is_file()
     lock = (app / "axiom.lock").read_text(encoding="utf-8")
     assert 'name = "axiom-scan-report"' in lock
     assert 'version = "0.1.0"' in lock
+
+    installed_tests = subprocess.run(
+        [str(AXPM_BIN), "test"], cwd=installed, env=env,
+        capture_output=True, text=True,
+    )
+    assert installed_tests.returncode == 0, installed_tests.stdout + installed_tests.stderr
+    assert "1/1 test başarılı" in installed_tests.stdout
 
     (app / "tests" / "test_main.ax").write_text(
         'import "axiom-scan-report"\n\n'

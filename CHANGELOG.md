@@ -26,6 +26,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   kurulmadan önce biçim açısından doğrulanıyor; Windows izin bitleri platforma
   uygun karşılaştırılıyor. Platform smoke CI'si gerçek cache hit yolunu da
   Linux/Windows/macOS runner'larında deneyecek şekilde genişletildi.
+- Yerel `file://` registry adresleri percent-encoded ve Windows sürücü yollarını
+  platforma uygun çözüyor; uzak host içeren dosya URL'leri reddediliyor. URL
+  çözümleme testleri Linux/Windows/macOS smoke matrisine eklendi.
 - Linux ARM64 artık doğrulanmış tam test/`axiom-scan` ortamı olarak tanıtılmıyor;
   sürüm politikası ve kanıta dayalı platform matrisi Türkçe/İngilizce belgelendi.
 - `axpm install`, registry bağımlılığı sürümü değiştiğinde eski yerel kopyayı

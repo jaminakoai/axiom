@@ -137,6 +137,28 @@ def _have_openssl() -> bool:
     return shutil.which("openssl") is not None
 
 
+def test_fetch_reads_file_uri_with_escaped_spaces(tmp_path):
+    source = tmp_path / "registry files" / "index.json"
+    source.parent.mkdir()
+    source.write_text('{"schema":1}', encoding="utf-8")
+
+    uri = source.as_uri()
+    assert registry_module._fetch(uri) == b'{"schema":1}'
+    assert registry_module._fetch(uri.replace("file://", "FILE://", 1)) == b'{"schema":1}'
+
+
+def test_fetch_rejects_remote_file_uri_host():
+    with pytest.raises(ValueError, match="uzak bir host"):
+        registry_module._fetch("file://example.invalid/index.json")
+
+
+def test_fetch_index_reports_invalid_file_uri_as_registry_error():
+    config = RegistryConfig(url="file://example.invalid/registry")
+
+    with pytest.raises(RuntimeError, match="registry URL geçersiz"):
+        registry_module.fetch_index(config)
+
+
 
 def _isolated_env(tmp_path):
     """axpm alt-süreçleri için İZOLE ortam.

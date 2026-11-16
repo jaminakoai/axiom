@@ -247,9 +247,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
   paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
-  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **76 geçti**
-  (56 registry, 20 paket yöneticisi). Gerçek cache hit testi de platform smoke'da
-  Linux/Windows/macOS dosya izinleriyle geçti.
+  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **80 geçti**
+  (59 registry, 21 paket yöneticisi). Yerel `file://` URL'leri artık yüzde
+  kaçışlarını ve Windows sürücü yollarını platforma uygun çözüyor; uzak host'lar
+  açık hata veriyor. Cache hit ve file URL regresyonları Linux/Windows/macOS
+  platform smoke'a eklendi; `url2pathname` dönüşümü yerelde doğrulandı.
+  Takip commit'inin kaynak CI ve platform smoke sonuçları henüz bekleniyor.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
@@ -264,8 +267,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
   kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
   CI'da gerçek `axiom-scan-report` örneğini geçici anahtarla paketleyip imzalayan,
-  yerel registry'den temiz tüketiciye kuran ve `axpm test` çalıştıran yayın ön
-  kontrolü eklendi; bu da resmi yayın sayılmaz. Kanıt:
+  yerel registry'den temiz tüketiciye kuran, kurulu paketin kendi testini ve
+  tüketici import testini `axpm test` ile çalıştıran yayın ön kontrolü eklendi;
+  bu da resmi yayın sayılmaz. Kanıt:
   `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/

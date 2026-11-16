@@ -33,8 +33,13 @@ jobs:
       - name: Axiom kurulumu
         run: python -m pip install -e . pytest
 
-      - name: Registry cache dosya sistemi smoke testi
-        run: python -m pytest -q tests/test_registry.py -k download_cache_hit_is_portable_on_current_platform
+      - name: Registry cache ve file URL platform smoke testleri
+        run: >-
+          python -m pytest -q tests/test_registry.py -k
+          "download_cache_hit_is_portable_on_current_platform or
+          fetch_reads_file_uri_with_escaped_spaces or
+          fetch_rejects_remote_file_uri_host or
+          fetch_index_reports_invalid_file_uri_as_registry_error"
 
       - name: Derleyici sürümünü doğrula
         run: |

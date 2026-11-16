@@ -405,10 +405,18 @@ def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: s
 # ---------------------------------------------------------------------------
 
 def _fetch(url: str, timeout: int = 30) -> bytes:
-    if url.startswith("file://"):
-        return Path(urllib.parse.urlparse(url).path).read_bytes()
-    if url.startswith("/"):
-        return Path(url).read_bytes()
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme.lower() == "file":
+        if parsed.netloc.lower() not in ("", "localhost"):
+            raise ValueError("file:// registry URL uzak bir host içeremez")
+        if parsed.query or parsed.fragment:
+            raise ValueError("file:// registry URL query veya fragment içeremez")
+        # url2pathname decodes escaped characters and converts drive-letter
+        # paths such as /C:/... correctly on Windows.
+        path = urllib.request.url2pathname(parsed.path)
+        return Path(path).read_bytes()
+    if not parsed.scheme and url.startswith("/"):
+        return Path(parsed.path).read_bytes()
     req = urllib.request.Request(url, headers={"User-Agent": "axpm/0.5"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
@@ -424,6 +432,8 @@ def fetch_index(config: RegistryConfig) -> RegistryIndex:
         raise RuntimeError(f"registry'ye ulaşılamadı ({url}): {e.reason}")
     except OSError as e:
         raise RuntimeError(f"registry index okunamadı ({url}): {e}")
+    except ValueError as e:
+        raise RuntimeError(f"registry URL geçersiz ({url}): {e}") from e
     try:
         data = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as e:
