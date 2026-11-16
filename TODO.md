@@ -12,12 +12,12 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `2dda920`: Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman blokları 55 geçti |
-| Son CI denemesi | `2871874` [run 43890193347](https://github.com/jaminakoai/axiom/actions/runs/43890193347): PAX düzeltmesi dahil Python 3.10/12/13 paketleri geçti (1507/27 skip); Python 3.11'de DFIR parite testi canlı `/var/log/auth.log` değiştiği için başarısız oldu. Sabit log ve HTTP `Date` normalizasyonu çalışma ağacında düzeltildi; self-hosted parite dosyası 27/27 geçti, yeni CI bekliyor |
-| Son başarılı tam CI | `2dda920` [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı**; `2871874` için test düzeltmeleri sonrası yeni tam CI bekleniyor |
-| Son platform smoke | `c71e026`, cache + file URL testleri ve native build/run Linux/Windows/macOS run 43886676224 **3/3 başarılı** (platform başına 4 test geçti) |
+| Son tamamlanmış tam test paketi | GitHub Actions `b874434`: Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman blokları 55 geçti |
+| Son CI denemesi | `b874434` [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı**; her Python sürümünde 1508 geçti / 27 skip, doküman blokları 55 geçti |
+| Son başarılı tam CI | `b874434` [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı** |
+| Son platform smoke | `b874434`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43895118939 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `2dda920` — [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı**; Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `b874434` — [run 43895118917](https://github.com/jaminakoai/axiom/actions/runs/43895118917), **7/7 başarılı**; Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -217,7 +217,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   başlangıç akışı hazırlandı; temiz klon/venv kurulumunda doğrulandı:
   [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md) ve
   [`docs/reports/2026-11-16-g3-external-onboarding.md`](docs/reports/2026-11-16-g3-external-onboarding.md).
-- [x] Başlangıç akışını güncel `2871874` HEAD'inde yeniden doğrula: temiz klon,
+- [x] Başlangıç akışını `2871874` commit'inde (doğrulama anındaki güncel master)
+  yeniden doğrula: temiz klon,
   venv/kurulum, örnek derleme, `rules` ve sentetik sentinel `scan` başarılı;
   15 saniye, `match_count=1`. Bu sentetik kontrol bağımsız kullanıcı kapısını
   kapatmaz; güncel kanıt G3 raporundadır.
@@ -275,7 +276,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   HTTP örneğinin backend çalıştırmaları arasında `Date` header'ının saniye
   değişimini gösterdi; normalizasyon yalnızca satır başındaki HTTP `Date`
   header'ını etkisizleştiriyor ve server header'ı gibi sabit çıktıları hâlâ
-  karşılaştırıyor; buna özel regresyon eklendi. Yeni tam CI bekleniyor.
+  karşılaştırıyor; buna özel regresyon eklendi. Düzeltme commit'i `b874434`
+  için tam CI 7/7 geçti: Python 3.10–3.13'te her biri 1508 geçti/27 skip,
+  doküman kod blokları 55 geçti. Platform smoke Linux/Windows/macOS'ta 3/3
+  geçti (run 43895118939); önceki parite hatası kapandı.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
@@ -362,8 +366,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | Son başarılı tam paket CI `2dda920`: Python 3.10–13’te her biri 1500 geçti/27 skip; tüm 7 job başarılı. Sonraki `2871874` koşusunda 3.10/12/13 geçti, 3.11'de değişken auth log girdili bir test tek hata verdi; düzeltme yerelde hedefli testten geçti | Run 43881080555; başarısız deneme 43890193347 |
-| Son native platform smoke | `2dda920`: cache/file URL seçkisi (platform başına 4 test) + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43881080465 |
+| Son tamamlanmış tam test paketi | CI `b874434`: Python 3.10–13’te her biri 1508 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43895118917 |
+| Son native platform smoke | `b874434`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43895118939 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1208,8 +1212,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `2871874`: Python 3.10/12/13'te 1507 geçti/27 skip; Python 3.11'de 1506 geçti/27 skip ve tek değişken auth log parite testi hatası. Yerel test düzeltmesi geçti; yeni CI bekleniyor | Run 43890193347 | 2000 |
-| Son native platform smoke | `c71e026`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
+| Son tam CI | `b874434`: Python 3.10–13’te her biri 1508 geçti/27 skip; 7/7 başarılı | Run 43895118917 | 2000 |
+| Son native platform smoke | `b874434`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43895118939 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |

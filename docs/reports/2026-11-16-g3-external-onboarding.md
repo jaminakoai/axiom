@@ -45,11 +45,11 @@ Henüz böyle bir kullanıcı raporu/issue yoktur. Hiçbir kullanıcı girdisi p
 alınmadı. Testçi sonucu geldiğinde girdiyi depolamadan bulgu `TODO.md`'ye
 gizlilik gözeten yeniden üretim bilgisi ve önceliğiyle eklenecek.
 
-## Güncel HEAD üzerinde tekrar doğrulama
+## `2871874` commit'inde tekrar doğrulama
 
 Önceki `79e27c5` kanıtını güncel kaynakla karıştırmamak için aynı temiz klon,
-kurulum, build ve sentetik sentinel akışı GitHub `master`'ın güncel
-`2871874` commit'inde yeniden çalıştırıldı. `git clone --depth 1`, Python venv,
+kurulum, build ve sentetik sentinel akışı doğrulama anında GitHub `master`'ın
+güncel `2871874` commit'inde yeniden çalıştırıldı. `git clone --depth 1`, Python venv,
 `pip install -e .`, `axiom --version`, örnek derleme, `rules` ve `scan`
 adımlarının tamamı başarılı oldu. Toplam süre **15 saniye** idi.
 

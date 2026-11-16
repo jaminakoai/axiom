@@ -58,7 +58,9 @@ asserts its two expected Sigma detections. Running the complete self-hosted
 parity file locally also exposed one-second HTTP `Date` header differences in
 two network examples; normalization now ignores only that header, with a unit
 test that still rejects changes to the `server` header. The full parity file
-passes (27 passed), and docs tests pass (38 passed). A new full CI for these
-test fixes is required. The previous successful
-full CI remains `2dda920` (7/7, 1,500 passed / 27 skipped per Python 3.10–3.13),
-and `c71e026` platform smoke passed 3/3 with four selected tests on each OS.
+passes (27 passed), and docs tests pass (38 passed). Follow-up commit `b874434`
+passed full CI 7/7: Python 3.10–3.13 each reported 1,508 passed / 27 skipped,
+docs code blocks reported 55 passed, and native platform smoke passed on Linux,
+Windows, and macOS (3/3). The previous successful full CI was `2dda920` (7/7,
+1,500 passed / 27 skipped per Python 3.10–3.13), and `c71e026` platform smoke
+passed 3/3 with four selected tests on each OS.
