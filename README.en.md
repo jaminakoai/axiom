@@ -175,6 +175,10 @@ export PATH="$PWD/bin:$PATH"
 axiom build compiler/main.ax -o bin/axiomc
 ```
 
+For an independent tester: reproducible Linux setup, a five-minute
+`axiom-scan` smoke test, and a privacy-conscious feedback template are in the
+[external user trial guide](docs/EXTERNAL_VALIDATION.md).
+
 ### Interactive REPL (Interactive Shell)
 ```bash
 axiom repl

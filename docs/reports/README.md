@@ -97,6 +97,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 ## 16 Kasım 2026
 
 - [G2 — Sabitlenmiş gerçek YARA corpus doğrulaması](2026-11-16-g2-yara-real-rule-corpus.md)
+- [G3 — Dış kullanıcı başlangıç akışı hazırlığı](2026-11-16-g3-external-onboarding.md)
 
 ## Okuma sırası (yeni gelen için)
 

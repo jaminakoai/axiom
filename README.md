@@ -175,6 +175,10 @@ export PATH="$PWD/bin:$PATH"
 axiom build compiler/main.ax -o bin/axiomc
 ```
 
+Bağımsız kullanıcı için tekrar üretilebilir Linux kurulumu, 5 dakikalık
+`axiom-scan` duman testi ve gizlilik gözeten geri bildirim şablonu:
+[Dış kullanıcı denemesi](docs/EXTERNAL_VALIDATION.md).
+
 ### Etkileşimli REPL (Interactive Shell)
 ```bash
 axiom repl

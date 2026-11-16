@@ -203,10 +203,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - **Kapı:** örnek kümesindeki her kural ya doğru eşleşiyor ya neden destek
   dışında olduğu açıkça raporlanıyor.
 
-#### G3 — Dış kullanıcı doğrulaması `[ ]` — Faz 1 ürün kapısı
+#### G3 — Dış kullanıcı doğrulaması `[~]` — Faz 1 ürün kapısı
 
-- [ ] Bir dış kullanıcı için tekrar üretilebilir kurulum ve 5 dakikalık
-  başlangıç akışı hazırla.
+- [x] Bir dış kullanıcı için tekrar üretilebilir kurulum ve 5 dakikalık
+  başlangıç akışı hazırlandı; temiz klon/venv kurulumunda doğrulandı:
+  [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md) ve
+  [`docs/reports/2026-11-16-g3-external-onboarding.md`](docs/reports/2026-11-16-g3-external-onboarding.md).
 - [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
   çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
 - [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
@@ -243,7 +245,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 **G3 — Dış kullanıcı doğrulaması.** G1 ve G2 kapandı. G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir; sıradaki ürün kapısı G3 bağımsız kullanıcı doğrulamasıdır.
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir. G3 kurulum/başlangıç rehberi temiz klon ve sentetik hedefle doğrulandı; artık kapının kalan kısmı bağımsız kullanıcının yetkili dosya veya PCAP'inde gerçek iş akışını deneyip gizli olmayan geri bildirim vermesidir: [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md).
 
 ---
 
