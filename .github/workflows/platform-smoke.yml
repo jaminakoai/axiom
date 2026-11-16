@@ -33,6 +33,13 @@ jobs:
       - name: Axiom kurulumu
         run: python -m pip install -e . pytest
 
+      - name: macOS OpenSSL 3 PATH
+        if: runner.os == 'macOS'
+        run: echo "$(brew --prefix openssl@3)/bin" >> "$GITHUB_PATH"
+
+      - name: Ed25519 için OpenSSL doğrula
+        run: openssl version
+
       - name: Registry cache ve file URL platform smoke testleri
         run: >-
           python -m pytest -q tests/test_registry.py -k
@@ -40,7 +47,11 @@ jobs:
           fetch_reads_file_uri_with_escaped_spaces or
           fetch_rejects_remote_file_uri_host or
           fetch_index_reports_invalid_file_uri_as_registry_error or
-          registry_index_state_lock_serializes_processes"
+          registry_index_state_lock_serializes_processes or
+          signed_index_verifies_and_persists_accepted_sequence or
+          signed_index_rejects_tampering_and_missing_trust_key or
+          signed_index_rejects_rollback_and_same_sequence_equivocation or
+          signed_index_rejects_expired_and_excessively_long_expiration"
 
       - name: Derleyici sürümünü doğrula
         run: |
