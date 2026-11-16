@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
 **Date:** 16 November 2026  
-**Reviewed source commit:** `53a32f9` (includes the guide, regression tests, and CI record)
+**Reviewed source commit:** `043de10` (includes the guide, regression tests, and latest CI record)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed
@@ -45,14 +45,14 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 The target was the harmless sentinel from the guide. This is install/build/smoke
 evidence only and does **not** satisfy independent-user validation.
 
-### GitHub checks for source commit `53a32f9`
+### GitHub checks for source commit `043de10`
 
-- Full CI [run 43915764328](https://github.com/jaminakoai/axiom/actions/runs/43915764328):
+- Full CI [run 43919495340](https://github.com/jaminakoai/axiom/actions/runs/43919495340):
   **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
   **1514 passed, 27 skipped**; documentation code blocks reported **55 passed**.
   The pinned real-YARA corpus differential job reported **29 passed** on each
   Python version.
-- Native platform smoke [run 43915764353](https://github.com/jaminakoai/axiom/actions/runs/43915764353):
+- Native platform smoke [run 43919495717](https://github.com/jaminakoai/axiom/actions/runs/43919495717):
   **Linux, Windows, and macOS 3/3 passed**.
 
 The modified docs and added regression tests were also checked locally:
