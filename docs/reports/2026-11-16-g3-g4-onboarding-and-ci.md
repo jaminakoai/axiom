@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
 **Date:** 16 November 2026  
-**Reviewed source commit:** `1e9dd235394b1f5d1fbc730c84c2b6be6d8972c5`  
+**Reviewed source commit:** `3615e9e` (includes the guide and regression tests)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed
@@ -45,18 +45,17 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 The target was the harmless sentinel from the guide. This is install/build/smoke
 evidence only and does **not** satisfy independent-user validation.
 
-### GitHub checks for source commit `1e9dd23`
+### GitHub checks for source commit `3615e9e`
 
-- Full CI [run 43907139711](https://github.com/jaminakoai/axiom/actions/runs/43907139711):
+- Full CI [run 43911790238](https://github.com/jaminakoai/axiom/actions/runs/43911790238):
   **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
-  **1508 passed, 27 skipped**; documentation code blocks reported **55 passed**.
+  **1514 passed, 27 skipped**; documentation code blocks reported **55 passed**.
   The pinned real-YARA corpus differential job reported **29 passed** on each
   Python version.
-- Native platform smoke [run 43907139654](https://github.com/jaminakoai/axiom/actions/runs/43907139654):
+- Native platform smoke [run 43911790895](https://github.com/jaminakoai/axiom/actions/runs/43911790895):
   **Linux, Windows, and macOS 3/3 passed**.
 
-These CI runs predate the documentation edits in this report. The modified docs
-and added regression tests were checked locally:
+The modified docs and added regression tests were also checked locally:
 
 ```text
 python -m pytest -q tests/test_external_validation_docs.py tests/test_registry_docs.py \
@@ -85,13 +84,9 @@ registry index.
 - Windows/macOS validation remains native build/run and the documented cache/file
   URL smoke subset. The full pytest and `axiom-scan` trial have not been verified
   on those operating systems.
-- The full CI result applies to source commit `1e9dd23`; documentation changes
-  made afterward require a new CI run before they can be claimed as CI-verified.
 
 ## Next steps
 
-1. Run the new documentation tests and the full CI against the commit containing
-   these guide changes.
-2. Obtain one independent, authorized G3 real-workflow report.
-3. Decide the G4 registry host/deployment method and production signing-key
+1. Obtain one independent, authorized G3 real-workflow report.
+2. Decide the G4 registry host/deployment method and production signing-key
    custody; then stage and publish the first versioned example package.
