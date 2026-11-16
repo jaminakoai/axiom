@@ -154,14 +154,15 @@ design*; measurements and caveats are in "Claims and evidence" below:
 2. **Garbage-Collector-Free (Zero-GC):** No pauses. Predictable micro-second latency for real-time systems and security tooling.
 3. **Contract-Driven Logic Safety:** With `requires`, `ensures`, and `verify` blocks, logic errors and bounds overflows are caught at compile time.
 4. **`Result<T, E>` + `?` for Expected Errors:** *Expected* conditions such as a missing file, a closed port, or a network error flow through `Result`; the `?` operator propagates the error to the caller while `defer` cleanup runs. `main` can also return `Result<int, str>` (Err → stderr + exit 1). The stdlib's `Result` layer is ready: `std/io/file`, `std/encoding/json`, `std/net/http`, `std/crypto/tls`, `std/os/process`. Contract violations (`requires`/`ensures`/`verify`) are treated as *programming errors* and halt the program.
-5. **Standalone ELF Binary:** No dependency hell like Python; a single command produces a standalone ELF binary (dynamically linked against the system OpenSSL and glibc libraries).
+5. **Native Executable:** One command produces an executable for the target operating system (ELF on Linux); system-library linkage depends on the platform.
 
 ---
 
 ## 🚀 Quick Start
 
 ### Requirements
-* Linux (x86_64 / ARM64)
+* Linux (x86_64 / ARM64) is the verified environment for the full test suite and `axiom-scan`.
+* A clean install and native build/run smoke test pass in Windows and macOS CI; the full suite and `axiom-scan` workflow are not yet verified on those platforms.
 * Python 3.10+ (for the Axiom bootstrap compiler)
 * `clang` or `gcc` (for native binary compilation)
 
@@ -586,7 +587,7 @@ std/                # 52 Standard Library Modules / 385 functions
 | **No Garbage Collector (No GC)** | ❌ | ✅ | ✅ |
 | **Borrow Checker Burden** | None | High | **None** (no lifetime accounting; ownership via refcount) |
 | **Logic Verification (`requires`/`ensures`)** | ❌ | Partial/External | **Built-in** |
-| **Distribution** | Cumbersome (venv/pip) | Static Binary | **Standalone ELF Binary (OpenSSL/glibc dynamically linked)** |
+| **Distribution** | Cumbersome (venv/pip) | Static Binary | **One-command native executable (system libraries may be required)** |
 
 > The stars in this table are **not measurements** (except the speed row); the
 > ergonomics score is subjective. The only measured comparison is in
@@ -703,9 +704,11 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
 - **CI:** green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
-- **Windows:** cross-compilation + execution under `wine` verified; no CI run on
-  a real Windows machine.
-- **macOS:** no runner/verification.
+- **Windows:** clean installation and a native example build/run smoke test pass
+  on a real Windows runner ([CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338));
+  the full suite and `axiom-scan` remain unverified.
+- **macOS:** the same smoke test passes on a real macOS runner; the full suite
+  and `axiom-scan` remain unverified.
 - **WASI:** does not build without `--sysroot`; WASM encoder is experimental.
 - **Static linking:** binaries link dynamically to glibc/OpenSSL/zlib; no full
   static musl support.
@@ -718,7 +721,7 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
 ### ⬜ Planned
 
 - `v1.0` API stability and a two-release backward-compatibility promise.
-- Real Windows and macOS CI runners; end-to-end WASI tests with a sysroot.
+- Full test-suite and DFIR/`axiom-scan` workflows on Windows/macOS; end-to-end WASI tests with a sysroot.
 - Static (musl) binary production.
 - Published package ecosystem (target: 200+ packages) and a first enterprise user.
 - An IEC 62304 / ISO 26262 audit evidence pack from `axiom prove` output.

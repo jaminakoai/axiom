@@ -154,14 +154,15 @@ bölümündedir:
 2. **Çöp Toplayıcısız (Zero-GC):** Duraksama yok. Gerçek zamanlı sistemler ve güvenlik araçları için öngörülebilir mikro-saniye gecikme.
 3. **Sözleşmeli Doğrulama (Contract-Driven Logic Safety):** `requires`, `ensures` ve `verify` blokları ile mantık hataları ve sınır taşmaları daha derleme anında tespit edilir.
 4. **Beklenen Hatalar İçin `Result<T, E>` + `?`:** Dosya yok, port kapalı, ağ hatası gibi *beklenen* durumlar `Result` ile akar; `?` operatörü hatayı üst katmana iletir, `defer` temizliği çalışır. `main` de `Result<int, str>` dönebilir (Err → stderr + exit 1). Stdlib'in `Result` katmanı hazırdır: `std/io/file`, `std/encoding/json`, `std/net/http`, `std/crypto/tls`, `std/os/process`. Sözleşme ihlalleri (`requires`/`ensures`/`verify`) ise *programlama hatası* sayılır ve programı durdurur.
-5. **Bağımsız ELF İkili Dosyası (Standalone Binary):** Python gibi bağımlılık cehennemi yok; tek bir komutla bağımsız ELF ikili dosyası üretir (Sistem OpenSSL ve glibc kütüphanelerine dinamik bağlıdır).
+5. **Yerel İkili Dosya:** Tek komutla hedef işletim sisteminin çalıştırılabilir biçiminde (Linux'ta ELF) ikili üretir; sistem kütüphanelerine bağlantı platforma göre değişir.
 
 ---
 
 ## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
-* Linux (x86_64 / ARM64)
+* Linux (x86_64 / ARM64) tam test paketi ve `axiom-scan` için doğrulanmış ortamdır.
+* Windows ve macOS'ta temiz kurulum + yerel derleme/çalıştırma duman testi CI'da doğrulanır; tam test paketi ve `axiom-scan` iş akışı bu platformlarda henüz doğrulanmamıştır.
 * Python 3.10+ (Axiom Bootstrap Derleyicisi için)
 * `clang` veya `gcc` (Yerel ikili derleme için)
 
@@ -585,7 +586,7 @@ std/                # 52 Standart Kütüphane Modülü / 385 fonksiyon
 | **Çöp Toplayıcısız (No GC)** | ❌ | ✅ | ✅ |
 | **Borrow Checker Zorluğu** | Yok | Yüksek | **Yok** (ömür muhasebesi yok; sahiplik refcount ile) |
 | **Mantık Doğrulama (`requires`/`ensures`)** | ❌ | Kısmi/Harici | **Yerleşik (Built-in)** |
-| **Dağıtım** | Hantal (venv/pip) | Statik Binary | **Bağımsız ELF İkili Dosyası (OpenSSL/glibc dinamik bağlı)** |
+| **Dağıtım** | Hantal (venv/pip) | Statik Binary | **Tek komutla yerel ikili (sistem kütüphaneleri gerekebilir)** |
 
 > Tablodaki yıldızlar **ölçüm değildir** (hız satırı hariç); ergonomi puanı
 > özneldir. Ölçülen tek karşılaştırma `benchmarks/RESULTS.md`'dedir.
@@ -692,16 +693,18 @@ En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarıl�
 - HTTP istemcisi, gerçek JSON parser, YARA/Sigma motorları, PCAP okuyucu.
 - Paket yöneticisi + registry v1 (ed25519 imza, semver, transitive, yanked).
 - LSP (10 metod), `axiom doc`, TR+EN rehber ve şartname, 43 geliştirme raporu.
-- Linux ve Windows hedefi; NFC/NFD normalizasyonu; epoll tabanlı olay döngüsü.
+- Linux ve Windows hedefleri; NFC/NFD normalizasyonu; epoll tabanlı olay döngüsü.
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
 - **CI:** yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
-- **Windows:** çapraz derleme + `wine` ile çalıştırma doğrulandı; gerçek Windows
-  makinede CI koşusu yok.
-- **macOS:** runner/doğrulama yok.
+- **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
+  duman testi geçti ([CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338));
+  tam test paketi ve `axiom-scan` doğrulanmadı.
+- **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
+  `axiom-scan` doğrulanmadı.
 - **WASI:** `--sysroot` olmadan derlenmez; WASM encoder deneysel.
 - **Statik bağlama:** ikililer glibc/OpenSSL/zlib'e dinamik bağlı; tam statik
   musl desteği yok.
@@ -714,7 +717,7 @@ En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarıl�
 ### ⬜ Planlanan
 
 - `v1.0` API kararlılığı ve 2 sürüm geriye uyum taahhüdü.
-- Gerçek Windows ve macOS CI runner'ları; WASI sysroot ile uçtan uca test.
+- Windows/macOS'ta tam test paketi ve DFIR/`axiom-scan` iş akışları; WASI sysroot ile uçtan uca test.
 - Statik (musl) ikili üretimi.
 - Yayınlanmış paket ekosistemi (hedef: 200+ paket) ve ilk kurumsal kullanıcı.
 - `axiom prove` çıktısından IEC 62304 / ISO 26262 denetim kanıt paketi.
