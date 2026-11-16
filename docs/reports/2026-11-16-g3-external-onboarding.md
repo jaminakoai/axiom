@@ -45,6 +45,28 @@ Henüz böyle bir kullanıcı raporu/issue yoktur. Hiçbir kullanıcı girdisi p
 alınmadı. Testçi sonucu geldiğinde girdiyi depolamadan bulgu `TODO.md`'ye
 gizlilik gözeten yeniden üretim bilgisi ve önceliğiyle eklenecek.
 
+## Güncel HEAD üzerinde tekrar doğrulama
+
+Önceki `79e27c5` kanıtını güncel kaynakla karıştırmamak için aynı temiz klon,
+kurulum, build ve sentetik sentinel akışı GitHub `master`'ın güncel
+`2871874` commit'inde yeniden çalıştırıldı. `git clone --depth 1`, Python venv,
+`pip install -e .`, `axiom --version`, örnek derleme, `rules` ve `scan`
+adımlarının tamamı başarılı oldu. Toplam süre **15 saniye** idi.
+
+```text
+commit: 2871874
+environment: Linux x86_64, local Python 3.13
+axiom --version: Axiom (λx) v0.5.0-alpha
+rules: ok=true, rules=1
+scan: ok=true, match_count=1
+match: Axiom_External_Validation, offset=36, length=37
+target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
+elapsed: 15 s
+```
+
+Bu güncel doğrulama da yalnızca temiz kurulum/build ve sentetik akışı kanıtlar;
+bağımsız kullanıcı deneyimi veya gerçek dosya/PCAP kabulü değildir.
+
 Dokümantasyon doğrulaması: `python -m pytest -q --tb=short
 tests/test_docs_en.py tests/test_docgen.py tests/test_tutorial_examples.py` →
 **38 passed**; `make fmt-check` ve `git diff --check` başarılı.

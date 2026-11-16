@@ -59,6 +59,7 @@ _NORMALIZERS = [
     (re.compile(r"PID:\s*\d+"), "PID: N"),
     (re.compile(r"pid[:=]\s*\d+", re.IGNORECASE), "pid: N"),
     (re.compile(r"\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}"), "TS"),
+    (re.compile(r"(?im)^[ \t]*date:[^\r\n]*$"), "date: <HTTP-date>"),
     (re.compile(r"(Sure|sure|Süre)\s*\(ms\)\s*:\s*\d+"), r"\1 (ms): N"),
     (re.compile(r"(Gecen|Geçen)\s+S(ü|u)re\s*\(ms\)\s*:\s*\d+"), "Gecen Sure (ms): N"),
     (re.compile(r"timestamp_ms\"?:\"?\d+"), 'timestamp_ms":"N'),
@@ -153,19 +154,38 @@ def _driver(src: Path):
 
 @pytest.mark.skipif(not AXIOMC.exists(), reason="bin/axiomc yok")
 @pytest.mark.parametrize("name", SUPPORTED)
-def test_selfhosted_matches_python_driver(name):
+def test_selfhosted_matches_python_driver(name, tmp_path, monkeypatch):
     src = EXAMPLES / name
     if name in NEEDS_NETWORK:
         from tests.support_env import network_probe
         _ok, _why = network_probe()
         if not _ok:
             pytest.skip(f"Ağ gerektiren örnek: {_why}")
+
+    if name == "22_dfir_triage.ax":
+        # Both executions must read identical log bytes. The example otherwise
+        # falls back to a live host log, which can change between subprocesses.
+        log_path = tmp_path / "auth.log"
+        log_path.write_text(
+            "Jan  1 00:00:00 web01 sshd[1]: Failed password for root from 1.2.3.4 port 22 ssh2\n"
+            "Jan  1 00:00:01 web01 sshd[1]: Accepted password for root from 1.2.3.4 port 22 ssh2\n"
+            'Jan  1 00:00:02 web01 apache: 10.0.0.9 - - "GET /index.php?id=1%20union%20select%20password HTTP/1.1" 200\n',
+            encoding="utf-8",
+        )
+        monkeypatch.setenv("AXIOM_DFIR_LOG", str(log_path))
+
     sh_rc, sh_out = _selfhosted(src)
     py_rc, py_out = _driver(src)
 
     # CLI araclari argumansiz calistirilinca kullanim mesaji + exit 1 dondurur;
     # onemli olan iki arka ucun AYNI kodu ve AYNI ciktiyi vermesi.
     assert sh_rc == py_rc, f"{name}: cikis kodu farki {sh_rc} vs {py_rc}\n{sh_out[:1500]}"
+
+    if name == "22_dfir_triage.ax":
+        report = json.loads(sh_out)
+        assert report["log"] == {"source": str(log_path), "lines": "3"}
+        detection_ids = {item["rule_id"] for item in report["detections"]["items"]}
+        assert {"SSH_BRUTE_FORCE", "SQL_INJECTION"} <= detection_ids
 
     a = _normalize(sh_out)
     b = _normalize(py_out)
@@ -322,3 +342,11 @@ def test_dfir_normalization_keeps_integrity_detections_and_risk():
     skewed_log = _normalize(_dfir_sample(log={"source": "/tmp/other.log",
                                               "lines": "3"}))
     assert a != skewed_log, "log kaynagi farki gozden kacmamali"
+
+
+def test_http_date_normalization_ignores_only_volatile_date_header():
+    before = "HTTP/1.1 200 OK\ndate: Mon, 16 Nov 2026 15:13:51 GMT\nserver: uvicorn\n"
+    after = "HTTP/1.1 200 OK\ndate: Mon, 16 Nov 2026 15:13:52 GMT\nserver: uvicorn\n"
+    assert _normalize(before) == _normalize(after)
+    assert _normalize(before) != _normalize(after.replace("server: uvicorn",
+                                                           "server: other"))

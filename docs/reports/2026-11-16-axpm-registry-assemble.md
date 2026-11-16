@@ -48,8 +48,17 @@ passed
 CI run `43886676395` for `c71e026` found that Python 3.13 did not reject the
 oversized PAX test fixture, while Python 3.10, 3.11, and 3.12 each passed 1,507
 tests and the other CI jobs succeeded. The local fix now decompresses through a
-bounded spool and supplies a PAX/GNU guard before `tarfile` parses members. The
-87 focused tests and PAX regression pass locally; a new CI run is still
-required. The previous successful full CI was `2dda920` (7/7, 1,500 passed / 27
-skipped per Python 3.10–3.13), and `c71e026` platform smoke passed 3/3 with four
-selected tests on each OS.
+bounded spool and supplies a PAX/GNU guard before `tarfile` parses members.
+CI run `43890193347` for `2871874` confirmed the PAX fix across Python 3.10,
+3.12, and 3.13 (1,507 passed / 27 skipped each). Python 3.11 reported one
+unrelated parity-test failure: `22_dfir_triage.ax` read the changing live
+`/var/log/auth.log` between the Python and self-hosted executions (83 vs. 81
+lines). The test now supplies both backends the same fixed three-line log and
+asserts its two expected Sigma detections. Running the complete self-hosted
+parity file locally also exposed one-second HTTP `Date` header differences in
+two network examples; normalization now ignores only that header, with a unit
+test that still rejects changes to the `server` header. The full parity file
+passes (27 passed), and docs tests pass (38 passed). A new full CI for these
+test fixes is required. The previous successful
+full CI remains `2dda920` (7/7, 1,500 passed / 27 skipped per Python 3.10–3.13),
+and `c71e026` platform smoke passed 3/3 with four selected tests on each OS.
