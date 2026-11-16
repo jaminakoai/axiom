@@ -219,10 +219,16 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - **Kapı:** en az bir bağımsız kullanıcının gerçek iş akışı ve sonucu
   belgelenmeden Faz 3/1.0 iddiasına geçme.
 
-#### G4 — Alfa dağıtımını sağlamlaştır `[ ]`
+#### G4 — Alfa dağıtımını sağlamlaştır `[~]`
 
+- [x] Yerel derleme hazırlığında POSIX'e özgü `which` ve `/dev/null`
+  varsayımlarını taşınabilir Python karşılıklarına taşı; native Windows/macOS
+  linker bayraklarını host'a göre seç. Platform seçim testleri Linux'ta geçti;
+  gerçek Windows/macOS runner doğrulaması hâlâ açık.
 - [ ] GitHub Actions'ı güncel Linux, gerçek Windows runner ve macOS runner'da
-  doğrula; Wine testini gerçek Windows CI kanıtı olarak sayma.
+  doğrula; Wine testini gerçek Windows CI kanıtı olarak sayma. Bu kapı için
+  `.github/workflows/platform-smoke.yml` native derle/çalıştır işi eklendi;
+  üç runner sonucu gelmeden madde kapanmaz.
 - [ ] Temiz makineden kurulum/çalıştırma adımlarını doğrula; platform ve sistem
   kütüphanesi gereksinimlerini açıkça yaz.
 - [ ] `axpm` için en az bir resmi, sürümlenmiş örnek paketi yayınla; imza,
@@ -240,9 +246,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] Regülasyon kanıt paketi, fon başvurusu ve genel amaçlı dil hedeflerini
   yalnız somut talep/ortak bulunduğunda başlat.
 
-### Şimdi çalışılacak tek madde
+### Aktif kapı ve paralel hazırlık
 
-**G3 — Dış kullanıcı doğrulaması.** G1 ve G2 kapandı. G1: NUL
+**G3 — Dış kullanıcı doğrulaması** hâlâ Faz 1'in açık kabul kapısıdır. G3
+bağımsız kullanıcı geri bildirimi beklerken, G4 için G3 kanıtına bağlı olmayan
+taşınabilirlik hazırlıkları paralel yürütülebilir; bu hazırlıklar G3'ü veya G4
+kapısını kapatmış sayılmaz. G1 ve G2 kapandı. G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
 overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir. G3 kurulum/başlangıç rehberi temiz klon ve sentetik hedefle doğrulandı; artık kapının kalan kısmı bağımsız kullanıcının yetkili dosya veya PCAP'inde gerçek iş akışını deneyip gizli olmayan geri bildirim vermesidir: [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md).

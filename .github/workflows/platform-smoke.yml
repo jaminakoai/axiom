@@ -1,0 +1,53 @@
+name: Native platform smoke
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  native-smoke:
+    name: Native build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Linux sistem bağımlılıkları
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang libssl-dev zlib1g-dev
+
+      - name: Axiom kurulumu
+        run: python -m pip install -e .
+
+      - name: Derleyici sürümünü doğrula
+        run: |
+          axiom --version
+          clang --version
+
+      - name: Derle ve çalıştır (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          axiom build examples/01_hello.ax --output "$RUNNER_TEMP/axiom-hello"
+          python -c 'import os, subprocess; p=os.path.join(os.environ["RUNNER_TEMP"], "axiom-hello"); r=subprocess.run([p], check=True, capture_output=True, text=True); print(r.stdout); assert "[DOGRULAMA]" in r.stdout'
+
+      - name: Derle ve çalıştır (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          axiom build examples/01_hello.ax --output "$env:RUNNER_TEMP\axiom-hello.exe"
+          python -c 'import os, subprocess; p=os.path.join(os.environ["RUNNER_TEMP"], "axiom-hello.exe"); r=subprocess.run([p], check=True, capture_output=True, text=True); print(r.stdout); assert "[DOGRULAMA]" in r.stdout'

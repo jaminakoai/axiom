@@ -4,6 +4,7 @@ Axiom Programming Language (λx) - Command Line Interface (CLI Driver)
 import sys
 import os
 import argparse
+import shutil
 import subprocess
 import tempfile
 from pathlib import Path
@@ -56,6 +57,14 @@ def get_platform_link_flags(target: Optional[str]) -> List[str]:
         return ["-lws2_32"]
     if "wasm" in t:
         return []
+    if not t and sys.platform == "win32":
+        return ["-lws2_32"]
+    if (not t or t in ("native", "host")) and sys.platform == "darwin":
+        # macOS provides dlopen/pthread/math through libSystem; there is no
+        # separate libdl to link against.
+        # zlib ships with the SDK; OpenSSL is optional and is not part of the
+        # macOS SDK, so do not force Homebrew-specific library search paths.
+        return ["-lz"]
     return ["-lz", "-lssl", "-lcrypto", "-ldl", "-lm"]
 
 
@@ -65,6 +74,8 @@ def get_thread_flag(target: Optional[str]) -> List[str]:
              "x86_64-w64-mingw32") or "mingw" in t:
         return []
     if "wasm" in t:
+        return []
+    if not t and sys.platform == "win32":
         return []
     return ["-pthread"]
 
@@ -82,8 +93,7 @@ def get_target_compiler_flags(target: Optional[str], cc: str, sysroot: Optional[
         # Windows: mingw-w64 araclari kullanilir (clang --target de olur ama
         # mingw sysroot'a ihtiyac duyar; kurulu cross-gcc en guvenilir yol).
         for cc_name in ("x86_64-w64-mingw32-gcc", "x86_64-w64-mingw32-clang"):
-            if subprocess.run(["which", cc_name], stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE).returncode == 0:
+            if shutil.which(cc_name):
                 return cc_name, ["-lws2_32"]
         return "x86_64-w64-mingw32-gcc", ["-lws2_32"]
     else:
@@ -100,13 +110,11 @@ def get_target_compiler_flags(target: Optional[str], cc: str, sysroot: Optional[
                 extra_flags.append(f"--sysroot={wasi_sysroot}")
 
     # Clang multi-target destegi
-    res = subprocess.run(["which", "clang"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if res.returncode == 0:
+    if shutil.which("clang"):
         return "clang", [f"--target={target_triple}"] + extra_flags
 
     cross_gcc = f"{target_triple}-gcc"
-    res_gcc = subprocess.run(["which", cross_gcc], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    if res_gcc.returncode == 0:
+    if shutil.which(cross_gcc):
         return cross_gcc, extra_flags
 
     return cc, [f"--target={target_triple}"] + extra_flags
@@ -119,7 +127,7 @@ def validate_target_toolchain(target: str, cc: str, target_flags: List[str]) -> 
     """
     t = target.lower().strip()
     probe_src = "#include <stdio.h>\nint main(void) { return 0; }\n"
-    cmd = [cc] + target_flags + ["-xc", "-", "-c", "-o", "/dev/null"]
+    cmd = [cc] + target_flags + ["-xc", "-", "-c", "-o", os.devnull]
     try:
         res = subprocess.run(cmd, input=probe_src.encode("utf-8"), capture_output=True, timeout=5)
         if res.returncode == 0:
@@ -188,8 +196,7 @@ def compile_axiom_source(
 
 def find_c_compiler() -> str:
     for cc in ["clang", "gcc"]:
-        res = subprocess.run(["which", cc], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if res.returncode == 0:
+        if shutil.which(cc):
             return cc
     raise RuntimeError("Sistemde 'clang' veya 'gcc' C derleyicisi bulunamadi!")
 
