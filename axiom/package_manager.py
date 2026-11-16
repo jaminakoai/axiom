@@ -11,6 +11,7 @@ import hashlib
 import shutil
 import subprocess
 import argparse
+import tempfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -538,9 +539,25 @@ fn main() -> void {{
                 version = info["version"]
                 target_dir = (self.deps_dir / dep_dir_name(name)).resolve()
                 src_dir, cache_hit = client.download(name, version, info["sha256"], info["sig"])
-                if not target_dir.exists() or not any(target_dir.iterdir()):
-                    target_dir.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copytree(src_dir, target_dir)
+                target_dir.parent.mkdir(parents=True, exist_ok=True)
+                # A new lock version must replace the previous installed
+                # contents. Stage beside the destination so the final rename
+                # is atomic; restore the old directory if promotion fails.
+                with tempfile.TemporaryDirectory(
+                    prefix=".axpm-package-", dir=str(target_dir.parent)
+                ) as staging_root:
+                    staged_dir = Path(staging_root) / "package"
+                    backup_dir = Path(staging_root) / "previous"
+                    shutil.copytree(src_dir, staged_dir)
+                    had_previous = target_dir.exists()
+                    if had_previous:
+                        os.replace(target_dir, backup_dir)
+                    try:
+                        os.replace(staged_dir, target_dir)
+                    except Exception:
+                        if had_previous and backup_dir.exists():
+                            os.replace(backup_dir, target_dir)
+                        raise
                 checksum = compute_dir_checksum(target_dir)
                 locked_packages.append({
                     "name": name,
@@ -625,10 +642,46 @@ fn main() -> void {{
 
         if self.lock_path.exists():
             lock = LockFile.from_file(self.lock_path)
-            lock.packages = [p for p in lock.packages if p.get("name") != dep_name]
+            previous_packages = lock.packages
+            packages_by_name = {p.get("name"): p for p in previous_packages if p.get("name")}
+
+            # Keep only the lockfile graph reachable from dependencies that
+            # remain in the manifest. This also drops orphaned registry
+            # transitive dependencies instead of leaving stale lock entries.
+            reachable = set()
+            pending = list(manifest.dependencies)
+            while pending:
+                name = pending.pop()
+                if name in reachable:
+                    continue
+                reachable.add(name)
+                pkg = packages_by_name.get(name, {})
+                dependencies = pkg.get("dependencies", [])
+                if isinstance(dependencies, list):
+                    pending.extend(dep for dep in dependencies if isinstance(dep, str))
+
+            lock.packages = [p for p in previous_packages if p.get("name") in reachable]
             lock.save(self.lock_path)
 
-        if purge and isinstance(spec, dict) and "git" in spec:
+            # Registry packages are per-project installed copies and should
+            # disappear when no remaining root dependency can reach them.
+            # Path dependencies are external; Git clones retain the existing
+            # opt-in purge behavior.
+            for pkg in previous_packages:
+                name = pkg.get("name")
+                source = pkg.get("source", "")
+                should_remove = source.startswith("registry:") or (
+                    purge and source.startswith("git:") and name == dep_name
+                )
+                if name not in reachable and should_remove:
+                    dep_dir = self.deps_dir / dep_dir_name(name)
+                    if dep_dir.exists():
+                        shutil.rmtree(dep_dir, ignore_errors=True)
+        elif not (isinstance(spec, dict) and "path" in spec) and (
+            purge or not (isinstance(spec, dict) and "git" in spec)
+        ):
+            # With no lockfile, the removed direct registry package can still
+            # be cleaned. Git remains opt-in and path dependencies are external.
             dep_dir = self.deps_dir / dep_dir_name(dep_name)
             if dep_dir.exists():
                 shutil.rmtree(dep_dir, ignore_errors=True)
@@ -826,7 +879,7 @@ def main(argv: Optional[List[str]] = None):
     # remove
     p_remove = subparsers.add_parser("remove", help="Bir bağımlılığı kaldırır")
     p_remove.add_argument("dependency", help="Kaldırılacak bağımlılık adı")
-    p_remove.add_argument("--purge", action="store_true", help="İndirilmiş git bağımlılığını da sil")
+    p_remove.add_argument("--purge", action="store_true", help="İndirilmiş Git bağımlılığı klonunu da sil")
 
     # search
     p_search = subparsers.add_parser("search", help="Registry'de paket arar")

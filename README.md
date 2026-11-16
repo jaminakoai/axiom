@@ -161,10 +161,15 @@ bölümündedir:
 ## 🚀 Hızlı Başlangıç
 
 ### Gereksinimler
-* Linux (x86_64 / ARM64) tam test paketi ve `axiom-scan` için doğrulanmış ortamdır.
-* Windows ve macOS'ta temiz kurulum + yerel derleme/çalıştırma duman testi CI'da doğrulanır; tam test paketi ve `axiom-scan` iş akışı bu platformlarda henüz doğrulanmamıştır.
-* Python 3.10+ (Axiom Bootstrap Derleyicisi için)
-* `clang` veya `gcc` (Yerel ikili derleme için)
+* **Linux (x86_64 / ARM64):** Tam test paketi ve `axiom-scan` için doğrulanmış
+  ortam. Python 3.10+, `clang` veya `gcc`, OpenSSL ve zlib geliştirme başlıkları
+  gerekir (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`).
+* **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile temiz kurulum +
+  native örnek derle/çalıştır duman testi CI'da geçti. Tam test paketi,
+  `axiom-scan` ve el ile kurulum adımları henüz doğrulanmadı.
+* **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı duman
+  testi geçti. Tam test paketi, `axiom-scan` ve el ile kurulum adımları henüz
+  doğrulanmadı.
 
 ### Kurulum ve CLI Erişimi
 ```bash

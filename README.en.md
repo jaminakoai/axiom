@@ -161,10 +161,15 @@ design*; measurements and caveats are in "Claims and evidence" below:
 ## 🚀 Quick Start
 
 ### Requirements
-* Linux (x86_64 / ARM64) is the verified environment for the full test suite and `axiom-scan`.
-* A clean install and native build/run smoke test pass in Windows and macOS CI; the full suite and `axiom-scan` workflow are not yet verified on those platforms.
-* Python 3.10+ (for the Axiom bootstrap compiler)
-* `clang` or `gcc` (for native binary compilation)
+* **Linux (x86_64 / ARM64):** Verified for the full test suite and
+  `axiom-scan`. Requires Python 3.10+, `clang` or `gcc`, and OpenSSL/zlib
+  development headers (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`).
+* **Windows:** A clean install and native example build/run smoke test pass in
+  CI with Python 3.12, LLVM `clang`, and the MSVC/Windows SDK toolchain. The full
+  suite, `axiom-scan`, and manual installation steps are not yet verified.
+* **macOS:** The same smoke test passes in CI with Python 3.12 and Xcode Command
+  Line Tools `clang`. The full suite, `axiom-scan`, and manual installation
+  steps are not yet verified.
 
 ### Installation and CLI Access
 ```bash

@@ -33,6 +33,7 @@ from axiom.registry import (  # noqa: E402
     RegistryConfig, RegistryClient, RegistryIndex, resolve_tree,
     version_matches, SemverError, sha256_bytes,
 )
+from axiom.package_manager import LockFile  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -181,8 +182,11 @@ def _make_registry(base: Path, packages, sign: bool = True, tamper: bool = False
                     + "".join(f'{k} = "{c}"\n' for k, c in (v.get("deps") or {}).items()),
                     encoding="utf-8",
                 )
-                (d / "src" / "lib.ax").write_text(
-                    f"fn {name.replace('-', '_')}_v() -> int {{ return 1 }}\n", encoding="utf-8")
+                source = v.get(
+                    "source",
+                    f"fn {name.replace('-', '_')}_v() -> int {{ return 1 }}\n",
+                )
+                (d / "src" / "lib.ax").write_text(source, encoding="utf-8")
                 tarball = base / name / f"{ver}.tar.gz"
                 with tarfile.open(tarball, "w:gz") as tf:
                     tf.add(d, arcname=".")
@@ -353,6 +357,83 @@ def test_axpm_install_registry_end_to_end(tmp_path):
     verify = subprocess.run([str(AXPM), "verify"], cwd=str(app),
                             capture_output=True, text=True, env=env)
     assert verify.returncode == 0, verify.stdout + verify.stderr
+
+    remove = subprocess.run([str(AXPM), "remove", "app-lib"],
+                            cwd=str(app), capture_output=True, text=True, env=env)
+    assert remove.returncode == 0, remove.stdout + remove.stderr
+    assert not (app / ".axiom" / "deps" / "app-lib").exists()
+    assert not (app / ".axiom" / "deps" / "json-lib").exists()
+    lock_after_remove = LockFile.from_file(app / "axiom.lock")
+    assert lock_after_remove.packages == []
+
+    verify_after_remove = subprocess.run([str(AXPM), "verify"], cwd=str(app),
+                                         capture_output=True, text=True, env=env)
+    assert verify_after_remove.returncode == 0, verify_after_remove.stdout + verify_after_remove.stderr
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_axpm_registry_upgrade_replaces_installed_package_contents(tmp_path):
+    reg, pub = _make_registry(tmp_path / "reg", {
+        "lib-a": [
+            {"version": "1.0.0", "source": "fn old_api() -> int { return 1 }\n"},
+            {"version": "1.1.0", "source": "fn new_api() -> int { return 2 }\n"},
+        ],
+    })
+    app = tmp_path / "app"
+    env = _isolated_env(tmp_path)
+    subprocess.run([str(AXPM), "init", str(app)], check=True, capture_output=True, env=env)
+
+    manifest = app / "axiom.toml"
+    manifest.write_text(
+        f'[package]\nname = "app"\nversion = "0.1.0"\nentry = "src/main.ax"\n\n'
+        f'[dependencies]\nlib-a = "=1.0.0"\n\n'
+        f'[registry]\nurl = "file://{reg}"\npublic_key = """{pub}"""\n',
+        encoding="utf-8",
+    )
+    install_v1 = subprocess.run([str(AXPM), "install"], cwd=str(app),
+                                 capture_output=True, text=True, env=env)
+    assert install_v1.returncode == 0, install_v1.stdout + install_v1.stderr
+    installed_source = app / ".axiom" / "deps" / "lib-a" / "src" / "lib.ax"
+    assert "old_api" in installed_source.read_text(encoding="utf-8")
+
+    manifest.write_text(manifest.read_text(encoding="utf-8").replace("=1.0.0", "=1.1.0"), encoding="utf-8")
+    install_v2 = subprocess.run([str(AXPM), "install"], cwd=str(app),
+                                capture_output=True, text=True, env=env)
+    assert install_v2.returncode == 0, install_v2.stdout + install_v2.stderr
+
+    assert "new_api" in installed_source.read_text(encoding="utf-8")
+    assert LockFile.from_file(app / "axiom.lock").packages[0]["version"] == "1.1.0"
+    verify = subprocess.run([str(AXPM), "verify"], cwd=str(app),
+                            capture_output=True, text=True, env=env)
+    assert verify.returncode == 0, verify.stdout + verify.stderr
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_axpm_remove_keeps_registry_package_still_used_transitively(tmp_path):
+    reg, pub = _make_registry(tmp_path / "reg", {
+        "json-lib": [{"version": "1.0.0"}],
+        "app-lib": [{"version": "0.3.0", "deps": {"json-lib": "^1.0"}}],
+    })
+    app = tmp_path / "app"
+    env = _isolated_env(tmp_path)
+    subprocess.run([str(AXPM), "init", str(app)], check=True, capture_output=True, env=env)
+    (app / "axiom.toml").write_text(
+        f'[package]\nname = "app"\nversion = "0.1.0"\nentry = "src/main.ax"\n\n'
+        f'[dependencies]\napp-lib = "^0.3"\njson-lib = "^1.0"\n\n'
+        f'[registry]\nurl = "file://{reg}"\npublic_key = """{pub}"""\n',
+        encoding="utf-8",
+    )
+    install = subprocess.run([str(AXPM), "install"], cwd=str(app),
+                             capture_output=True, text=True, env=env)
+    assert install.returncode == 0, install.stdout + install.stderr
+
+    remove = subprocess.run([str(AXPM), "remove", "app-lib", "--purge"],
+                            cwd=str(app), capture_output=True, text=True, env=env)
+    assert remove.returncode == 0, remove.stdout + remove.stderr
+    assert not (app / ".axiom" / "deps" / "app-lib").exists()
+    assert (app / ".axiom" / "deps" / "json-lib" / "axiom.toml").exists()
+    lock = LockFile.from_file(app / "axiom.lock")
+    assert [pkg["name"] for pkg in lock.packages] == ["json-lib"]
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")

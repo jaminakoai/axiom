@@ -6,6 +6,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Düzeltilen
+- `axpm install`, registry bağımlılığı sürümü değiştiğinde eski yerel kopyayı
+  korumak yerine doğrulanmış yeni içeriği atomik olarak kuruyor; terfi başarısız
+  olursa önceki kopyayı geri yüklüyor. `axpm remove` artık erişilemeyen registry
+  bağımlılıklarını temizliyor; `--purge` Git klonlarını da siliyor. Başka
+  bağımlılıkların kullandığı paylaşımlı registry paketleri korunuyor.
 - Native derleme için C derleyicisi keşfi ve hedef toolchain kontrolü artık
   POSIX `which`/`/dev/null` yollarına bağlı değil. Yerel Windows linker/thread
   bayrakları ve macOS SDK'sında bulunan zlib ile bağlantı seçiliyor;

@@ -10,11 +10,11 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-15 |
+| Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | GitHub Actions `53839c3`: Python 3.10–3.13’de her biri 1457 geçti, 27 genel ortam testi atlandı; doküman blokları 55 geçti |
+| Son tam test paketi | GitHub Actions `2e17925`: Python 3.10–3.13'te her biri 1478 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son başarılı CI | `53839c3` — [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082), **7/7 başarılı**; Python 3.10–3.13’de her biri 1457 geçti, 27 genel ortam testi atlandı; doküman testleri 55 geçti |
+| Son başarılı CI | `2e17925` — [run 43854136494](https://github.com/jaminakoai/axiom/actions/runs/43854136494), **7/7 başarılı**; Python 3.10–3.13'te her biri 1478 geçti / 27 genel ortam testi atlandı; doküman testleri 55 geçti |
 
 ---
 
@@ -224,16 +224,25 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Yerel derleme hazırlığında POSIX'e özgü `which` ve `/dev/null`
   varsayımlarını taşınabilir Python karşılıklarına taşı; native Windows/macOS
   linker bayraklarını host'a göre seç. Platform seçim testleri Linux'ta geçti;
-  gerçek Windows/macOS runner doğrulaması hâlâ açık.
+  native bayraklar üç OS smoke CI'sinde de doğrulandı.
 - [x] `.github/workflows/platform-smoke.yml` ile gerçek Linux, Windows ve
   macOS runner'larında temiz Python kurulumu, native derleme ve çalıştırma
-  doğrulandı; Wine kullanılmadı. [CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338),
+  doğrulandı; Wine kullanılmadı. [CI run 43854136351](https://github.com/jaminakoai/axiom/actions/runs/43854136351),
   3/3 runner başarılı. Bu tam pytest paketinin üç işletim sisteminde çalıştığı
   anlamına gelmez; tam paket CI'si Linux'ta kalıyor.
-- [ ] Temiz makineden kurulum/çalıştırma adımlarını doğrula; platform ve sistem
-  kütüphanesi gereksinimlerini açıkça yaz.
-- [ ] `axpm` için en az bir resmi, sürümlenmiş örnek paketi yayınla; imza,
-  checksum, uninstall/upgrade ve bozuk indirme yollarını test et.
+- [x] Temiz runner'larda kurulum/yerel örnek derle-çalıştır akışını doğrula;
+  Linux, Windows ve macOS test kapsamını ve Linux sistem kütüphanesi
+  gereksinimlerini iki README'de açıkça yaz. Windows/macOS için tam test paketi,
+  `axiom-scan` ve elle kurulum adımlarının henüz doğrulanmadığı açıkça belirtili.
+- [x] Registry paketlerinin imza/checksum/bozuk cache testleri zaten vardı;
+  sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
+  erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
+  paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
+  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **60 geçti**.
+- [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm` şu an registry
+  istemcisi; `pack`/`publish` komutu veya barındırılan registry yayın yolu yok.
+  Paket imzalama ve indeks barındırma yöntemi seçilmeden örnek paket
+  yayınlanmış sayılmaz.
 - [ ] Kırıcı API/syntax değişiklikleri, semver ve desteklenen platform matrisi
   için 1.0 öncesi kararı yaz.
 - **Kapı:** temiz ortamda kurulumdan örnek taramaya kadar belgelenmiş akış
