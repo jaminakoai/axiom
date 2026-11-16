@@ -61,7 +61,7 @@
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #  include <time.h>
-#  include <BaseTsd.h>
+#  include <basetsd.h>
 #  ifndef _SSIZE_T_DEFINED
 typedef SSIZE_T ssize_t;
 #    define _SSIZE_T_DEFINED

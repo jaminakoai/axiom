@@ -195,7 +195,10 @@ def test_axpm_pack_creates_deterministic_signed_registry_artifact(tmp_path):
         url=f"file://{published_registry}", public_key=public_key,
         cache_dir=tmp_path / "consumer-cache",
     ))
-    extracted, cache_hit = client.download("pack-project", "1.2.3", entry["sha256"], entry["sig"])
+    extracted, cache_hit = client.download(
+        "pack-project", "1.2.3", entry["sha256"], entry["sig"],
+        entry["dependencies"],
+    )
     assert not cache_hit
     assert (extracted / "src" / "main.ax").is_file()
     assert not (extracted / ".env").exists()

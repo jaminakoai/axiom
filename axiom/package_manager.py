@@ -754,7 +754,9 @@ fn main() -> void {{
             for name, info in sorted(tree.items()):
                 version = info["version"]
                 target_dir = (self.deps_dir / dep_dir_name(name)).resolve()
-                src_dir, cache_hit = client.download(name, version, info["sha256"], info["sig"])
+                src_dir, cache_hit = client.download(
+                    name, version, info["sha256"], info["sig"], info["deps"]
+                )
                 target_dir.parent.mkdir(parents=True, exist_ok=True)
                 # A new lock version must replace the previous installed
                 # contents. Stage beside the destination so the final rename

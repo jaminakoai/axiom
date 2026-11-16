@@ -31,9 +31,15 @@ import urllib.request
 from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional, Tuple
 
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python 3.10
+    import tomli as tomllib
+
 SCHEMA_VERSION = 1
 DEFAULT_REGISTRY = "https://registry.axiom-lang.org"
 _SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
+_REGISTRY_PACKAGE_NAME_RE = re.compile(r"^(@[A-Za-z0-9_.-]+/)?[A-Za-z0-9_.-]+$")
 
 
 def _extract_package_archive(raw: bytes, destination: Path) -> None:
@@ -309,12 +315,69 @@ class RegistryIndex:
 
     @classmethod
     def from_json(cls, data: Dict[str, Any], base_url: str) -> "RegistryIndex":
-        if data.get("schema", SCHEMA_VERSION) != SCHEMA_VERSION:
-            raise ValueError(f"desteklenmeyen registry şeması: {data.get('schema')}")
-        pkgs = data.get("packages") or {}
+        if not isinstance(data, dict):
+            raise ValueError("index.json kök değeri nesne olmalı")
+        schema = data.get("schema", SCHEMA_VERSION)
+        if type(schema) is not int or schema != SCHEMA_VERSION:
+            raise ValueError(f"desteklenmeyen registry şeması: {schema}")
+        pkgs = data.get("packages", {})
         if not isinstance(pkgs, dict):
             raise ValueError("index.json: 'packages' nesne olmalı")
-        return cls(pkgs, base_url)
+
+        validated: Dict[str, List[Dict[str, Any]]] = {}
+        for name, entries in pkgs.items():
+            if (
+                not isinstance(name, str)
+                or ".." in name
+                or name.count("/") > 1
+                or not _REGISTRY_PACKAGE_NAME_RE.fullmatch(name)
+            ):
+                raise ValueError(f"index.json: geçersiz paket adı: {name!r}")
+            if not isinstance(entries, list):
+                raise ValueError(f"index.json: '{name}' sürüm listesi dizi olmalı")
+            versions = set()
+            validated_entries = []
+            for position, entry in enumerate(entries):
+                location = f"packages.{name}[{position}]"
+                if not isinstance(entry, dict):
+                    raise ValueError(f"index.json: {location} nesne olmalı")
+                version = entry.get("version")
+                if not isinstance(version, str):
+                    raise ValueError(f"index.json: {location}.version metin olmalı")
+                try:
+                    version_key(version)
+                except (SemverError, ValueError, OverflowError) as exc:
+                    raise ValueError(f"index.json: {location}.version geçersiz") from exc
+                if version in versions:
+                    raise ValueError(f"index.json: {location}.version yinelenmiş")
+                versions.add(version)
+
+                sha = entry.get("sha256")
+                if not isinstance(sha, str) or _SHA256_HEX_RE.fullmatch(sha) is None:
+                    raise ValueError(f"index.json: {location}.sha256 64 hexadecimal karakter olmalı")
+                signature = entry.get("sig", "")
+                if not isinstance(signature, str):
+                    raise ValueError(f"index.json: {location}.sig metin olmalı")
+                dependencies = entry.get("dependencies", {})
+                if not isinstance(dependencies, dict):
+                    raise ValueError(f"index.json: {location}.dependencies nesne olmalı")
+                for dep_name, constraint in dependencies.items():
+                    if (
+                        not isinstance(dep_name, str)
+                        or ".." in dep_name
+                        or dep_name.count("/") > 1
+                        or not _REGISTRY_PACKAGE_NAME_RE.fullmatch(dep_name)
+                        or not isinstance(constraint, str)
+                    ):
+                        raise ValueError(
+                            f"index.json: {location}.dependencies geçersiz"
+                        )
+                yanked = entry.get("yanked", False)
+                if not isinstance(yanked, bool):
+                    raise ValueError(f"index.json: {location}.yanked boolean olmalı")
+                validated_entries.append(entry)
+            validated[name] = validated_entries
+        return cls(validated, base_url)
 
     def versions(self, name: str) -> List[Dict[str, Any]]:
         return list(self.packages.get(name) or [])
@@ -388,7 +451,6 @@ def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: s
             f"'{name}@{version}' sha256 uyuşmuyor.\n"
             f"  beklenen: {expected_sha}\n  gerçek  : {sha256_bytes(raw)}"
         )
-
     if sig_b64:
         ok, why = verify_signature(raw, sig_b64, config.public_key)
         if not ok:
@@ -396,9 +458,40 @@ def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: s
     elif not config.allow_unsigned:
         raise RuntimeError(
             f"'{name}@{version}' imzalanmamış ve allow_unsigned kapalı. "
-            f"Registry'yi düzeltin veya AXIOM_ALLOW_UNSIGNED=1 kullanın."
+            "Registry'yi düzeltin veya AXIOM_ALLOW_UNSIGNED=1 kullanın."
         )
 
+
+def _validate_package_manifest(
+    package_dir: Path,
+    name: str,
+    version: str,
+    indexed_dependencies: Dict[str, str],
+) -> None:
+    """Bind unsigned index metadata to the manifest covered by the tarball signature."""
+    manifest_path = package_dir / "axiom.toml"
+    try:
+        if manifest_path.stat().st_size > 1024 * 1024:
+            raise RuntimeError(f"'{name}@{version}' axiom.toml 1 MiB sınırını aşıyor")
+        manifest = tomllib.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, tomllib.TOMLDecodeError) as exc:
+        raise RuntimeError(f"'{name}@{version}' paket manifestosu okunamadı: {exc}") from exc
+
+    package = manifest.get("package") or manifest.get("project") or {}
+    if not isinstance(package, dict):
+        raise RuntimeError(f"'{name}@{version}' manifestosundaki [package] geçersiz")
+    if package.get("name") != name:
+        raise RuntimeError(f"registry paket adı imzalı manifestoyla uyuşmuyor: {name!r}")
+    if package.get("version") != version:
+        raise RuntimeError(f"registry sürümü imzalı manifestoyla uyuşmuyor: {version!r}")
+
+    manifest_dependencies = manifest.get("dependencies") or {}
+    if not isinstance(manifest_dependencies, dict):
+        raise RuntimeError(f"'{name}@{version}' manifestosundaki [dependencies] geçersiz")
+    if manifest_dependencies != indexed_dependencies:
+        raise RuntimeError(
+            f"'{name}@{version}' registry bağımlılıkları imzalı manifestoyla uyuşmuyor"
+        )
 
 # ---------------------------------------------------------------------------
 # İndirme
@@ -458,16 +551,41 @@ class RegistryClient:
         return self.config.cache_dir / "sha256" / sha
 
     def download(self, name: str, version: str, expected_sha: str,
-                 sig_b64: str) -> Tuple[Path, bool]:
+                 sig_b64: str,
+                 indexed_dependencies: Optional[Dict[str, str]] = None) -> Tuple[Path, bool]:
         """
         Paketi indirir, sha256 + imza doğrular, içerik-adresli cache'e açar.
         Dönüş: (açılmış_dizin, cache_iskaca_vurdu_mu)
+        `indexed_dependencies`, çözümleyicinin kullandığı bağımlılık haritasıdır.
+        Yüklenmiş index girdisiyle de eşleşmeli ve imzalı manifestoyla doğrulanır.
         """
         if not isinstance(expected_sha, str) or _SHA256_HEX_RE.fullmatch(expected_sha) is None:
             raise RuntimeError(
                 f"'{name}@{version}' registry index SHA-256 değeri geçersiz; "
                 "64 hexadecimal karakter bekleniyor"
             )
+        index_entries = [
+            entry for entry in self.index.versions(name)
+            if entry.get("version") == version
+            and str(entry.get("sha256", "")).lower() == expected_sha.lower()
+        ]
+        if len(index_entries) != 1:
+            raise RuntimeError(f"'{name}@{version}' registry index girdisi tekil değil")
+        index_entry = index_entries[0]
+        if index_entry.get("sig", "") != sig_b64:
+            raise RuntimeError(f"'{name}@{version}' registry imza alanı index ile uyuşmuyor")
+        index_dependencies = index_entry.get("dependencies")
+        if index_dependencies is None:
+            index_dependencies = {}
+        if not isinstance(index_dependencies, dict):
+            raise RuntimeError(f"'{name}@{version}' registry bağımlılık listesi geçersiz")
+        if indexed_dependencies is not None and indexed_dependencies != index_dependencies:
+            raise RuntimeError(
+                f"'{name}@{version}' çözümleme ve registry bağımlılık bilgileri uyuşmuyor"
+            )
+        indexed_dependencies = index_dependencies
+        if not isinstance(indexed_dependencies, dict):
+            raise RuntimeError(f"'{name}@{version}' registry bağımlılık listesi geçersiz")
 
         cache_dir = self.cache_path_for(expected_sha)
         stored_tarball = cache_dir / "pkg.tar.gz"
@@ -481,6 +599,9 @@ class RegistryClient:
                 _verify_package_tarball(cached, name, version, expected_sha,
                                         sig_b64, self.config)
                 if _cache_matches_archive(cached, cache_dir):
+                    _validate_package_manifest(
+                        cache_dir, name, version, indexed_dependencies
+                    )
                     return cache_dir, True
             # bozuk cache: temizle ve yeniden indir
             shutil.rmtree(cache_dir, ignore_errors=True)
@@ -503,6 +624,7 @@ class RegistryClient:
             # Tarball'i cache'te sakla: sonraki isabetlerde yeniden doğrulanır.
             (tmp / "pkg.tar.gz").write_bytes(raw)
             _extract_package_archive(raw, tmp)
+            _validate_package_manifest(tmp, name, version, indexed_dependencies)
             if cache_dir.exists():
                 shutil.rmtree(cache_dir, ignore_errors=True)
             tmp.rename(cache_dir)

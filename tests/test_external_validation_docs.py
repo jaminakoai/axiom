@@ -87,7 +87,8 @@ def test_public_trial_issue_form_requires_consent_and_avoids_private_artifacts()
         "I was authorized to use the tested file or PCAP",
         "I consent to publishing this sanitized report publicly",
         "Never paste full JSON",
-        "Tam JSON yapıştırmayın",
+        "Tam JSON'u ya da target_sha256 değerini",
+        "Only report match_count, rules, offset, length, or exit_code",
         "SHA-256 can identify a file",
         "SHA-256 (paylaşma yetkiniz yoksa boş bırakın)",
     ):

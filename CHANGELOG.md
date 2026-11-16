@@ -21,6 +21,15 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
 
 ### Düzeltilen
+- Registry istemcisi, doğrulanmış tarball içindeki `axiom.toml` paket adı,
+  sürümü ve bağımlılıklarını unsigned index kaydıyla karşılaştırıyor; kontrol
+  indirme ve cache hit yollarında uygulanıyor. Index imzası ve rollback politikası
+  henüz yok; resmi yayın öncesi G4 kararı gerekiyor.
+- Registry v1 index girdileri artık sürüm, hash, imza türü, bağımlılık haritası
+  ve yanked alanları açısından doğrulanıyor; bozuk JSON nesne şekilleri resolver
+  kodunda beklenmedik Python hatalarına dönüşmeden reddediliyor.
+- MinGW cross-compile için Windows SDK başlığının Linux'taki büyük/küçük harf
+  duyarlılığına uygun `basetsd.h` yazımı kullanılıyor.
 - Türkçe ve İngilizce tutorial'ların artık eski “registry yok” açıklaması
   yerine Registry v1 ve `axpm pack` sınırlarını anlatması sağlandı.
 - Registry paketleri artık tar içindeki symlink/hardlink, özel dosya ve Windows

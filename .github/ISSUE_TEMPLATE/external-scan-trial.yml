@@ -86,13 +86,14 @@ body:
   - type: input
     id: match-summary
     attributes:
-      label: match_count or other relevant JSON fields / match_count veya ilgili JSON alanları
+      label: Selected non-sensitive values / Hassas olmayan seçili değerler
       description: >-
-        Include only counts or selected values. Never paste full JSON; redact
-        target names, paths, hashes, and private values / Yalnızca sayıları veya
-        seçilmiş değerleri yazın. Tam JSON yapıştırmayın; hedef adlarını,
-        yolları, hash değerlerini ve özel alanları maskeleyin.
-      placeholder: "Example / Örnek: match_count=1"
+        Only report match_count, rules, offset, length, or exit_code when useful.
+        Never paste full JSON or target_sha256; omit any value that could identify
+        a private artifact / Yalnızca gerekliyse match_count, rules, offset, length
+        veya exit_code değerlerini yazın. Tam JSON'u ya da target_sha256 değerini
+        paylaşmayın; özel bir dosyayı tanımlayabilecek her değeri boş bırakın.
+      placeholder: "Example / Örnek: match_count=1, exit_code=0"
 
   - type: input
     id: sha256

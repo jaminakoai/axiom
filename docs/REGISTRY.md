@@ -206,7 +206,7 @@ işletimi ayrıca çözülmelidir.
 | Tehdit | Karşı önlem | Test |
 |---|---|---|
 | Bozuk/ele geçirilmiş tarball | sha256 **indirme sonrası** doğrulanır | `test_download_rejects_tampered_tarball` |
-| Sahte paket (index ele geçirildi) | İmza tarball baytları üzerinden doğrulanır | `test_download_rejects_bad_signature` |
+| Index paketi başka ad/sürüm altında gösterirse | İmzalı manifest adı/sürümü ve bağımlılıkları index kaydıyla eşleşmelidir | `test_download_rejects_unsigned_index_metadata_mismatch`, `test_axpm_install_rejects_signed_package_relabelled_by_index` |
 | İmzasız paket | Varsayılan **red**; `allow_unsigned` açıkça istenmeli | `test_download_rejects_unsigned_by_default` |
 | Bozuk önbellek | Her isabette tarball SHA-256, güncel imza/unsigned politikası ve açılmış dosya içerikleri yeniden doğrulanır; bozuksa önbellek atılıp yenilenir | `test_download_heals_corrupted_cache`, `test_download_heals_modified_extracted_cache`, `test_cached_download_rejects_bad_signature`, `test_cached_unsigned_download_rechecks_unsigned_policy` |
 | Arşiv path traversal ve link kaçışı | Bütün üyeler önceden doğrulanır; yalnız normal dosya/dizin açılır, symlink/hardlink ve özel dosyalar reddedilir | `test_download_rejects_path_traversal`, `test_download_rejects_archive_links_before_extracting_children`, `test_download_rejects_windows_style_archive_paths` |
@@ -214,8 +214,17 @@ işletimi ayrıca çözülmelidir.
 | Sürüm çakışması | Daha yüksek sürüm seçilir, kısıt yeniden doğrulanır | `test_resolve_*` |
 | Yanked sürüm | Çözümlemede atlanır | `test_resolve_skips_yanked` |
 
-**Kritik not:** Doğrulama *indirme sırasında* değil, **tam indirme sonrasında** yapılır ve
-*önce doğrula, sonra aç* sırası korunur (`_fetch` → `verify_sha256` → imza → güvenli üye doğrulama/açma).
+**Index güven sınırı:** `index.json` Registry v1'de imzalanmaz. Paket imzası
+arşiv içeriğini ve manifesti doğrular; istemci manifestin adını, sürümünü ve
+bağımlılıklarını index girdisiyle karşılaştırır. Ancak imzasız index'te `yanked`
+değeri değiştirilebilir, kayıtlar silinebilir veya aynı kimlikteki eski ama
+geçerli imzalı bir paket tekrar sunulabilir. Bu nedenle Registry v1 index'i
+rollback/freshness korumalı ya da kurcalamaya karşı kanıtlı değildir. İmzalı
+index formatı ve anahtar rotasyonu resmi yayın öncesi kararlaştırılmalıdır.
+
+**Kritik not:** Tarball'ın SHA-256 ve imzası doğrulanmadan arşiv açılmaz; güvenli
+üye kontrollerinden sonra çıkarılan imzalı manifesto index metadata'sıyla
+karşılaştırılır.
 
 ---
 
@@ -235,8 +244,10 @@ kök bağımlılıklar
 
 ## 8. Bilinen sınırlar (v1)
 
-1. **HTTPS imzası yok** — index.json'un kendisi imzalı değil; imza yalnızca tarball'da.
-   Index MITM'e karşı TLS'e güveniyor. v2: imzalı index.
+1. **İmzalı index/freshness yok** — `index.json` imzalanmaz. TLS taşıma sırasında
+   koruma sağlayabilir, ancak index değişikliği, yank/entry silme ve eski geçerli
+   pakete rollback için kriptografik kanıt sağlamaz. v2: imzalı index ve rollback
+   politikası.
 2. **Namespace yok** — düz isim alanı (`P2-02`).
 3. **`yanked` dışında politika yok** (deprecation, advisory).
 4. **Ayna/CDN yok**.

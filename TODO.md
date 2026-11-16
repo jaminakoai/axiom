@@ -38,6 +38,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   paket hazırlama akışı var; resmi paket yayımlanmış değil. Yükleme yolu ve resmi
   imza anahtarı işletimi hâlâ belirlenmeli. Varsayılan registry alan adı henüz
   dağıtılmadı; doküman bunu açıkça belirtiyor ve çalışan yerel `file://` akışını gösteriyor.
+- Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
+  imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
+  regresyon kanıtı eklendi; kalan index imzası/rollback tasarımı yayın öncesi
+  açık kapıdır: [G4 metadata binding raporu](docs/reports/2026-11-16-registry-index-metadata-binding.md).
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
@@ -316,7 +320,18 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
   unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden
   doğrulanıyor; `docs/reports/2026-11-16-registry-cache-integrity.md` içinde 73
-  registry/paket-yöneticisi testiyle kanıtlandı.
+  registry/paket-yöneticisi testiyle kanıtlandı. Son güvenlik incelemesi ayrıca
+  istemcinin tarball içindeki imzalı `axiom.toml` adını, sürümünü ve bağımlılık
+  haritasını unsigned index kaydıyla karşılaştırmadığını gösterdi. Client artık
+  bu karşılaştırmayı hem indirmede hem cache hit'te yapıyor; PackageManager
+  çözümlediği bağımlılık haritasını doğrulamaya geçiriyor. Registry ve paket
+  yöneticisi hedef testleri yeni regresyonlarla **104 geçti**; kayıt şeması
+  doğrulaması da buna dahildir. Güncel doküman+registry+paket yöneticisi hedef
+  paketi **111 geçti**, MinGW/Windows taşınabilirlik testi **34 geçti**. Ayrıntı
+  ve imzasız index nedeniyle kalan signed-index/rollback riski
+  `docs/reports/2026-11-16-registry-index-metadata-binding.md`. Resmi yayın
+  öncesi index imza formatı, anahtar rolü/rotasyonu ve eski index'e rollback
+  politikasını seçip doğrula; mevcut Registry v1 `index.json` imzasızdır.
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket

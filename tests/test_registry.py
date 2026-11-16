@@ -77,6 +77,47 @@ def _idx(packages):
     return RegistryIndex(packages, "file:///test")
 
 
+@pytest.mark.parametrize(
+    ("data", "message"),
+    [
+        ([], "kök değeri nesne"),
+        ({"schema": True, "packages": {}}, "şeması"),
+        ({"schema": 1, "packages": {"bad/name/shape": []}}, "paket adı"),
+        ({"schema": 1, "packages": {"lib-a": None}}, "sürüm listesi"),
+        ({"schema": 1, "packages": {"lib-a": ["1.0.0"]}}, "nesne olmalı"),
+        ({"schema": 1, "packages": {"lib-a": [{"version": "not-semver"}]}}, "version"),
+        ({"schema": 1, "packages": {"lib-a": [{"version": "9" * 5000 + ".0.0"}]}}, "version"),
+        (
+            {"schema": 1, "packages": {"lib-a": [{
+                "version": "1.0.0", "sha256": "not-a-hash",
+            }]}},
+            "sha256",
+        ),
+        (
+            {"schema": 1, "packages": {"lib-a": [{
+                "version": "1.0.0", "sha256": "a" * 64, "sig": 42,
+            }]}},
+            "sig metin",
+        ),
+        (
+            {"schema": 1, "packages": {"lib-a": [{
+                "version": "1.0.0", "sha256": "a" * 64, "dependencies": [],
+            }]}},
+            "dependencies nesne",
+        ),
+        (
+            {"schema": 1, "packages": {"lib-a": [{
+                "version": "1.0.0", "sha256": "a" * 64, "yanked": "false",
+            }]}},
+            "yanked boolean",
+        ),
+    ],
+)
+def test_registry_index_rejects_malformed_schema(data, message):
+    with pytest.raises(ValueError, match=message):
+        RegistryIndex.from_json(data, "file:///test")
+
+
 def test_resolve_picks_highest_matching():
     idx = _idx({"a": [
         {"version": "1.0.0", "sha256": "s1", "dependencies": {}},
@@ -257,6 +298,105 @@ def test_download_verifies_and_caches(tmp_path):
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+@pytest.mark.parametrize(
+    ("indexed_name", "indexed_version", "indexed_dependencies", "expected_error"),
+    [
+        ("alias", "9.9.9", {}, "paket adı imzalı manifestoyla uyuşmuyor"),
+        ("real-package", "9.9.9", {}, "sürümü imzalı manifestoyla uyuşmuyor"),
+        (
+            "real-package", "1.0.0", {"injected-dep": "^1.0"},
+            "bağımlılıkları imzalı manifestoyla uyuşmuyor",
+        ),
+    ],
+)
+def test_download_rejects_unsigned_index_metadata_mismatch(
+    tmp_path, indexed_name, indexed_version, indexed_dependencies, expected_error,
+):
+    """A valid signature must not let an unsigned index relabel package metadata."""
+    registry, public_key = _make_registry(
+        tmp_path / "registry", {"real-package": [{"version": "1.0.0"}]}
+    )
+    index_path = registry / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    original_entry = index["packages"]["real-package"][0]
+    source = registry / "real-package" / "1.0.0.tar.gz"
+    if indexed_name != "real-package" or indexed_version != "1.0.0":
+        package_path = registry / indexed_name
+        package_path.mkdir(exist_ok=True)
+        shutil.copyfile(source, package_path / f"{indexed_version}.tar.gz")
+        index["packages"].pop("real-package")
+        original_entry["version"] = indexed_version
+        index["packages"][indexed_name] = [original_entry]
+    original_entry["dependencies"] = indexed_dependencies
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+
+    client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", public_key=public_key,
+        cache_dir=tmp_path / "cache",
+    ))
+    with pytest.raises(RuntimeError, match=expected_error):
+        client.download(
+            indexed_name, indexed_version, original_entry["sha256"],
+            original_entry["sig"], indexed_dependencies,
+        )
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_cache_hit_rejects_index_relabeling(tmp_path):
+    registry, public_key = _make_registry(
+        tmp_path / "registry", {"real-package": [{"version": "1.0.0"}]}
+    )
+    cache = tmp_path / "cache"
+    client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", public_key=public_key, cache_dir=cache,
+    ))
+    entry = client.index.versions("real-package")[0]
+    client.download("real-package", "1.0.0", entry["sha256"], entry["sig"], {})
+
+    index_path = registry / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    alias_entry = dict(index["packages"].pop("real-package")[0])
+    (registry / "alias").mkdir()
+    shutil.copyfile(
+        registry / "real-package" / "1.0.0.tar.gz",
+        registry / "alias" / "1.0.0.tar.gz",
+    )
+    index["packages"]["alias"] = [alias_entry]
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    changed_client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", public_key=public_key, cache_dir=cache,
+    ))
+
+    with pytest.raises(RuntimeError, match="paket adı imzalı manifestoyla uyuşmuyor"):
+        changed_client.download("alias", "1.0.0", entry["sha256"], entry["sig"])
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_cache_hit_rejects_dependency_metadata_substitution(tmp_path):
+    registry, public_key = _make_registry(
+        tmp_path / "registry", {"lib-a": [{"version": "1.0.0"}]}
+    )
+    client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", public_key=public_key,
+        cache_dir=tmp_path / "cache",
+    ))
+    entry = client.index.versions("lib-a")[0]
+    client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"], {})
+
+    index_path = registry / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    index["packages"]["lib-a"][0]["dependencies"] = {"injected-dep": "^1.0"}
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+    changed_client = RegistryClient(RegistryConfig(
+        url=f"file://{registry}", public_key=public_key,
+        cache_dir=tmp_path / "cache",
+    ))
+
+    with pytest.raises(RuntimeError, match="bağımlılıkları imzalı manifestoyla uyuşmuyor"):
+        changed_client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
 def test_download_rejects_tampered_tarball(tmp_path):
     reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]},
                               tamper=True)
@@ -343,6 +483,9 @@ def test_download_cache_hit_is_portable_on_current_platform(tmp_path):
         url="https://registry.example.invalid", allow_unsigned=True,
         cache_dir=tmp_path / "cache",
     ))
+    client._index = RegistryIndex({"portable-cache-test": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, "https://registry.example.invalid")
     cache_dir = client.cache_path_for(sha)
     cache_dir.mkdir(parents=True)
     (cache_dir / "pkg.tar.gz").write_bytes(raw)
@@ -562,6 +705,41 @@ def test_axpm_install_registry_end_to_end(tmp_path):
                                          capture_output=True, text=True, env=env)
     assert verify_after_remove.returncode == 0, verify_after_remove.stdout + verify_after_remove.stderr
 
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_axpm_install_rejects_signed_package_relabelled_by_index(tmp_path):
+    registry, public_key = _make_registry(
+        tmp_path / "registry", {"real-package": [{"version": "1.0.0"}]}
+    )
+    index_path = registry / "index.json"
+    index = json.loads(index_path.read_text(encoding="utf-8"))
+    entry = index["packages"].pop("real-package")[0]
+    (registry / "alias").mkdir()
+    shutil.copyfile(
+        registry / "real-package" / "1.0.0.tar.gz",
+        registry / "alias" / "9.9.9.tar.gz",
+    )
+    entry["version"] = "9.9.9"
+    index["packages"]["alias"] = [entry]
+    index_path.write_text(json.dumps(index), encoding="utf-8")
+
+    app = tmp_path / "consumer"
+    env = _isolated_env(tmp_path)
+    subprocess.run([str(AXPM), "init", str(app)], check=True, capture_output=True, env=env)
+    (app / "axiom.toml").write_text(
+        '[package]\nname = "consumer"\nversion = "0.1.0"\nentry = "src/main.ax"\n\n'
+        '[dependencies]\nalias = "*"\n\n'
+        f'[registry]\nurl = "{registry.as_uri()}"\npublic_key = """{public_key}"""\n',
+        encoding="utf-8",
+    )
+
+    result = subprocess.run(
+        [str(AXPM), "install"], cwd=app, env=env, capture_output=True, text=True,
+    )
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert "paket adı imzalı manifestoyla uyuşmuyor" in result.stderr
+    assert not (app / ".axiom" / "deps" / "alias" / "axiom.toml").exists()
+    assert 'name = "alias"' not in (app / "axiom.lock").read_text(encoding="utf-8")
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
 def test_axpm_registry_upgrade_replaces_installed_package_contents(tmp_path):
