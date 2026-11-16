@@ -225,13 +225,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   varsayımlarını taşınabilir Python karşılıklarına taşı; native Windows/macOS
   linker bayraklarını host'a göre seç. Platform seçim testleri Linux'ta geçti;
   gerçek Windows/macOS runner doğrulaması hâlâ açık.
-- [ ] GitHub Actions'ı güncel Linux, gerçek Windows runner ve macOS runner'da
-  doğrula; Wine testini gerçek Windows CI kanıtı olarak sayma. Bu kapı için
-  `.github/workflows/platform-smoke.yml` native derle/çalıştır işi eklendi;
-  Ubuntu ve macOS geçti. Windows koşuları varsayılan `cp1252` kaynak yazımı,
-  runtime'daki POSIX isim bağımlılıkları ve `_popen`/`_pclose` uyumluluğunu
-  yakaladı; düzeltmeler eklendi, tekrar koşusu bekleniyor.
-  Üç runner başarılı olmadan madde kapanmaz.
+- [x] `.github/workflows/platform-smoke.yml` ile gerçek Linux, Windows ve
+  macOS runner'larında temiz Python kurulumu, native derleme ve çalıştırma
+  doğrulandı; Wine kullanılmadı. [CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338),
+  3/3 runner başarılı. Bu tam pytest paketinin üç işletim sisteminde çalıştığı
+  anlamına gelmez; tam paket CI'si Linux'ta kalıyor.
 - [ ] Temiz makineden kurulum/çalıştırma adımlarını doğrula; platform ve sistem
   kütüphanesi gereksinimlerini açıkça yaz.
 - [ ] `axpm` için en az bir resmi, sürümlenmiş örnek paketi yayınla; imza,

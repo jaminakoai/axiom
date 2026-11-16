@@ -13,8 +13,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   yerel platform bağlantı bayraklarını kullanıyor, Windows geçici ikilileri
   `.exe` uzantısı alıyor. Windows runtime için POSIX isimleri ve `_popen` /
   `_pclose` eşlemeleri tanımlandı. Platform seçimleri regresyon testleriyle
-  kapsandı. Ubuntu/macOS duman CI'si geçti; Windows runner UTF-8 ve POSIX
-  uyumluluk hatalarını ortaya çıkardı, düzeltmeler sonrası tekrar doğrulanıyor.
+  kapsandı. Temiz kurulum, native derleme ve çalıştırma Ubuntu, Windows ve
+  macOS runner'larında geçti ([CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338));
+  tam test paketi hâlâ yalnız Linux'ta koşuyor.
 - Bağımsız kullanıcıların Linux'ta `axiom-scan` kurulum ve yetkili yerel girdi
   denemesini tekrarlayabilmesi için iki dilli dış kullanıcı doğrulama rehberi
   eklendi; hassas dosya/PCAP yüklemeden rapor şablonu sunuyor.
