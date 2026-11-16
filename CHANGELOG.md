@@ -9,9 +9,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - Native derleme için C derleyicisi keşfi ve hedef toolchain kontrolü artık
   POSIX `which`/`/dev/null` yollarına bağlı değil. Yerel Windows linker/thread
   bayrakları ve macOS SDK'sında bulunan zlib ile bağlantı seçiliyor;
-  platform seçimleri regresyon testleriyle kapsandı. Gerçek Windows/macOS CI
-  doğrulaması için Ubuntu/Windows/macOS native derleme ve çalıştırma workflow'u
-  eklendi; ilk runner sonuçları hâlâ bekleniyor.
+  C/LLVM geçici kaynakları açıkça UTF-8 yazılıyor. `axiom run` ve `axiom test`
+  yerel platform bağlantı bayraklarını kullanıyor, Windows geçici ikilileri
+  `.exe` uzantısı alıyor. Platform seçimleri regresyon testleriyle kapsandı.
+  Ubuntu/macOS duman CI'si geçti; Windows runner UTF-8 varsayılan kodlamada bir
+  hatayı ortaya çıkardı ve düzeltme sonrası tekrar doğrulanıyor.
 - Bağımsız kullanıcıların Linux'ta `axiom-scan` kurulum ve yetkili yerel girdi
   denemesini tekrarlayabilmesi için iki dilli dış kullanıcı doğrulama rehberi
   eklendi; hassas dosya/PCAP yüklemeden rapor şablonu sunuyor.

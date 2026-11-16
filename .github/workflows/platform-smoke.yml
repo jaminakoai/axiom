@@ -44,6 +44,7 @@ jobs:
         run: |
           axiom build examples/01_hello.ax --output "$RUNNER_TEMP/axiom-hello"
           python -c 'import os, subprocess; p=os.path.join(os.environ["RUNNER_TEMP"], "axiom-hello"); r=subprocess.run([p], check=True, capture_output=True, text=True); print(r.stdout); assert "[DOGRULAMA]" in r.stdout'
+          axiom run examples/01_hello.ax
 
       - name: Derle ve çalıştır (Windows)
         if: runner.os == 'Windows'
@@ -51,3 +52,4 @@ jobs:
         run: |
           axiom build examples/01_hello.ax --output "$env:RUNNER_TEMP\axiom-hello.exe"
           python -c 'import os, subprocess; p=os.path.join(os.environ["RUNNER_TEMP"], "axiom-hello.exe"); r=subprocess.run([p], check=True, capture_output=True, text=True); print(r.stdout); assert "[DOGRULAMA]" in r.stdout'
+          axiom run examples/01_hello.ax

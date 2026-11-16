@@ -236,7 +236,7 @@ def cmd_build(args):
             sys.exit(1)
 
         runtime_c = str(Path(__file__).resolve().parent / "axiom_llvm_runtime.c")
-        with tempfile.NamedTemporaryFile(suffix=".ll", mode="w", delete=False) as tf:
+        with tempfile.NamedTemporaryFile(suffix=".ll", mode="w", encoding="utf-8", delete=False) as tf:
             tf.write(llvm_ir)
             ll_temp_file = tf.name
 
@@ -286,7 +286,7 @@ def cmd_build(args):
             print(f"{CLR_RED}{err_msg}{CLR_RESET}", file=sys.stderr)
             sys.exit(1)
 
-    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as tf:
+    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", encoding="utf-8", delete=False) as tf:
         tf.write(c_code)
         c_temp_file = tf.name
 
@@ -328,8 +328,8 @@ def cmd_run(args):
         sys.exit(1)
 
     cc = find_c_compiler()
-    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as c_f, \
-         tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as bin_f:
+    with tempfile.NamedTemporaryFile(suffix=".c", mode="w", encoding="utf-8", delete=False) as c_f, \
+         tempfile.NamedTemporaryFile(suffix=".exe" if sys.platform == "win32" else ".bin", delete=False) as bin_f:
         c_path = c_f.name
         bin_path = bin_f.name
         c_f.write(c_code)
@@ -342,7 +342,9 @@ def cmd_run(args):
         else:
             opt_level = "-O3"
             debug_flags = []
-        compile_cmd = [cc, opt_level, "-pthread"] + debug_flags + sanitizer_flags + [c_path, "-lz", "-lssl", "-lcrypto", "-ldl", "-lm", "-o", bin_path]
+        compile_cmd = ([cc, opt_level] + get_thread_flag(None) + debug_flags
+                       + sanitizer_flags + [c_path] + get_platform_link_flags(None)
+                       + ["-o", bin_path])
         res = subprocess.run(compile_cmd, capture_output=True, text=True)
         if res.returncode != 0:
             print(f"{CLR_RED}C Derleme Hatasi:{CLR_RESET}\n{res.stderr}", file=sys.stderr)
@@ -747,14 +749,15 @@ class REPLSession:
         except (LexerError, ParserError, SemanticError, ModuleError) as e:
             return False, "", str(e)
 
-        with tempfile.NamedTemporaryFile(suffix=".c", mode="w", delete=False) as c_f, \
-             tempfile.NamedTemporaryFile(suffix=".bin", delete=False) as bin_f:
+        with tempfile.NamedTemporaryFile(suffix=".c", mode="w", encoding="utf-8", delete=False) as c_f, \
+             tempfile.NamedTemporaryFile(suffix=".exe" if sys.platform == "win32" else ".bin", delete=False) as bin_f:
             c_path = c_f.name
             bin_path = bin_f.name
             c_f.write(c_code)
 
         try:
-            compile_cmd = [self.cc, "-O0", "-pthread", c_path, "-lz", "-lssl", "-lcrypto", "-ldl", "-lm", "-o", bin_path]
+            compile_cmd = ([self.cc, "-O0"] + get_thread_flag(None) + [c_path]
+                           + get_platform_link_flags(None) + ["-o", bin_path])
             res = subprocess.run(compile_cmd, capture_output=True, text=True)
             if res.returncode != 0:
                 return False, "", res.stderr
