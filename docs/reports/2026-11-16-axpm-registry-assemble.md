@@ -63,6 +63,8 @@ passed full CI 7/7: Python 3.10–3.13 each reported 1,508 passed / 27 skipped,
 docs code blocks reported 55 passed, and native platform smoke passed on Linux,
 Windows, and macOS (3/3). A documentation follow-up at `a7cfe09` also passed
 full CI 7/7 (1,508 passed / 27 skipped for each Python 3.10–3.13 job; 55 docs
-examples) and platform smoke 3/3. The previous successful full CI was `2dda920` (7/7,
+examples) and platform smoke 3/3. The later documentation follow-up `2b6e946`
+also passed full CI 7/7 with those same test counts and platform smoke 3/3.
+The previous successful full CI was `2dda920` (7/7,
 1,500 passed / 27 skipped per Python 3.10–3.13), and `c71e026` platform smoke
 passed 3/3 with four selected tests on each OS.
