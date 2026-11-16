@@ -1,7 +1,7 @@
 # G4 — Signed Registry index v2
 
 **Date:** 17 November 2026  
-**Base commit:** `089ffde` · **Implementation commit:** `23a0aca`
+**Base commit:** `089ffde` · **Implementation commit:** `23a0aca` · **Cross-platform lock regression:** `cc7de3a`
 **Status:** Signed index generation and client verification implemented. Local full suite and GitHub CI passed. Official hosting, production trust-key lifecycle, and initial-use freshness remain open.
 
 ## What changed
@@ -28,7 +28,8 @@
 ```text
 python3 -m pytest -q tests/test_registry.py tests/test_package_manager.py \
   tests/test_registry_docs.py tests/test_external_validation_docs.py
-117 passed in 13.24s
+117 passed in 13.24s; after the native-lock regression was added, the focused
+command passed 118 tests in 13.29s on the latest local working tree.
 
 python3 -m pytest -q
 1565 passed in 1331.91s (0:22:11)
@@ -49,6 +50,14 @@ https://github.com/jaminakoai/axiom/actions/runs/43962051440
 Native platform smoke on `23a0aca`
 Linux, Windows, macOS: 3/3 jobs passed.
 https://github.com/jaminakoai/axiom/actions/runs/43962051589
+
+After this report was first committed, `cc7de3a` added a child-process
+regression for the rollback-state file lock to the native platform smoke
+workflow. The test passed on Linux, Windows, and macOS (3/3):
+https://github.com/jaminakoai/axiom/actions/runs/43966078968. The full CI for
+`cc7de3a` passed 7/7; each Python 3.10–3.13 job reported 1539 passed / 27
+skipped, and 55 documentation blocks passed:
+https://github.com/jaminakoai/axiom/actions/runs/43966078962.
 ```
 
 The tests cover signature validation, tampering, expiry, sequence rollback,
@@ -67,12 +76,13 @@ consumer installing and testing the sample package through a signed index.
   reliable clocks.
 - This change does not choose or deploy hosting, publish a package, establish
   an official index key, or define key revocation/rotation operations.
-- The full suite passed on the current Linux environment. This new signed-index
-  path has not yet run on native Windows or macOS CI runners.
+- The full signed-index cryptographic path has not yet run on native Windows or
+  macOS. The portable cross-process lock itself is covered by the new native
+  platform smoke test.
 
 ## Next
 
 Decide and document production key custody/rotation and registry hosting; keep
-the first-use replay limitation visible in the release policy. Run the signed
-index path on native Windows/macOS before treating its file-lock behavior as
-cross-platform verified.
+the first-use replay limitation visible in the release policy. Add native
+Windows/macOS coverage for the signed-index OpenSSL verification path after
+confirming those runners have a supported OpenSSL Ed25519 implementation.

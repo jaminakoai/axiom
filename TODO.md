@@ -12,12 +12,12 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `23a0aca`: [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
-| Son CI denemesi | `23a0aca` [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
-| Son başarılı tam CI | `23a0aca` [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
-| Son platform smoke | `23a0aca`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43962051589 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `cc7de3a`: Python 3.10–3.13'te her biri 1539 geçti / 27 skip, doküman blokları 55 geçti; [run 43966078962](https://github.com/jaminakoai/axiom/actions/runs/43966078962), **7/7 başarılı** |
+| Son CI denemesi | `cc7de3a` [run 43966078962](https://github.com/jaminakoai/axiom/actions/runs/43966078962), **7/7 başarılı** |
+| Son başarılı tam CI | `cc7de3a` [run 43966078962](https://github.com/jaminakoai/axiom/actions/runs/43966078962), **7/7 başarılı** |
+| Son platform smoke | `cc7de3a`, native build/run, cache/file URL ve süreçler arası registry kilidi Linux/Windows/macOS run 43966078968 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `23a0aca` — [run 43962051440](https://github.com/jaminakoai/axiom/actions/runs/43962051440), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `cc7de3a` — [run 43966078962](https://github.com/jaminakoai/axiom/actions/runs/43966078962), **7/7 başarılı** |
 | Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
 
 ---
@@ -332,11 +332,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   çözümlediği bağımlılık haritasını doğrulamaya geçiriyor. Registry ve paket
   yöneticisi hedef testleri yeni regresyonlarla **104 geçti**; kayıt şeması
   doğrulaması da buna dahildir. Güncel doküman+registry+paket yöneticisi hedef
-  paketi **111 geçti**, MinGW/Windows taşınabilirlik testi **34 geçti**. Ayrıntı
+  paketi **118 geçti** (cc7de3a), MinGW/Windows taşınabilirlik testi **34 geçti**. Ayrıntı
   ve kalan ilk-bağlantı rollback sınırı
   `docs/reports/2026-11-16-registry-index-metadata-binding.md`. İmzalı schema 2
   biçimi uygulanmıştır; resmi yayın öncesi hosting, üretim anahtarı koruma/
   rotasyonu ve ilk bağlantı rollback sınırını operasyonel olarak kabul et.
+  Sequence-state kilidinin iki süreç arasındaki bloklama testi `cc7de3a` ile
+  Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
+  OpenSSL doğrulama yolunun native Windows/macOS koşusu henüz yok.
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
@@ -405,8 +408,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `23a0aca`: tüm 7 job başarılı; 1565 yerel test geçti | GitHub Actions run 43962051440; `python3 -m pytest -q` |
-| Son native platform smoke | `468e3d9`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43936054928 |
+| Son tamamlanmış tam test paketi | CI `cc7de3a`: Python 3.10–3.13'te her biri 1539 geçti/27 skip; 1565 yerel test `23a0aca` commit'inde geçti | GitHub Actions run 43966078962; `python3 -m pytest -q` |
+| Son native platform smoke | `cc7de3a`: süreçler arası registry kilidi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43966078968 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
