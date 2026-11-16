@@ -50,6 +50,8 @@ def test_feedback_routing_separates_public_usability_from_security_reports():
     )
     assert "güvenlik açığı şüphesi olmayan" in guide.lower()
     assert "never open a public issue" in normalized_guide
+    assert "GitHub hesabınızla oturum açmanız gerekir" in guide
+    assert "sign in with a GitHub account" in guide
     assert "../SECURITY.md" in guide
     assert "**Lütfen herkese açık issue açmayın.**" in security
     assert "security@axiom-lang.org" in security

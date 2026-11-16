@@ -130,12 +130,16 @@ yerel tam yolu issue'ya eklemeyin. SHA-256 da dosyanın kimliğini açığa
 çıkarabilir; varsayılan olarak boş bırakın ve ancak paylaşmaya yetkiniz varsa
 ekleyin.
 
+Formu göndermek için GitHub hesabınızla oturum açmanız gerekir.
+
 For usability feedback that is not a suspected security vulnerability and is
 approved for public sharing, use the [scanner trial issue form](https://github.com/jaminakoai/axiom/issues/new?template=external-scan-trial.yml)
 and provide only sanitized information. Never attach a raw file/PCAP,
 packet contents, rule text, credentials, personal data, sensitive filenames, or
 absolute local paths. A SHA-256 can identify a file; leave it blank by default
 and include it only when you are authorized to share it.
+
+You need to sign in with a GitHub account to submit the form.
 
 Geri bildiriminizin kamuya açık kullanılmasına izin vermiyorsanız formu
 kullanmayın ve public issue açmayın; özel ayrıntı göndermeden önce proje

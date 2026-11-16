@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
 **Date:** 16 November 2026  
-**Reviewed source commit:** `043de10` (includes the guide, regression tests, and latest CI record)
+**Reviewed source commit:** `aeb75f1` (includes the guide, issue form, tests, and CI record)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed
@@ -16,8 +16,13 @@
   contents, rule text, credentials, personal data, or private paths. SHA-256 is
   blank by default. Reports without public consent need a private channel agreed
   with the maintainer before details are sent.
+- Added `.github/ISSUE_TEMPLATE/external-scan-trial.yml`, a bilingual public
+  issue form. It requires authorization and public-disclosure consent, has no
+  upload field, and asks for selected output values only; it warns against
+  sharing whole JSON, target names, paths, hashes, or other private values.
 - Added `tests/test_external_validation_docs.py` to guard guide links, the smoke
-  instructions and result, bilingual fields, privacy guidance, and report routes.
+  instructions and result, bilingual fields, privacy guidance, the issue form,
+  and report routes.
 - Marked `registry.axiom-lang.org` as not deployed in `docs/REGISTRY.md`; the
   `DEFAULT_REGISTRY` code behavior was not changed. Added a local signed package
   → `file://` registry → clean consumer install/test procedure and
@@ -45,23 +50,25 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 The target was the harmless sentinel from the guide. This is install/build/smoke
 evidence only and does **not** satisfy independent-user validation.
 
-### GitHub checks for source commit `043de10`
+### GitHub checks for source commit `aeb75f1`
 
-- Full CI [run 43919495340](https://github.com/jaminakoai/axiom/actions/runs/43919495340):
+- Full CI [run 43928548301](https://github.com/jaminakoai/axiom/actions/runs/43928548301):
   **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
   **1514 passed, 27 skipped**; documentation code blocks reported **55 passed**.
   The pinned real-YARA corpus differential job reported **29 passed** on each
   Python version.
-- Native platform smoke [run 43919495717](https://github.com/jaminakoai/axiom/actions/runs/43919495717):
+- Native platform smoke [run 43928548077](https://github.com/jaminakoai/axiom/actions/runs/43928548077):
   **Linux, Windows, and macOS 3/3 passed**.
 
 The modified docs and added regression tests were also checked locally:
 
 ```text
+PyYAML 6.0.3 safe_load: valid document, 11 body elements, unique IDs, no upload field
+
 python -m pytest -q tests/test_external_validation_docs.py tests/test_registry_docs.py \
   tests/test_docs_en.py tests/test_docgen.py tests/test_tutorial_examples.py \
   tests/test_package_manager.py::test_sample_scan_report_signed_registry_release_preflight
-45 passed in 25.75s
+45 passed in 24.46s
 
 make fmt-check: passed
 git diff --check: passed
@@ -84,6 +91,9 @@ registry index.
 - Windows/macOS validation remains native build/run and the documented cache/file
   URL smoke subset. The full pytest and `axiom-scan` trial have not been verified
   on those operating systems.
+- The public issue form URL redirects anonymous visitors to GitHub sign-in, so
+  its authenticated browser rendering was not inspected. Its YAML was parsed
+  locally and the committed issue-form content is covered by CI tests.
 
 ## Next steps
 
