@@ -12,12 +12,12 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `2b6e946`: Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman blokları 55 geçti |
-| Son CI denemesi | `2b6e946` [run 43903266152](https://github.com/jaminakoai/axiom/actions/runs/43903266152), **7/7 başarılı**; her Python sürümünde 1508 geçti / 27 skip, doküman blokları 55 geçti |
-| Son başarılı tam CI | `2b6e946` [run 43903266152](https://github.com/jaminakoai/axiom/actions/runs/43903266152), **7/7 başarılı** |
-| Son platform smoke | `2b6e946`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43903265622 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `1e9dd23`: Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman blokları 55 geçti |
+| Son CI denemesi | `1e9dd23` [run 43907139711](https://github.com/jaminakoai/axiom/actions/runs/43907139711), **7/7 başarılı**; her Python sürümünde 1508 geçti / 27 skip, doküman blokları 55 geçti |
+| Son başarılı tam CI | `1e9dd23` [run 43907139711](https://github.com/jaminakoai/axiom/actions/runs/43907139711), **7/7 başarılı** |
+| Son platform smoke | `1e9dd23`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43907139654 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `2b6e946` — [run 43903266152](https://github.com/jaminakoai/axiom/actions/runs/43903266152), **7/7 başarılı**; Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `1e9dd23` — [run 43907139711](https://github.com/jaminakoai/axiom/actions/runs/43907139711), **7/7 başarılı**; Python 3.10–3.13'te her biri 1508 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -36,7 +36,8 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
 - Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
   paket hazırlama akışı var; resmi paket yayımlanmış değil. Yükleme yolu ve resmi
-  imza anahtarı işletimi hâlâ belirlenmeli.
+  imza anahtarı işletimi hâlâ belirlenmeli. Varsayılan registry alan adı henüz
+  dağıtılmadı; doküman bunu açıkça belirtiyor ve çalışan yerel `file://` akışını gösteriyor.
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
@@ -222,6 +223,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   venv/kurulum, örnek derleme, `rules` ve sentetik sentinel `scan` başarılı;
   15 saniye, `match_count=1`. Bu sentetik kontrol bağımsız kullanıcı kapısını
   kapatmaz; güncel kanıt G3 raporundadır.
+- [x] Rehberin yönergelerini ve geri bildirim alanlarını Türkçe/İngilizce sun;
+  kullanılabilirlik ile güvenlik bildirimlerinin kanallarını ayır; kamuya açık
+  şablonda dosya/PCAP veya hassas bilgi isteme. Link, içerik, dil ve gizlilik
+  kuralları doküman regresyon testleriyle korunuyor.
+- [x] Aynı temiz klon/kurulum/build/sentinel akışını `1e9dd23` commit'inde
+  yeniden çalıştır: Linux x86_64, Python 3.13, 18,2 saniye, `rules ok=true`,
+  `scan match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız
+  kullanıcı kabulü değildir; tam çıktı G3/G4 raporundadır.
 - [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
   çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
 - [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
@@ -306,6 +315,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden
   doğrulanıyor; `docs/reports/2026-11-16-registry-cache-integrity.md` içinde 73
   registry/paket-yöneticisi testiyle kanıtlandı.
+- [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
+  `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
+  sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
+  → registry assemble → temiz tüketicide install/test akışını belgele ve
+  regresyon testi ekle. Akış yerel tüketici testlerinde 2/2 geçti; bu resmi
+  yayın veya index imzası değildir. Hosting ve üretim anahtarı kararı hâlâ açık.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
   taahhüdü özellikle 1.0 kararı öncesine bırakıldı; README'ler ARM64 durumunu
@@ -366,8 +381,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `2b6e946`: Python 3.10–13’te her biri 1508 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43903266152 |
-| Son native platform smoke | `2b6e946`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43903265622 |
+| Son tamamlanmış tam test paketi | CI `1e9dd23`: Python 3.10–13’te her biri 1508 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43907139711 |
+| Son native platform smoke | `1e9dd23`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43907139654 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1212,8 +1227,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `2b6e946`: Python 3.10–13’te her biri 1508 geçti/27 skip; 7/7 başarılı | Run 43903266152 | 2000 |
-| Son native platform smoke | `2b6e946`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43903265622 | — |
+| Son tam CI | `1e9dd23`: Python 3.10–13’te her biri 1508 geçti/27 skip; 7/7 başarılı | Run 43907139711 | 2000 |
+| Son native platform smoke | `1e9dd23`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43907139654 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1257,6 +1272,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    hedeflerini kararlaştır.
 
 **G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`ecc770d` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
+`1e9dd23` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
 doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
 kanıt ve açık kapsam sınırlarıyla eklenir.

@@ -19,11 +19,17 @@ Registry v1 bunları çözer: **içerik-adresli depo + ed25519 imza + semver + t
 
 ## 2. Yapılandırma
 
+> **Yayın durumu:** `registry.axiom-lang.org` henüz dağıtılmamıştır ve şu anda
+> çalışan bir registry adresi değildir. İstemcideki `DEFAULT_REGISTRY` değeri
+> geçici hedef olarak bu alan adını gösterir. Registry adresi açıkça
+> yapılandırılmadan `axpm add`, `install` veya `search` komutlarının bu adreste
+> çalışmasını beklemeyin. Resmî hosting ve imza anahtarı işletimi hazır değildir.
+
 `axiom.toml` içinde:
 
 ```toml
 [registry]
-url = "https://registry.axiom-lang.org"
+url = "https://registry.axiom-lang.org" # henüz dağıtılmadı; aktif adres değildir
 public_key = """
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAG...
@@ -40,6 +46,60 @@ Ortam değişkenleri (öncelikli):
 | `AXIOM_REGISTRY_KEY` | Açık anahtarı ezer (PEM) |
 | `AXIOM_ALLOW_UNSIGNED=1` | İmzasız paketlere izin verir |
 | `AXIOM_CACHE_DIR` | Önbellek kökü (`<dir>/registry`) |
+
+### Yerel `file://` registry ile uçtan uca deneme
+
+Aşağıdaki akış, mevcut `packages/axiom-scan-report` örneğini geçici bir Ed25519
+anahtarıyla imzalar, statik registry dizini oluşturur ve ayrı bir tüketici
+projesine kurup test eder. Bash veya Zsh ile Linux/macOS üzerinde çalışır.
+Paketleme, temiz ve commit edilmiş bir Git çalışma ağacı ister. Özel anahtar
+yalnızca bu yerel deneme içindir; yayımlama anahtarı olarak kullanmayın.
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+DEMO_ROOT="$(mktemp -d)"
+AXPM="$REPO_ROOT/bin/axpm"
+
+openssl genpkey -algorithm ED25519 -out "$DEMO_ROOT/demo-private.pem"
+openssl pkey -in "$DEMO_ROOT/demo-private.pem" -pubout \
+  -out "$DEMO_ROOT/demo-public.pem"
+
+(cd "$REPO_ROOT/packages/axiom-scan-report" && \
+  "$AXPM" pack --signing-key "$DEMO_ROOT/demo-private.pem" \
+    --output "$DEMO_ROOT/packed")
+
+"$AXPM" registry assemble --from "$DEMO_ROOT/packed" \
+  --output "$DEMO_ROOT/registry" \
+  --public-key "$DEMO_ROOT/demo-public.pem"
+
+export AXIOM_REGISTRY="$(python3 -c \
+  'from pathlib import Path; import sys; print(Path(sys.argv[1]).as_uri())' \
+  "$DEMO_ROOT/registry")"
+export AXIOM_REGISTRY_KEY="$(cat "$DEMO_ROOT/demo-public.pem")"
+
+CONSUMER="$DEMO_ROOT/consumer"
+"$AXPM" init "$CONSUMER"
+(
+  cd "$CONSUMER"
+  "$AXPM" add axiom-scan-report --version 0.1.0
+  "$AXPM" install
+  mkdir -p tests
+  cat > tests/test_registry.ax <<'AXIOM'
+import "axiom-scan-report"
+
+fn main() -> void {
+    verify report_label(0, 0) == "no_findings"
+    verify report_label(3, 1) == "high_severity_findings"
+}
+AXIOM
+  "$AXPM" test
+)
+```
+
+Başarılı son adım yeni tüketici iskeletinin örnek testiyle birlikte
+`2/2 test başarılı` çıktısını verir. `DEMO_ROOT` altındaki
+anahtar ve registry geçicidir. Bu yerel deneme internete yükleme yapmaz,
+resmî paket yayımlamaz ve `index.json` için imza üretmez.
 
 ---
 
