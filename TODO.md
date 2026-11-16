@@ -12,11 +12,11 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `ecc770d`: Python 3.10–3.13'te her biri 1496 geçti / 27 skip; doküman blokları 55 geçti |
-| Son tam CI koşusu | `ecc770d` [run 43871931757](https://github.com/jaminakoai/axiom/actions/runs/43871931757), **7/7 başarılı** |
-| Son platform smoke | `ecc770d`, gerçek registry cache hit + native build/run Linux/Windows/macOS run 43871931643 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `2dda920`: Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman blokları 55 geçti |
+| Son tam CI koşusu | `2dda920` [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı** |
+| Son platform smoke | `2dda920`, cache + file URL testleri ve native build/run Linux/Windows/macOS run 43881080465 **3/3 başarılı** (platform başına 4 test geçti) |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `ecc770d` — [run 43871931757](https://github.com/jaminakoai/axiom/actions/runs/43871931757), **7/7 başarılı**; Python 3.10–3.13'te her biri 1496 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `2dda920` — [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı**; Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -247,12 +247,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
   paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
-  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **80 geçti**
-  (59 registry, 21 paket yöneticisi). Yerel `file://` URL'leri artık yüzde
+  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **87 geçti**
+  (59 registry, 28 paket yöneticisi). Yerel `file://` URL'leri artık yüzde
   kaçışlarını ve Windows sürücü yollarını platforma uygun çözüyor; uzak host'lar
   açık hata veriyor. Cache hit ve file URL regresyonları Linux/Windows/macOS
-  platform smoke'a eklendi; `url2pathname` dönüşümü yerelde doğrulandı.
-  Takip commit'inin kaynak CI ve platform smoke sonuçları henüz bekleniyor.
+  platform smoke'da platform başına 4/4 geçti (run 43881080465). Son tam CI
+  `2dda920` için 7/7 başarılı; Python 3.10–3.13'te her biri 1500 geçti/27 skip
+  (run 43881080555). Yeni assembler kodu bu CI commit'inden sonra yerelde
+  doğrulandı; henüz uzak CI'ya gönderilmedi.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
@@ -268,8 +270,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
   CI'da gerçek `axiom-scan-report` örneğini geçici anahtarla paketleyip imzalayan,
   yerel registry'den temiz tüketiciye kuran, kurulu paketin kendi testini ve
-  tüketici import testini `axpm test` ile çalıştıran yayın ön kontrolü eklendi;
-  bu da resmi yayın sayılmaz. Kanıt:
+  tüketici import testini `axpm test` ile çalıştıran yayın ön kontrolü eklendi.
+  `axpm registry assemble --from ... --output ... --public-key ...` komutu
+  paket çıktısını imza/SHA/manifest kontrollerinden geçirerek deterministik,
+  çevrimdışı statik Registry v1 dosya düzenine dönüştürüyor. Hiçbir yere yükleme
+  yapmıyor; Registry index'i ayrıca imzalanmıyor. Kanıt:
   `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
@@ -336,8 +341,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `ecc770d`: Python 3.10–13’te her biri 1496 geçti/27 skip; tüm 7 job başarılı | GitHub Actions run 43871931757 |
-| Son native platform smoke | `ecc770d`: gerçek registry cache hit + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43871931643 |
+| Son tamamlanmış tam test paketi | CI `2dda920`: Python 3.10–13’te her biri 1500 geçti/27 skip; tüm 7 job başarılı | GitHub Actions run 43881080555 |
+| Son native platform smoke | `2dda920`: cache/file URL seçkisi (platform başına 4 test) + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43881080465 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -346,8 +351,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | LLVM backend örnek | 21/21 | `... --backend=llvm` |
 | Self-hosted (`bin/axiomc`) | **21/21** ✅ | `./bin/axiomc build examples/$f.ax` |
 | Paket kayıt defteri | **v1 var** (ed25519, semver, transitive) | `tests/test_registry.py` |
-| Windows desteği | **21/21 cross-compile + Wine**; native build + registry cache smoke geçti | P2-19b ve run 43871931643 |
-| macOS | native build + registry cache smoke geçti; tam pytest/`axiom-scan` doğrulanmamış | run 43871931643 ve README sınırları |
+| Windows desteği | **21/21 cross-compile + Wine**; native build + registry cache/file URL smoke geçti | P2-19b ve run 43881080465 |
+| macOS | native build + registry cache/file URL smoke geçti; tam pytest/`axiom-scan` doğrulanmamış | run 43881080465 ve README sınırları |
 | Doküman dili | TR + EN (tam) | `docs/en/TUTORIAL.md` |
 | LSP | 10 metod (refs, rename, format, semantic tokens, signature help) | `tests/test_lsp_full_features.py` |
 | API dokümanı | `axiom doc` → `docs/api/` | `axiom doc std/` |
@@ -1182,8 +1187,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `ecc770d`: Python 3.10–13'te 1496 geçti/27 skip; 7/7 job başarılı | — | 2000 |
-| Son native platform smoke | `ecc770d`: registry cache hit + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
+| Son tam CI | `2dda920`: Python 3.10–13'te 1500 geçti/27 skip; 7/7 job başarılı | — | 2000 |
+| Son native platform smoke | `2dda920`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |

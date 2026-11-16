@@ -2,7 +2,7 @@
 
 **Durum:** uygulandı (P2-01)
 **Modül:** `axiom/registry.py`
-**Test:** `tests/test_registry.py` (56 test)
+**Test:** `tests/test_registry.py` (59 test)
 
 ---
 
@@ -71,6 +71,26 @@ Bu komut dosyaları registry'ye yüklemez veya `index.json`'ı değiştirmez.
 Çıktıdaki tarball registry paket yoluna taşınmalı ve index entry, registry
 yöneticisinin onayladığı index'e eklenmelidir. Otomatik `publish` veya resmi
 paket yayın altyapısı henüz yoktur.
+
+### Yerel statik Registry dizini oluşturma
+
+Bir veya daha fazla doğrulanmış `axpm pack` çıktısını Registry v1'in beklediği
+dosya düzenine çevirmek için:
+
+```bash
+axpm registry assemble \
+  --from /tmp/packed-artifacts \
+  --output /tmp/registry-static \
+  --public-key /secure/path/registry-ed25519.pub.pem
+```
+
+Komut her arşivin SHA-256 ve Ed25519 imzasını, paket içindeki `axiom.toml`
+metadata'sını ve güvenli tar yollarını kontrol eder; başarılı olursa statik
+`index.json` ile `<paket>/<sürüm>.tar.gz` ağacını atomik olarak üretir. Çıktı
+yolu yeni veya boş olmalıdır. Komut ağ kullanmaz, yükleme yapmaz, özel anahtar
+almaz ve `index.json`'ı imzalamaz. Üretilen dizin **yayınlanmış veya index'i
+imzalı bir registry değildir**; hosting, index bütünlüğü ve üretim anahtarı
+işletimi ayrıca çözülmelidir.
 
 ---
 

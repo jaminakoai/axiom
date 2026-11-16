@@ -12,6 +12,10 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - `axpm pack`, temiz Git commit'inden deterministik tarball ve Ed25519 imzalı
   registry index girdisi hazırlar; monorepo altındaki paketleri de destekler ve
   otomatik yükleme yapmaz. İmza anahtarı Git deposu dışında olmak zorundadır.
+- `axpm registry assemble`, imzalı `axpm pack` çıktılarını tarball SHA/imzası,
+  arşiv yolları ve imzalı `axiom.toml` metadata'sıyla doğrulayarak çevrimdışı,
+  deterministik Registry v1 dizinine dönüştürür. Yükleme yapmaz; `index.json`
+  imzası ve üretim anahtarı yönetimi kapsam dışıdır.
 - `packages/axiom-scan-report` küçük örnek kütüphanesi ve gerçek yerel bağımlılık
   tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
 

@@ -16,12 +16,13 @@ import subprocess
 import argparse
 import tempfile
 import tarfile
-from pathlib import Path
+import zlib
+from pathlib import Path, PurePosixPath
 from typing import Dict, Any, List, Optional, Tuple
 
 from axiom.registry import (
     RegistryConfig, RegistryClient, resolve_tree, SemverError, parse_version,
-    sha256_bytes,
+    sha256_bytes, verify_sha256, verify_signature, version_key,
 )
 
 try:
@@ -40,6 +41,53 @@ CLR_YELLOW = "\033[1;33m"
 CLR_CYAN = "\033[1;36m"
 CLR_BOLD = "\033[1m"
 CLR_RESET = "\033[0m"
+
+_REGISTRY_INDEX_ENTRY_KEYS = {"version", "sha256", "sig", "dependencies", "yanked"}
+_REGISTRY_CONSTRAINT_PART_RE = re.compile(
+    r"^(?:>=|<=|>|<|=|\^|~)?\s*\d+(?:\.\d+){0,2}$"
+)
+_MAX_REGISTRY_PACK_BYTES = 256 * 1024 * 1024
+_MAX_REGISTRY_ARCHIVE_BYTES = 256 * 1024 * 1024
+_MAX_REGISTRY_ARCHIVE_MEMBERS = 20_000
+_MAX_REGISTRY_MANIFEST_BYTES = 1024 * 1024
+_MAX_REGISTRY_SIDECAR_BYTES = 1024 * 1024
+_MAX_REGISTRY_PACKAGES = 10_000
+_MAX_REGISTRY_PACK_DIRECTORIES = 30_000
+_MAX_REGISTRY_TAR_METADATA_READ = 1024 * 1024
+_MAX_REGISTRY_TAR_METADATA_TOTAL = 32 * 1024 * 1024
+
+
+class _BoundedTarReader:
+    """Bound reads performed internally by tarfile for PAX/GNU metadata."""
+
+    def __init__(self, source, max_read: int, max_total: int):
+        self.source = source
+        self.max_read = max_read
+        self.max_total = max_total
+        self.total_read = 0
+
+    def read(self, size: int = -1) -> bytes:
+        if size < 0 or size > self.max_read:
+            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
+        data = self.source.read(size)
+        self.total_read += len(data)
+        if self.total_read > self.max_total:
+            raise ValueError("tar başlık/manifest verisi toplam 32 MiB sınırını aşıyor")
+        return data
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        if whence != 0:
+            raise ValueError("tar akışında yalnızca mutlak seek desteklenir")
+        return self.source.seek(offset)
+
+    def tell(self) -> int:
+        return self.source.tell()
+
+    def close(self) -> None:
+        self.source.close()
+
+    def __getattr__(self, name: str):
+        return getattr(self.source, name)
 
 
 class TomlWriter:
@@ -136,6 +184,135 @@ def is_valid_dep_name(name: str) -> bool:
 def dep_dir_name(name: str) -> str:
     """Paket adini dosya sistemi icin guvenli dizin adina cevirir."""
     return name.replace("/", "__")
+
+
+def _valid_registry_constraint(value: str) -> bool:
+    if value in ("*", "latest"):
+        return True
+    parts = value.split(",")
+    return bool(parts) and all(
+        part.strip() in ("*", "latest")
+        or _REGISTRY_CONSTRAINT_PART_RE.fullmatch(part.strip())
+        for part in parts
+    )
+
+
+def _validate_registry_pack_archive(
+    raw: bytes,
+    archive_path: Path,
+    package_name: str,
+    package_version: str,
+    indexed_dependencies: Dict[str, str],
+) -> None:
+    """Validate a signed pack's tar structure and metadata without extracting it."""
+    if len(raw) > _MAX_REGISTRY_PACK_BYTES:
+        raise ValueError(f"paket arşivi sıkıştırılmış boyut sınırını aşıyor: {archive_path}")
+    try:
+        with tarfile.open(fileobj=io.BytesIO(raw), mode="r|gz") as archive:
+            archive.fileobj = _BoundedTarReader(
+                archive.fileobj,
+                _MAX_REGISTRY_TAR_METADATA_READ,
+                _MAX_REGISTRY_TAR_METADATA_TOTAL,
+            )
+            entries: Dict[str, Tuple[bool, tarfile.TarInfo]] = {}
+            total_size = 0
+            member_count = 0
+            manifest_text = None
+            regular_files = set()
+            while True:
+                member = archive.next()
+                if member is None:
+                    break
+                member_count += 1
+                if member_count > _MAX_REGISTRY_ARCHIVE_MEMBERS:
+                    raise ValueError(f"paket arşivindeki dosya sayısı sınır dışında: {archive_path}")
+                name = member.name
+                is_directory = member.isdir()
+                normalized_name = name[:-1] if is_directory and name.endswith("/") else name
+                if (
+                    not normalized_name
+                    or normalized_name.startswith("/")
+                    or "\\" in normalized_name
+                    or any(part in ("", ".", "..") for part in normalized_name.split("/"))
+                    or ":" in normalized_name.split("/", 1)[0]
+                ):
+                    raise ValueError(f"güvensiz tarball yolu: {name!r}")
+                if not (member.isfile() or is_directory):
+                    raise ValueError(f"desteklenmeyen tarball girdisi: {name!r}")
+                if member.mode & ~0o777:
+                    raise ValueError(f"özel izin bitli tarball girdisi: {name!r}")
+                if is_directory and member.size != 0:
+                    raise ValueError(f"boyutlu dizin girdisi desteklenmiyor: {name!r}")
+                if member.isfile():
+                    if name.endswith("/") or member.size < 0:
+                        raise ValueError(f"geçersiz tarball dosya girdisi: {name!r}")
+                    total_size += member.size
+                    if total_size > _MAX_REGISTRY_ARCHIVE_BYTES:
+                        raise ValueError("paket arşivi açılmış boyut sınırını aşıyor")
+                    regular_files.add(normalized_name)
+                    if normalized_name == "axiom.toml":
+                        if member.size > _MAX_REGISTRY_MANIFEST_BYTES:
+                            raise ValueError("paket manifesto boyutu 1 MiB sınırını aşıyor")
+                        manifest_stream = archive.extractfile(member)
+                        if manifest_stream is None:
+                            raise ValueError("paket tarball'ındaki axiom.toml okunamadı")
+                        with manifest_stream:
+                            manifest_text = manifest_stream.read(member.size).decode("utf-8")
+                if normalized_name in entries:
+                    raise ValueError(f"yinelenen tarball yolu: {normalized_name}")
+                entries[normalized_name] = (is_directory, member)
+
+            if member_count == 0:
+                raise ValueError(f"paket arşivi boş: {archive_path}")
+
+            for name, (is_directory, _) in entries.items():
+                parent = PurePosixPath(name).parent
+                while parent != PurePosixPath("."):
+                    parent_name = parent.as_posix()
+                    if parent_name in entries and not entries[parent_name][0]:
+                        raise ValueError(f"tarball dosyası başka bir yolun üst dizini: {parent_name}")
+                    parent = parent.parent
+                if not is_directory and any(
+                    candidate.startswith(name + "/") for candidate in entries
+                ):
+                    raise ValueError(f"tarball dosyası alt yol içeriyor: {name}")
+
+            if manifest_text is None:
+                raise ValueError("paket tarball'ında kök axiom.toml yok")
+            manifest_data = parse_toml(manifest_text)
+    except (OSError, EOFError, tarfile.TarError, UnicodeDecodeError, zlib.error) as exc:
+        raise ValueError(f"geçersiz paket tarball'ı: {archive_path}: {exc}") from exc
+
+    package_data = manifest_data.get("package") or manifest_data.get("project") or {}
+    if not isinstance(package_data, dict):
+        raise ValueError("tarball axiom.toml içindeki [package] nesne olmalı")
+    if package_data.get("name") != package_name:
+        raise ValueError(
+            f"index paket adı tarball manifestosuyla uyuşmuyor: {package_name!r}"
+        )
+    if package_data.get("version") != package_version:
+        raise ValueError(
+            f"index sürümü tarball manifestosuyla uyuşmuyor: {package_version!r}"
+        )
+    build_data = manifest_data.get("build") or {}
+    if not isinstance(build_data, dict):
+        raise ValueError("tarball axiom.toml içindeki [build] nesne olmalı")
+    entry = package_data.get("entry") or build_data.get("entry") or "src/main.ax"
+    if not isinstance(entry, str) or entry not in regular_files:
+        raise ValueError(f"paket giriş dosyası tarball'da yok: {entry!r}")
+
+    manifest_dependencies = manifest_data.get("dependencies") or {}
+    if not isinstance(manifest_dependencies, dict):
+        raise ValueError("tarball axiom.toml içindeki [dependencies] nesne olmalı")
+    for dependency, constraint in manifest_dependencies.items():
+        if (
+            not is_valid_dep_name(dependency)
+            or not isinstance(constraint, str)
+            or not _valid_registry_constraint(constraint)
+        ):
+            raise ValueError(f"geçersiz registry bağımlılığı: {dependency!r}")
+    if manifest_dependencies != indexed_dependencies:
+        raise ValueError("index bağımlılıkları tarball manifestosuyla uyuşmuyor")
 
 
 def compute_dir_checksum(directory: Path) -> str:
@@ -741,6 +918,241 @@ fn main() -> void {{
             os.replace(stage, final_dir)
         return final_dir
 
+    def assemble_registry(self, pack_dir: Path, output_dir: Path, public_key_path: Path) -> Path:
+        """Build and verify an offline static Registry v1 tree from ``axpm pack`` output.
+
+        This command never uploads content and never accepts a private key. The
+        destination is committed atomically only after every input artifact has
+        passed validation.
+        """
+        source_arg = pack_dir.expanduser()
+        if source_arg.is_symlink() or not source_arg.is_dir():
+            raise ValueError(f"pack çıktısı normal bir dizin olmalı: {source_arg}")
+        source_root = source_arg.resolve()
+
+        def ensure_source_file(path: Path) -> None:
+            if path.is_symlink() or not path.is_file():
+                raise ValueError(f"pack girdisi normal dosya olmalı: {path}")
+            try:
+                path.resolve().relative_to(source_root)
+            except ValueError:
+                raise ValueError(f"pack girdisi kaynak dizin dışına taşıyor: {path}") from None
+            parent = path.parent
+            while parent != source_root:
+                if parent.is_symlink():
+                    raise ValueError(f"pack girdisi symlink dizin içeremez: {parent}")
+                parent = parent.parent
+
+        output_arg = output_dir.expanduser()
+        if output_arg.name in ("", ".", ".."):
+            raise ValueError("registry çıktısı yeni bir dizin adı olmalı")
+        if output_arg.is_symlink():
+            raise ValueError(f"registry çıktı yolu symlink olamaz: {output_arg}")
+        output_parent = output_arg.parent.resolve()
+        if not output_parent.is_dir():
+            raise FileNotFoundError(f"registry çıktı üst dizini yok: {output_parent}")
+        output_root = output_parent / output_arg.name
+        if output_root.exists():
+            if not output_root.is_dir() or any(output_root.iterdir()):
+                raise FileExistsError(f"registry çıktı dizini boş olmalı: {output_root}")
+
+        if (output_root == source_root or output_root.is_relative_to(source_root)
+                or source_root.is_relative_to(output_root)):
+            raise ValueError("pack girdisi ve registry çıktısı iç içe olamaz")
+
+        key_arg = public_key_path.expanduser()
+        if key_arg.is_symlink() or not key_arg.is_file():
+            raise FileNotFoundError(f"registry açık anahtarı normal bir dosya olmalı: {key_arg}")
+        try:
+            public_key = key_arg.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError) as exc:
+            raise ValueError(f"registry açık anahtarı okunamadı: {exc}") from exc
+        if not public_key.strip():
+            raise ValueError("registry açık anahtarı boş olamaz")
+
+        # The pack output is deliberately a staging layout. Require every
+        # payload and sidecar to form exactly one name/version pair.
+        artifacts: Dict[Tuple[str, str], Dict[str, Path]] = {}
+        seen_directories = set()
+        artifact_count = 0
+
+        def walk_error(exc: OSError) -> None:
+            raise ValueError(f"pack girdisi okunamadı: {exc}") from exc
+
+        for current, directory_names, file_names in os.walk(
+            source_root, followlinks=False, onerror=walk_error
+        ):
+            current_path = Path(current)
+            for directory in directory_names:
+                directory_path = current_path / directory
+                if directory_path.is_symlink():
+                    raise ValueError(f"pack girdisi symlink içeremez: {directory_path}")
+                seen_directories.add(directory_path.relative_to(source_root).as_posix())
+                if len(seen_directories) > _MAX_REGISTRY_PACK_DIRECTORIES:
+                    raise ValueError("pack çıktısındaki dizin sayısı sınırı aşıyor")
+            for filename in file_names:
+                path = current_path / filename
+                ensure_source_file(path)
+                relative = path.relative_to(source_root)
+                parts = relative.parts
+                if filename.endswith(".index-entry.json"):
+                    artifact_kind = "entry"
+                    artifact_version = filename[:-len(".index-entry.json")]
+                elif filename.endswith(".tar.gz"):
+                    artifact_kind = "archive"
+                    artifact_version = filename[:-len(".tar.gz")]
+                else:
+                    raise ValueError(f"beklenmeyen pack çıktısı: {relative}")
+                if len(parts) < 3 or parts[-2] != artifact_version:
+                    raise ValueError(f"pack girdisi name/version yapısında değil: {relative}")
+                package_name = "/".join(parts[:-2])
+                if not is_valid_dep_name(package_name):
+                    raise ValueError(f"geçersiz paket yolu: {relative}")
+                try:
+                    parse_version(artifact_version)
+                except SemverError as exc:
+                    raise ValueError(f"geçersiz sürüm dizini: {relative}") from exc
+                key = (package_name, artifact_version)
+                slot = artifacts.setdefault(key, {})
+                if artifact_kind in slot:
+                    raise ValueError(f"yinelenen paket çıktısı: {package_name}@{artifact_version}")
+                slot[artifact_kind] = path
+                artifact_count += 1
+                if artifact_count > _MAX_REGISTRY_PACKAGES * 2:
+                    raise ValueError("pack çıktısındaki paket/sidecar sayısı sınırı aşıyor")
+
+        if not artifacts:
+            raise ValueError(f"pack çıktısında imzalı paket bulunamadı: {source_root}")
+        for relative_dir in seen_directories:
+            if not any(
+                Path(*key[0].split("/"), key[1]).as_posix() == relative_dir
+                or Path(*key[0].split("/"), key[1]).as_posix().startswith(relative_dir + "/")
+                for key in artifacts
+            ):
+                raise ValueError(f"pack girdisinde kullanılmayan dizin: {relative_dir}")
+
+        validated: List[Tuple[str, str, Dict[str, Any], Path]] = []
+        for (package_name, package_version), pair in sorted(
+            artifacts.items(), key=lambda item: (item[0][0], version_key(item[0][1]))
+        ):
+            if set(pair) != {"archive", "entry"}:
+                raise ValueError(f"paket arşivi ve index girdisi eşleşmiyor: {package_name}@{package_version}")
+            sidecar_path = pair["entry"]
+            ensure_source_file(sidecar_path)
+            if sidecar_path.stat().st_size > _MAX_REGISTRY_SIDECAR_BYTES:
+                raise ValueError(f"index girdisi 1 MiB sınırını aşıyor: {sidecar_path}")
+            try:
+                with sidecar_path.open("rb") as sidecar_file:
+                    sidecar_bytes = sidecar_file.read(_MAX_REGISTRY_SIDECAR_BYTES + 1)
+                if len(sidecar_bytes) > _MAX_REGISTRY_SIDECAR_BYTES:
+                    raise ValueError(f"index girdisi 1 MiB sınırını aşıyor: {sidecar_path}")
+                entry = json.loads(sidecar_bytes.decode("utf-8"))
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise ValueError(f"geçersiz index girdisi {sidecar_path}: {exc}") from exc
+            if not isinstance(entry, dict) or set(entry) != _REGISTRY_INDEX_ENTRY_KEYS:
+                raise ValueError(f"index girdisi Registry v1 alanlarıyla eşleşmiyor: {sidecar_path}")
+            if entry.get("version") != package_version:
+                raise ValueError(f"index sürümü dosya yoluyla uyuşmuyor: {sidecar_path}")
+            if type(entry.get("yanked")) is not bool:
+                raise ValueError(f"index girdisindeki yanked bool olmalı: {sidecar_path}")
+            dependencies = entry.get("dependencies")
+            if not isinstance(dependencies, dict):
+                raise ValueError(f"index girdisindeki dependencies nesne olmalı: {sidecar_path}")
+            for dependency, constraint in dependencies.items():
+                if (not is_valid_dep_name(dependency) or not isinstance(constraint, str)
+                        or not _valid_registry_constraint(constraint)):
+                    raise ValueError(f"geçersiz bağımlılık index girdisinde: {dependency!r}")
+
+            archive_path = pair["archive"]
+            ensure_source_file(archive_path)
+            if archive_path.stat().st_size > _MAX_REGISTRY_PACK_BYTES:
+                raise ValueError(f"paket arşivi sıkıştırılmış boyut sınırını aşıyor: {archive_path}")
+            with archive_path.open("rb") as archive_file:
+                archive_bytes = archive_file.read(_MAX_REGISTRY_PACK_BYTES + 1)
+            if len(archive_bytes) > _MAX_REGISTRY_PACK_BYTES:
+                raise ValueError(f"paket arşivi sıkıştırılmış boyut sınırını aşıyor: {archive_path}")
+            if not verify_sha256(archive_bytes, entry.get("sha256")):
+                raise ValueError(f"paket SHA-256 doğrulaması başarısız: {package_name}@{package_version}")
+            signature_b64 = entry.get("sig")
+            if not isinstance(signature_b64, str):
+                raise ValueError(f"paket imzası metin olmalı: {package_name}@{package_version}")
+            try:
+                signature = base64.b64decode(signature_b64, validate=True)
+            except (ValueError, base64.binascii.Error) as exc:
+                raise ValueError(f"paket imzası geçerli base64 değil: {package_name}@{package_version}") from exc
+            if len(signature) != 64 or base64.b64encode(signature).decode("ascii") != signature_b64:
+                raise ValueError(f"paket imzası Ed25519 biçiminde değil: {package_name}@{package_version}")
+            signature_ok, reason = verify_signature(archive_bytes, signature_b64, public_key)
+            if not signature_ok:
+                raise ValueError(f"paket imzası doğrulanamadı {package_name}@{package_version}: {reason}")
+
+            _validate_registry_pack_archive(
+                archive_bytes, archive_path, package_name, package_version, dependencies
+            )
+            normalized_entry = {
+                "version": package_version,
+                "sha256": entry["sha256"].lower(),
+                "sig": signature_b64,
+                "dependencies": dict(sorted(dependencies.items())),
+                "yanked": entry["yanked"],
+            }
+            validated.append((package_name, package_version, normalized_entry, archive_path))
+
+        if len(validated) > _MAX_REGISTRY_PACKAGES:
+            raise ValueError("pack çıktısındaki paket sayısı sınırı aşıyor")
+
+        packages: Dict[str, List[Dict[str, Any]]] = {}
+        for package_name, package_version, entry, _ in validated:
+            package_versions = packages.setdefault(package_name, [])
+            if any(item["version"] == package_version for item in package_versions):
+                raise ValueError(f"yinelenen paket sürümü: {package_name}@{package_version}")
+            package_versions.append(entry)
+        for package_versions in packages.values():
+            package_versions.sort(key=lambda item: version_key(item["version"]))
+
+        # Verify the output remains a fresh/empty directory, then stage next to
+        # it so the final rename is atomic on the same filesystem.
+        stage = Path(tempfile.mkdtemp(prefix=".axpm-registry-assemble-", dir=str(output_parent)))
+        try:
+            for package_name, package_version, entry, archive_path in validated:
+                ensure_source_file(archive_path)
+                destination = stage.joinpath(*package_name.split("/"), f"{package_version}.tar.gz")
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                digest = hashlib.sha256()
+                total_bytes = 0
+                with archive_path.open("rb") as source, destination.open("xb") as target:
+                    while True:
+                        chunk = source.read(1024 * 1024)
+                        if not chunk:
+                            break
+                        total_bytes += len(chunk)
+                        if total_bytes > _MAX_REGISTRY_PACK_BYTES:
+                            raise RuntimeError(
+                                f"paket arşivi kopyalanırken boyut sınırını aştı: "
+                                f"{package_name}@{package_version}"
+                            )
+                        digest.update(chunk)
+                        target.write(chunk)
+                if digest.hexdigest() != entry["sha256"]:
+                    raise RuntimeError(f"paket kopyalanırken değişti: {package_name}@{package_version}")
+
+            index = {"schema": 1, "packages": {name: packages[name] for name in sorted(packages)}}
+            (stage / "index.json").write_text(
+                json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+
+            if output_root.is_symlink():
+                raise ValueError(f"registry çıktı yolu symlink olamaz: {output_root}")
+            if output_root.exists():
+                if not output_root.is_dir() or any(output_root.iterdir()):
+                    raise FileExistsError(f"registry çıktı dizini boş olmalı: {output_root}")
+                output_root.rmdir()
+            os.replace(stage, output_root)
+        finally:
+            if stage.exists():
+                shutil.rmtree(stage, ignore_errors=True)
+        return output_root
+
     def get_search_paths(self) -> List[Path]:
         """Paket bağımlılıklarının include / arama yollarını derler."""
         paths: List[Path] = [self.root_dir, self.root_dir / "src", self.deps_dir]
@@ -1063,6 +1475,26 @@ def main(argv: Optional[List[str]] = None):
         "--output", type=Path, help="Registry kök çıktı dizini (varsayılan: dist/registry)",
     )
 
+    p_registry = subparsers.add_parser(
+        "registry", help="Yerel registry artefact'larını doğrula ve hazırla (ağ kullanmaz)"
+    )
+    registry_commands = p_registry.add_subparsers(dest="registry_cmd", required=True)
+    p_registry_assemble = registry_commands.add_parser(
+        "assemble", help="İmzalı axpm pack çıktılarını statik Registry v1 dizinine dönüştürür"
+    )
+    p_registry_assemble.add_argument(
+        "--from", dest="pack_output", type=Path, required=True,
+        help="axpm pack komutunun çıktı kökü",
+    )
+    p_registry_assemble.add_argument(
+        "--output", type=Path, required=True,
+        help="Oluşturulacak, mevcut değilse daha iyi olan yeni/boş registry dizini",
+    )
+    p_registry_assemble.add_argument(
+        "--public-key", type=Path, required=True,
+        help="Tarball imzalarını doğrulamak için güvenilen Ed25519 PEM açık anahtarı",
+    )
+
     # update
     p_update = subparsers.add_parser("update", help="Git bağımlılıklarını yeniden çeker ve kilidi günceller")
     p_update.add_argument("dependency", nargs="?", help="Yalnızca bu bağımlılığı güncelle")
@@ -1109,6 +1541,10 @@ def main(argv: Optional[List[str]] = None):
         elif args.cmd == "pack":
             result = pm.pack(Path(args.signing_key), output_dir=args.output)
             print(f"{CLR_GREEN}✓ İmzalı registry paketi hazırlandı:{CLR_RESET} {result}")
+        elif args.cmd == "registry" and args.registry_cmd == "assemble":
+            result = pm.assemble_registry(args.pack_output, args.output, args.public_key)
+            print(f"{CLR_GREEN}✓ Doğrulanmış statik registry hazırlandı:{CLR_RESET} {result}")
+            print("Bu komut hiçbir yere yükleme yapmadı; index.json ayrıca imzalanmaz.")
         elif args.cmd == "update":
             pm.update(getattr(args, "dependency", None))
         elif args.cmd == "remove":

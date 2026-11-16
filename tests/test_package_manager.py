@@ -104,6 +104,45 @@ def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
     return root, key, public_key
 
 
+def _replace_pack_archive_and_sign(
+    pack_dir, package_root, signing_key, tmp_path, first_member, pax_header_bytes=0
+):
+    """Replace a test pack with a custom signed archive to exercise validation."""
+    import base64
+    import io
+
+    archive_path = pack_dir / "1.2.3.tar.gz"
+    entry_path = pack_dir / "1.2.3.index-entry.json"
+    archive_buffer = io.BytesIO()
+    with tarfile.open(fileobj=archive_buffer, mode="w:gz") as archive:
+        entries = [
+            (first_member, b"untrusted\n"),
+            ("axiom.toml", (package_root / "axiom.toml").read_bytes()),
+            ("src/main.ax", (package_root / "src" / "main.ax").read_bytes()),
+        ]
+        for name, content in entries:
+            info = tarfile.TarInfo(name)
+            if name == "src/main.ax" and pax_header_bytes:
+                info.pax_headers = {"comment": "x" * pax_header_bytes}
+            info.size = len(content)
+            archive.addfile(info, io.BytesIO(content))
+    archive_bytes = archive_buffer.getvalue()
+    archive_path.write_bytes(archive_bytes)
+
+    payload = tmp_path / "signed-test-package.tar.gz"
+    signature = tmp_path / "signed-test-package.sig"
+    payload.write_bytes(archive_bytes)
+    subprocess.run(
+        ["openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(signing_key),
+         "-in", str(payload), "-out", str(signature)],
+        check=True, capture_output=True,
+    )
+    entry = json.loads(entry_path.read_text(encoding="utf-8"))
+    entry["sha256"] = hashlib.sha256(archive_bytes).hexdigest()
+    entry["sig"] = base64.b64encode(signature.read_bytes()).decode("ascii")
+    entry_path.write_text(json.dumps(entry), encoding="utf-8")
+
+
 def _init_test_git_repo(repo, hooks_dir):
     """Initialize a repo without inheriting host hooks or commit signing."""
     subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
@@ -195,6 +234,140 @@ def test_axpm_pack_refuses_signing_key_inside_repository(tmp_path):
         PackageManager(root).pack(in_repo_key, tmp_path / "registry")
 
 
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_rejects_wrong_key_and_leaves_no_partial_output(tmp_path):
+    root, key, _ = _make_committed_pack_project(tmp_path / "package")
+    _, _, wrong_public_key = _make_committed_pack_project(tmp_path / "wrong-key")
+    pack_root = tmp_path / "pack-output"
+    PackageManager(root).pack(key, pack_root)
+
+    output = tmp_path / "registry"
+    with pytest.raises(ValueError, match="paket imzası doğrulanamadı"):
+        PackageManager(root).assemble_registry(
+            pack_root, output, wrong_public_key
+        )
+    assert not output.exists()
+    assert not list(tmp_path.glob(".axpm-registry-assemble-*"))
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_rejects_sidecar_manifest_mismatch(tmp_path):
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    packed = PackageManager(root).pack(key, pack_root)
+    sidecar = packed / "1.2.3.index-entry.json"
+    entry = json.loads(sidecar.read_text(encoding="utf-8"))
+    entry["dependencies"] = {"different-package": "^1.0"}
+    sidecar.write_text(json.dumps(entry), encoding="utf-8")
+
+    output = tmp_path / "registry"
+    with pytest.raises(ValueError, match="manifestosuyla uyuşmuyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+    assert not list(tmp_path.glob(".axpm-registry-assemble-*"))
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_allows_empty_output_and_rejects_nonempty_or_nested_paths(tmp_path):
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    PackageManager(root).pack(key, pack_root)
+
+    empty_output = tmp_path / "empty-registry"
+    empty_output.mkdir()
+    assembled = PackageManager(root).assemble_registry(pack_root, empty_output, public_key)
+    assert assembled == empty_output
+    assert (empty_output / "index.json").is_file()
+
+    with pytest.raises(FileExistsError, match="boş olmalı"):
+        PackageManager(root).assemble_registry(pack_root, empty_output, public_key)
+
+    nested_output = pack_root / "assembled"
+    with pytest.raises(ValueError, match="iç içe olamaz"):
+        PackageManager(root).assemble_registry(pack_root, nested_output, public_key)
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_rejects_late_unmatched_artifact_without_partial_output(tmp_path):
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    PackageManager(root).pack(key, pack_root)
+    late = pack_root / "z-last" / "1.0.0"
+    late.mkdir(parents=True)
+    (late / "1.0.0.index-entry.json").write_text("{}\n", encoding="utf-8")
+
+    output = tmp_path / "registry"
+    with pytest.raises(ValueError, match="arşivi ve index girdisi eşleşmiyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+    assert not list(tmp_path.glob(".axpm-registry-assemble-*"))
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_rejects_signed_path_traversal_and_oversize_archives(
+    tmp_path, monkeypatch
+):
+    import axiom.package_manager as package_manager_module
+
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    packed = PackageManager(root).pack(key, pack_root)
+    _replace_pack_archive_and_sign(packed, root, key, tmp_path, "../escaped.txt")
+
+    output = tmp_path / "unsafe-registry"
+    with pytest.raises(ValueError, match="güvensiz tarball yolu"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+    # Re-pack a valid archive and shrink the configured bound to cover the
+    # oversize branch without allocating a huge test fixture.
+    shutil.rmtree(pack_root)
+    packed = PackageManager(root).pack(key, pack_root)
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_ARCHIVE_BYTES", 1)
+    with pytest.raises(ValueError, match="açılmış boyut sınırını aşıyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_rejects_oversized_signed_pax_header(tmp_path):
+    import axiom.package_manager as package_manager_module
+
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    packed = PackageManager(root).pack(key, pack_root)
+    _replace_pack_archive_and_sign(
+        packed, root, key, tmp_path, "safe.txt",
+        pax_header_bytes=package_manager_module._MAX_REGISTRY_TAR_METADATA_READ + 1,
+    )
+
+    output = tmp_path / "registry"
+    with pytest.raises(ValueError, match="tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_registry_assemble_enforces_sidecar_and_package_count_limits(tmp_path, monkeypatch):
+    import axiom.package_manager as package_manager_module
+
+    root, key, public_key = _make_committed_pack_project(tmp_path)
+    pack_root = tmp_path / "pack-output"
+    PackageManager(root).pack(key, pack_root)
+    output = tmp_path / "registry"
+
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_SIDECAR_BYTES", 1)
+    with pytest.raises(ValueError, match="index girdisi 1 MiB sınırını aşıyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_SIDECAR_BYTES", 1024 * 1024)
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_PACKAGES", 0)
+    with pytest.raises(ValueError, match="paket/sidecar sayısı sınırı aşıyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+
 def test_sample_scan_report_package_runs_and_installs_as_path_dependency(tmp_path):
     package = Path(__file__).resolve().parent.parent / "packages" / "axiom-scan-report"
     package_tests = subprocess.run(
@@ -267,13 +440,24 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     assert index_entry["sha256"] == hashlib.sha256(tarball.read_bytes()).hexdigest()
 
     registry = tmp_path / "local-registry"
-    package_registry_dir = registry / "axiom-scan-report"
-    package_registry_dir.mkdir(parents=True)
-    shutil.copyfile(tarball, package_registry_dir / "0.1.0.tar.gz")
-    (registry / "index.json").write_text(json.dumps({
-        "schema": 1,
-        "packages": {"axiom-scan-report": [index_entry]},
-    }), encoding="utf-8")
+    registry_build = subprocess.run(
+        [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
+         "--output", str(registry), "--public-key", str(public_key_path)],
+        cwd=repo, capture_output=True, text=True,
+    )
+    assert registry_build.returncode == 0, registry_build.stdout + registry_build.stderr
+    assert (registry / "axiom-scan-report" / "0.1.0.tar.gz").read_bytes() == tarball.read_bytes()
+    assembled_index = json.loads((registry / "index.json").read_text(encoding="utf-8"))
+    assert assembled_index == {"schema": 1, "packages": {"axiom-scan-report": [index_entry]}}
+
+    second_registry = tmp_path / "second-registry"
+    second_build = subprocess.run(
+        [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
+         "--output", str(second_registry), "--public-key", str(public_key_path)],
+        cwd=repo, capture_output=True, text=True,
+    )
+    assert second_build.returncode == 0, second_build.stdout + second_build.stderr
+    assert (second_registry / "index.json").read_bytes() == (registry / "index.json").read_bytes()
 
     app = tmp_path / "clean-consumer"
     init = subprocess.run(
