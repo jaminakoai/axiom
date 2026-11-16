@@ -31,7 +31,10 @@ jobs:
           sudo apt-get install -y -qq clang libssl-dev zlib1g-dev
 
       - name: Axiom kurulumu
-        run: python -m pip install -e .
+        run: python -m pip install -e . pytest
+
+      - name: Registry cache dosya sistemi smoke testi
+        run: python -m pytest -q tests/test_registry.py -k download_cache_hit_is_portable_on_current_platform
 
       - name: Derleyici sürümünü doğrula
         run: |

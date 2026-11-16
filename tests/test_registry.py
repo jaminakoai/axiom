@@ -306,6 +306,32 @@ def test_cache_mode_check_handles_windows_chmod_semantics(monkeypatch, tmp_path)
     assert registry_module._cache_matches_archive(raw, cache_dir)
 
 
+def test_download_cache_hit_is_portable_on_current_platform(tmp_path):
+    """A real cache hit works with the host filesystem's chmod semantics."""
+    archive_buffer = io.BytesIO()
+    with tempfile.TemporaryDirectory(dir=tmp_path) as source_dir:
+        manifest = Path(source_dir) / "axiom.toml"
+        manifest.write_text('[package]\nname = "portable-cache-test"\nversion = "1.0.0"\n',
+                            encoding="utf-8")
+        with tarfile.open(fileobj=archive_buffer, mode="w:gz") as archive:
+            archive.add(manifest, arcname="./axiom.toml")
+    raw = archive_buffer.getvalue()
+    sha = sha256_bytes(raw)
+    client = RegistryClient(RegistryConfig(
+        url="https://registry.example.invalid", allow_unsigned=True,
+        cache_dir=tmp_path / "cache",
+    ))
+    cache_dir = client.cache_path_for(sha)
+    cache_dir.mkdir(parents=True)
+    (cache_dir / "pkg.tar.gz").write_bytes(raw)
+    registry_module._extract_package_archive(raw, cache_dir)
+
+    resolved_dir, hit = client.download("portable-cache-test", "1.0.0", sha, "")
+
+    assert hit is True
+    assert (resolved_dir / "axiom.toml").exists()
+
+
 def test_download_rejects_invalid_sha_before_using_cache_path(tmp_path):
     """Untrusted index SHA cannot traverse to and delete outside the cache."""
     victim = tmp_path / "victim"
