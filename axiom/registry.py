@@ -86,6 +86,65 @@ def _extract_package_archive(raw: bytes, destination: Path) -> None:
                 shutil.copyfileobj(source, output)
             target.chmod(0o755 if member.mode & 0o111 else 0o644)
 
+
+def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
+    """Ensure extracted cache files still equal the verified archive contents."""
+    expected: Dict[str, Tuple[int, str, int]] = {}
+    try:
+        with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive:
+            for member in archive.getmembers():
+                name = member.name
+                path = PurePosixPath(name)
+                parts = path.parts
+                if (
+                    not name
+                    or "\\" in name
+                    or path.is_absolute()
+                    or any(part in ("..", "") for part in parts)
+                    or (parts and ":" in parts[0])
+                ):
+                    return False
+                if member.isdir():
+                    continue
+                if member.issym() or member.islnk() or not member.isfile() or not parts:
+                    return False
+                relative_name = "/".join(parts)
+                if relative_name == "pkg.tar.gz" or relative_name in expected:
+                    return False
+                source = archive.extractfile(member)
+                if source is None:
+                    return False
+                digest = hashlib.sha256()
+                size = 0
+                with source:
+                    for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                        size += len(chunk)
+                        digest.update(chunk)
+                mode = 0o755 if member.mode & 0o111 else 0o644
+                expected[relative_name] = (size, digest.hexdigest(), mode)
+
+        actual: Dict[str, Tuple[int, str, int]] = {}
+        for path in cache_dir.rglob("*"):
+            if path == cache_dir / "pkg.tar.gz":
+                continue
+            if path.is_symlink():
+                return False
+            if path.is_dir():
+                continue
+            if not path.is_file():
+                return False
+            digest = hashlib.sha256()
+            size = 0
+            with path.open("rb") as source:
+                for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                    size += len(chunk)
+                    digest.update(chunk)
+            relative = path.relative_to(cache_dir).as_posix()
+            actual[relative] = (size, digest.hexdigest(), path.stat().st_mode & 0o777)
+        return actual == expected
+    except (OSError, tarfile.TarError, ValueError):
+        return False
+
 # ---------------------------------------------------------------------------
 # Semver
 # ---------------------------------------------------------------------------
@@ -312,6 +371,26 @@ def verify_signature(data: bytes, signature_b64: str, public_key: Optional[str])
     return (True, "") if ok else (False, "imza geçersiz")
 
 
+def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: str,
+                           sig_b64: str, config: RegistryConfig) -> None:
+    """Her kullanımdan önce tarball bütünlüğünü ve güncel güven politikasını doğrula."""
+    if not verify_sha256(raw, expected_sha):
+        raise RuntimeError(
+            f"'{name}@{version}' sha256 uyuşmuyor.\n"
+            f"  beklenen: {expected_sha}\n  gerçek  : {sha256_bytes(raw)}"
+        )
+
+    if sig_b64:
+        ok, why = verify_signature(raw, sig_b64, config.public_key)
+        if not ok:
+            raise RuntimeError(f"'{name}@{version}' imza doğrulanamadı: {why}")
+    elif not config.allow_unsigned:
+        raise RuntimeError(
+            f"'{name}@{version}' imzalanmamış ve allow_unsigned kapalı. "
+            f"Registry'yi düzeltin veya AXIOM_ALLOW_UNSIGNED=1 kullanın."
+        )
+
+
 # ---------------------------------------------------------------------------
 # İndirme
 # ---------------------------------------------------------------------------
@@ -368,10 +447,14 @@ class RegistryClient:
 
         if cache_dir.exists() and stored_tarball.exists():
             # Cache isabeti: içeriği YİNE doğrula. Aksi halde bozulmuş/ele
-            # geçirilmiş cache doğrulamayı atlatırdı.
+            # geçirilmiş cache doğrulamayı atlatırdı. İmzayı ve unsigned
+            # politikasını da mevcut yapılandırmaya göre yeniden uygula.
             cached = stored_tarball.read_bytes()
             if verify_sha256(cached, expected_sha):
-                return cache_dir, True
+                _verify_package_tarball(cached, name, version, expected_sha,
+                                        sig_b64, self.config)
+                if _cache_matches_archive(cached, cache_dir):
+                    return cache_dir, True
             # bozuk cache: temizle ve yeniden indir
             shutil.rmtree(cache_dir, ignore_errors=True)
 
@@ -383,22 +466,8 @@ class RegistryClient:
         except urllib.error.URLError as e:
             raise RuntimeError(f"paket indirilemedi ({url}): {e.reason}")
 
-        if not verify_sha256(raw, expected_sha):
-            raise RuntimeError(
-                f"'{name}@{version}' sha256 uyuşmuyor.\n"
-                f"  beklenen: {expected_sha}\n  gerçek  : {sha256_bytes(raw)}"
-            )
-
-        if sig_b64:
-            ok, why = verify_signature(raw, sig_b64, self.config.public_key)
-            if not ok:
-                raise RuntimeError(f"'{name}@{version}' imza doğrulanamadı: {why}")
-        else:
-            if not self.config.allow_unsigned:
-                raise RuntimeError(
-                    f"'{name}@{version}' imzalanmamış ve allow_unsigned kapalı. "
-                    f"Registry'yi düzeltin veya AXIOM_ALLOW_UNSIGNED=1 kullanın."
-                )
+        _verify_package_tarball(raw, name, version, expected_sha, sig_b64,
+                                self.config)
 
         # Açma (atomik: geçici dizin -> rename)
         cache_dir.parent.mkdir(parents=True, exist_ok=True)

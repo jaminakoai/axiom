@@ -12,7 +12,8 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son kaydedilmiş tam test paketi | GitHub Actions `c908b02`: Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
+| Son tamamlanmış tam test paketi | GitHub Actions `c908b02`: Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
+| Güncel commit CI | `cac4ab8`: tam CI run 43865229438 sürüyor; native Linux/Windows/macOS smoke run 43865229360 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `c908b02` — [run 43860681878](https://github.com/jaminakoai/axiom/actions/runs/43860681878), **7/7 başarılı**; Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman testleri 55 geçti |
 
@@ -27,20 +28,25 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 ### Mevcut konum ve ilerleme tahmini
 
 - Axiom'ın derleyici, iki arka uç, standart kütüphane, paket altyapısı ve
-  `axiom-scan`/DFIR örnekleri mevcut. Faz 1'in **kod ve test işleri** tamamlandı;
-  Faz 2'nin büyük bölümü uygulandı.
+  `axiom-scan`/DFIR örnekleri mevcut. G0, G1 ve G2 tamamlandı; G4 platform smoke
+  doğrulaması da Linux, Windows ve macOS'ta geçti.
 - Faz 1'in dış kullanıcı kapısı **açılmadı**: `axiom-scan`'i kendi verisinde
   deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
+- Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
+  paket hazırlama akışı var; resmi paket yayımlanmış değil. Yükleme yolu ve resmi
+  imza anahtarı işletimi hâlâ belirlenmeli.
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
 - G1 kapandı: YARA 4.5.4 differential, C/LLVM parity, runtime limit kontrolleri
   ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
   değildir.
-- İlk güvenilir public release hedefine göre yaklaşık **%67** ilerleme tahmini
-  kullanılıyor. Bu ölçülmüş KPI değildir; G1 kapanışı teknik güveni artırdı.
-  G2 gerçek kural dosyası corpus'u, G3 dış kullanıcı doğrulaması ve G4
-  dağıtım/platform kanıtı hâlâ eksik.
+- İlk güvenilir public release hedefine göre yaklaşık **%75** ilerleme tahmini
+  kullanılıyor. Bu ölçülmüş KPI değildir; G1/G2 kanıtı ve native platform
+  smoke doğrulaması tamamlandığı için tahmin güncellendi.
+  G2 gerçek kural corpus'u ve G4 platform smoke kapandı; G3 bağımsız kullanıcı
+  kanıtı ile G4 resmi örnek paket yayını hâlâ açık. Yüzde yalnız kaba milestone
+  tahminidir, kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
 
 ### İş sırası ve kabul kapıları
 
@@ -246,7 +252,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   hazır, ancak bunlar resmi yayın sayılmaz. Bunlar çözülüp örnek paket gerçekten
   yayınlanmadan bu madde kapanmaz.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
-  kötü niyetli arşiv regresyonları test edildi.
+  kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
+  unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden
+  doğrulanıyor; `docs/reports/2026-11-16-registry-cache-integrity.md` içinde 73
+  registry/paket-yöneticisi testiyle kanıtlandı.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
   taahhüdü özellikle 1.0 kararı öncesine bırakıldı; README'ler ARM64 durumunu
@@ -307,7 +316,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tam test paketi | CI `53839c3`: Python 3.10–13’te 1457 geçti/27 genel ortam testi atlandı; tüm 7 job başarılı | GitHub Actions run 43758677082 |
+| Son tamamlanmış tam test paketi | CI `c908b02`: Python 3.10–13’te 1485 geçti/27 genel ortam testi atlandı; tüm 7 job başarılı | GitHub Actions run 43860681878 |
+| Güncel tam CI | `cac4ab8` tam CI sürüyor; G1/G2 doğrulaması ve biçimlendirme adımları tamamlandı | GitHub Actions run 43865229438 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -316,8 +326,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | LLVM backend örnek | 21/21 | `... --backend=llvm` |
 | Self-hosted (`bin/axiomc`) | **21/21** ✅ | `./bin/axiomc build examples/$f.ax` |
 | Paket kayıt defteri | **v1 var** (ed25519, semver, transitive) | `tests/test_registry.py` |
-| Windows desteği | **21/21 cross-compile + Wine**; gerçek Windows runner yok | `axiom build --target windows` + `wine` |
-| macOS | doğrulanmış destek/CI yok | G4 platform CI işi |
+| Windows desteği | **21/21 cross-compile + Wine**; native smoke CI geçti | P2-19b ve run 43865229360 |
+| macOS | native smoke CI geçti; tam pytest paketi/`axiom-scan` doğrulanmadı | run 43865229360 ve README sınırları |
 | Doküman dili | TR + EN (tam) | `docs/en/TUTORIAL.md` |
 | LSP | 10 metod (refs, rename, format, semantic tokens, signature help) | `tests/test_lsp_full_features.py` |
 | API dokümanı | `axiom doc` → `docs/api/` | `axiom doc std/` |
@@ -1072,7 +1082,8 @@ tek statik binary, sıfır runtime bağımlılığı, ölçülebilir hız.
 ## 6. FAZ 3 — NİŞ'TE REFERANS (Faz 1 kapısı açıldıktan sonra)
 
 - [ ] 1.0 sürüm; 2 sürüm geriye uyum taahhüdü
-- [x] ~~Windows çapraz derleme~~ ✅ (P2-19, 21/21) · macOS doğrulaması bekliyor
+- [x] ~~Windows çapraz derleme~~ ✅ (P2-19, 21/21); native Windows/macOS
+  smoke CI de geçti (tam pytest/`axiom-scan` bu platformlarda doğrulanmış değil).
 - [ ] 200+ paket, 20+ yazar
 - [ ] İlk kurumsal kullanıcı (güvenlik ekibi veya gömülü)
 - [ ] Regülasyon kanıt paketi: `axiom prove` çıktısı → IEC 62304 / ISO 26262 denetim dosyası
@@ -1151,16 +1162,17 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam test (güncel çalışma ağacı) | CI `53839c3`: Python 3.10–13’te 1457 geçti/27 genel ortam skip’i; 7/7 job başarılı | — | 2000 |
+| Son tamamlanmış tam CI | `c908b02`: Python 3.10–13'te 1485 geçti/27 genel ortam skip'i; 7/7 job başarılı | — | 2000 |
+| Güncel commit CI | `cac4ab8`: run 43865229438 sürüyor; platform smoke run 43865229360 3/3 geçti | — | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
-| Paket (registry) | 0 → altyapı hazır | 10 | 250 |
+| Yayımlanmış registry paketi | 0; 1 kaynak örneği paketlenebilir, yayınlanmadı | 10 | 250 |
 | Dış katkı/ay | 0 | 2 | 10 |
 | Üretim kullanıcısı | 0 | 1 | 3 |
 | Self-hosted örnek | **21/21** ✅ | 8/21 | 21/21 |
 | C'ye hız oranı (aritmetik) | 1,5–2,2× | ≤2× | ≤1,5× |
-| Platform | Linux; Windows cross-compile + Wine 21/21; gerçek Windows/macOS CI yok | 1 | 2+ gerçek runner |
+| Platform | Linux tam CI; Windows/macOS native smoke 3/3; tam pytest/scan doğrulaması Linux'ta | 2 işletim sistemi runner'ı | 2+ gerçek runner |
 
 ---
 
@@ -1185,12 +1197,16 @@ Aşağıdakiler **geçmiş kayıttır**, güncel değildir. Çelişki varsa bu d
 Bu bölüm aktif listedeki sırayı tekrarlar; görev ayrıntıları ve kabul kapıları
 belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 
-1. **G1:** YARA hex pattern modelini birleştir; desteklenen kombinasyon ve
-   occurrence semantiğini diferansiyel testlerle belirle.
-2. **G2:** lisans/sürümü sabitlenmiş zararsız gerçek-kural örnek kümesi.
-3. **G3:** en az bir bağımsız kullanıcının `axiom-scan` ile gerçek iş akışı.
-4. **G4:** gerçek Windows/macOS CI ve temiz ortamda dağıtım doğrulaması.
-5. **G5:** kullanıcı kanıtı ve bakım kapasitesinden sonra 1.0/ekosistem hedefleri.
+1. **G3:** en az bir bağımsız kullanıcının `axiom-scan` ile gerçek iş akışı;
+   gizli olmayan geri bildirimi kaydet ve bulguları önceliklendir.
+2. **G4:** örnek paket için upload/hosted registry yazma yolunu ve resmi imza
+   anahtarı işletimini kararlaştır; en az bir sürümlü paketi gerçekten yayımla.
+   G4 platform smoke kısmı Linux/Windows/macOS'ta geçti, fakat tam test/scan
+   kapsamı Windows/macOS'ta doğrulanmış değildir.
+3. **G5:** kullanıcı kanıtı ve bakım kapasitesi oluştuktan sonra 1.0 ve ekosistem
+   hedeflerini kararlaştır.
 
-**G0, G1 ve G2 kapandı. Şimdiki iş G3 dış kullanıcı doğrulamasıdır.** Yeni YARA sözdizimi
-differential kanıt ve açık kapsam sınırlarıyla eklenir.
+**G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
+`cac4ab8` tam CI sonucu bekleniyor. Sıradaki kabul kapıları G3 dış kullanıcı
+doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
+kanıt ve açık kapsam sınırlarıyla eklenir.

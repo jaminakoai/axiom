@@ -264,6 +264,24 @@ def test_download_heals_corrupted_cache(tmp_path):
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_download_heals_modified_extracted_cache(tmp_path):
+    """İmzalı tarball ile eşleşmeyen açılmış cache kaynağı kullanılmamalı."""
+    reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]})
+    cfg = RegistryConfig(url=f"file://{reg}", public_key=pub, cache_dir=tmp_path / "c")
+    client = RegistryClient(cfg)
+    entry = client.index.versions("lib-a")[0]
+    d, _ = client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
+
+    manifest = d / "axiom.toml"
+    original = manifest.read_bytes()
+    manifest.write_bytes(original + b"# tampered\\n")
+    d2, hit = client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
+
+    assert hit is False
+    assert (d2 / "axiom.toml").read_bytes() == original
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
 def test_download_rejects_bad_signature(tmp_path):
     reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]})
     cfg = RegistryConfig(url=f"file://{reg}", public_key=pub, cache_dir=tmp_path / "c")
@@ -283,6 +301,39 @@ def test_download_rejects_unsigned_by_default(tmp_path):
     entry = client.index.versions("lib-a")[0]
     with pytest.raises(RuntimeError, match="imzalanmamış"):
         client.download("lib-a", "1.0.0", entry["sha256"], "")
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_cached_download_rejects_bad_signature(tmp_path):
+    """Cache isabeti de o andaki registry imzası ve anahtarıyla doğrulanmalı."""
+    reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]})
+    cache = tmp_path / "cache"
+    cfg = RegistryConfig(url=f"file://{reg}", public_key=pub, cache_dir=cache)
+    client = RegistryClient(cfg)
+    entry = client.index.versions("lib-a")[0]
+    client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
+
+    bad_sig = base64.b64encode(b"x" * 64).decode()
+    with pytest.raises(RuntimeError, match="imza"):
+        client.download("lib-a", "1.0.0", entry["sha256"], bad_sig)
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_cached_unsigned_download_rechecks_unsigned_policy(tmp_path):
+    """Önceden izin verilen unsigned cache, varsayılan politikayı atlayamaz."""
+    reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]},
+                              sign=False)
+    cache = tmp_path / "cache"
+    allowed = RegistryConfig(url=f"file://{reg}", public_key=pub, allow_unsigned=True,
+                             cache_dir=cache)
+    client = RegistryClient(allowed)
+    entry = client.index.versions("lib-a")[0]
+    client.download("lib-a", "1.0.0", entry["sha256"], "")
+
+    denied = RegistryClient(RegistryConfig(url=f"file://{reg}", public_key=pub,
+                                           allow_unsigned=False, cache_dir=cache))
+    with pytest.raises(RuntimeError, match="imzalanmamış"):
+        denied.download("lib-a", "1.0.0", entry["sha256"], "")
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")

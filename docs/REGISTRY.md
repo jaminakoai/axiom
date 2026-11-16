@@ -2,7 +2,7 @@
 
 **Durum:** uygulandı (P2-01)
 **Modül:** `axiom/registry.py`
-**Test:** `tests/test_registry.py` (50 test)
+**Test:** `tests/test_registry.py` (53 test)
 
 ---
 
@@ -128,7 +128,7 @@ paket yayın altyapısı henüz yoktur.
 | Bozuk/ele geçirilmiş tarball | sha256 **indirme sonrası** doğrulanır | `test_download_rejects_tampered_tarball` |
 | Sahte paket (index ele geçirildi) | İmza tarball baytları üzerinden doğrulanır | `test_download_rejects_bad_signature` |
 | İmzasız paket | Varsayılan **red**; `allow_unsigned` açıkça istenmeli | `test_download_rejects_unsigned_by_default` |
-| Bozuk önbellek | Her isabette yeniden doğrulanır, bozuksa atılıp indirilir | `test_download_heals_corrupted_cache` |
+| Bozuk önbellek | Her isabette tarball SHA-256, güncel imza/unsigned politikası ve açılmış dosya içerikleri yeniden doğrulanır; bozuksa önbellek atılıp yenilenir | `test_download_heals_corrupted_cache`, `test_download_heals_modified_extracted_cache`, `test_cached_download_rejects_bad_signature`, `test_cached_unsigned_download_rechecks_unsigned_policy` |
 | Arşiv path traversal ve link kaçışı | Bütün üyeler önceden doğrulanır; yalnız normal dosya/dizin açılır, symlink/hardlink ve özel dosyalar reddedilir | `test_download_rejects_path_traversal`, `test_download_rejects_archive_links_before_extracting_children`, `test_download_rejects_windows_style_archive_paths` |
 | Bağımlılık döngüsü | `visiting` yığını ile tespit | `test_resolve_detects_cycle` |
 | Sürüm çakışması | Daha yüksek sürüm seçilir, kısıt yeniden doğrulanır | `test_resolve_*` |
