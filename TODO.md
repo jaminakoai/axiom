@@ -228,8 +228,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] GitHub Actions'ı güncel Linux, gerçek Windows runner ve macOS runner'da
   doğrula; Wine testini gerçek Windows CI kanıtı olarak sayma. Bu kapı için
   `.github/workflows/platform-smoke.yml` native derle/çalıştır işi eklendi;
-  Ubuntu ve macOS geçti. Windows ilk koşusu varsayılan `cp1252` kodlamasında
-  kaynak yazımını yakaladı; UTF-8 düzeltmesi eklendi, tekrar koşusu bekleniyor.
+  Ubuntu ve macOS geçti. Windows koşuları varsayılan `cp1252` kaynak yazımı ve
+  runtime'daki POSIX isim bağımlılıklarını yakaladı; iki düzeltme eklendi,
+  tekrar koşusu bekleniyor.
   Üç runner başarılı olmadan madde kapanmaz.
 - [ ] Temiz makineden kurulum/çalıştırma adımlarını doğrula; platform ve sistem
   kütüphanesi gereksinimlerini açıkça yaz.

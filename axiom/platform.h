@@ -61,6 +61,23 @@
 #  include <sys/types.h>
 #  include <sys/stat.h>
 #  include <time.h>
+#  include <BaseTsd.h>
+#  ifndef _SSIZE_T_DEFINED
+typedef SSIZE_T ssize_t;
+#    define _SSIZE_T_DEFINED
+#  endif
+#  ifndef strncasecmp
+#    define strncasecmp _strnicmp
+#  endif
+#  ifndef F_OK
+#    define F_OK 0
+#  endif
+#  ifndef S_ISREG
+#    define S_ISREG(mode) (((mode) & _S_IFMT) == _S_IFREG)
+#  endif
+#  ifndef S_ISDIR
+#    define S_ISDIR(mode) (((mode) & _S_IFMT) == _S_IFDIR)
+#  endif
 #  define AXIOM_PATH_SEP '\\'
 #  define AXIOM_HAVE_POSIX_REGEX 0
 typedef int socklen_t;
