@@ -242,7 +242,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
-  yok. Bunlar çözülüp örnek paket gerçekten yayınlanmadan bu madde kapanmaz.
+  yok. `packages/axiom-scan-report` kaynak örneği ve gerçek path bağımlılık testi
+  hazır, ancak bunlar resmi yayın sayılmaz. Bunlar çözülüp örnek paket gerçekten
+  yayınlanmadan bu madde kapanmaz.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:

@@ -59,8 +59,9 @@ axpm verify           # kilit vs. yerel içerik
 ### İmzalı paket hazırlama
 
 `axpm pack --signing-key /secure/path/registry-ed25519.pem --output /tmp/registry`
-komutu temiz Git deposundaki commit edilmiş normal dosyalardan deterministik
-tarball ve `<sürüm>.index-entry.json` üretir. `axiom.lock`, build çıktıları,
+komutu temiz Git deposunun kökündeki veya bir alt dizinindeki paket için commit
+edilmiş normal dosyalardan deterministik tarball ve `<sürüm>.index-entry.json`
+üretir. Depodaki izlenen hiçbir dosya değişmemiş olmalıdır. `axiom.lock`, build çıktıları,
 yaygın özel anahtar biçimleri ve `.env` dosyaları pakete alınmaz; symlink ve
 özel Git girdileri reddedilir. Giriş dosyası Git tarafından izlenmeli ve commit
 edilmiş olmalıdır. İmza anahtarı depo dışında tutulmalıdır; şifreli anahtar için

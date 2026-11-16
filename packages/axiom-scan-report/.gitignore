@@ -1,0 +1,5 @@
+# Axiom derleme ve kilit artıkları
+*.o
+*.c
+target/
+.axiom/

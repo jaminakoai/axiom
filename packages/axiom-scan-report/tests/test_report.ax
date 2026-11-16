@@ -1,0 +1,7 @@
+import "../src/lib.ax"
+
+fn main() -> void {
+    verify report_label(0, 0) == "no_findings"
+    verify report_label(4, 0) == "findings"
+    verify report_label(4, 2) == "high_severity_findings"
+}

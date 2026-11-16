@@ -74,7 +74,8 @@ def test_manifest_roundtrip(tmp_path):
 
 
 def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
-    root = tmp_path / "pack-project"
+    repo = tmp_path / "repository"
+    root = repo / "packages" / "pack-project"
     (root / "src").mkdir(parents=True)
     (root / "axiom.toml").write_text(
         '[package]\nname = "pack-project"\nversion = "1.2.3"\n'
@@ -87,11 +88,14 @@ def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
     (root / "axiom.lock").write_text("local path details\n", encoding="utf-8")
     (root / "target").mkdir()
     (root / "target" / "generated.txt").write_text("generated\n", encoding="utf-8")
-    subprocess.run(["git", "init", str(root)], check=True, capture_output=True)
-    subprocess.run(["git", "-C", str(root), "config", "user.email", "test@example.invalid"], check=True)
-    subprocess.run(["git", "-C", str(root), "config", "user.name", "Axiom Test"], check=True)
-    subprocess.run(["git", "-C", str(root), "add", "axiom.toml", "src", "README.md", ".env", "axiom.lock", "target"], check=True)
-    subprocess.run(["git", "-C", str(root), "commit", "-m", "package fixture"], check=True,
+    other_package = repo / "packages" / "other-package"
+    other_package.mkdir(parents=True)
+    (other_package / "not-in-this-package.txt").write_text("other\n", encoding="utf-8")
+    subprocess.run(["git", "init", str(repo)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(repo), "config", "user.name", "Axiom Test"], check=True)
+    subprocess.run(["git", "-C", str(repo), "add", "-A"], check=True)
+    subprocess.run(["git", "-C", str(repo), "commit", "-m", "package fixture"], check=True,
                    capture_output=True)
     key = tmp_path / "registry-ed25519.pem"
     public_key = tmp_path / "registry-ed25519.pub.pem"
@@ -131,6 +135,7 @@ def test_axpm_pack_creates_deterministic_signed_registry_artifact(tmp_path):
     with tarfile.open(first_archive, "r:gz") as archive:
         names = set(archive.getnames())
     assert names == {"axiom.toml", "src/main.ax", "README.md"}
+    assert "not-in-this-package.txt" not in names
 
     published_registry = tmp_path / "local-registry"
     package_path = published_registry / "pack-project"
@@ -176,10 +181,45 @@ def test_axpm_pack_rejects_non_registry_dependencies(tmp_path):
 @pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
 def test_axpm_pack_refuses_signing_key_inside_repository(tmp_path):
     root, key, _ = _make_committed_pack_project(tmp_path)
-    in_repo_key = root / "registry-secret.pem"
+    in_repo_key = root.parents[1] / "registry-secret.pem"
     shutil.copyfile(key, in_repo_key)
     with pytest.raises(ValueError, match="deposunun dışında"):
         PackageManager(root).pack(in_repo_key, tmp_path / "registry")
+
+
+def test_sample_scan_report_package_runs_and_installs_as_path_dependency(tmp_path):
+    package = Path(__file__).resolve().parent.parent / "packages" / "axiom-scan-report"
+    package_tests = subprocess.run(
+        [str(AXPM_BIN), "test"], cwd=package, capture_output=True, text=True,
+    )
+    assert package_tests.returncode == 0, package_tests.stdout + package_tests.stderr
+
+    app = tmp_path / "scan-report-consumer"
+    init = subprocess.run(
+        [str(AXPM_BIN), "init", str(app)], cwd=AXPM_BIN.parent.parent,
+        capture_output=True, text=True,
+    )
+    assert init.returncode == 0, init.stdout + init.stderr
+    add = subprocess.run(
+        [str(AXPM_BIN), "add", "axiom-scan-report", "--path", str(package)],
+        cwd=app, capture_output=True, text=True,
+    )
+    assert add.returncode == 0, add.stdout + add.stderr
+
+    entry = app / "src" / "main.ax"
+    entry.write_text(
+        'import "axiom-scan-report"\n\n'
+        'fn main() -> void {\n'
+        '    verify report_label(0, 0) == "no_findings"\n'
+        '    verify report_label(3, 1) == "high_severity_findings"\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    run = subprocess.run(
+        [str(AXIOM_BIN), "run", str(entry)], cwd=app,
+        capture_output=True, text=True,
+    )
+    assert run.returncode == 0, run.stdout + run.stderr
 
 
 def test_lockfile_generation_and_tamper_detection(tmp_path):

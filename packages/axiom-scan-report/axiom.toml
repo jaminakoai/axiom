@@ -1,0 +1,10 @@
+[package]
+name = "axiom-scan-report"
+version = "0.1.0"
+authors = ["Axiom Developer <developer@axiom-lang.org>"]
+edition = "2026"
+entry = "src/lib.ax"
+description = "Contract-checked labels for numeric scan report counts"
+license = "MIT"
+
+[dependencies]

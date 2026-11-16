@@ -1,0 +1,4 @@
+# Bu dosya Axiom Paket Yöneticisi (axpm) tarafından otomatik olarak üretilmiştir.
+# Manuel olarak değiştirilmesi önerilmez; 'axiom pkg install' ile güncelleyin.
+
+version = 1

@@ -586,12 +586,6 @@ fn main() -> void {{
         if not key_path.is_absolute():
             key_path = self.root_dir / key_path
         key_path = key_path.resolve()
-        try:
-            key_path.relative_to(self.root_dir)
-        except ValueError:
-            pass
-        else:
-            raise ValueError("registry imza anahtarını proje deposunun dışında tutun")
         if not key_path.is_file():
             raise FileNotFoundError(f"Ed25519 imza anahtarı bulunamadı: {key_path}")
 
@@ -628,20 +622,29 @@ fn main() -> void {{
             return result.stdout
 
         repo_root = Path(os.fsdecode(git("rev-parse", "--show-toplevel")).strip()).resolve()
-        if repo_root != self.root_dir:
-            raise RuntimeError("axpm pack yalnızca Git deposunun kök paketinde çalışır")
+        package_rel = self.root_dir.relative_to(repo_root)
+        try:
+            key_path.relative_to(repo_root)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("registry imza anahtarını Git deposunun dışında tutun")
         dirty = git("status", "--porcelain", "--untracked-files=no").decode("utf-8", errors="replace")
         if dirty:
             raise RuntimeError("axpm pack için izlenen dosyalardaki değişiklikleri önce commit edin")
 
-        tracked = git("ls-files", "--stage", "-z").split(b"\0")
+        tracked = git("ls-files", "--full-name", "--stage", "-z").split(b"\0")
         files = []
         for record in tracked:
             if not record:
                 continue
             metadata, raw_path = record.split(b"\t", 1)
             mode = metadata.split(b" ", 1)[0]
-            relative = Path(os.fsdecode(raw_path))
+            repo_relative = Path(os.fsdecode(raw_path))
+            try:
+                relative = repo_relative.relative_to(package_rel)
+            except ValueError:
+                continue
             parts = relative.parts
             if (
                 relative.is_absolute()
@@ -660,7 +663,7 @@ fn main() -> void {{
                 continue
             if mode not in (b"100644", b"100755"):
                 raise RuntimeError(f"paket symlink veya özel Git girdisi içeremez: {relative}")
-            source = self.root_dir / relative
+            source = repo_root / repo_relative
             if source.is_symlink() or not source.is_file():
                 raise RuntimeError(f"paket girdisi normal dosya değil: {relative}")
             files.append((relative, source, mode == b"100755"))
