@@ -16,6 +16,7 @@ import subprocess
 import hashlib
 import json
 import tarfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import pytest
 
@@ -439,6 +440,13 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     subprocess.run(["openssl", "pkey", "-in", str(signing_key), "-pubout", "-out",
                     str(public_key_path)], check=True, capture_output=True)
 
+    index_signing_key = tmp_path / "ephemeral-index-ed25519.pem"
+    index_public_key_path = tmp_path / "ephemeral-index-ed25519.pub.pem"
+    subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out",
+                    str(index_signing_key)], check=True, capture_output=True)
+    subprocess.run(["openssl", "pkey", "-in", str(index_signing_key), "-pubout", "-out",
+                    str(index_public_key_path)], check=True, capture_output=True)
+
     packed = PackageManager(package).pack(signing_key, tmp_path / "packed-output")
     tarball = packed / "0.1.0.tar.gz"
     index_entry = json.loads(
@@ -450,22 +458,31 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     registry = tmp_path / "local-registry"
     registry_build = subprocess.run(
         [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
-         "--output", str(registry), "--public-key", str(public_key_path)],
+         "--output", str(registry), "--public-key", str(public_key_path),
+         "--index-signing-key", str(index_signing_key), "--index-sequence", "1",
+         "--index-expires", (datetime.now(timezone.utc) + timedelta(days=7))
+         .isoformat().replace("+00:00", "Z")],
         cwd=repo, capture_output=True, text=True,
     )
     assert registry_build.returncode == 0, registry_build.stdout + registry_build.stderr
     assert (registry / "axiom-scan-report" / "0.1.0.tar.gz").read_bytes() == tarball.read_bytes()
     assembled_index = json.loads((registry / "index.json").read_text(encoding="utf-8"))
-    assert assembled_index == {"schema": 1, "packages": {"axiom-scan-report": [index_entry]}}
+    assert assembled_index["schema"] == 2
+    assert assembled_index["sequence"] == 1
+    assert assembled_index["packages"] == {"axiom-scan-report": [index_entry]}
+    assert (registry / "index.json.sig").is_file()
 
     second_registry = tmp_path / "second-registry"
     second_build = subprocess.run(
         [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
-         "--output", str(second_registry), "--public-key", str(public_key_path)],
+         "--output", str(second_registry), "--public-key", str(public_key_path),
+         "--index-signing-key", str(index_signing_key), "--index-sequence", "1",
+         "--index-expires", assembled_index["expires"]],
         cwd=repo, capture_output=True, text=True,
     )
     assert second_build.returncode == 0, second_build.stdout + second_build.stderr
     assert (second_registry / "index.json").read_bytes() == (registry / "index.json").read_bytes()
+    assert (second_registry / "index.json.sig").read_bytes() == (registry / "index.json.sig").read_bytes()
 
     app = tmp_path / "clean-consumer"
     init = subprocess.run(
@@ -478,11 +495,13 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
         '[package]\nname = "scan-report-consumer"\nversion = "0.1.0"\n'
         'entry = "src/main.ax"\n\n[dependencies]\n'
         'axiom-scan-report = "^0.1"\n\n[registry]\n'
-        f'url = "{registry.as_uri()}"\npublic_key = """{public_key}"""\n',
+        f'url = "{registry.as_uri()}"\npublic_key = """{public_key}"""\n'
+        f'index_public_key = """{index_public_key_path.read_text(encoding="utf-8")}"""\n',
         encoding="utf-8",
     )
     env = os.environ.copy()
-    for variable in ("AXIOM_REGISTRY", "AXIOM_REGISTRY_KEY", "AXIOM_ALLOW_UNSIGNED"):
+    for variable in ("AXIOM_REGISTRY", "AXIOM_REGISTRY_KEY", "AXIOM_REGISTRY_INDEX_KEY",
+                     "AXIOM_ALLOW_UNSIGNED"):
         env.pop(variable, None)
     env["AXIOM_CACHE_DIR"] = str(tmp_path / "consumer-cache")
 

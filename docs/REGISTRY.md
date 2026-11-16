@@ -1,8 +1,8 @@
-# Axiom Registry v1 — Kullanım ve Protokol
+# Axiom Registry — Kullanım ve Protokol
 
 **Durum:** uygulandı (P2-01)
 **Modül:** `axiom/registry.py`
-**Test:** `tests/test_registry.py` (59 test)
+**Test:** `tests/test_registry.py` (82 test; schema 1 and signed schema 2)
 
 ---
 
@@ -35,6 +35,12 @@ public_key = """
 MCowBQYDK2VwAyEAG...
 -----END PUBLIC KEY-----
 """
+# İsteğe bağlı, paket imza anahtarından ayrı Registry v2 index anahtarı:
+# index_public_key = """
+# -----BEGIN PUBLIC KEY-----
+# ...
+# -----END PUBLIC KEY-----
+# """
 # allow_unsigned = false        # varsayılan: imzasız paket REDDEDİLİR
 ```
 
@@ -44,6 +50,7 @@ Ortam değişkenleri (öncelikli):
 |---|---|
 | `AXIOM_REGISTRY` | Registry URL'ini ezer |
 | `AXIOM_REGISTRY_KEY` | Açık anahtarı ezer (PEM) |
+| `AXIOM_REGISTRY_INDEX_KEY` | Registry v2 index açık anahtarını ezer (PEM) |
 | `AXIOM_ALLOW_UNSIGNED=1` | İmzasız paketlere izin verir |
 | `AXIOM_CACHE_DIR` | Önbellek kökü (`<dir>/registry`) |
 
@@ -146,11 +153,36 @@ axpm registry assemble \
 
 Komut her arşivin SHA-256 ve Ed25519 imzasını, paket içindeki `axiom.toml`
 metadata'sını ve güvenli tar yollarını kontrol eder; başarılı olursa statik
-`index.json` ile `<paket>/<sürüm>.tar.gz` ağacını atomik olarak üretir. Çıktı
-yolu yeni veya boş olmalıdır. Komut ağ kullanmaz, yükleme yapmaz, özel anahtar
-almaz ve `index.json`'ı imzalamaz. Üretilen dizin **yayınlanmış veya index'i
-imzalı bir registry değildir**; hosting, index bütünlüğü ve üretim anahtarı
-işletimi ayrıca çözülmelidir.
+index ile `<paket>/<sürüm>.tar.gz` ağacını atomik olarak üretir. Çıktı yolu yeni
+veya boş olmalıdır. Varsayılan mod, geriye uyumluluk için Registry v1
+`index.json` üretir; ağ kullanmaz ve yükleme yapmaz.
+
+Index'i tarball imza anahtarından ayrı bir Ed25519 anahtarıyla imzalamak için
+şu üç parametreyi birlikte verin:
+
+```bash
+axpm registry assemble --from /tmp/packed --output /tmp/registry-v2 \
+  --public-key /secure/package-signing.pub.pem \
+  --index-signing-key /secure/index-signing.pem \
+  --index-sequence 1 \
+  --index-expires 2027-01-15T00:00:00Z
+```
+
+Bu mod `schema: 2`, monoton artan `sequence`, en fazla 90 gün geçerli `expires`
+ve `index.json.sig` sidecar'ı üretir. Tüketici `[registry].index_public_key`
+veya `AXIOM_REGISTRY_INDEX_KEY` ile ayrı güven anahtarını yapılandırmalıdır;
+bu anahtar ayarlıysa v1 unsigned index reddedilir. İstemci imzayı doğrular,
+süresi dolmuş veya 90 günden fazla ileri tarihli index'i reddeder ve kabul
+ettiği en yüksek sequence/hash değerini registry URL'i başına cache'e yazar.
+Gözlemlenmiş sequence geriye alınamaz; aynı sequence altında farklı index
+içeriği de reddedilir.
+
+İmzalı index ilk bağlantıda en yeni index'in sunulduğunu kanıtlamaz; saldırgan
+ilk kullanımda hâlâ geçerli eski bir imzalı index sunabilir. Yerel rollback
+durumu silinirse geçmiş sequence bilgisi de kaybolur. Yayın sistemi sequence'i
+her değişiklikte artırmalı, özel anahtarı korumalı ve istemcilerdeki güvenilen
+anahtar dağıtımını yönetmelidir. Komut hiçbir yere yükleme yapmaz; hosting ve
+üretim anahtarı işletimi ayrıca çözülmelidir.
 
 ---
 
@@ -183,6 +215,19 @@ işletimi ayrıca çözülmelidir.
 - `sig`, **tarball baytları** üzerinden ed25519 detached imzadır.
 - `yanked: true` sürümler çözümlemede atlanır.
 
+İmzalı Registry v2'de aynı package listesi aşağıdaki üst alanlarla gelir;
+`index.json.sig`, `index.json` dosyasının tam baytları üzerindeki Ed25519
+imzasının base64 biçimidir:
+
+```json
+{
+  "schema": 2,
+  "sequence": 12,
+  "expires": "2027-01-15T00:00:00Z",
+  "packages": {}
+}
+```
+
 ---
 
 ## 5. Semver
@@ -214,13 +259,15 @@ işletimi ayrıca çözülmelidir.
 | Sürüm çakışması | Daha yüksek sürüm seçilir, kısıt yeniden doğrulanır | `test_resolve_*` |
 | Yanked sürüm | Çözümlemede atlanır | `test_resolve_skips_yanked` |
 
-**Index güven sınırı:** `index.json` Registry v1'de imzalanmaz. Paket imzası
+**Index güven sınırı:** Registry v1 `index.json` imzasızdır. Paket imzası
 arşiv içeriğini ve manifesti doğrular; istemci manifestin adını, sürümünü ve
 bağımlılıklarını index girdisiyle karşılaştırır. Ancak imzasız index'te `yanked`
 değeri değiştirilebilir, kayıtlar silinebilir veya aynı kimlikteki eski ama
-geçerli imzalı bir paket tekrar sunulabilir. Bu nedenle Registry v1 index'i
-rollback/freshness korumalı ya da kurcalamaya karşı kanıtlı değildir. İmzalı
-index formatı ve anahtar rotasyonu resmi yayın öncesi kararlaştırılmalıdır.
+geçerli imzalı bir paket tekrar sunulabilir. İmzalı Registry v2 mode index
+kurcalamasını ve istemcinin daha yüksek sequence gözlemledikten sonraki rollback'i
+tespit eder; ilk bağlantı veya yerel state silindikten sonraki eski index sunumunu
+tek başına engellemez. Üretim anahtar rotasyonu ve hosting hâlâ yayın öncesi
+karardır.
 
 **Kritik not:** Tarball'ın SHA-256 ve imzası doğrulanmadan arşiv açılmaz; güvenli
 üye kontrollerinden sonra çıkarılan imzalı manifesto index metadata'sıyla
@@ -244,10 +291,10 @@ kök bağımlılıklar
 
 ## 8. Bilinen sınırlar (v1)
 
-1. **İmzalı index/freshness yok** — `index.json` imzalanmaz. TLS taşıma sırasında
-   koruma sağlayabilir, ancak index değişikliği, yank/entry silme ve eski geçerli
-   pakete rollback için kriptografik kanıt sağlamaz. v2: imzalı index ve rollback
-   politikası.
+1. **v1 index/freshness yok** — Registry v1 imzasızdır. İmzalı schema 2 mode
+   vardır; 90 günlük sona erme ve gözlemlenmiş sequence rollback kontrolü sağlar.
+   İlk bağlantı veya yerel state silindikten sonraki eski index sunumunu tek başına
+   engellemez.
 2. **Namespace yok** — düz isim alanı (`P2-02`).
 3. **`yanked` dışında politika yok** (deprecation, advisory).
 4. **Ayna/CDN yok**.

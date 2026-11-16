@@ -27,6 +27,11 @@ def test_registry_guide_documents_local_file_registry_round_trip():
         "test",
         "`2/2 test başarılı`",
         "`index.json` için imza üretmez",
+        "--index-signing-key",
+        "--index-sequence",
+        "--index-expires",
+        "AXIOM_REGISTRY_INDEX_KEY",
+        "ilk bağlantıda en yeni index'in sunulduğunu kanıtlamaz",
     ):
         assert required in text, f"docs/REGISTRY.md eksik: {required}"
 
@@ -36,10 +41,10 @@ def test_registry_guide_states_index_binding_and_unsigned_index_limits():
 
     for required in (
         "İmzalı manifest adı/sürümü ve bağımlılıkları index kaydıyla eşleşmelidir",
-        "`index.json` Registry v1'de imzalanmaz",
+        "Registry v1 `index.json` imzasızdır",
         "`yanked` değeri değiştirilebilir",
         "eski ama",
-        "rollback/freshness korumalı",
+        "ilk bağlantı veya yerel state silindikten sonraki eski index",
         "test_download_rejects_unsigned_index_metadata_mismatch",
     ):
         assert required in text, f"docs/REGISTRY.md güven sınırı eksik: {required}"

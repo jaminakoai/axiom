@@ -17,6 +17,7 @@ import argparse
 import tempfile
 import tarfile
 import zlib
+from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Dict, Any, List, Optional, Tuple
 
@@ -954,8 +955,11 @@ fn main() -> void {{
             os.replace(stage, final_dir)
         return final_dir
 
-    def assemble_registry(self, pack_dir: Path, output_dir: Path, public_key_path: Path) -> Path:
-        """Build and verify an offline static Registry v1 tree from ``axpm pack`` output.
+    def assemble_registry(self, pack_dir: Path, output_dir: Path, public_key_path: Path,
+                          index_signing_key_path: Optional[Path] = None,
+                          index_sequence: Optional[int] = None,
+                          index_expires: Optional[str] = None) -> Path:
+        """Build and verify an offline static Registry tree from ``axpm pack`` output.
 
         This command never uploads content and never accepts a private key. The
         destination is committed atomically only after every input artifact has
@@ -1005,6 +1009,39 @@ fn main() -> void {{
             raise ValueError(f"registry açık anahtarı okunamadı: {exc}") from exc
         if not public_key.strip():
             raise ValueError("registry açık anahtarı boş olamaz")
+
+        signed_index = index_signing_key_path is not None
+        supplied_index_options = sum(value is not None for value in (
+            index_signing_key_path, index_sequence, index_expires
+        ))
+        if supplied_index_options not in (0, 3):
+            raise ValueError(
+                "imzalı index için --index-signing-key, --index-sequence ve "
+                "--index-expires birlikte verilmelidir"
+            )
+        index_signing_key = None
+        if signed_index:
+            if type(index_sequence) is not int or index_sequence < 1:
+                raise ValueError("index sequence pozitif bir tam sayı olmalı")
+            try:
+                expiration = datetime.fromisoformat(index_expires.replace("Z", "+00:00"))
+            except (AttributeError, ValueError) as exc:
+                raise ValueError("index expires ISO 8601 saat dilimli zaman olmalı") from exc
+            if expiration.tzinfo is None or expiration.utcoffset() is None:
+                raise ValueError("index expires saat dilimi içermeli")
+            seconds_left = (expiration.astimezone(timezone.utc)
+                            - datetime.now(timezone.utc)).total_seconds()
+            if seconds_left <= 0 or seconds_left > 90 * 24 * 60 * 60:
+                raise ValueError("index expires şu andan sonraki en fazla 90 gün olmalı")
+            index_key_arg = index_signing_key_path.expanduser()
+            if index_key_arg.is_symlink() or not index_key_arg.is_file():
+                raise FileNotFoundError(
+                    f"index imza anahtarı normal bir dosya olmalı: {index_key_arg}"
+                )
+            try:
+                index_signing_key = index_key_arg.resolve(strict=True)
+            except OSError as exc:
+                raise ValueError(f"index imza anahtarı okunamadı: {exc}") from exc
 
         # The pack output is deliberately a staging layout. Require every
         # payload and sidecar to form exactly one name/version pair.
@@ -1172,10 +1209,42 @@ fn main() -> void {{
                 if digest.hexdigest() != entry["sha256"]:
                     raise RuntimeError(f"paket kopyalanırken değişti: {package_name}@{package_version}")
 
-            index = {"schema": 1, "packages": {name: packages[name] for name in sorted(packages)}}
-            (stage / "index.json").write_text(
-                json.dumps(index, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-            )
+            if signed_index:
+                index = {
+                    "schema": 2,
+                    "sequence": index_sequence,
+                    "expires": index_expires,
+                    "packages": {name: packages[name] for name in sorted(packages)},
+                }
+            else:
+                index = {"schema": 1, "packages": {name: packages[name] for name in sorted(packages)}}
+            index_bytes = (json.dumps(index, indent=2, sort_keys=True) + "\n").encode("utf-8")
+            (stage / "index.json").write_bytes(index_bytes)
+            if signed_index:
+                with tempfile.TemporaryDirectory(prefix=".axpm-index-sign-") as sign_dir:
+                    sign_root = Path(sign_dir)
+                    data_path = sign_root / "index.json"
+                    signature_path = sign_root / "index.sig"
+                    data_path.write_bytes(index_bytes)
+                    command = ["openssl", "pkeyutl", "-sign", "-rawin", "-inkey",
+                               str(index_signing_key), "-in", str(data_path), "-out",
+                               str(signature_path)]
+                    if os.environ.get("AXIOM_REGISTRY_SIGNING_PASSPHRASE"):
+                        command.extend(["-passin", "env:AXIOM_REGISTRY_SIGNING_PASSPHRASE"])
+                    try:
+                        result = subprocess.run(command, capture_output=True, text=True,
+                                                timeout=30, check=False)
+                    except FileNotFoundError as exc:
+                        raise RuntimeError("index imzası için openssl gerekli") from exc
+                    except subprocess.TimeoutExpired as exc:
+                        raise RuntimeError("index imza işlemi 30 saniyeyi aştı") from exc
+                    if result.returncode != 0:
+                        detail = result.stderr.strip() or "openssl imza üretmedi"
+                        raise RuntimeError(f"registry index imzalanamadı: {detail}")
+                    signature = signature_path.read_bytes()
+                    if len(signature) != 64:
+                        raise RuntimeError("registry index Ed25519 imzası 64 bayt olmalı")
+                    (stage / "index.json.sig").write_bytes(base64.b64encode(signature) + b"\n")
 
             if output_root.is_symlink():
                 raise ValueError(f"registry çıktı yolu symlink olamaz: {output_root}")
@@ -1530,6 +1599,18 @@ def main(argv: Optional[List[str]] = None):
         "--public-key", type=Path, required=True,
         help="Tarball imzalarını doğrulamak için güvenilen Ed25519 PEM açık anahtarı",
     )
+    p_registry_assemble.add_argument(
+        "--index-signing-key", type=Path,
+        help="(isteğe bağlı) Registry index'ini imzalayan ayrı Ed25519 PEM özel anahtarı",
+    )
+    p_registry_assemble.add_argument(
+        "--index-sequence", type=int,
+        help="İmzalı index için monoton artan sequence numarası",
+    )
+    p_registry_assemble.add_argument(
+        "--index-expires",
+        help="İmzalı index'in ISO 8601 sona erme zamanı (en fazla 90 gün)",
+    )
 
     # update
     p_update = subparsers.add_parser("update", help="Git bağımlılıklarını yeniden çeker ve kilidi günceller")
@@ -1578,9 +1659,17 @@ def main(argv: Optional[List[str]] = None):
             result = pm.pack(Path(args.signing_key), output_dir=args.output)
             print(f"{CLR_GREEN}✓ İmzalı registry paketi hazırlandı:{CLR_RESET} {result}")
         elif args.cmd == "registry" and args.registry_cmd == "assemble":
-            result = pm.assemble_registry(args.pack_output, args.output, args.public_key)
+            result = pm.assemble_registry(
+                args.pack_output, args.output, args.public_key,
+                index_signing_key_path=args.index_signing_key,
+                index_sequence=args.index_sequence,
+                index_expires=args.index_expires,
+            )
             print(f"{CLR_GREEN}✓ Doğrulanmış statik registry hazırlandı:{CLR_RESET} {result}")
-            print("Bu komut hiçbir yere yükleme yapmadı; index.json ayrıca imzalanmaz.")
+            if args.index_signing_key:
+                print("Index Ed25519 ile imzalandı; bu komut hiçbir yere yükleme yapmadı.")
+            else:
+                print("Bu komut hiçbir yere yükleme yapmadı; index.json ayrıca imzalanmaz.")
         elif args.cmd == "update":
             pm.update(getattr(args, "dependency", None))
         elif args.cmd == "remove":

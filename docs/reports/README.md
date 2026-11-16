@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 57 rapor** · 58 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 58 rapor** · 59 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -105,6 +105,10 @@ sıradaki iş. Ölçülmemiş iddia yok.
 - [`axpm pack` → imza → yerel registry → paket testi](2026-11-16-axpm-pack-local-registry-smoke.md)
 - [Örnek paket için imzalı registry yayın ön kontrolü](2026-11-16-axpm-signed-release-preflight.md)
 - [`axpm registry assemble` offline statik registry hazırlama](2026-11-16-axpm-registry-assemble.md)
+
+## 17 Kasım 2026
+
+- [G4 — Signed Registry index v2](2026-11-17-signed-registry-index-v2.md)
 
 ## Okuma sırası (yeni gelen için)
 

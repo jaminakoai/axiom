@@ -6,6 +6,10 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Eklendi
+- Registry istemcisi ve `axpm registry assemble`, ayrı Ed25519 index anahtarıyla
+  imzalı Registry schema 2 destekliyor. İmza, 90 günlük son kullanma süresi ve
+  URL başına kalıcı sequence/hash kontrolü doğrulanıyor; bu, ilk bağlantıdaki
+  eski index sunumunu veya yerel rollback state silinmesini engellemez.
 - CI'da `axiom-scan-report` örneği için geçici Ed25519 anahtarıyla paketleme,
   yerel registry'den temiz tüketiciye kurulum ve `axpm test` akışını birleştiren
   yayın ön kontrolü eklendi; gerçek yayın yapılmaz.
@@ -14,17 +18,18 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   otomatik yükleme yapmaz. İmza anahtarı Git deposu dışında olmak zorundadır.
 - `axpm registry assemble`, imzalı `axpm pack` çıktılarını tarball SHA/imzası,
   arşiv yolları ve imzalı `axiom.toml` metadata'sıyla doğrulayarak çevrimdışı,
-  deterministik Registry v1 dizinine dönüştürür. Yükleme yapmaz; `index.json`
-  imzası ve üretim anahtarı yönetimi kapsam dışıdır. Gzip açılımı, PAX/GNU
+  deterministik Registry v1 veya imzalı v2 dizinine dönüştürür. Yükleme yapmaz;
+  üretim anahtarı yönetimi ve hosting kapsam dışıdır. Gzip açılımı, PAX/GNU
   uzantı başlıkları ve arşiv girdileri boyutlandırılmıştır.
 - `packages/axiom-scan-report` küçük örnek kütüphanesi ve gerçek yerel bağımlılık
   tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
 
 ### Düzeltilen
 - Registry istemcisi, doğrulanmış tarball içindeki `axiom.toml` paket adı,
-  sürümü ve bağımlılıklarını unsigned index kaydıyla karşılaştırıyor; kontrol
-  indirme ve cache hit yollarında uygulanıyor. Index imzası ve rollback politikası
-  henüz yok; resmi yayın öncesi G4 kararı gerekiyor.
+  sürümü ve bağımlılıklarını index kaydıyla karşılaştırıyor; kontrol indirme ve
+  cache hit yollarında uygulanıyor. Schema 2 imzası ayrı yapılandırılan index
+  anahtarıyla doğrulanıyor; üretim anahtarı, hosting ve ilk bağlantı rollback
+  sınırı yayın öncesi G4 gereksinimi olarak kalıyor.
 - Registry v1 index girdileri artık sürüm, hash, imza türü, bağımlılık haritası
   ve yanked alanları açısından doğrulanıyor; bozuk JSON nesne şekilleri resolver
   kodunda beklenmedik Python hatalarına dönüşmeden reddediliyor.

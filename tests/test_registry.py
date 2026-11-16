@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -67,6 +68,14 @@ from axiom.package_manager import LockFile  # noqa: E402
 ])
 def test_semver_ranges(version, constraint, expected):
     assert version_matches(version, constraint) is expected
+
+
+def test_registry_config_keeps_existing_positional_arguments_compatible(tmp_path):
+    config = RegistryConfig("file:///registry", "package-key", True, 12, tmp_path)
+    assert config.public_key == "package-key"
+    assert config.allow_unsigned is True
+    assert config.timeout == 12
+    assert config.cache_dir == tmp_path
 
 
 # ---------------------------------------------------------------------------
@@ -188,6 +197,13 @@ def test_fetch_reads_file_uri_with_escaped_spaces(tmp_path):
     assert registry_module._fetch(uri.replace("file://", "FILE://", 1)) == b'{"schema":1}'
 
 
+def test_fetch_stops_at_configured_byte_limit(tmp_path):
+    source = tmp_path / "oversized-index.json"
+    source.write_bytes(b"123456")
+    with pytest.raises(RuntimeError, match="5 bayt sınırını aşıyor"):
+        registry_module._fetch(source.as_uri(), max_bytes=5)
+
+
 def test_fetch_rejects_remote_file_uri_host():
     with pytest.raises(ValueError, match="uzak bir host"):
         registry_module._fetch("file://example.invalid/index.json")
@@ -215,6 +231,7 @@ def _isolated_env(tmp_path):
     # Gerçek kullanıcı ayarları sızmasın
     env.pop("AXIOM_REGISTRY", None)
     env.pop("AXIOM_REGISTRY_KEY", None)
+    env.pop("AXIOM_REGISTRY_INDEX_KEY", None)
     env.pop("AXIOM_ALLOW_UNSIGNED", None)
     return env
 
@@ -275,6 +292,112 @@ def _make_registry(base: Path, packages, sign: bool = True, tamper: bool = False
                 index["packages"][name][-1]["yanked"] = True
     (base / "index.json").write_text(json.dumps(index), encoding="utf-8")
     return base, public_pem
+
+
+def _write_signed_index(registry: Path, index, signing_key: Path):
+    raw = (json.dumps(index, indent=2, sort_keys=True) + "\n").encode("utf-8")
+    index_path = registry / "index.json"
+    index_path.write_bytes(raw)
+    with tempfile.TemporaryDirectory() as temp_dir:
+        source = Path(temp_dir) / "index.json"
+        signature = Path(temp_dir) / "index.sig"
+        source.write_bytes(raw)
+        subprocess.run(
+            ["openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(signing_key),
+             "-in", str(source), "-out", str(signature)],
+            check=True, capture_output=True,
+        )
+        (registry / "index.json.sig").write_bytes(base64.b64encode(signature.read_bytes()) + b"\n")
+    return raw
+
+
+def _new_index_keypair(directory: Path):
+    private_key = directory / "index-private.pem"
+    public_key = directory / "index-public.pem"
+    subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(private_key)],
+                   check=True, capture_output=True)
+    subprocess.run(["openssl", "pkey", "-in", str(private_key), "-pubout", "-out", str(public_key)],
+                   check=True, capture_output=True)
+    return private_key, public_key.read_text(encoding="utf-8")
+
+
+def _signed_index(sequence, packages=None, expires=None):
+    if expires is None:
+        expires = (datetime.now(timezone.utc) + timedelta(days=7)).isoformat().replace("+00:00", "Z")
+    return {"schema": 2, "sequence": sequence, "expires": expires,
+            "packages": packages or {}}
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_signed_index_verifies_and_persists_accepted_sequence(tmp_path):
+    registry = tmp_path / "signed-registry"
+    registry.mkdir()
+    key, public_key = _new_index_keypair(tmp_path)
+    raw = _write_signed_index(registry, _signed_index(1), key)
+    config = RegistryConfig(url=registry.as_uri(), index_public_key=public_key,
+                            cache_dir=tmp_path / "cache")
+
+    index = registry_module.fetch_index(config)
+    assert index.schema == 2 and index.sequence == 1
+    assert index.raw_sha256 == hashlib.sha256(raw).hexdigest()
+    state_files = list((config.cache_dir / "index-state").glob("*.json"))
+    assert len(state_files) == 1
+    assert json.loads(state_files[0].read_text(encoding="utf-8"))["sequence"] == 1
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_signed_index_rejects_tampering_and_missing_trust_key(tmp_path):
+    registry = tmp_path / "signed-registry"
+    registry.mkdir()
+    key, public_key = _new_index_keypair(tmp_path)
+    _write_signed_index(registry, _signed_index(1), key)
+    index_path = registry / "index.json"
+    index_path.write_bytes(index_path.read_bytes() + b" ")
+
+    with pytest.raises(RuntimeError, match="imzası doğrulanamadı"):
+        registry_module.fetch_index(RegistryConfig(
+            url=registry.as_uri(), index_public_key=public_key, cache_dir=tmp_path / "cache",
+        ))
+    with pytest.raises(RuntimeError, match="AXIOM_REGISTRY_INDEX_KEY gerekli"):
+        registry_module.fetch_index(RegistryConfig(url=registry.as_uri(),
+                                                   cache_dir=tmp_path / "other-cache"))
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_signed_index_rejects_rollback_and_same_sequence_equivocation(tmp_path):
+    registry = tmp_path / "signed-registry"
+    registry.mkdir()
+    key, public_key = _new_index_keypair(tmp_path)
+    config = RegistryConfig(url=registry.as_uri(), index_public_key=public_key,
+                            cache_dir=tmp_path / "cache")
+    _write_signed_index(registry, _signed_index(2), key)
+    registry_module.fetch_index(config)
+
+    _write_signed_index(registry, _signed_index(1), key)
+    with pytest.raises(RuntimeError, match="rollback reddedildi"):
+        registry_module.fetch_index(config)
+
+    _write_signed_index(registry, _signed_index(2, {"new-package": []}), key)
+    with pytest.raises(RuntimeError, match="aynı sequence"):
+        registry_module.fetch_index(config)
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_signed_index_rejects_expired_and_excessively_long_expiration(tmp_path):
+    registry = tmp_path / "signed-registry"
+    registry.mkdir()
+    key, public_key = _new_index_keypair(tmp_path)
+    config = RegistryConfig(url=registry.as_uri(), index_public_key=public_key,
+                            cache_dir=tmp_path / "cache")
+    expired = (datetime.now(timezone.utc) - timedelta(days=1)).isoformat().replace("+00:00", "Z")
+    _write_signed_index(registry, _signed_index(1, expires=expired), key)
+    with pytest.raises(RuntimeError, match="süresi dolmuş"):
+        registry_module.fetch_index(config)
+
+    too_far = (datetime.now(timezone.utc) + timedelta(days=91)).isoformat().replace("+00:00", "Z")
+    _write_signed_index(registry, _signed_index(1, expires=too_far), key)
+    with pytest.raises(RuntimeError, match="90 günden"):
+        registry_module.fetch_index(config)
 
 
 # ---------------------------------------------------------------------------

@@ -10,14 +10,15 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-16 |
+| Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `468e3d9`: Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman blokları 55 geçti |
-| Son CI denemesi | `468e3d9` [run 43936054939](https://github.com/jaminakoai/axiom/actions/runs/43936054939), **7/7 başarılı**; her Python sürümünde 1514 geçti / 27 skip, doküman blokları 55 geçti |
-| Son başarılı tam CI | `468e3d9` [run 43936054939](https://github.com/jaminakoai/axiom/actions/runs/43936054939), **7/7 başarılı** |
-| Son platform smoke | `468e3d9`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43936054928 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `089ffde`: [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
+| Son CI denemesi | `089ffde` [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
+| Son başarılı tam CI | `089ffde` [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
+| Son platform smoke | `089ffde`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43948302925 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `468e3d9` — [run 43936054939](https://github.com/jaminakoai/axiom/actions/runs/43936054939), **7/7 başarılı**; Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `089ffde` — [run 43948302993](https://github.com/jaminakoai/axiom/actions/runs/43948302993), **7/7 başarılı** |
+| Son tam yerel test paketi | `089ffde` üzerine imzalı Registry v2 çalışma ağacı: **1565 geçti, 0 başarısız** (1331,91 sn); commit sonrası GitHub CI bekleniyor |
 
 ---
 
@@ -40,8 +41,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   dağıtılmadı; doküman bunu açıkça belirtiyor ve çalışan yerel `file://` akışını gösteriyor.
 - Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
   imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
-  regresyon kanıtı eklendi; kalan index imzası/rollback tasarımı yayın öncesi
-  açık kapıdır: [G4 metadata binding raporu](docs/reports/2026-11-16-registry-index-metadata-binding.md).
+  regresyon kanıtı eklendi. Ayrı anahtarlı imzalı schema 2 index ve gözlemlenmiş
+  sequence rollback kontrolü de eklendi; ilk kullanım/yerel state silinmesi
+  sınırı ile üretim anahtarı ve hosting kararı açık kapıdır:
+  [G4 metadata binding raporu](docs/reports/2026-11-16-registry-index-metadata-binding.md).
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
   iddiası değildir.
@@ -313,8 +316,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   tüketici import testini `axpm test` ile çalıştıran yayın ön kontrolü eklendi.
   `axpm registry assemble --from ... --output ... --public-key ...` komutu
   paket çıktısını imza/SHA/manifest kontrollerinden geçirerek deterministik,
-  çevrimdışı statik Registry v1 dosya düzenine dönüştürüyor. Hiçbir yere yükleme
-  yapmıyor; Registry index'i ayrıca imzalanmıyor. Kanıt:
+  çevrimdışı statik Registry v1 veya ayrı anahtarla imzalı v2 dosya düzenine
+  dönüştürüyor. Schema 2, 90 günlük süre ve gözlemlenmiş sequence rollback
+  kontrollerini içeriyor; ilk bağlantıdaki eski index'i kanıtlayamaz ve yerel
+  rollback state silinebilir. Hiçbir yere yükleme yapmıyor. Kanıt:
   `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
   kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
@@ -328,16 +333,18 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   yöneticisi hedef testleri yeni regresyonlarla **104 geçti**; kayıt şeması
   doğrulaması da buna dahildir. Güncel doküman+registry+paket yöneticisi hedef
   paketi **111 geçti**, MinGW/Windows taşınabilirlik testi **34 geçti**. Ayrıntı
-  ve imzasız index nedeniyle kalan signed-index/rollback riski
-  `docs/reports/2026-11-16-registry-index-metadata-binding.md`. Resmi yayın
-  öncesi index imza formatı, anahtar rolü/rotasyonu ve eski index'e rollback
-  politikasını seçip doğrula; mevcut Registry v1 `index.json` imzasızdır.
+  ve kalan ilk-bağlantı rollback sınırı
+  `docs/reports/2026-11-16-registry-index-metadata-binding.md`. İmzalı schema 2
+  biçimi uygulanmıştır; resmi yayın öncesi hosting, üretim anahtarı koruma/
+  rotasyonu ve ilk bağlantı rollback sınırını operasyonel olarak kabul et.
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
   → registry assemble → temiz tüketicide install/test akışını belgele ve
   regresyon testi ekle. Akış yerel tüketici testlerinde 2/2 geçti; bu resmi
-  yayın veya index imzası değildir. Hosting ve üretim anahtarı kararı hâlâ açık.
+  yayın değildir. Ayrı anahtarlı Registry v2 imza/sequence akışı bu turda eklendi;
+  hosting, üretim anahtarı işletimi ve ilk kullanımda eski index'in
+  önlenememesi hâlâ açık yayın sınırlarıdır.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
   taahhüdü özellikle 1.0 kararı öncesine bırakıldı; README'ler ARM64 durumunu
@@ -398,7 +405,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `468e3d9`: Python 3.10–13’te her biri 1514 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43936054939 |
+| Son tamamlanmış tam test paketi | CI `089ffde`: tüm 7 job başarılı; bu çalışma ağacında ayrıca 1565 yerel test geçti | GitHub Actions run 43948302993; `python3 -m pytest -q` |
 | Son native platform smoke | `468e3d9`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43936054928 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |

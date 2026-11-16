@@ -25,9 +25,11 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -40,6 +42,9 @@ SCHEMA_VERSION = 1
 DEFAULT_REGISTRY = "https://registry.axiom-lang.org"
 _SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _REGISTRY_PACKAGE_NAME_RE = re.compile(r"^(@[A-Za-z0-9_.-]+/)?[A-Za-z0-9_.-]+$")
+_MAX_REGISTRY_INDEX_BYTES = 16 * 1024 * 1024
+_MAX_REGISTRY_INDEX_SIGNATURE_BYTES = 1024
+_MAX_SIGNED_INDEX_LIFETIME_SECONDS = 90 * 24 * 60 * 60
 
 
 def _extract_package_archive(raw: bytes, destination: Path) -> None:
@@ -281,9 +286,11 @@ def version_matches(version: str, constraint: str) -> bool:
 class RegistryConfig:
     def __init__(self, url: str, public_key: Optional[str] = None,
                  allow_unsigned: bool = False, timeout: int = 30,
-                 cache_dir: Optional[Path] = None):
+                 cache_dir: Optional[Path] = None,
+                 index_public_key: Optional[str] = None):
         self.url = url.rstrip("/")
         self.public_key = public_key
+        self.index_public_key = index_public_key
         self.allow_unsigned = allow_unsigned
         self.timeout = timeout
         env_cache = os.environ.get("AXIOM_CACHE_DIR")
@@ -299,9 +306,12 @@ class RegistryConfig:
         reg = raw_data.get("registry") or {}
         url = os.environ.get("AXIOM_REGISTRY") or reg.get("url") or DEFAULT_REGISTRY
         key = os.environ.get("AXIOM_REGISTRY_KEY") or reg.get("public_key")
+        index_key = (os.environ.get("AXIOM_REGISTRY_INDEX_KEY")
+                     or reg.get("index_public_key"))
         allow = (os.environ.get("AXIOM_ALLOW_UNSIGNED") == "1"
                  or bool(reg.get("allow_unsigned", False)))
-        return cls(url=url, public_key=key, allow_unsigned=allow)
+        return cls(url=url, public_key=key, index_public_key=index_key,
+                   allow_unsigned=allow)
 
 
 # ---------------------------------------------------------------------------
@@ -309,17 +319,39 @@ class RegistryConfig:
 # ---------------------------------------------------------------------------
 
 class RegistryIndex:
-    def __init__(self, packages: Dict[str, List[Dict[str, Any]]], base_url: str):
+    def __init__(self, packages: Dict[str, List[Dict[str, Any]]], base_url: str,
+                 schema: int = SCHEMA_VERSION, sequence: Optional[int] = None,
+                 expires: Optional[datetime] = None, raw_sha256: Optional[str] = None):
         self.packages = packages
         self.base_url = base_url
+        self.schema = schema
+        self.sequence = sequence
+        self.expires = expires
+        self.raw_sha256 = raw_sha256
 
     @classmethod
     def from_json(cls, data: Dict[str, Any], base_url: str) -> "RegistryIndex":
         if not isinstance(data, dict):
             raise ValueError("index.json kök değeri nesne olmalı")
         schema = data.get("schema", SCHEMA_VERSION)
-        if type(schema) is not int or schema != SCHEMA_VERSION:
+        if type(schema) is not int or schema not in (1, 2):
             raise ValueError(f"desteklenmeyen registry şeması: {schema}")
+        sequence = None
+        expires = None
+        if schema == 2:
+            sequence = data.get("sequence")
+            if type(sequence) is not int or sequence < 1:
+                raise ValueError("index.json v2: sequence pozitif bir tam sayı olmalı")
+            expiration = data.get("expires")
+            if not isinstance(expiration, str):
+                raise ValueError("index.json v2: expires UTC zaman metni olmalı")
+            try:
+                expires = datetime.fromisoformat(expiration.replace("Z", "+00:00"))
+            except ValueError as exc:
+                raise ValueError("index.json v2: expires geçersiz") from exc
+            if expires.tzinfo is None or expires.utcoffset() is None:
+                raise ValueError("index.json v2: expires saat dilimi içermeli")
+            expires = expires.astimezone(timezone.utc)
         pkgs = data.get("packages", {})
         if not isinstance(pkgs, dict):
             raise ValueError("index.json: 'packages' nesne olmalı")
@@ -377,7 +409,8 @@ class RegistryIndex:
                     raise ValueError(f"index.json: {location}.yanked boolean olmalı")
                 validated_entries.append(entry)
             validated[name] = validated_entries
-        return cls(validated, base_url)
+        return cls(validated, base_url, schema=schema, sequence=sequence,
+                   expires=expires)
 
     def versions(self, name: str) -> List[Dict[str, Any]]:
         return list(self.packages.get(name) or [])
@@ -421,6 +454,95 @@ def _openssl_verify(data: bytes, signature: bytes, public_key_pem: str) -> bool:
         except FileNotFoundError:
             raise RuntimeError("imza doğrulaması için 'openssl' gerekli (sistemde yok)")
         return res.returncode == 0
+
+
+@contextmanager
+def _exclusive_registry_state_lock(path: Path):
+    """Serialize sequence checks/updates across concurrent axpm processes."""
+    if path.is_symlink():
+        raise RuntimeError("registry index rollback kilidi symlink olamaz")
+    with path.open("a+b") as lock_file:
+        if os.name == "nt":
+            import msvcrt
+            lock_file.seek(0, os.SEEK_END)
+            if lock_file.tell() == 0:
+                lock_file.write(b"\0")
+                lock_file.flush()
+            lock_file.seek(0)
+            msvcrt.locking(lock_file.fileno(), msvcrt.LK_LOCK, 1)
+            try:
+                yield
+            finally:
+                lock_file.seek(0)
+                msvcrt.locking(lock_file.fileno(), msvcrt.LK_UNLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+
+
+def _validate_signed_index_freshness(index: RegistryIndex, raw: bytes,
+                                     config: RegistryConfig) -> None:
+    """Reject expired signed indexes and locally observed sequence rollback."""
+    if index.schema != 2 or index.sequence is None or index.expires is None:
+        raise RuntimeError("imzalı registry index'i schema 2, sequence ve expires gerektirir")
+    now = datetime.now(timezone.utc)
+    remaining = (index.expires - now).total_seconds()
+    if remaining <= 0:
+        raise RuntimeError("imzalı registry index'inin süresi dolmuş")
+    if remaining > _MAX_SIGNED_INDEX_LIFETIME_SECONDS:
+        raise RuntimeError("imzalı registry index'i 90 günden daha ileri tarihli")
+
+    state_root = config.cache_dir / "index-state"
+    if state_root.is_symlink():
+        raise RuntimeError("registry index rollback dizini symlink olamaz")
+    state_root.mkdir(parents=True, exist_ok=True)
+    registry_id = hashlib.sha256(config.url.encode("utf-8")).hexdigest()
+    state_path = state_root / f"{registry_id}.json"
+    if state_path.is_symlink():
+        raise RuntimeError("registry index rollback durumu symlink olamaz")
+    lock_path = state_path.with_suffix(".lock")
+    with _exclusive_registry_state_lock(lock_path):
+        raw_hash = hashlib.sha256(raw).hexdigest()
+        old_sequence = None
+        if state_path.exists():
+            try:
+                if state_path.stat().st_size > 4096:
+                    raise ValueError("rollback durumu 4 KiB sınırını aşıyor")
+                state = json.loads(state_path.read_text(encoding="utf-8"))
+                if not isinstance(state, dict):
+                    raise ValueError("rollback durumu nesne olmalı")
+                old_sequence = state["sequence"]
+                old_hash = state["sha256"]
+                if (type(old_sequence) is not int or old_sequence < 1
+                        or not isinstance(old_hash, str)
+                        or _SHA256_HEX_RE.fullmatch(old_hash) is None):
+                    raise ValueError("rollback durumu biçimi geçersiz")
+            except (OSError, UnicodeDecodeError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+                raise RuntimeError(f"registry index rollback durumu okunamadı: {exc}") from exc
+            if index.sequence < old_sequence:
+                raise RuntimeError(
+                    f"registry index rollback reddedildi (güncel {old_sequence}, alınan {index.sequence})"
+                )
+            if index.sequence == old_sequence and raw_hash != old_hash:
+                raise RuntimeError("aynı sequence için farklı registry index içeriği reddedildi")
+
+        if old_sequence is None or index.sequence > old_sequence:
+            temp_path = state_path.with_name(f".{state_path.name}.{os.getpid()}.tmp")
+            try:
+                with temp_path.open("x", encoding="utf-8") as output:
+                    json.dump({"sequence": index.sequence, "sha256": raw_hash}, output,
+                              sort_keys=True, separators=(",", ":"))
+                    output.write("\n")
+                os.replace(temp_path, state_path)
+            finally:
+                try:
+                    temp_path.unlink()
+                except FileNotFoundError:
+                    pass
 
 
 def verify_signature(data: bytes, signature_b64: str, public_key: Optional[str]) -> Tuple[bool, str]:
@@ -497,7 +619,13 @@ def _validate_package_manifest(
 # İndirme
 # ---------------------------------------------------------------------------
 
-def _fetch(url: str, timeout: int = 30) -> bytes:
+def _fetch(url: str, timeout: int = 30, max_bytes: Optional[int] = None) -> bytes:
+    def read_limited(source) -> bytes:
+        raw = source.read() if max_bytes is None else source.read(max_bytes + 1)
+        if max_bytes is not None and len(raw) > max_bytes:
+            raise RuntimeError(f"indirilen içerik {max_bytes} bayt sınırını aşıyor")
+        return raw
+
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme.lower() == "file":
         if parsed.netloc.lower() not in ("", "localhost"):
@@ -507,18 +635,20 @@ def _fetch(url: str, timeout: int = 30) -> bytes:
         # url2pathname decodes escaped characters and converts drive-letter
         # paths such as /C:/... correctly on Windows.
         path = urllib.request.url2pathname(parsed.path)
-        return Path(path).read_bytes()
+        with Path(path).open("rb") as source:
+            return read_limited(source)
     if not parsed.scheme and url.startswith("/"):
-        return Path(parsed.path).read_bytes()
+        with Path(parsed.path).open("rb") as source:
+            return read_limited(source)
     req = urllib.request.Request(url, headers={"User-Agent": "axpm/0.5"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
-        return resp.read()
+        return read_limited(resp)
 
 
 def fetch_index(config: RegistryConfig) -> RegistryIndex:
     url = f"{config.url}/index.json"
     try:
-        raw = _fetch(url, config.timeout)
+        raw = _fetch(url, config.timeout, _MAX_REGISTRY_INDEX_BYTES)
     except urllib.error.HTTPError as e:
         raise RuntimeError(f"registry index alınamadı ({url}): HTTP {e.code}")
     except urllib.error.URLError as e:
@@ -527,11 +657,34 @@ def fetch_index(config: RegistryConfig) -> RegistryIndex:
         raise RuntimeError(f"registry index okunamadı ({url}): {e}")
     except ValueError as e:
         raise RuntimeError(f"registry URL geçersiz ({url}): {e}") from e
+    signature_b64 = ""
+    if config.index_public_key:
+        try:
+            signature_raw = _fetch(f"{url}.sig", config.timeout,
+                                   _MAX_REGISTRY_INDEX_SIGNATURE_BYTES)
+        except (urllib.error.HTTPError, urllib.error.URLError, OSError, ValueError) as exc:
+            raise RuntimeError(f"imzalı registry index imzası alınamadı: {exc}") from exc
+        try:
+            signature_b64 = signature_raw.decode("ascii").strip()
+        except UnicodeDecodeError as exc:
+            raise RuntimeError("registry index imzası ASCII base64 olmalı") from exc
+        ok, why = verify_signature(raw, signature_b64, config.index_public_key)
+        if not ok:
+            raise RuntimeError(f"registry index imzası doğrulanamadı: {why}")
     try:
         data = json.loads(raw.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as e:
         raise RuntimeError(f"index.json geçersiz JSON: {e}")
-    return RegistryIndex.from_json(data, config.url)
+    index = RegistryIndex.from_json(data, config.url)
+    if config.index_public_key and index.schema != 2:
+        raise RuntimeError("imza anahtarı yapılandırıldığında registry index schema 2 olmalı")
+    if index.schema == 2:
+        if not config.index_public_key:
+            raise RuntimeError("schema 2 registry index için AXIOM_REGISTRY_INDEX_KEY gerekli")
+        _validate_signed_index_freshness(index, raw, config)
+    return RegistryIndex(index.packages, index.base_url, schema=index.schema,
+                         sequence=index.sequence, expires=index.expires,
+                         raw_sha256=hashlib.sha256(raw).hexdigest())
 
 
 class RegistryClient:
