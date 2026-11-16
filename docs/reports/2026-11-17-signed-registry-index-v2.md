@@ -64,6 +64,16 @@ Linux, Windows, and macOS each reported **9 passed, 74 deselected**, with no
 skips; OpenSSL was available on all three (3.5.5, 3.6.5, and 3.5.9
 respectively). Run:
 https://github.com/jaminakoai/axiom/actions/runs/43972448814.
+
+The follow-up documentation commit `8772063` passed the full GitHub CI (7/7):
+Python 3.10, 3.11, 3.12, and 3.13 each reported **1539 passed, 27 skipped**;
+the documentation suite reported **55 passed** on every version:
+https://github.com/jaminakoai/axiom/actions/runs/43973323624. The 27 skips are
+the 16 MinGW and 11 Wine portability cases unavailable on the Linux CI runner.
+On the local host, both tools were present and `tests/test_portability.py`
+reported **34 passed, 0 skipped** in 100.70 seconds. The native smoke workflow
+also passed 3/3 on Linux, Windows, and macOS for `8772063`:
+https://github.com/jaminakoai/axiom/actions/runs/43973323753.
 ```
 
 The tests cover signature validation, tampering, expiry, sequence rollback,
