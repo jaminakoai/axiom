@@ -12,12 +12,12 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `aeb75f1`: Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman blokları 55 geçti |
-| Son CI denemesi | `aeb75f1` [run 43928548301](https://github.com/jaminakoai/axiom/actions/runs/43928548301), **7/7 başarılı**; her Python sürümünde 1514 geçti / 27 skip, doküman blokları 55 geçti |
-| Son başarılı tam CI | `aeb75f1` [run 43928548301](https://github.com/jaminakoai/axiom/actions/runs/43928548301), **7/7 başarılı** |
-| Son platform smoke | `aeb75f1`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43928548077 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `99e14cd`: Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman blokları 55 geçti |
+| Son CI denemesi | `99e14cd` [run 43932157879](https://github.com/jaminakoai/axiom/actions/runs/43932157879), **7/7 başarılı**; her Python sürümünde 1514 geçti / 27 skip, doküman blokları 55 geçti |
+| Son başarılı tam CI | `99e14cd` [run 43932157879](https://github.com/jaminakoai/axiom/actions/runs/43932157879), **7/7 başarılı** |
+| Son platform smoke | `99e14cd`, native build/run ve cache/file URL seçkisi Linux/Windows/macOS run 43932157444 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `aeb75f1` — [run 43928548301](https://github.com/jaminakoai/axiom/actions/runs/43928548301), **7/7 başarılı**; Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `99e14cd` — [run 43932157879](https://github.com/jaminakoai/axiom/actions/runs/43932157879), **7/7 başarılı**; Python 3.10–3.13'te her biri 1514 geçti / 27 skip; doküman testleri 55 geçti |
 
 ---
 
@@ -383,8 +383,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `aeb75f1`: Python 3.10–13’te her biri 1514 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43928548301 |
-| Son native platform smoke | `aeb75f1`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43928548077 |
+| Son tamamlanmış tam test paketi | CI `99e14cd`: Python 3.10–13’te her biri 1514 geçti/27 skip; tüm 7 job başarılı; doküman testleri 55 geçti | GitHub Actions run 43932157879 |
+| Son native platform smoke | `99e14cd`: cache/file URL seçkisi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43932157444 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1229,8 +1229,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `aeb75f1`: Python 3.10–13’te her biri 1514 geçti/27 skip; 7/7 başarılı | Run 43928548301 | 2000 |
-| Son native platform smoke | `aeb75f1`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43928548077 | — |
+| Son tam CI | `99e14cd`: Python 3.10–13’te her biri 1514 geçti/27 skip; 7/7 başarılı | Run 43932157879 | 2000 |
+| Son native platform smoke | `99e14cd`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | Run 43932157444 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1274,6 +1274,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    hedeflerini kararlaştır.
 
 **G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`aeb75f1` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
+`99e14cd` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
 doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
 kanıt ve açık kapsam sınırlarıyla eklenir.

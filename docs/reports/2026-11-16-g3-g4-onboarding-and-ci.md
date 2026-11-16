@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
 **Date:** 16 November 2026  
-**Reviewed source commit:** `aeb75f1` (includes the guide, issue form, tests, and CI record)
+**Reviewed source commit:** `99e14cd` (includes the guide, issue form, tests, and CI record)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed
@@ -50,14 +50,14 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 The target was the harmless sentinel from the guide. This is install/build/smoke
 evidence only and does **not** satisfy independent-user validation.
 
-### GitHub checks for source commit `aeb75f1`
+### GitHub checks for source commit `99e14cd`
 
-- Full CI [run 43928548301](https://github.com/jaminakoai/axiom/actions/runs/43928548301):
+- Full CI [run 43932157879](https://github.com/jaminakoai/axiom/actions/runs/43932157879):
   **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
   **1514 passed, 27 skipped**; documentation code blocks reported **55 passed**.
   The pinned real-YARA corpus differential job reported **29 passed** on each
   Python version.
-- Native platform smoke [run 43928548077](https://github.com/jaminakoai/axiom/actions/runs/43928548077):
+- Native platform smoke [run 43932157444](https://github.com/jaminakoai/axiom/actions/runs/43932157444):
   **Linux, Windows, and macOS 3/3 passed**.
 
 The modified docs and added regression tests were also checked locally:
@@ -68,7 +68,7 @@ PyYAML 6.0.3 safe_load: valid document, 11 body elements, unique IDs, no upload 
 python -m pytest -q tests/test_external_validation_docs.py tests/test_registry_docs.py \
   tests/test_docs_en.py tests/test_docgen.py tests/test_tutorial_examples.py \
   tests/test_package_manager.py::test_sample_scan_report_signed_registry_release_preflight
-45 passed in 24.46s
+45 passed in 24.33s
 
 make fmt-check: passed
 git diff --check: passed
