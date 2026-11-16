@@ -122,7 +122,7 @@ def _replace_pack_archive_and_sign(
         ]
         for name, content in entries:
             info = tarfile.TarInfo(name)
-            if name == "src/main.ax" and pax_header_bytes:
+            if name == first_member and pax_header_bytes:
                 info.pax_headers = {"comment": "x" * pax_header_bytes}
             info.size = len(content)
             archive.addfile(info, io.BytesIO(content))
@@ -330,7 +330,7 @@ def test_registry_assemble_rejects_signed_path_traversal_and_oversize_archives(
 
 
 @pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
-def test_registry_assemble_rejects_oversized_signed_pax_header(tmp_path):
+def test_registry_assemble_rejects_oversized_signed_pax_header(tmp_path, monkeypatch):
     import axiom.package_manager as package_manager_module
 
     root, key, public_key = _make_committed_pack_project(tmp_path)
@@ -343,6 +343,11 @@ def test_registry_assemble_rejects_oversized_signed_pax_header(tmp_path):
 
     output = tmp_path / "registry"
     with pytest.raises(ValueError, match="tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor"):
+        PackageManager(root).assemble_registry(pack_root, output, public_key)
+    assert not output.exists()
+
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_TAR_EXPANDED_BYTES", 1024)
+    with pytest.raises(ValueError, match="açılmış akış boyutu sınırını aşıyor"):
         PackageManager(root).assemble_registry(pack_root, output, public_key)
     assert not output.exists()
 

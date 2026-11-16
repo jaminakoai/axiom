@@ -55,6 +55,10 @@ _MAX_REGISTRY_PACKAGES = 10_000
 _MAX_REGISTRY_PACK_DIRECTORIES = 30_000
 _MAX_REGISTRY_TAR_METADATA_READ = 1024 * 1024
 _MAX_REGISTRY_TAR_METADATA_TOTAL = 32 * 1024 * 1024
+_MAX_REGISTRY_TAR_EXPANDED_BYTES = (
+    _MAX_REGISTRY_ARCHIVE_BYTES + _MAX_REGISTRY_TAR_METADATA_TOTAL
+    + _MAX_REGISTRY_ARCHIVE_MEMBERS * 1024 + 1024
+)
 
 
 class _BoundedTarReader:
@@ -88,6 +92,20 @@ class _BoundedTarReader:
 
     def __getattr__(self, name: str):
         return getattr(self.source, name)
+
+
+class _BoundedRegistryTarInfo(tarfile.TarInfo):
+    """Reject oversized extension headers before tarfile parses their payload."""
+
+    def _proc_pax(self, archive):
+        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
+            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
+        return super()._proc_pax(archive)
+
+    def _proc_gnulong(self, archive):
+        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
+            raise ValueError("GNU tar uzantı başlığı 1 MiB sınırını aşıyor")
+        return super()._proc_gnulong(archive)
 
 
 class TomlWriter:
@@ -208,78 +226,94 @@ def _validate_registry_pack_archive(
     if len(raw) > _MAX_REGISTRY_PACK_BYTES:
         raise ValueError(f"paket arşivi sıkıştırılmış boyut sınırını aşıyor: {archive_path}")
     try:
-        with tarfile.open(fileobj=io.BytesIO(raw), mode="r|gz") as archive:
-            archive.fileobj = _BoundedTarReader(
-                archive.fileobj,
+        # Bound gzip expansion before tarfile parses PAX/GNU extension headers.
+        # SpooledTemporaryFile keeps large but valid packages off Python memory.
+        with gzip.GzipFile(fileobj=io.BytesIO(raw), mode="rb") as compressed, \
+                tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b") as tar_data:
+            expanded_size = 0
+            while True:
+                chunk = compressed.read(64 * 1024)
+                if not chunk:
+                    break
+                expanded_size += len(chunk)
+                if expanded_size > _MAX_REGISTRY_TAR_EXPANDED_BYTES:
+                    raise ValueError("tar arşivi açılmış akış boyutu sınırını aşıyor")
+                tar_data.write(chunk)
+            tar_data.seek(0)
+            bounded_tar = _BoundedTarReader(
+                tar_data,
                 _MAX_REGISTRY_TAR_METADATA_READ,
                 _MAX_REGISTRY_TAR_METADATA_TOTAL,
             )
-            entries: Dict[str, Tuple[bool, tarfile.TarInfo]] = {}
-            total_size = 0
-            member_count = 0
-            manifest_text = None
-            regular_files = set()
-            while True:
-                member = archive.next()
-                if member is None:
-                    break
-                member_count += 1
-                if member_count > _MAX_REGISTRY_ARCHIVE_MEMBERS:
-                    raise ValueError(f"paket arşivindeki dosya sayısı sınır dışında: {archive_path}")
-                name = member.name
-                is_directory = member.isdir()
-                normalized_name = name[:-1] if is_directory and name.endswith("/") else name
-                if (
-                    not normalized_name
-                    or normalized_name.startswith("/")
-                    or "\\" in normalized_name
-                    or any(part in ("", ".", "..") for part in normalized_name.split("/"))
-                    or ":" in normalized_name.split("/", 1)[0]
-                ):
-                    raise ValueError(f"güvensiz tarball yolu: {name!r}")
-                if not (member.isfile() or is_directory):
-                    raise ValueError(f"desteklenmeyen tarball girdisi: {name!r}")
-                if member.mode & ~0o777:
-                    raise ValueError(f"özel izin bitli tarball girdisi: {name!r}")
-                if is_directory and member.size != 0:
-                    raise ValueError(f"boyutlu dizin girdisi desteklenmiyor: {name!r}")
-                if member.isfile():
-                    if name.endswith("/") or member.size < 0:
-                        raise ValueError(f"geçersiz tarball dosya girdisi: {name!r}")
-                    total_size += member.size
-                    if total_size > _MAX_REGISTRY_ARCHIVE_BYTES:
-                        raise ValueError("paket arşivi açılmış boyut sınırını aşıyor")
-                    regular_files.add(normalized_name)
-                    if normalized_name == "axiom.toml":
-                        if member.size > _MAX_REGISTRY_MANIFEST_BYTES:
-                            raise ValueError("paket manifesto boyutu 1 MiB sınırını aşıyor")
-                        manifest_stream = archive.extractfile(member)
-                        if manifest_stream is None:
-                            raise ValueError("paket tarball'ındaki axiom.toml okunamadı")
-                        with manifest_stream:
-                            manifest_text = manifest_stream.read(member.size).decode("utf-8")
-                if normalized_name in entries:
-                    raise ValueError(f"yinelenen tarball yolu: {normalized_name}")
-                entries[normalized_name] = (is_directory, member)
+            with tarfile.open(
+                fileobj=bounded_tar, mode="r:", tarinfo=_BoundedRegistryTarInfo
+            ) as archive:
+                entries: Dict[str, Tuple[bool, tarfile.TarInfo]] = {}
+                total_size = 0
+                member_count = 0
+                manifest_text = None
+                regular_files = set()
+                while True:
+                    member = archive.next()
+                    if member is None:
+                        break
+                    member_count += 1
+                    if member_count > _MAX_REGISTRY_ARCHIVE_MEMBERS:
+                        raise ValueError(f"paket arşivindeki dosya sayısı sınır dışında: {archive_path}")
+                    name = member.name
+                    is_directory = member.isdir()
+                    normalized_name = name[:-1] if is_directory and name.endswith("/") else name
+                    if (
+                        not normalized_name
+                        or normalized_name.startswith("/")
+                        or "\\" in normalized_name
+                        or any(part in ("", ".", "..") for part in normalized_name.split("/"))
+                        or ":" in normalized_name.split("/", 1)[0]
+                    ):
+                        raise ValueError(f"güvensiz tarball yolu: {name!r}")
+                    if not (member.isfile() or is_directory):
+                        raise ValueError(f"desteklenmeyen tarball girdisi: {name!r}")
+                    if member.mode & ~0o777:
+                        raise ValueError(f"özel izin bitli tarball girdisi: {name!r}")
+                    if is_directory and member.size != 0:
+                        raise ValueError(f"boyutlu dizin girdisi desteklenmiyor: {name!r}")
+                    if member.isfile():
+                        if name.endswith("/") or member.size < 0:
+                            raise ValueError(f"geçersiz tarball dosya girdisi: {name!r}")
+                        total_size += member.size
+                        if total_size > _MAX_REGISTRY_ARCHIVE_BYTES:
+                            raise ValueError("paket arşivi açılmış boyut sınırını aşıyor")
+                        regular_files.add(normalized_name)
+                        if normalized_name == "axiom.toml":
+                            if member.size > _MAX_REGISTRY_MANIFEST_BYTES:
+                                raise ValueError("paket manifesto boyutu 1 MiB sınırını aşıyor")
+                            manifest_stream = archive.extractfile(member)
+                            if manifest_stream is None:
+                                raise ValueError("paket tarball'ındaki axiom.toml okunamadı")
+                            with manifest_stream:
+                                manifest_text = manifest_stream.read(member.size).decode("utf-8")
+                    if normalized_name in entries:
+                        raise ValueError(f"yinelenen tarball yolu: {normalized_name}")
+                    entries[normalized_name] = (is_directory, member)
 
-            if member_count == 0:
-                raise ValueError(f"paket arşivi boş: {archive_path}")
+                if member_count == 0:
+                    raise ValueError(f"paket arşivi boş: {archive_path}")
 
-            for name, (is_directory, _) in entries.items():
-                parent = PurePosixPath(name).parent
-                while parent != PurePosixPath("."):
-                    parent_name = parent.as_posix()
-                    if parent_name in entries and not entries[parent_name][0]:
-                        raise ValueError(f"tarball dosyası başka bir yolun üst dizini: {parent_name}")
-                    parent = parent.parent
-                if not is_directory and any(
-                    candidate.startswith(name + "/") for candidate in entries
-                ):
-                    raise ValueError(f"tarball dosyası alt yol içeriyor: {name}")
+                for name, (is_directory, _) in entries.items():
+                    parent = PurePosixPath(name).parent
+                    while parent != PurePosixPath("."):
+                        parent_name = parent.as_posix()
+                        if parent_name in entries and not entries[parent_name][0]:
+                            raise ValueError(f"tarball dosyası başka bir yolun üst dizini: {parent_name}")
+                        parent = parent.parent
+                    if not is_directory and any(
+                        candidate.startswith(name + "/") for candidate in entries
+                    ):
+                        raise ValueError(f"tarball dosyası alt yol içeriyor: {name}")
 
-            if manifest_text is None:
-                raise ValueError("paket tarball'ında kök axiom.toml yok")
-            manifest_data = parse_toml(manifest_text)
+                if manifest_text is None:
+                    raise ValueError("paket tarball'ında kök axiom.toml yok")
+                manifest_data = parse_toml(manifest_text)
     except (OSError, EOFError, tarfile.TarError, UnicodeDecodeError, zlib.error) as exc:
         raise ValueError(f"geçersiz paket tarball'ı: {archive_path}: {exc}") from exc
 

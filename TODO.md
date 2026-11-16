@@ -13,8 +13,9 @@
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tamamlanmış tam test paketi | GitHub Actions `2dda920`: Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman blokları 55 geçti |
-| Son tam CI koşusu | `2dda920` [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı** |
-| Son platform smoke | `2dda920`, cache + file URL testleri ve native build/run Linux/Windows/macOS run 43881080465 **3/3 başarılı** (platform başına 4 test geçti) |
+| Son CI denemesi | `c71e026` [run 43886676395](https://github.com/jaminakoai/axiom/actions/runs/43886676395): yalnız Python 3.13 PAX limit testi başarısız; Python 3.10/11/12 paketleri ve diğer job'lar geçti |
+| Son başarılı tam CI | `2dda920` [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı** |
+| Son platform smoke | `c71e026`, cache + file URL testleri ve native build/run Linux/Windows/macOS run 43886676224 **3/3 başarılı** (platform başına 4 test geçti) |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `2dda920` — [run 43881080555](https://github.com/jaminakoai/axiom/actions/runs/43881080555), **7/7 başarılı**; Python 3.10–3.13'te her biri 1500 geçti / 27 skip; doküman testleri 55 geçti |
 
@@ -251,10 +252,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   (59 registry, 28 paket yöneticisi). Yerel `file://` URL'leri artık yüzde
   kaçışlarını ve Windows sürücü yollarını platforma uygun çözüyor; uzak host'lar
   açık hata veriyor. Cache hit ve file URL regresyonları Linux/Windows/macOS
-  platform smoke'da platform başına 4/4 geçti (run 43881080465). Son tam CI
-  `2dda920` için 7/7 başarılı; Python 3.10–3.13'te her biri 1500 geçti/27 skip
-  (run 43881080555). Yeni assembler kodu bu CI commit'inden sonra yerelde
-  doğrulandı; henüz uzak CI'ya gönderilmedi.
+  platform smoke'da platform başına 4/4 geçti (run 43886676224). Assembler
+  commit'i `c71e026` CI'sinde Python 3.13, PAX uzantı başlığı sınır testini
+  kaçırdı (1 başarısız, 1506 geçti, 27 skip); Python 3.10/11/12'de 1507 test
+  geçti/27 skip, diğer job'lar başarılı. Kök neden, `tarfile.open()` çağrısından
+  sonra takılan sınır wrapper'ının ilk/uzantı başlıklarını her Python sürümünde
+  yakalayamamasıydı. Gzip açılımı artık boyut sınırına kadar geçici spool'a
+  yazılıyor; `TarInfo` PAX/GNU boyut kontrolü arşiv açılırken uygulanıyor.
+  Düzeltme yerelde 87 hedefli test ve büyük PAX regresyonuyla geçti; yeni tam CI
+  henüz bekleniyor.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
@@ -1187,8 +1193,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `2dda920`: Python 3.10–13'te 1500 geçti/27 skip; 7/7 job başarılı | — | 2000 |
-| Son native platform smoke | `2dda920`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
+| Son tam CI | `2dda920`: Python 3.10–13'te 1500 geçti/27 skip; 7/7 job başarılı; sonraki `c71e026` denemesinde yalnız 3.13 PAX limiti başarısız | — | 2000 |
+| Son native platform smoke | `c71e026`: cache/file URL testleri + build/run Linux/Windows/macOS 3/3 başarılı | — | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |

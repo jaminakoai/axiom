@@ -15,7 +15,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - `axpm registry assemble`, imzalı `axpm pack` çıktılarını tarball SHA/imzası,
   arşiv yolları ve imzalı `axiom.toml` metadata'sıyla doğrulayarak çevrimdışı,
   deterministik Registry v1 dizinine dönüştürür. Yükleme yapmaz; `index.json`
-  imzası ve üretim anahtarı yönetimi kapsam dışıdır.
+  imzası ve üretim anahtarı yönetimi kapsam dışıdır. Gzip açılımı, PAX/GNU
+  uzantı başlıkları ve arşiv girdileri boyutlandırılmıştır.
 - `packages/axiom-scan-report` küçük örnek kütüphanesi ve gerçek yerel bağımlılık
   tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
 
