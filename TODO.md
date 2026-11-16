@@ -256,6 +256,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   yok. `packages/axiom-scan-report` kaynak örneği ve gerçek path bağımlılık testi
   hazır, ancak bunlar resmi yayın sayılmaz. Bunlar çözülüp örnek paket gerçekten
   yayınlanmadan bu madde kapanmaz.
+  Hosting kararı için anlık kanıt: GitHub deposu public (`master`), Pages etkin
+  değil (`gh api repos/jaminakoai/axiom/pages` → HTTP 404) ve
+  `registry.axiom-lang.org` DNS'te çözülmüyor. Uygun hedef seçilmeden yayın
+  altyapısı veya resmi imza anahtarı oluşturulamaz.
   Yerel teknik akış uçtan uca doğrulandı: imzalı `pack`, Ed25519 doğrulaması,
   geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
   kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
@@ -361,7 +365,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | Blok | Durum | Etki |
 |---|---|---|
 | Paket sayısı | altyapı hazır, **0 yayınlanmış paket** | Dış katkı pratikte yok |
-| Windows/macOS | Windows cross-compile + Wine 21/21; gerçek Windows CI ve macOS doğrulaması yok | Destek matrisi ve kullanıcı tabanı sınırlı |
+| Windows/macOS | Native build + registry cache smoke Linux/Windows/macOS'ta 3/3 geçti; tam pytest ve `axiom-scan` yalnız Linux'ta doğrulanıyor | Platform kapsamı hâlâ sınırlı |
 | Self-hosted eşitlik | **21/21** ✅ (4→8→11→12→15→21) | Tam parite |
 | IANA saat dilimi / DST | sabit ofset (bilinçli sınır) | Takvim uygulamaları için yetersiz |
 | NFKC/NFKD | yok (NFC/NFD tam) | Homoglif normalleştirmesi yok |
