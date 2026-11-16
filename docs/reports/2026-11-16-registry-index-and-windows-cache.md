@@ -1,8 +1,11 @@
 # Registry metadata path validation and Windows cache parity
 
 **Date:** 2026-11-16  
-**Status:** Implemented locally; focused tests pass. GitHub CI for base commit
-`d905d05` is still running and does not include this follow-up.
+**Status:** Implemented and pushed in `720a6ab`; focused tests pass. Full
+GitHub CI run 43868658792 passed all 7 jobs. Python 3.10–3.13 each reported
+1495 passed / 27 skipped; documentation blocks reported 55 passed. Native
+Linux/Windows/macOS smoke run 43868658922 passed (3/3). The earlier `d905d05`
+full CI was canceled after the follow-up push and did not include these fixes.
 
 ## Findings and changes
 
