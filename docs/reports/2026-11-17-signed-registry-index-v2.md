@@ -74,6 +74,12 @@ On the local host, both tools were present and `tests/test_portability.py`
 reported **34 passed, 0 skipped** in 100.70 seconds. The native smoke workflow
 also passed 3/3 on Linux, Windows, and macOS for `8772063`:
 https://github.com/jaminakoai/axiom/actions/runs/43973323753.
+
+Commit `972d239` passed the full CI (7/7). Each Python 3.10–3.13 job reported
+**1539 passed, 27 skipped** and its documentation suite reported **55 passed**:
+https://github.com/jaminakoai/axiom/actions/runs/43977190911. Native platform
+smoke passed 3/3 on Linux, Windows, and macOS:
+https://github.com/jaminakoai/axiom/actions/runs/43977190700.
 ```
 
 The tests cover signature validation, tampering, expiry, sequence rollback,

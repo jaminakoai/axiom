@@ -12,10 +12,10 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `8772063`: Python 3.10–3.13'te her biri 1539 geçti / 27 skip, doküman blokları 55 geçti; [run 43973323624](https://github.com/jaminakoai/axiom/actions/runs/43973323624), **7/7 başarılı** |
-| Son CI denemesi | `8772063` [run 43973323624](https://github.com/jaminakoai/axiom/actions/runs/43973323624), **7/7 başarılı** |
-| Son başarılı tam CI | `8772063` [run 43973323624](https://github.com/jaminakoai/axiom/actions/runs/43973323624), **7/7 başarılı** |
-| Son platform smoke | `8772063`, native build/run, cache/file URL, süreçler arası kilit ve imzalı index doğrulaması Linux/Windows/macOS run 43973323753 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `972d239`: Python 3.10–3.13'te her biri 1539 geçti / 27 skip, doküman blokları 55 geçti; [run 43977190911](https://github.com/jaminakoai/axiom/actions/runs/43977190911), **7/7 başarılı** |
+| Son CI denemesi | `972d239` [run 43977190911](https://github.com/jaminakoai/axiom/actions/runs/43977190911), **7/7 başarılı** |
+| Son başarılı tam CI | `972d239` [run 43977190911](https://github.com/jaminakoai/axiom/actions/runs/43977190911), **7/7 başarılı** |
+| Son platform smoke | `972d239`, native build/run, cache/file URL, süreçler arası kilit ve imzalı index doğrulaması Linux/Windows/macOS run 43977190700 **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `cc7de3a` — [run 43966078962](https://github.com/jaminakoai/axiom/actions/runs/43966078962), **7/7 başarılı** |
@@ -342,12 +342,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
   OpenSSL Ed25519 doğrulama/rollback testleri de `4bf3b8b` ile native smoke'a
   eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
-  Son tam CI `8772063` [run 43973323624](https://github.com/jaminakoai/axiom/actions/runs/43973323624)
+  Son tam CI `972d239` [run 43977190911](https://github.com/jaminakoai/axiom/actions/runs/43977190911)
   için 7/7 geçti: Python 3.10–3.13'ün her birinde 1539 geçti/27 skip ve 55
   doküman testi geçti. 27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
   11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
-  tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `8772063`
-  için de Linux/Windows/macOS'ta 3/3 başarılı: [run 43973323753](https://github.com/jaminakoai/axiom/actions/runs/43973323753).
+  tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `972d239`
+  için Linux/Windows/macOS'ta 3/3 başarılı: [run 43977190700](https://github.com/jaminakoai/axiom/actions/runs/43977190700).
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
