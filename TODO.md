@@ -339,7 +339,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   rotasyonu ve ilk bağlantı rollback sınırını operasyonel olarak kabul et.
   Sequence-state kilidinin iki süreç arasındaki bloklama testi `cc7de3a` ile
   Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
-  OpenSSL doğrulama yolunun native Windows/macOS koşusu henüz yok.
+  OpenSSL Ed25519 doğrulama/rollback testleri de `4bf3b8b` ile native smoke'a
+  eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket

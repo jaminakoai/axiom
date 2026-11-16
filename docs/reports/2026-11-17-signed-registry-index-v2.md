@@ -1,7 +1,7 @@
 # G4 — Signed Registry index v2
 
 **Date:** 17 November 2026  
-**Base commit:** `089ffde` · **Implementation commit:** `23a0aca` · **Cross-platform lock regression:** `cc7de3a`
+**Base commit:** `089ffde` · **Implementation commit:** `23a0aca` · **Native signed-index validation:** `4bf3b8b`
 **Status:** Signed index generation and client verification implemented. Local full suite and GitHub CI passed. Official hosting, production trust-key lifecycle, and initial-use freshness remain open.
 
 ## What changed
@@ -58,6 +58,12 @@ https://github.com/jaminakoai/axiom/actions/runs/43966078968. The full CI for
 `cc7de3a` passed 7/7; each Python 3.10–3.13 job reported 1539 passed / 27
 skipped, and 55 documentation blocks passed:
 https://github.com/jaminakoai/axiom/actions/runs/43966078962.
+
+Commit `4bf3b8b` added Ed25519 signed-index tests to the native smoke workflow.
+Linux, Windows, and macOS each reported **9 passed, 74 deselected**, with no
+skips; OpenSSL was available on all three (3.5.5, 3.6.5, and 3.5.9
+respectively). Run:
+https://github.com/jaminakoai/axiom/actions/runs/43972448814.
 ```
 
 The tests cover signature validation, tampering, expiry, sequence rollback,
@@ -76,13 +82,12 @@ consumer installing and testing the sample package through a signed index.
   reliable clocks.
 - This change does not choose or deploy hosting, publish a package, establish
   an official index key, or define key revocation/rotation operations.
-- The full signed-index cryptographic path has not yet run on native Windows or
-  macOS. The portable cross-process lock itself is covered by the new native
-  platform smoke test.
+- Registry hosting, official signing-key custody/rotation, and initial-use
+  replay protection remain deployment decisions. The full local Ed25519
+  verification/expiry/rollback test selection now runs on native Linux,
+  Windows, and macOS.
 
 ## Next
 
 Decide and document production key custody/rotation and registry hosting; keep
-the first-use replay limitation visible in the release policy. Add native
-Windows/macOS coverage for the signed-index OpenSSL verification path after
-confirming those runners have a supported OpenSSL Ed25519 implementation.
+the first-use replay limitation visible in the release policy.
