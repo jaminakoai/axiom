@@ -1,0 +1,101 @@
+name: Axiom scanner trial feedback
+description: Share a sanitized, public report about an authorized axiom-scan trial / Yetkili axiom-scan denemesi için temizlenmiş herkese açık rapor
+title: "[scanner trial]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This issue is public / Bu issue herkese açıktır.**
+
+        Do not submit a suspected security vulnerability here. Follow the private steps in [SECURITY.md](https://github.com/jaminakoai/axiom/blob/master/SECURITY.md).
+
+        Do not attach or paste files, PCAPs, packet contents, rule text, credentials, personal data, private filenames, or absolute paths. Leave hashes blank unless you are authorized to publish them.
+
+        **Bu issue herkese açıktır.** Güvenlik açığı şüphesini buraya yazmayın; [SECURITY.md](https://github.com/jaminakoai/axiom/blob/master/SECURITY.md) içindeki özel bildirim yolunu kullanın.
+
+        Dosya, PCAP, paket içeriği, kural metni, kimlik bilgisi, kişisel veri, özel dosya adı veya tam yol eklemeyin/yapıştırmayın. Hash değerini, paylaşmaya yetkiniz yoksa boş bırakın.
+
+  - type: checkboxes
+    id: authorization
+    attributes:
+      label: Authorization / Yetki
+      description: Both statements must be true to submit this public report / Bu herkese açık raporu göndermek için iki ifade de doğru olmalıdır.
+      options:
+        - label: I was authorized to use the tested file or PCAP / Denediğim dosya veya PCAP üzerinde test yapmaya yetkim vardı.
+          required: true
+        - label: I consent to publishing this sanitized report publicly and confirm it contains no private artifacts or data / Bu temizlenmiş raporun herkese açık yayımlanmasına izin veriyorum; özel dosya veya veri içermediğini onaylıyorum.
+          required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: OS, version, and architecture / İşletim sistemi, sürüm ve mimari
+      placeholder: "Example / Örnek: Ubuntu 24.04, x86_64"
+    validations:
+      required: true
+
+  - type: input
+    id: axiom-commit
+    attributes:
+      label: Axiom commit (git rev-parse HEAD) / Axiom commit kimliği
+      placeholder: "40-character commit SHA"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: input-type
+    attributes:
+      label: Input type / Girdi türü
+      description: Do not provide a filename or sample / Dosya adı veya örnek paylaşmayın.
+      multiple: false
+      options:
+        - File / Dosya
+        - PCAP
+    validations:
+      required: true
+
+  - type: input
+    id: use-case
+    attributes:
+      label: Redacted rule construct or use case / Maskelenmiş kural yapısı veya kullanım senaryosu
+      description: Name only a supported construct or general use case. Do not paste rule text / Yalnızca desteklenen yapıyı veya genel senaryoyu yazın; kural metni yapıştırmayın.
+      placeholder: "Example / Örnek: nocase string, packet scan"
+
+  - type: textarea
+    id: command
+    attributes:
+      label: Command (redact paths and secrets) / Komut (yolları ve gizli değerleri maskeleyin)
+      description: Never include private absolute paths, credentials, or sample contents / Özel tam yolları, kimlik bilgilerini veya örnek içeriğini eklemeyin.
+      placeholder: "axiom-scan scan <redacted-file> --rules <redacted-rules>"
+
+  - type: textarea
+    id: expected-result
+    attributes:
+      label: Expected behavior / Beklenen davranış
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-result
+    attributes:
+      label: Actual result, sanitized error, and exit code / Gerçek sonuç, temizlenmiş hata ve çıkış kodu
+      description: Do not paste a full JSON report if it contains paths or other private values / Yollara veya özel değerlere yer veriyorsa tam JSON raporu yapıştırmayın.
+    validations:
+      required: true
+
+  - type: input
+    id: match-summary
+    attributes:
+      label: match_count or other relevant JSON fields / match_count veya ilgili JSON alanları
+      description: >-
+        Include only counts or selected values. Never paste full JSON; redact
+        target names, paths, hashes, and private values / Yalnızca sayıları veya
+        seçilmiş değerleri yazın. Tam JSON yapıştırmayın; hedef adlarını,
+        yolları, hash değerlerini ve özel alanları maskeleyin.
+      placeholder: "Example / Örnek: match_count=1"
+
+  - type: input
+    id: sha256
+    attributes:
+      label: SHA-256 (leave blank unless authorized to publish) / SHA-256 (paylaşma yetkiniz yoksa boş bırakın)
+

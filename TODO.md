@@ -225,8 +225,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kapatmaz; güncel kanıt G3 raporundadır.
 - [x] Rehberin yönergelerini ve geri bildirim alanlarını Türkçe/İngilizce sun;
   kullanılabilirlik ile güvenlik bildirimlerinin kanallarını ayır; kamuya açık
-  şablonda dosya/PCAP veya hassas bilgi isteme. Link, içerik, dil ve gizlilik
-  kuralları doküman regresyon testleriyle korunuyor.
+  `.github/ISSUE_TEMPLATE/external-scan-trial.yml` formunda yalnız temizlenmiş
+  alanlar iste; yetki ve kamuya açık paylaşım onaylarını zorunlu kıl. Formda
+  dosya yükleme alanı yok. Link, içerik, dil ve gizlilik kuralları doküman
+  regresyon testleriyle korunuyor.
 - [x] Aynı temiz klon/kurulum/build/sentinel akışını `1e9dd23` commit'inde
   yeniden çalıştır: Linux x86_64, Python 3.13, 18,2 saniye, `rules ok=true`,
   `scan match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız

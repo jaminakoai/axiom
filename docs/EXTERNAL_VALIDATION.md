@@ -123,45 +123,31 @@ does not prove full YARA compatibility or reliable malware detection.
 ## Geri bildirim gönderme / How to submit feedback
 
 Güvenlik açığı şüphesi olmayan, kamuya açık paylaşılmasına izin verdiğiniz
-kullanılabilirlik geri bildirimini [GitHub Issues](https://github.com/jaminakoai/axiom/issues/new)
-üzerinden **yalnızca aşağıdaki temizlenmiş şablonla** gönderin. Ham dosya/PCAP,
+kullanılabilirlik geri bildirimini [tarama denemesi issue formu](https://github.com/jaminakoai/axiom/issues/new?template=external-scan-trial.yml)
+üzerinden gönderin. Formu yalnızca temizlenmiş bilgilerle doldurun. Ham dosya/PCAP,
 paket içeriği, kural metni, kimlik bilgisi, kişisel veri, hassas dosya adı veya
 yerel tam yolu issue'ya eklemeyin. SHA-256 da dosyanın kimliğini açığa
 çıkarabilir; varsayılan olarak boş bırakın ve ancak paylaşmaya yetkiniz varsa
 ekleyin.
 
 For usability feedback that is not a suspected security vulnerability and is
-approved for public sharing, use [GitHub Issues](https://github.com/jaminakoai/axiom/issues/new)
-and include **only the sanitized template below**. Never attach a raw file/PCAP,
+approved for public sharing, use the [scanner trial issue form](https://github.com/jaminakoai/axiom/issues/new?template=external-scan-trial.yml)
+and provide only sanitized information. Never attach a raw file/PCAP,
 packet contents, rule text, credentials, personal data, sensitive filenames, or
 absolute local paths. A SHA-256 can identify a file; leave it blank by default
 and include it only when you are authorized to share it.
 
-Geri bildiriminizin kamuya açık kullanılmasına izin vermiyorsanız public issue
-açmayın ve özel bilgileri göndermeyin; önce proje sorumlusuyla uygun özel kanalı
-kararlaştırın. Güvenlik açığı veya güvenlik etkisi olabilecek bir bulgu için
-**asla public issue açmayın**; [SECURITY.md](../SECURITY.md) içindeki özel
-bildirim adımlarını izleyin.
+Geri bildiriminizin kamuya açık kullanılmasına izin vermiyorsanız formu
+kullanmayın ve public issue açmayın; özel ayrıntı göndermeden önce proje
+sorumlusuyla özel bir kanal kararlaştırın.
 
-If you do not consent to public use of your feedback, do not open a public issue
-or send private details; first agree on an appropriate private channel with the
-maintainer. For a suspected vulnerability or security-impacting finding, **do
-not open a public issue**; follow the private reporting steps in
-[SECURITY.md](../SECURITY.md).
+If you do not consent to public use, do not use the form or open a public issue;
+agree on a private channel with the maintainer before sending private details.
+For a suspected vulnerability or security-impacting finding, **never open a
+public issue**; follow the private reporting steps in [SECURITY.md](../SECURITY.md).
 
-```text
-İşletim sistemi/sürümü ve mimari / OS/version and architecture:
-Axiom commit (git rev-parse HEAD):
-Girdi türü (dosya/PCAP) / Input type (file/PCAP):
-Girdi bu deneme için kullanma yetkiniz dahilinde miydi? / Were you authorized to use it? (yes/no):
-Kural yapısı veya kullanım senaryosu (gerekirse adları maskeleyin) / Rule construct or use case (redact names if needed):
-Komut (tam yolları ve gizli değerleri maskeleyin) / Command (redact full paths and secrets):
-Beklenen davranış / Expected behavior:
-Gerçek sonuç/hata ve çıkış kodu / Actual result/error and exit code:
-match_count ve ilgili JSON alanları / match_count and relevant JSON fields:
-SHA-256 (varsayılan boş; yalnızca paylaşma izni varsa / blank by default; only if authorized):
-Kamuya açık issue olarak paylaşılmasına izin var mı? / Is public issue use permitted? (yes/no):
-```
+The issue form requests only the sanitized fields needed to reproduce a trial.
+/ Issue formu yalnızca denemeyi yeniden üretmek için gereken temizlenmiş alanları ister.
 
 Bulgu yalnızca testçi geri bildirim verdikten sonra kaydedilir. Rapor, kullanıcı
 girdisini almadan veya saklamadan; temizlenmiş yeniden üretim adımı ve önem

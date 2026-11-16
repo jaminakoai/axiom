@@ -42,36 +42,53 @@ def test_smoke_instructions_and_expected_result_are_documented_in_both_languages
 def test_feedback_routing_separates_public_usability_from_security_reports():
     guide = _read_guide()
     security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")
+    normalized_guide = re.sub(r"\s+", " ", guide)
 
-    assert "https://github.com/jaminakoai/axiom/issues/new" in guide
+    assert (
+        "https://github.com/jaminakoai/axiom/issues/new?template=external-scan-trial.yml"
+        in guide
+    )
     assert "güvenlik açığı şüphesi olmayan" in guide.lower()
-    assert "do not open a public issue" in guide
+    assert "never open a public issue" in normalized_guide
     assert "../SECURITY.md" in guide
     assert "**Lütfen herkese açık issue açmayın.**" in security
     assert "security@axiom-lang.org" in security
-    assert "kamuya açık kullanılmasına izin vermiyorsanız public issue" in guide
-    assert "first agree on an appropriate private channel" in guide
+    assert "kamuya açık kullanılmasına izin vermiyorsanız formu" in normalized_guide
+    assert "agree on a private channel with the maintainer" in guide
 
 
-def test_public_feedback_template_does_not_request_private_artifacts():
+def test_public_trial_issue_form_requires_consent_and_avoids_private_artifacts():
     guide = _read_guide()
-    template = guide.split("```text\n", maxsplit=1)[1].split("\n```", maxsplit=1)[0]
+    form_path = ROOT / ".github" / "ISSUE_TEMPLATE" / "external-scan-trial.yml"
+    form = form_path.read_text(encoding="utf-8")
+
+    assert "https://github.com/jaminakoai/axiom/issues/new?template=external-scan-trial.yml" in guide
+    for field in (
+        "id: authorization",
+        "required: true",
+        "id: environment",
+        "id: axiom-commit",
+        "id: input-type",
+        "id: command",
+        "id: expected-result",
+        "id: actual-result",
+        "id: match-summary",
+        "id: sha256",
+    ):
+        assert field in form
 
     for instruction in (
-        "Ham dosya/PCAP",
-        "paket içeriği",
-        "kimlik bilgisi",
-        "kişisel veri",
-        "Never attach a raw file/PCAP",
-        "packet contents",
-        "credentials",
-        "personal data",
+        "Güvenlik açığı şüphesini buraya yazmayın",
+        "Dosya, PCAP, paket içeriği, kural metni",
+        "Do not attach or paste files, PCAPs",
+        "suspected security vulnerability here",
+        "I was authorized to use the tested file or PCAP",
+        "I consent to publishing this sanitized report publicly",
+        "Never paste full JSON",
+        "Tam JSON yapıştırmayın",
+        "SHA-256 can identify a file",
+        "SHA-256 (paylaşma yetkiniz yoksa boş bırakın)",
     ):
-        assert instruction in guide
+        assert instruction in guide + form
 
-    assert "SHA-256 (varsayılan boş" in template
-    assert "SHA-256 can identify a file" in guide
-    assert "Komut (tam yolları ve gizli değerleri maskeleyin" in template
-    assert "Command (redact full paths and secrets)" in template
-    assert "Can the maintainer use this report in a public issue?" not in template
-    assert "Kamuya açık issue olarak paylaşılmasına izin var mı?" in template
+    assert "type: upload" not in form
