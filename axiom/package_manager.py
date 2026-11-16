@@ -7,16 +7,21 @@ import os
 import re
 import sys
 import json
+import base64
+import gzip
 import hashlib
+import io
 import shutil
 import subprocess
 import argparse
 import tempfile
+import tarfile
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 from axiom.registry import (
-    RegistryConfig, RegistryClient, resolve_tree, SemverError,
+    RegistryConfig, RegistryClient, resolve_tree, SemverError, parse_version,
+    sha256_bytes,
 )
 
 try:
@@ -575,6 +580,164 @@ fn main() -> void {{
         print(f"{CLR_GREEN}✓ Bağımlılıklar kilitlendi:{CLR_RESET} {len(locked_packages)} paket -> axiom.lock")
         return lock
 
+    def pack(self, signing_key: Path, output_dir: Optional[Path] = None) -> Path:
+        """Create a deterministic, signed registry artifact from a clean Git tree."""
+        key_path = signing_key.expanduser()
+        if not key_path.is_absolute():
+            key_path = self.root_dir / key_path
+        key_path = key_path.resolve()
+        try:
+            key_path.relative_to(self.root_dir)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("registry imza anahtarını proje deposunun dışında tutun")
+        if not key_path.is_file():
+            raise FileNotFoundError(f"Ed25519 imza anahtarı bulunamadı: {key_path}")
+
+        if not self.manifest_path.is_file():
+            raise FileNotFoundError(f"Manifesto dosyası bulunamadı: {self.manifest_path}")
+        manifest = Manifest.from_file(self.manifest_path)
+        if not is_valid_dep_name(manifest.name):
+            raise ValueError(f"geçersiz paket adı: {manifest.name!r}")
+        try:
+            parse_version(manifest.version)
+        except SemverError as exc:
+            raise ValueError(f"geçersiz paket sürümü: {manifest.version!r}") from exc
+
+        dependencies = {}
+        for name, constraint in manifest.dependencies.items():
+            if not is_valid_dep_name(name) or not isinstance(constraint, str):
+                raise ValueError(
+                    "registry paketi bağımlılıkları geçerli ad ve sürüm aralığı olmalı; "
+                    f"'{name}' path/git bağımlılıkları registry'de yayımlanamaz"
+                )
+            dependencies[name] = constraint
+
+        def git(*args: str) -> bytes:
+            try:
+                result = subprocess.run(
+                    ["git", "-C", str(self.root_dir), *args],
+                    capture_output=True, check=False, timeout=30,
+                )
+            except FileNotFoundError as exc:
+                raise RuntimeError("axpm pack için Git gerekli") from exc
+            if result.returncode:
+                detail = result.stderr.decode("utf-8", errors="replace").strip()
+                raise RuntimeError(f"Git komutu başarısız: {' '.join(args)}\n{detail}")
+            return result.stdout
+
+        repo_root = Path(os.fsdecode(git("rev-parse", "--show-toplevel")).strip()).resolve()
+        if repo_root != self.root_dir:
+            raise RuntimeError("axpm pack yalnızca Git deposunun kök paketinde çalışır")
+        dirty = git("status", "--porcelain", "--untracked-files=no").decode("utf-8", errors="replace")
+        if dirty:
+            raise RuntimeError("axpm pack için izlenen dosyalardaki değişiklikleri önce commit edin")
+
+        tracked = git("ls-files", "--stage", "-z").split(b"\0")
+        files = []
+        for record in tracked:
+            if not record:
+                continue
+            metadata, raw_path = record.split(b"\t", 1)
+            mode = metadata.split(b" ", 1)[0]
+            relative = Path(os.fsdecode(raw_path))
+            parts = relative.parts
+            if (
+                relative.is_absolute()
+                or any(part in ("..", ".git", ".axiom") for part in parts)
+                or "\\" in relative.as_posix()
+                or (parts and ":" in parts[0])
+            ):
+                raise RuntimeError(f"paket içinde güvenli olmayan yol: {relative}")
+            if any(part in {"target", "dist", ".venv", "venv", "__pycache__"} for part in parts):
+                continue
+            lower_name = relative.name.lower()
+            if (lower_name == "axiom.lock" or lower_name == ".env"
+                    or lower_name.startswith(".env.")
+                    or lower_name.endswith((".pem", ".key", ".p12", ".pfx"))
+                    or lower_name in {"id_rsa", "id_ed25519"}):
+                continue
+            if mode not in (b"100644", b"100755"):
+                raise RuntimeError(f"paket symlink veya özel Git girdisi içeremez: {relative}")
+            source = self.root_dir / relative
+            if source.is_symlink() or not source.is_file():
+                raise RuntimeError(f"paket girdisi normal dosya değil: {relative}")
+            files.append((relative, source, mode == b"100755"))
+        files.sort(key=lambda item: item[0].as_posix())
+        file_names = {path.as_posix() for path, _, _ in files}
+        if "axiom.toml" not in file_names:
+            raise RuntimeError("axiom.toml Git tarafından izlenmeli ve commit edilmiş olmalı")
+        if manifest.entry not in file_names:
+            raise RuntimeError(f"paket giriş dosyası Git tarafından izlenmiyor: {manifest.entry}")
+
+        tar_buffer = io.BytesIO()
+        with tarfile.open(fileobj=tar_buffer, mode="w", format=tarfile.PAX_FORMAT) as archive:
+            for relative, source, executable in files:
+                content = source.read_bytes()
+                info = tarfile.TarInfo(relative.as_posix())
+                info.size = len(content)
+                info.mode = 0o755 if executable else 0o644
+                info.mtime = 0
+                info.uid = info.gid = 0
+                info.uname = info.gname = ""
+                archive.addfile(info, io.BytesIO(content))
+        compressed = io.BytesIO()
+        with gzip.GzipFile(filename="", mode="wb", fileobj=compressed, mtime=0, compresslevel=9) as gz:
+            gz.write(tar_buffer.getvalue())
+        archive_bytes = compressed.getvalue()
+
+        with tempfile.TemporaryDirectory(prefix="axpm-pack-sign-") as temp_dir:
+            temp = Path(temp_dir)
+            payload = temp / "package.tar.gz"
+            signature = temp / "package.sig"
+            payload.write_bytes(archive_bytes)
+            sign_args = ["openssl", "pkeyutl", "-sign", "-rawin", "-inkey", str(key_path),
+                         "-in", str(payload), "-out", str(signature)]
+            if os.environ.get("AXIOM_REGISTRY_SIGNING_PASSPHRASE"):
+                sign_args.extend(["-passin", "env:AXIOM_REGISTRY_SIGNING_PASSPHRASE"])
+            try:
+                result = subprocess.run(
+                    sign_args, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                    timeout=30, check=False,
+                )
+            except FileNotFoundError as exc:
+                raise RuntimeError("axpm pack için OpenSSL gerekli") from exc
+            if result.returncode:
+                detail = result.stderr.strip()
+                raise RuntimeError(f"Ed25519 paketi imzalanamadı: {detail}")
+            signature_b64 = base64.b64encode(signature.read_bytes()).decode("ascii")
+
+        output_root = (output_dir or (self.root_dir / "dist" / "registry")).expanduser().resolve()
+        output_root.mkdir(parents=True, exist_ok=True)
+        package_dir = output_root
+        for component in manifest.name.split("/"):
+            package_dir = package_dir / component
+            if package_dir.is_symlink():
+                raise RuntimeError(f"çıktı yolu symlink içeremez: {package_dir}")
+            package_dir.mkdir(exist_ok=True)
+        if not package_dir.resolve().is_relative_to(output_root):
+            raise RuntimeError(f"paket çıktı dizini registry kökü dışına taşıyor: {package_dir}")
+        final_dir = package_dir / manifest.version
+        if final_dir.exists() or final_dir.is_symlink():
+            raise FileExistsError(f"paket çıktısı zaten var: {final_dir}")
+
+        entry = {
+            "version": manifest.version,
+            "sha256": sha256_bytes(archive_bytes),
+            "sig": signature_b64,
+            "dependencies": dependencies,
+            "yanked": False,
+        }
+        with tempfile.TemporaryDirectory(prefix=".axpm-pack-", dir=str(package_dir)) as stage_name:
+            stage = Path(stage_name)
+            (stage / f"{manifest.version}.tar.gz").write_bytes(archive_bytes)
+            (stage / f"{manifest.version}.index-entry.json").write_text(
+                json.dumps(entry, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+            )
+            os.replace(stage, final_dir)
+        return final_dir
+
     def get_search_paths(self) -> List[Path]:
         """Paket bağımlılıklarının include / arama yollarını derler."""
         paths: List[Path] = [self.root_dir, self.root_dir / "src", self.deps_dir]
@@ -885,6 +1048,18 @@ def main(argv: Optional[List[str]] = None):
     p_search = subparsers.add_parser("search", help="Registry'de paket arar")
     p_search.add_argument("query", nargs="?", default="", help="Arama metni")
 
+    # pack
+    p_pack = subparsers.add_parser(
+        "pack", help="Temiz Git commit'inden deterministik ve imzalı registry paketi hazırlar"
+    )
+    p_pack.add_argument(
+        "--signing-key", required=True,
+        help="Ed25519 özel anahtar PEM dosyası (AXIOM_REGISTRY_SIGNING_PASSPHRASE desteklenir)",
+    )
+    p_pack.add_argument(
+        "--output", type=Path, help="Registry kök çıktı dizini (varsayılan: dist/registry)",
+    )
+
     # update
     p_update = subparsers.add_parser("update", help="Git bağımlılıklarını yeniden çeker ve kilidi günceller")
     p_update.add_argument("dependency", nargs="?", help="Yalnızca bu bağımlılığı güncelle")
@@ -928,6 +1103,9 @@ def main(argv: Optional[List[str]] = None):
             pm.tree()
         elif args.cmd == "search":
             pm.search(getattr(args, "query", ""))
+        elif args.cmd == "pack":
+            result = pm.pack(Path(args.signing_key), output_dir=args.output)
+            print(f"{CLR_GREEN}✓ İmzalı registry paketi hazırlandı:{CLR_RESET} {result}")
         elif args.cmd == "update":
             pm.update(getattr(args, "dependency", None))
         elif args.cmd == "remove":

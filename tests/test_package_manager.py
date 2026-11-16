@@ -13,6 +13,9 @@ import os
 import sys
 import shutil
 import subprocess
+import hashlib
+import json
+import tarfile
 from pathlib import Path
 import pytest
 
@@ -68,6 +71,115 @@ def test_manifest_roundtrip(tmp_path):
     assert loaded.version == "0.2.0"
     assert loaded.edition == "2026"
     assert "net_core" in loaded.dependencies
+
+
+def _make_committed_pack_project(tmp_path, dependencies="shared = \"^1.2\"\n"):
+    root = tmp_path / "pack-project"
+    (root / "src").mkdir(parents=True)
+    (root / "axiom.toml").write_text(
+        '[package]\nname = "pack-project"\nversion = "1.2.3"\n'
+        'entry = "src/main.ax"\ndescription = "test package"\n\n'
+        f'[dependencies]\n{dependencies}', encoding="utf-8",
+    )
+    (root / "src" / "main.ax").write_text("fn main() -> int { return 0 }\n", encoding="utf-8")
+    (root / "README.md").write_text("package readme\n", encoding="utf-8")
+    (root / ".env").write_text("SECRET=do-not-package\n", encoding="utf-8")
+    (root / "axiom.lock").write_text("local path details\n", encoding="utf-8")
+    (root / "target").mkdir()
+    (root / "target" / "generated.txt").write_text("generated\n", encoding="utf-8")
+    subprocess.run(["git", "init", str(root)], check=True, capture_output=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.email", "test@example.invalid"], check=True)
+    subprocess.run(["git", "-C", str(root), "config", "user.name", "Axiom Test"], check=True)
+    subprocess.run(["git", "-C", str(root), "add", "axiom.toml", "src", "README.md", ".env", "axiom.lock", "target"], check=True)
+    subprocess.run(["git", "-C", str(root), "commit", "-m", "package fixture"], check=True,
+                   capture_output=True)
+    key = tmp_path / "registry-ed25519.pem"
+    public_key = tmp_path / "registry-ed25519.pub.pem"
+    subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(key)],
+                   check=True, capture_output=True)
+    subprocess.run(["openssl", "pkey", "-in", str(key), "-pubout", "-out", str(public_key)],
+                   check=True, capture_output=True)
+    return root, key, public_key
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_creates_deterministic_signed_registry_artifact(tmp_path):
+    from axiom.registry import RegistryClient, RegistryConfig, verify_signature
+
+    root, key, public_key_path = _make_committed_pack_project(tmp_path)
+    manager = PackageManager(root)
+    first_root = tmp_path / "registry-one"
+    cli = subprocess.run(
+        [str(AXPM_BIN), "pack", "--signing-key", str(key), "--output", str(first_root)],
+        cwd=root, capture_output=True, text=True,
+    )
+    assert cli.returncode == 0, cli.stdout + cli.stderr
+    first = first_root / "pack-project" / "1.2.3"
+    second = manager.pack(key, tmp_path / "registry-two")
+    first_archive = first / "1.2.3.tar.gz"
+    second_archive = second / "1.2.3.tar.gz"
+    assert first_archive.read_bytes() == second_archive.read_bytes()
+
+    entry = json.loads((first / "1.2.3.index-entry.json").read_text(encoding="utf-8"))
+    archive_bytes = first_archive.read_bytes()
+    assert entry["sha256"] == hashlib.sha256(archive_bytes).hexdigest()
+    assert entry["dependencies"] == {"shared": "^1.2"}
+    public_key = public_key_path.read_text(encoding="utf-8")
+    valid, reason = verify_signature(archive_bytes, entry["sig"], public_key)
+    assert valid, reason
+
+    with tarfile.open(first_archive, "r:gz") as archive:
+        names = set(archive.getnames())
+    assert names == {"axiom.toml", "src/main.ax", "README.md"}
+
+    published_registry = tmp_path / "local-registry"
+    package_path = published_registry / "pack-project"
+    package_path.mkdir(parents=True)
+    shutil.copyfile(first_archive, package_path / "1.2.3.tar.gz")
+    (published_registry / "index.json").write_text(json.dumps({
+        "schema": 1, "packages": {"pack-project": [entry]},
+    }), encoding="utf-8")
+    client = RegistryClient(RegistryConfig(
+        url=f"file://{published_registry}", public_key=public_key,
+        cache_dir=tmp_path / "consumer-cache",
+    ))
+    extracted, cache_hit = client.download("pack-project", "1.2.3", entry["sha256"], entry["sig"])
+    assert not cache_hit
+    assert (extracted / "src" / "main.ax").is_file()
+    assert not (extracted / ".env").exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_requires_clean_commit_and_never_overwrites(tmp_path):
+    root, key, _ = _make_committed_pack_project(tmp_path)
+    manager = PackageManager(root)
+    (root / "README.md").write_text("changed after commit\n", encoding="utf-8")
+    with pytest.raises(RuntimeError, match="önce commit edin"):
+        manager.pack(key, tmp_path / "registry")
+
+    subprocess.run(["git", "-C", str(root), "checkout", "--", "README.md"], check=True)
+    first = manager.pack(key, tmp_path / "registry")
+    with pytest.raises(FileExistsError, match="zaten var"):
+        manager.pack(key, tmp_path / "registry")
+    assert (first / "1.2.3.tar.gz").is_file()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_rejects_non_registry_dependencies(tmp_path):
+    root, key, _ = _make_committed_pack_project(
+        tmp_path, dependencies='shared = { path = "../shared" }\n'
+    )
+    with pytest.raises(ValueError, match="path/git bağımlılıkları"):
+        PackageManager(root).pack(key, tmp_path / "registry")
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_refuses_signing_key_inside_repository(tmp_path):
+    root, key, _ = _make_committed_pack_project(tmp_path)
+    in_repo_key = root / "registry-secret.pem"
+    shutil.copyfile(key, in_repo_key)
+    with pytest.raises(ValueError, match="deposunun dışında"):
+        PackageManager(root).pack(in_repo_key, tmp_path / "registry")
 
 
 def test_lockfile_generation_and_tamper_detection(tmp_path):

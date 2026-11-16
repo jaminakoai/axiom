@@ -56,6 +56,21 @@ axpm verify           # kilit vs. yerel içerik
 `axiom.lock` her paket için `name`, `version`, `source = "registry:<ver>"`,
 `checksum` (dizin içeriği), `sha256` (tarball) ve `dependencies` yazar.
 
+### İmzalı paket hazırlama
+
+`axpm pack --signing-key /secure/path/registry-ed25519.pem --output /tmp/registry`
+komutu temiz Git deposundaki commit edilmiş normal dosyalardan deterministik
+tarball ve `<sürüm>.index-entry.json` üretir. `axiom.lock`, build çıktıları,
+yaygın özel anahtar biçimleri ve `.env` dosyaları pakete alınmaz; symlink ve
+özel Git girdileri reddedilir. Giriş dosyası Git tarafından izlenmeli ve commit
+edilmiş olmalıdır. İmza anahtarı depo dışında tutulmalıdır; şifreli anahtar için
+`AXIOM_REGISTRY_SIGNING_PASSPHRASE` kullanılabilir.
+
+Bu komut dosyaları registry'ye yüklemez veya `index.json`'ı değiştirmez.
+Çıktıdaki tarball registry paket yoluna taşınmalı ve index entry, registry
+yöneticisinin onayladığı index'e eklenmelidir. Otomatik `publish` veya resmi
+paket yayın altyapısı henüz yoktur.
+
 ---
 
 ## 4. Depo biçimi

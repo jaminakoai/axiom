@@ -12,9 +12,9 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tam test paketi | GitHub Actions `2e17925`: Python 3.10–3.13'te her biri 1478 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
+| Son kaydedilmiş tam test paketi | GitHub Actions `c908b02`: Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son başarılı CI | `2e17925` — [run 43854136494](https://github.com/jaminakoai/axiom/actions/runs/43854136494), **7/7 başarılı**; Python 3.10–3.13'te her biri 1478 geçti / 27 genel ortam testi atlandı; doküman testleri 55 geçti |
+| Son kaydedilmiş başarılı CI | `c908b02` — [run 43860681878](https://github.com/jaminakoai/axiom/actions/runs/43860681878), **7/7 başarılı**; Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman testleri 55 geçti |
 
 ---
 
@@ -239,11 +239,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
   paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
   klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **60 geçti**.
-- [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm` şu an registry
-  istemcisi; `pack`/`publish` komutu veya barındırılan registry yayın yolu yok.
-  Paket imzalama ve indeks barındırma yöntemi seçilmeden örnek paket
-  yayınlanmış sayılmaz. İndirme tarafında tar symlink/hardlink ve özel dosya
-  kaçışları reddediliyor; kötü niyetli arşiv regresyonları test edildi.
+- [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
+  Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
+  upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
+  yok. Bunlar çözülüp örnek paket gerçekten yayınlanmadan bu madde kapanmaz.
+  İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
+  kötü niyetli arşiv regresyonları test edildi.
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
   taahhüdü özellikle 1.0 kararı öncesine bırakıldı; README'ler ARM64 durumunu

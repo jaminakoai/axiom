@@ -5,6 +5,11 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Eklendi
+- `axpm pack`, temiz Git commit'inden deterministik tarball ve Ed25519 imzalı
+  registry index girdisi hazırlar; otomatik yükleme yapmaz. İmza anahtarı proje
+  deposu dışında olmak zorundadır.
+
 ### Düzeltilen
 - Registry paketleri artık tar içindeki symlink/hardlink, özel dosya ve Windows
   tarzı kaçış yollarını açmadan reddediyor; dosyalar doğrulanmış hedeflere tek tek
