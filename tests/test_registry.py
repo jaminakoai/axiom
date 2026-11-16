@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -398,6 +399,41 @@ def test_signed_index_rejects_expired_and_excessively_long_expiration(tmp_path):
     _write_signed_index(registry, _signed_index(1, expires=too_far), key)
     with pytest.raises(RuntimeError, match="90 günden"):
         registry_module.fetch_index(config)
+
+
+def test_registry_index_state_lock_serializes_processes(tmp_path):
+    lock_path = tmp_path / "registry-index.lock"
+    started_path = tmp_path / "child-started"
+    acquired_path = tmp_path / "child-acquired"
+    child_script = "\n".join((
+        "from pathlib import Path",
+        "import sys",
+        "from axiom.registry import _exclusive_registry_state_lock",
+        "Path(sys.argv[2]).write_text('started', encoding='utf-8')",
+        "with _exclusive_registry_state_lock(Path(sys.argv[1])):",
+        "    Path(sys.argv[3]).write_text('acquired', encoding='utf-8')",
+    ))
+    child = None
+    try:
+        with registry_module._exclusive_registry_state_lock(lock_path):
+            child = subprocess.Popen(
+                [sys.executable, "-c", child_script, str(lock_path),
+                 str(started_path), str(acquired_path)],
+                cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+            )
+            deadline = time.monotonic() + 5
+            while not started_path.exists() and time.monotonic() < deadline:
+                time.sleep(0.01)
+            assert started_path.is_file(), "alt süreç kilit denemesine başlayamadı"
+            time.sleep(0.1)
+            assert not acquired_path.exists(), "alt süreç kilit tutulurken içeri girdi"
+        stdout, stderr = child.communicate(timeout=5)
+        assert child.returncode == 0, stdout + stderr
+        assert acquired_path.read_text(encoding="utf-8") == "acquired"
+    finally:
+        if child is not None and child.poll() is None:
+            child.terminate()
+            child.wait(timeout=5)
 
 
 # ---------------------------------------------------------------------------

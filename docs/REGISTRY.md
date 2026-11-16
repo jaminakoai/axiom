@@ -2,7 +2,7 @@
 
 **Durum:** uygulandı (P2-01)
 **Modül:** `axiom/registry.py`
-**Test:** `tests/test_registry.py` (82 test; schema 1 and signed schema 2)
+**Test:** `tests/test_registry.py` (83 test; schema 1 and signed schema 2)
 
 ---
 

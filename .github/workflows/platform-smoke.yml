@@ -39,7 +39,8 @@ jobs:
           "download_cache_hit_is_portable_on_current_platform or
           fetch_reads_file_uri_with_escaped_spaces or
           fetch_rejects_remote_file_uri_host or
-          fetch_index_reports_invalid_file_uri_as_registry_error"
+          fetch_index_reports_invalid_file_uri_as_registry_error or
+          registry_index_state_lock_serializes_processes"
 
       - name: Derleyici sürümünü doğrula
         run: |
