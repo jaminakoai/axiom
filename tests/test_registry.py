@@ -34,6 +34,7 @@ from axiom.registry import (  # noqa: E402
     RegistryConfig, RegistryClient, RegistryIndex, resolve_tree,
     version_matches, SemverError, sha256_bytes,
 )
+from axiom import registry as registry_module  # noqa: E402
 from axiom.package_manager import LockFile  # noqa: E402
 
 
@@ -279,6 +280,46 @@ def test_download_heals_modified_extracted_cache(tmp_path):
 
     assert hit is False
     assert (d2 / "axiom.toml").read_bytes() == original
+
+
+def test_cache_mode_check_handles_windows_chmod_semantics(monkeypatch, tmp_path):
+    """Windows st_mode does not retain POSIX 0644/0755 distinctions."""
+    reg, pub = _make_registry(tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]})
+    cfg = RegistryConfig(url=f"file://{reg}", public_key=pub, cache_dir=tmp_path / "c")
+    client = RegistryClient(cfg)
+    entry = client.index.versions("lib-a")[0]
+    cache_dir, _ = client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
+    raw = (cache_dir / "pkg.tar.gz").read_bytes()
+
+    original_stat = Path.stat
+
+    def windows_stat(path, *args, **kwargs):
+        result = original_stat(path, *args, **kwargs)
+        if path.name == "lib.ax":
+            values = list(result)
+            values[0] = (values[0] & ~0o777) | 0o666
+            return os.stat_result(values)
+        return result
+
+    monkeypatch.setattr(Path, "stat", windows_stat)
+    monkeypatch.setattr(registry_module.os, "name", "nt")
+    assert registry_module._cache_matches_archive(raw, cache_dir)
+
+
+def test_download_rejects_invalid_sha_before_using_cache_path(tmp_path):
+    """Untrusted index SHA cannot traverse to and delete outside the cache."""
+    victim = tmp_path / "victim"
+    victim.mkdir()
+    marker = victim / "pkg.tar.gz"
+    marker.write_bytes(b"keep this file")
+    client = RegistryClient(RegistryConfig(
+        url="file:///unused", allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+
+    with pytest.raises(RuntimeError, match="SHA-256"):
+        client.download("lib-a", "1.0.0", "../../victim", "")
+
+    assert marker.read_bytes() == b"keep this file"
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")

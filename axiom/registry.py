@@ -33,6 +33,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 SCHEMA_VERSION = 1
 DEFAULT_REGISTRY = "https://registry.axiom-lang.org"
+_SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 
 
 def _extract_package_archive(raw: bytes, destination: Path) -> None:
@@ -121,6 +122,10 @@ def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
                         size += len(chunk)
                         digest.update(chunk)
                 mode = 0o755 if member.mode & 0o111 else 0o644
+                if os.name == "nt":
+                    # Windows chmod preserves the read-only flag, not POSIX
+                    # distinctions such as 0644 vs 0755.
+                    mode &= 0o200
                 expected[relative_name] = (size, digest.hexdigest(), mode)
 
         actual: Dict[str, Tuple[int, str, int]] = {}
@@ -140,7 +145,10 @@ def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
                     size += len(chunk)
                     digest.update(chunk)
             relative = path.relative_to(cache_dir).as_posix()
-            actual[relative] = (size, digest.hexdigest(), path.stat().st_mode & 0o777)
+            mode = path.stat().st_mode & 0o777
+            if os.name == "nt":
+                mode &= 0o200
+            actual[relative] = (size, digest.hexdigest(), mode)
         return actual == expected
     except (OSError, tarfile.TarError, ValueError):
         return False
@@ -330,7 +338,8 @@ def sha256_bytes(data: bytes) -> str:
 
 
 def verify_sha256(data: bytes, expected: str) -> bool:
-    return sha256_bytes(data) == (expected or "").lower()
+    return (isinstance(expected, str) and _SHA256_HEX_RE.fullmatch(expected) is not None
+            and sha256_bytes(data) == expected.lower())
 
 
 def _openssl_verify(data: bytes, signature: bytes, public_key_pem: str) -> bool:
@@ -434,6 +443,8 @@ class RegistryClient:
         return self._index
 
     def cache_path_for(self, sha: str) -> Path:
+        if not isinstance(sha, str) or _SHA256_HEX_RE.fullmatch(sha) is None:
+            raise ValueError("registry SHA-256 değeri tam 64 hexadecimal karakter olmalı")
         return self.config.cache_dir / "sha256" / sha
 
     def download(self, name: str, version: str, expected_sha: str,
@@ -442,6 +453,12 @@ class RegistryClient:
         Paketi indirir, sha256 + imza doğrular, içerik-adresli cache'e açar.
         Dönüş: (açılmış_dizin, cache_iskaca_vurdu_mu)
         """
+        if not isinstance(expected_sha, str) or _SHA256_HEX_RE.fullmatch(expected_sha) is None:
+            raise RuntimeError(
+                f"'{name}@{version}' registry index SHA-256 değeri geçersiz; "
+                "64 hexadecimal karakter bekleniyor"
+            )
+
         cache_dir = self.cache_path_for(expected_sha)
         stored_tarball = cache_dir / "pkg.tar.gz"
 

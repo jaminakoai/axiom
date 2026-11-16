@@ -2,7 +2,7 @@
 
 **Durum:** uygulandı (P2-01)
 **Modül:** `axiom/registry.py`
-**Test:** `tests/test_registry.py` (53 test)
+**Test:** `tests/test_registry.py` (55 test)
 
 ---
 

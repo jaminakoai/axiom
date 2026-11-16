@@ -13,7 +13,7 @@
 | Son güncelleme | 2026-11-16 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tamamlanmış tam test paketi | GitHub Actions `c908b02`: Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman blokları 55 geçti |
-| Güncel commit CI | `cac4ab8`: tam CI run 43865229438 sürüyor; native Linux/Windows/macOS smoke run 43865229360 **3/3 başarılı** |
+| Güncel commit CI | `d905d05`: tam CI run 43866682484 sürüyor; native Linux/Windows/macOS smoke run 43866682548 **3/3 başarılı** |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `c908b02` — [run 43860681878](https://github.com/jaminakoai/axiom/actions/runs/43860681878), **7/7 başarılı**; Python 3.10–3.13'te her biri 1485 geçti / 27 genel ortam testi atlandı; doküman testleri 55 geçti |
 
@@ -244,7 +244,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
   paylaşımlı transitive paketleri koruma da test edildi. `remove --purge` Git
-  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **60 geçti**.
+  klonunu ayrıca temizler. Registry + paket yöneticisi hedef testleri **75 geçti**
+  (55 registry, 20 paket yöneticisi).
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
@@ -317,7 +318,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
 | Son tamamlanmış tam test paketi | CI `c908b02`: Python 3.10–13’te 1485 geçti/27 genel ortam testi atlandı; tüm 7 job başarılı | GitHub Actions run 43860681878 |
-| Güncel tam CI | `cac4ab8` tam CI sürüyor; G1/G2 doğrulaması ve biçimlendirme adımları tamamlandı | GitHub Actions run 43865229438 |
+| Güncel tam CI | `d905d05` tam CI sürüyor; biçimlendirme, ASan/UBSan ve LLVM+DWARF işleri geçti | GitHub Actions run 43866682484 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -326,8 +327,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | LLVM backend örnek | 21/21 | `... --backend=llvm` |
 | Self-hosted (`bin/axiomc`) | **21/21** ✅ | `./bin/axiomc build examples/$f.ax` |
 | Paket kayıt defteri | **v1 var** (ed25519, semver, transitive) | `tests/test_registry.py` |
-| Windows desteği | **21/21 cross-compile + Wine**; native smoke CI geçti | P2-19b ve run 43865229360 |
-| macOS | native smoke CI geçti; tam pytest paketi/`axiom-scan` doğrulanmadı | run 43865229360 ve README sınırları |
+| Windows desteği | **21/21 cross-compile + Wine**; native smoke CI geçti | P2-19b ve run 43866682548 |
+| macOS | native smoke CI geçti; tam pytest paketi/`axiom-scan` doğrulanmadı | run 43866682548 ve README sınırları |
 | Doküman dili | TR + EN (tam) | `docs/en/TUTORIAL.md` |
 | LSP | 10 metod (refs, rename, format, semantic tokens, signature help) | `tests/test_lsp_full_features.py` |
 | API dokümanı | `axiom doc` → `docs/api/` | `axiom doc std/` |
@@ -1163,7 +1164,7 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
 | Son tamamlanmış tam CI | `c908b02`: Python 3.10–13'te 1485 geçti/27 genel ortam skip'i; 7/7 job başarılı | — | 2000 |
-| Güncel commit CI | `cac4ab8`: run 43865229438 sürüyor; platform smoke run 43865229360 3/3 geçti | — | — |
+| Güncel commit CI | `d905d05`: run 43866682484 sürüyor; platform smoke run 43866682548 3/3 geçti | — | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1207,6 +1208,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    hedeflerini kararlaştır.
 
 **G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`cac4ab8` tam CI sonucu bekleniyor. Sıradaki kabul kapıları G3 dış kullanıcı
+`d905d05` tam CI sonucu bekleniyor. Sıradaki kabul kapıları G3 dış kullanıcı
 doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
 kanıt ve açık kapsam sınırlarıyla eklenir.

@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 49 rapor** · 50 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 50 rapor** · 51 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -99,6 +99,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 - [G2 — Sabitlenmiş gerçek YARA corpus doğrulaması](2026-11-16-g2-yara-real-rule-corpus.md)
 - [G3 — Dış kullanıcı başlangıç akışı hazırlığı](2026-11-16-g3-external-onboarding.md)
 - [Registry cache bütünlüğü ve güncel imza politikası](2026-11-16-registry-cache-integrity.md)
+- [Registry index SHA path sınırı ve Windows cache modu](2026-11-16-registry-index-and-windows-cache.md)
 
 ## Okuma sırası (yeni gelen için)
 
