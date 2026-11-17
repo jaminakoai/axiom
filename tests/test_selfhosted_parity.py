@@ -121,6 +121,30 @@ def _normalize(text: str) -> str:
     return text
 
 
+def _normalize_multithreaded_scanner(text: str) -> str:
+    """Canonicalize worker output whose ordering is intentionally concurrent."""
+    lines = text.splitlines()
+    start_prefix = "[*] 4 eşzamanlı iş parçacığı başlatıldı."
+    detection_prefix = "[+] Açık Port Tespit Edildi ->"
+    start_events = [line for line in lines if line.startswith(start_prefix)]
+    detections = sorted(line for line in lines if line.startswith(detection_prefix))
+    events = start_events + detections
+    if len(start_events) != 1:
+        return text
+
+    remaining = [
+        line for line in lines
+        if not line.startswith(start_prefix) and not line.startswith(detection_prefix)
+    ]
+    try:
+        footer_index = remaining.index("----------------------------------------------------------")
+    except ValueError:
+        return text
+    remaining[footer_index:footer_index] = events
+    ending = "\n" if text.endswith("\n") else ""
+    return "\n".join(remaining) + ending
+
+
 def _run(cmd, src: Path, timeout=300):
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
@@ -189,12 +213,39 @@ def test_selfhosted_matches_python_driver(name, tmp_path, monkeypatch):
 
     a = _normalize(sh_out)
     b = _normalize(py_out)
+    if name == "08_multithreaded_scanner.ax":
+        # Worker threads race with the main thread's status print, and their
+        # individual port detections have no stable order across executions.
+        # Keep every message and detection in the comparison, but canonicalize
+        # those concurrent lines before comparing the two backends.
+        a = _normalize_multithreaded_scanner(a)
+        b = _normalize_multithreaded_scanner(b)
     if a != b:
         import difflib
         diff = "\n".join(list(difflib.unified_diff(
             b.splitlines(), a.splitlines(),
             fromfile="python-driver", tofile="selfhosted", lineterm=""))[:60])
         pytest.fail(f"{name}: cikti farki (normalize edilmis)\n{diff}")
+
+
+def test_multithreaded_scanner_normalization_only_ignores_event_order():
+    header = "scanner\n"
+    started = "[*] 4 eşzamanlı iş parçacığı başlatıldı. Yanıtlar bekleniyor..."
+    detected_22 = "[+] Açık Port Tespit Edildi -> 127.0.0.1: 22"
+    detected_443 = "[+] Açık Port Tespit Edildi -> 127.0.0.1: 443"
+    footer = (
+        "----------------------------------------------------------\n"
+        "[✓] Tarama Tamamlandı!\n"
+    )
+
+    first = header + detected_22 + "\n" + started + "\n" + detected_443 + "\n" + footer
+    second = header + started + "\n" + detected_443 + "\n" + detected_22 + "\n" + footer
+    different_detection = header + started + "\n" + detected_443 + "\n" + footer
+
+    assert _normalize_multithreaded_scanner(first) == _normalize_multithreaded_scanner(second)
+    assert _normalize_multithreaded_scanner(first) != _normalize_multithreaded_scanner(
+        different_detection
+    )
 
 
 @pytest.mark.skipif(not AXIOMC.exists(), reason="bin/axiomc yok")

@@ -13,9 +13,9 @@
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
 | Son tamamlanmış tam test paketi | GitHub Actions `586de93`: Python 3.10–3.13'te her biri 1583 geçti / 27 skip, doküman blokları 55 geçti; [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
-| Son CI denemesi | `586de93` [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
+| Son CI denemesi | `18a364f` [run 44014863054](https://github.com/jaminakoai/axiom/actions/runs/44014863054): Python 3.11 parity testinde 1 yarış kaynaklı hata; diğer job'lar başarılı |
 | Son başarılı tam CI | `586de93` [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
-| Son platform smoke | `586de93`, native build/registry/PCAP Linux/Windows/macOS run [44011843309](https://github.com/jaminakoai/axiom/actions/runs/44011843309), **3/3 başarılı** |
+| Son platform smoke | `18a364f`, native build/registry/PCAP Linux/Windows/macOS run [44014863027](https://github.com/jaminakoai/axiom/actions/runs/44014863027), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `586de93` — [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
@@ -59,6 +59,15 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   macOS'ta geçti. G3 bağımsız kullanıcı kanıtı ve G4 resmi örnek paket yayını
   açık. Yüzde kaba milestone tahminidir;
   kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
+- `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
+  skip, Python 3.11'de 1583 geçti/27 skip ve tek
+  `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
+  başarısızlığı verdi. Aynı dosyada iş parçacığı çıktı satırlarının sırası
+  backend koşuları arasında değişebiliyor; test yalnız bu mesajları kanonik
+  sıraya alacak şekilde düzeltildi, port tespitlerinin içeriği karşılaştırmada
+  kalıyor. Güncel self-hosted derleyiciyle parity dosyası 28 geçti; etkilenen
+  gerçek parity testi beş tekrarda 5/5 geçti. Düzeltme için yeni tam CI henüz
+  çalışmadı; run 44014863054 son başarılı tam CI sayılmamalı.
 
 ### İş sırası ve kabul kapıları
 
