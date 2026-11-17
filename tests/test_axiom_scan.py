@@ -52,6 +52,7 @@ def scanner(tmp_path_factory):
     out = tmp_path_factory.mktemp("scan") / f"axiom-scan{exe}"
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
+    env["PYTHONIOENCODING"] = "ascii:backslashreplace"
     res = subprocess.run(
         [sys.executable, str(AXIOM), "build", str(EXAMPLE), "-o", str(out)],
         capture_output=True, text=True, timeout=600, env=env,
@@ -900,6 +901,24 @@ def test_scan_pcap_counts_empty_packet_and_continues(scanner, tmp_path):
     assert report["packets"][0]["rules"] == ["PacketNeedle"]
 
 
+def test_scan_pcap_empty_capture_reports_zero_packets(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "empty-capture.pcap"
+    pcap.write_bytes(struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1))
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["ok"] is True
+    assert report["packet_count"] == 0
+    assert report["match_count"] == 0
+
+
 def test_scan_pcap_opposite_endian_classic_file(scanner, tmp_path):
     rules = tmp_path / "rules.yar"
     rules.write_text(
@@ -968,6 +987,24 @@ def test_scan_pcap_malformed_or_truncated_records_fail_closed(scanner, tmp_path,
     )
     pcap = tmp_path / "truncated.pcap"
     pcap.write_bytes(truncated)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert '"ok":true' not in result.stdout
+
+
+def test_scan_pcap_rejects_record_over_custom_snaplen(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "small-snaplen.pcap"
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 2, 1)
+    payload = b"abc"
+    record = struct.pack("<IIII", 1700000000, 0, len(payload), len(payload)) + payload
+    pcap.write_bytes(header + record)
 
     result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
 
@@ -1060,6 +1097,7 @@ def scanner_llvm(tmp_path_factory):
     out = tmp_path_factory.mktemp("scan_llvm") / f"axiom-scan-llvm{exe}"
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
+    env["PYTHONIOENCODING"] = "ascii:backslashreplace"
     res = subprocess.run(
         [sys.executable, str(AXIOM), "build", str(EXAMPLE), "--backend=llvm", "-o", str(out)],
         capture_output=True, text=True, timeout=900, env=env,

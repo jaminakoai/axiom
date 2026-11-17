@@ -1,7 +1,9 @@
 # PCAP reader: fail-closed parsing and status reporting
 
 **Date:** 2026-11-17  
-**Status:** Local targeted validation passed. Full CI is pending for the source change.
+**Status:** Local targeted validation passed. The first native run exposed a
+Windows test-output encoding issue; its fix is in a follow-up commit and native
+rerun is pending.
 
 ## Finding
 
@@ -33,23 +35,25 @@ not decode protocol headers or reassemble TCP streams.
 - README and the external trial guide now say that only classic PCAP is
   supported and that matching scans raw captured frames, including headers.
 - The native smoke workflow now has a targeted PCAP test step; its Linux,
-  Windows, and macOS run is pending.
+  Windows, and macOS run is pending. Windows' first run failed while the test
+  captured the compiler's Unicode checkmark using the legacy console encoding;
+  the test fixture now sets an ASCII-safe Python output encoding.
 
 ## Validation
 
     python3 -m pytest -q --tb=short tests/test_pcap_runtime.py tests/test_axiom_scan.py tests/test_blueteam_libs.py tests/test_external_validation_docs.py
-    178 passed in 23.85s
+    180 passed in 23.82s
     make fmt-check
     passed
     git diff --check
     passed
 
-Coverage includes empty packet followed by a matching packet, microsecond and
-nanosecond PCAP in both byte orders, pcapng rejection, truncated global and
-record headers, short payload, inconsistent captured/original lengths, the
-65,535-byte limit, C/LLVM result parity, writer rejection of over-limit and
-invalid hex, exact-limit writer roundtrip, and the existing PCAP API readback
-path.
+Coverage includes empty packet followed by a matching packet, a valid capture
+with no records, microsecond and nanosecond PCAP in both byte orders, pcapng
+rejection, truncated global and record headers, short payload, inconsistent
+captured/original lengths, default and custom snaplen limits, the 65,535-byte
+limit, C/LLVM result parity, writer rejection of over-limit and invalid hex,
+exact-limit writer roundtrip, and the existing PCAP API readback path.
 
 ## Limits and next step
 
