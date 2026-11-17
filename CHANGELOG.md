@@ -32,6 +32,10 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
 
 ### Düzeltilen
+- Windows runtime artık statik string literal'larını platformun bellek bölgesi
+  denetimiyle tanıyor; `axiom_owned_str_wrap()` literal'ı heap belleği sanıp
+  `free()` etmiyor. PCAP EOF/boş paket yollarında görülen heap corruption
+  düzeltildi; native PCAP smoke Linux, Windows ve macOS'ta geçti.
 - Registry istemcisi, doğrulanmış tarball içindeki `axiom.toml` paket adı,
   sürümü ve bağımlılıklarını index kaydıyla karşılaştırıyor; kontrol indirme ve
   cache hit yollarında uygulanıyor. Schema 2 imzası ayrı yapılandırılan index

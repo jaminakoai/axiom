@@ -2,8 +2,10 @@
 
 **Date:** 2026-11-17  
 **Status:** PCAP reader implementation and local targeted validation passed.
-Native smoke exposed a Windows heap corruption fault; a runtime ownership fix
-is now prepared and its native three-platform rerun is pending.
+The Windows runtime ownership fault was fixed in `4d81ffe`; native PCAP smoke
+passed on Linux, Windows, and macOS (run 43998977308, 3/3). Full CI for that
+commit passed 7/7 (run 43998977282): Python 3.10–3.13 each had 1,573 passed / 27
+skipped; docs 55, YARA differential 29, sanitizer 40, LLVM 20 passed.
 
 ## Finding
 
@@ -34,8 +36,8 @@ not decode protocol headers or reassemble TCP streams.
   do not increment its packet count.
 - README and the external trial guide now say that only classic PCAP is
   supported and that matching scans raw captured frames, including headers.
-- The native smoke workflow now has a targeted PCAP test step; its Linux,
-  Windows, and macOS run is pending. Windows' first run failed while the test
+- The native smoke workflow now has a targeted PCAP test step. Windows' first
+  run failed while the test
   captured the compiler's Unicode checkmark using the legacy console encoding;
   the test fixture now sets an ASCII-safe Python output encoding. The next
   Windows run then exposed `0xC0000374` while the scanner wrapped a static empty
@@ -44,6 +46,7 @@ not decode protocol headers or reassemble TCP streams.
   attempted to free the literal. It now delegates to `ax_os_ptr_is_static()` in
   `platform.h`, which uses `VirtualQuery`/`MEM_IMAGE` on Windows and the existing
   platform checks elsewhere. Independent code review confirmed this root cause.
+  Commit `4d81ffe` passed the targeted PCAP suite on all three native OS runners.
 
 ## Validation
 
@@ -58,7 +61,12 @@ not decode protocol headers or reassemble TCP streams.
     pytest -q --tb=short tests/test_negative_security.py -k str_free_literal
     1 passed
     pytest -q --tb=short tests/test_portability.py -k 'windows_target_produces_pe_binary or windows_code_path_runs_natively or windows_binary_runs_under_wine'
-    3 passed (MinGW/Wine; native Windows result still required)
+    3 passed (local MinGW/Wine portability checks; native Windows smoke also passed in run 43998977308)
+    GitHub Actions full CI, commit 4d81ffe (run 43998977282)
+    7/7 jobs passed; Python 3.10–3.13 each 1573 passed / 27 skipped;
+    docs 55, YARA differential 29, sanitizer 40, LLVM 20 passed
+    GitHub Actions native platform smoke, commit 4d81ffe (run 43998977308)
+    Linux, Windows, macOS 3/3 passed, including PCAP scanner tests
 
 Coverage includes empty packet followed by a matching packet, a valid capture
 with no records, microsecond and nanosecond PCAP in both byte orders, pcapng
@@ -71,6 +79,5 @@ exact-limit writer roundtrip, and the existing PCAP API readback path.
 
 PCAPNG, protocol decoding, and TCP stream reassembly remain unsupported. This
 does not close G3: an independent user still needs to test an authorized real
-file or capture and provide sanitized feedback. The full CI and the added
-Windows/macOS/Linux PCAP smoke run must pass before treating this implementation
-as complete.
+file or capture and provide sanitized feedback. Native PCAP smoke is green on
+Linux, Windows, and macOS, and full CI passed for `4d81ffe`.

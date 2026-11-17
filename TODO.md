@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `52544da`: Python 3.10–3.13'te her biri 1558 geçti / 27 skip, doküman blokları 55 geçti; [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851), **7/7 başarılı** |
-| Son CI denemesi | `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851), **7/7 başarılı** |
-| Son başarılı tam CI | `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851), **7/7 başarılı** |
-| Son platform smoke | `52544da`, native build/run, cache/file URL, süreçler arası kilit ve imzalı index doğrulaması Linux/Windows/macOS run 43987784833 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `4d81ffe`: Python 3.10–3.13'te her biri 1573 geçti / 27 skip, doküman blokları 55 geçti; [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
+| Son CI denemesi | `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
+| Son başarılı tam CI | `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
+| Son platform smoke | `4d81ffe`, native classic PCAP testleri ve build/run Linux/Windows/macOS run 43998977308 **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `52544da` — [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `4d81ffe` — [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
 | Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
 
 ---
@@ -32,9 +32,9 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 ### Mevcut konum ve ilerleme tahmini
 
 - Axiom'ın derleyici, iki arka uç, standart kütüphane, paket altyapısı ve
-  `axiom-scan`/DFIR örnekleri mevcut. G0, G1 ve G2 tamamlandı. Genel G4 platform
-  smoke daha önce üç işletim sisteminde geçti; yeni PCAP özel smoke Windows'ta
-  heap corruption açığa çıkardı ve düzeltme doğrulaması sürüyor.
+  `axiom-scan`/DFIR örnekleri mevcut. G0, G1, G2 ve classic PCAP için üç
+  işletim sistemli smoke testi tamamlandı. Genel G4 platform smoke da daha önce
+  Linux, Windows ve macOS'ta geçti.
 - Faz 1'in dış kullanıcı kapısı **açılmadı**: `axiom-scan`'i kendi verisinde
   deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
 - Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
@@ -55,9 +55,9 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   değildir.
 - İlk güvenilir public release hedefine göre yaklaşık **%75** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u kapandı;
-  önceki genel platform smoke geçti, fakat PCAP özel Windows smoke şu anda
-  başarısız olduğundan ilgili G4 maddesi açık. G3 bağımsız kullanıcı kanıtı ve
-  G4 resmi örnek paket yayını da açık. Yüzde kaba milestone tahminidir;
+  önceki genel platform smoke ve yeni PCAP özel smoke Linux, Windows ve
+  macOS'ta geçti. G3 bağımsız kullanıcı kanıtı ve G4 resmi örnek paket yayını
+  açık. Yüzde kaba milestone tahminidir;
   kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
 
 ### İş sırası ve kabul kapıları
@@ -288,8 +288,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Linux, Windows ve macOS test kapsamını ve Linux sistem kütüphanesi
   gereksinimlerini iki README'de açıkça yaz. Windows/macOS için tam test paketi,
   `axiom-scan` ve elle kurulum adımlarının henüz doğrulanmadığı açıkça belirtili.
-- [ ] Yeni fail-closed classic PCAP okuyucu sınır testlerini native
-  Windows/macOS smoke matrisinde çalıştır; bu dar PCAP testi geçse bile tam
+- [x] Yeni fail-closed classic PCAP okuyucu sınır testlerini native
+  Linux/Windows/macOS smoke matrisinde çalıştır; run
+  [43998977308](https://github.com/jaminakoai/axiom/actions/runs/43998977308),
+  3/3 geçti. Bu dar PCAP testi geçse bile tam
   `axiom-scan` iş akışı ve tam pytest paketi bu platformlarda doğrulanmış
   sayılmaz.
 - [x] Registry paketlerinin imza/checksum/bozuk cache testleri zaten vardı;
@@ -368,11 +370,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
   Önceki tam CI `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851)
   için 7/7 geçti: Python 3.10–3.13'ün her birinde 1558 geçti/27 skip ve 55
-  doküman testi geçti. Güncel tam CI `4097bda` [run 43991703164](https://github.com/jaminakoai/axiom/actions/runs/43991703164)
-  için 7/7 geçti: Python 3.10–3.13'ün her birinde **1559 geçti/27 skip**,
-  doküman kod bloklarında 55 geçti; sabitlenmiş YARA diferansiyel testinde her
-  sürümde 29 geçti. Güncel native smoke `4097bda` [run 43991703153](https://github.com/jaminakoai/axiom/actions/runs/43991703153)
-  Linux, Windows ve macOS'ta 3/3 geçti. 27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
+  doküman testi geçti. Son tam CI `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282)
+  için 7/7 geçti: Python 3.10–3.13'ün her birinde **1573 geçti/27 skip**,
+  doküman kod bloklarında 55, sabitlenmiş YARA differential testinde 29 geçti;
+  ASan/UBSan paketi 40 geçti ve LLVM testi 20 geçti. Son native smoke `4d81ffe`
+  [run 43998977308](https://github.com/jaminakoai/axiom/actions/runs/43998977308)
+  Linux, Windows ve macOS'ta 3/3 geçti; classic PCAP smoke adımı da üçünde başarılı.
+  27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
   11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
   tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `52544da`
   için Linux/Windows/macOS'ta 3/3 başarılı: [run 43987784833](https://github.com/jaminakoai/axiom/actions/runs/43987784833).
@@ -461,8 +465,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `52544da`: Python 3.10–3.13'te her biri 1558 geçti/27 skip; 1565 yerel test `23a0aca` commit'inde geçti | GitHub Actions run 43987784851; `python3 -m pytest -q` |
-| Son native platform smoke | `52544da`: süreçler arası registry kilidi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43987784833 |
+| Son tamamlanmış tam test paketi | CI `4d81ffe`: Python 3.10–3.13'te her biri 1573 geçti/27 skip; 1565 yerel test `23a0aca` commit'inde geçti | GitHub Actions run 43998977282; `python3 -m pytest -q` |
+| Son native platform smoke | `4d81ffe`: classic PCAP sınır testleri + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43998977308 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1307,8 +1311,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `52544da`: Python 3.10–13’te her biri 1558 geçti/27 skip; doküman 55 geçti; 7/7 başarılı | Run 43987784851 | 2000 |
-| Son native platform smoke | `52544da`: cache/file URL + signed index + build/run Linux/Windows/macOS 3/3 başarılı | Run 43987784833 | — |
+| Son tam CI | `4d81ffe`: Python 3.10–13’te her biri 1573 geçti/27 skip; doküman 55, YARA differential 29, sanitizer 40, LLVM 20 geçti; 7/7 başarılı | Run 43998977282 | 2000 |
+| Son native platform smoke | `4d81ffe`: PCAP + cache/file URL + signed index + build/run Linux/Windows/macOS 3/3 başarılı | Run 43998977308 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
