@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `b4ef7b5`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, YARA differential 29 ve doküman blokları 55 geçti; [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
-| Son CI denemesi | `b4ef7b5` [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
-| Son başarılı tam CI | `b4ef7b5` [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
-| Son platform smoke | `b4ef7b5`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44023214456](https://github.com/jaminakoai/axiom/actions/runs/44023214456), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `2b73fea`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, YARA differential 29 ve doküman blokları 55 geçti; [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
+| Son CI denemesi | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
+| Son başarılı tam CI | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
+| Son platform smoke | `2b73fea`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44026041510](https://github.com/jaminakoai/axiom/actions/runs/44026041510), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `b4ef7b5` — [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `2b73fea` — [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
 | Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
 
 ---
@@ -74,6 +74,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   differential 29, doküman blokları 55 ve 7/7 başarılı; native platform smoke
   `44023214456` Linux, Windows ve macOS'ta 3/3 başarılı. Ayrıntı:
   [`b4ef7b5 CI raporu`](docs/reports/2026-11-17-b4ef7b5-ci.md).
+  `2b73fea` ile checkout/setup-python eylemleri Node 24 destekli güncel
+  sürümlerin SHA'larına sabitlendi. Tam CI `44026041380` ve platform smoke
+  `44026041510` başarılı; loglarda Node.js 20 deprecation uyarısı kalmadı.
+  Ayrıntı: [`Node 24 GitHub Actions raporu`](docs/reports/2026-11-17-node24-github-actions.md).
 
 ### İş sırası ve kabul kapıları
 
@@ -1377,8 +1381,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `b4ef7b5`: Python 3.10–13'te her biri 1587 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44023214490 | 2000 |
-| Son native platform smoke | `b4ef7b5`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44023214456 | — |
+| Son tam CI | `2b73fea`: Python 3.10–13'te her biri 1587 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44026041380 | 2000 |
+| Son native platform smoke | `2b73fea`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44026041510 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |

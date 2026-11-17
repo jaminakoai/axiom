@@ -122,6 +122,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- Node.js 24 action güncellemesinden sonra tam CI 7/7 ve Linux/Windows/macOS
+  platform smoke 3/3 başarılı oldu; CI/platform loglarında Node.js 20 uyarısı yok.
 - 64 MiB/999-byte suffix YARA typed-executor near-match regresyonuna 15 saniyelik
   ölçülen runtime eşiği eklendi (30 saniyelik subprocess timeout korunur).
 - Hex occurrence doğrudan runtime harness’i `INT64_MIN` min ve max offset sınırlarını da kapsıyor; ikisi de signed offset aritmetiğine ulaşmadan fail-closed biçimde reddediliyor.
