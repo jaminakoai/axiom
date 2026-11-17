@@ -246,6 +246,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   `scan` başarılı; `match_count=1`, offset 36/length 37, hedef SHA-256 alanı
   64 karakter. Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir;
   ayrıntı G3/G4 onboarding raporuna eklendi.
+- [x] Aynı akışı `4097bda` temiz klonunda tekrar doğrula: Python 3.13.14,
+  kurulum ve örnek derleme başarılı; `rules ok=true, rules=1`; sentinel
+  `scan ok=true, match_count=1`, offset 36/length 37 ve hedef SHA-256
+  `1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405`.
+  Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir; ayrıntı G3/G4
+  onboarding raporundadır.
 - [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
   çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
 - [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
@@ -347,9 +353,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
   OpenSSL Ed25519 doğrulama/rollback testleri de `4bf3b8b` ile native smoke'a
   eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
-  Son tam CI `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851)
+  Önceki tam CI `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851)
   için 7/7 geçti: Python 3.10–3.13'ün her birinde 1558 geçti/27 skip ve 55
-  doküman testi geçti. 27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
+  doküman testi geçti. Güncel tam CI `4097bda` [run 43991703164](https://github.com/jaminakoai/axiom/actions/runs/43991703164)
+  için 7/7 geçti: Python 3.10–3.13'ün her birinde **1559 geçti/27 skip**,
+  doküman kod bloklarında 55 geçti; sabitlenmiş YARA diferansiyel testinde her
+  sürümde 29 geçti. Güncel native smoke `4097bda` [run 43991703153](https://github.com/jaminakoai/axiom/actions/runs/43991703153)
+  Linux, Windows ve macOS'ta 3/3 geçti. 27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
   11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
   tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `52544da`
   için Linux/Windows/macOS'ta 3/3 başarılı: [run 43987784833](https://github.com/jaminakoai/axiom/actions/runs/43987784833).
@@ -361,9 +371,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   yayın değildir. Ayrı anahtarlı Registry v2 imza/sequence akışı bu turda eklendi;
   hosting, üretim anahtarı işletimi ve ilk kullanımda eski index'in
   önlenememesi hâlâ açık yayın sınırlarıdır.
-- [ ] İmzalı örnek paket yayın ön kontrolünü Windows/macOS dâhil native smoke'a
-  ekle. Test `60bb272` commit'inde Python yorumlayıcısıyla platform uyumlu hâle
-  getirildi; üç işletim sistemindeki CI doğrulaması bekleniyor.
+- [x] İmzalı örnek paket yayın ön kontrolünü Windows/macOS dâhil native smoke'a
+  ekle. Windows'ta eski konsol kodlamalarının Türkçe çıktıyı kaçış dizisine
+  çevirmesi nedeniyle testteki iki metin karşılaştırması sayısal özete
+  dayandırıldı (`4097bda`). Native smoke Linux, Windows ve macOS'ta 3/3 geçti:
+  [CI run 43991703153](https://github.com/jaminakoai/axiom/actions/runs/43991703153).
 - [x] Registry istemcisinde paket indirme, önbellek okuma ve arşiv açma
   sınırlarını `axpm pack`/`assemble` politikasıyla hizala: sıkıştırılmış paket,
   açılmış dosya toplamı, üye sayısı, manifesto, gzip genişlemesi ve PAX/GNU

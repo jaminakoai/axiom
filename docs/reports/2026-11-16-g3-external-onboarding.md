@@ -70,3 +70,25 @@ bağımsız kullanıcı deneyimi veya gerçek dosya/PCAP kabulü değildir.
 Dokümantasyon doğrulaması: `python -m pytest -q --tb=short
 tests/test_docs_en.py tests/test_docgen.py tests/test_tutorial_examples.py` →
 **38 passed**; `make fmt-check` ve `git diff --check` başarılı.
+
+## `4097bda` commit'inde temiz klonda tekrar doğrulama
+
+17 Kasım 2026'da GitHub `master`'ın güncel `4097bda` commit'i yeni bir geçici
+dizin altında derinliği 1 olan temiz klonda doğrulandı. Python 3.13.14 ile
+`pip install -e .`, `axiom --version`, örnek derleme, `rules` ve sentetik
+sentinel taraması başarılı oldu.
+
+```text
+commit: 4097bdaacff24c047d4f5ae98809b619681b39be
+python: 3.13.14
+axiom --version: Axiom (λx) v0.5.0-alpha
+build: examples/21_axiom_scan.ax succeeded
+rules: ok=true, rules=1
+scan: ok=true, match_count=1
+match: Axiom_External_Validation, offset 36, length 37
+target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
+```
+
+Bu güncel sentetik doğrulama onboarding komutlarını ve dosya tarama yolunu
+kanıtlar; bağımsız kullanıcının yetkili gerçek dosya veya PCAP denemesinin
+yerini tutmaz. G3 kullanıcı kabul kapısı bu nedenle açık kalır.
