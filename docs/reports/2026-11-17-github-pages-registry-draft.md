@@ -39,12 +39,12 @@ yayımlanmamıştır.
   public-key files.
 - `python -m pytest -q -rs` — **1610 passed, 0 failed, 0 skipped** in 1396.94 s
   (bu raporun oluşturulduğu yerel çalışma ağacı).
-- Commit `8d633b5` GitHub CI run
-  [44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602)
+- Commit `586de93` GitHub CI run
+  [44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295)
   **7/7 başarılı**: Python 3.10–3.13'ün her birinde 1583 geçti/27 ortam skip'i,
   55 doküman testi; ayrıca ASan/UBSan ve LLVM işleri geçti.
 - Aynı commit'in native smoke run
-  [44008473611](https://github.com/jaminakoai/axiom/actions/runs/44008473611)
+  [44011843309](https://github.com/jaminakoai/axiom/actions/runs/44011843309)
   Linux, Windows ve macOS'ta **3/3 başarılı**.
 - `git diff --check` — başarılı.
 

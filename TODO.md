@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `8d633b5`: Python 3.10–3.13'te her biri 1583 geçti / 27 skip, doküman blokları 55 geçti; [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
-| Son CI denemesi | `8d633b5` [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
-| Son başarılı tam CI | `8d633b5` [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
-| Son platform smoke | `8d633b5`, native build/registry/PCAP Linux/Windows/macOS run [44008473611](https://github.com/jaminakoai/axiom/actions/runs/44008473611), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `586de93`: Python 3.10–3.13'te her biri 1583 geçti / 27 skip, doküman blokları 55 geçti; [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
+| Son CI denemesi | `586de93` [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
+| Son başarılı tam CI | `586de93` [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
+| Son platform smoke | `586de93`, native build/registry/PCAP Linux/Windows/macOS run [44011843309](https://github.com/jaminakoai/axiom/actions/runs/44011843309), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `8d633b5` — [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `586de93` — [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
 | Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
 
 ---
@@ -399,9 +399,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Temiz klon + geçici anahtarlarla uçtan uca prova geçti. Pages'i açmaz, deploy
   başlatmaz; hosting/anahtar ve GitHub environment koruma ayarları dış karar
   olarak açık kalır. İlgili Pages/registry/release-preflight hedef testleri
-  **14 geçti**. Önceki `8d633b5` çalışma ağacı tam paketi **1610 geçti, 0 hata,
-  0 skip** (1396,94 sn); yeni yol düzeltmesi ayrıca 14 hedef test ve CI ile
-  doğrulanacak. İnceleme raporu:
+  **14 geçti**. Güncel `586de93` CI **7/7 başarılı**: Python 3.10–3.13'te
+  her biri 1583 geçti/27 ortam skip'i, 55 doküman testi; native Linux/Windows/
+  macOS smoke **3/3**. Önceki `8d633b5` yerel tam paketinde Pages taslağı
+  dâhil **1610 geçti, 0 hata, 0 skip** (1396,94 sn). İnceleme raporu:
   [`2026-11-17-github-pages-registry-draft.md`](docs/reports/2026-11-17-github-pages-registry-draft.md).
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
