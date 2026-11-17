@@ -32,11 +32,6 @@ Registry v1 bunları çözer: **içerik-adresli depo + ed25519 imza + semver + t
 [registry]
 url = "https://jaminakoai.github.io/axiom/registry"
 # Resmî adres için public_key ve index_public_key varsayılan olarak gelir.
-public_key = """
------BEGIN PUBLIC KEY-----
-MCowBQYDK2VwAyEAG...
------END PUBLIC KEY-----
-"""
 # İsteğe bağlı, paket imza anahtarından ayrı Registry v2 index anahtarı:
 # index_public_key = """
 # -----BEGIN PUBLIC KEY-----
@@ -182,15 +177,17 @@ içeriği de reddedilir.
 İmzalı index ilk bağlantıda en yeni index'in sunulduğunu kanıtlamaz; saldırgan
 ilk kullanımda hâlâ geçerli eski bir imzalı index sunabilir. Yerel rollback
 durumu silinirse geçmiş sequence bilgisi de kaybolur. Yayın sistemi sequence'i
-her değişiklikte artırmalı, özel anahtarı korumalı ve istemcilerdeki güvenilen
-anahtar dağıtımını yönetmelidir. Komut hiçbir yere yükleme yapmaz; hosting ve
-üretim anahtarı işletimi ayrıca çözülmelidir.
+her değişiklikte artırmalı, private anahtarları güvenli çevrimdışı yedeklemeli ve
+istemcilerdeki güvenilen anahtar dağıtımını yönetmelidir. Resmî Pages adresi
+yayındadır; ilk bağlantı rollback sınırı devam eder.
 
 ### GitHub Pages yayını
 
-İmzalı registry snapshot'ı GitHub Pages üzerinde barındırılır. Manuel workflow
+İmzalı registry snapshot'ı GitHub Pages üzerinde barındırılır. Canlı adres
+`https://jaminakoai.github.io/axiom/registry`'dir. Manuel workflow
 `.github/workflows/publish-registry-pages.yml` yalnızca `master` üzerinde
-`publish` onayıyla çalışır. GitHub Pages repository kaynağı Actions olmalıdır.
+`publish` onayıyla çalışır. Pages kaynağı Actions'tır. `github-pages`
+environment'i gerekli reviewer ve yalnız `master` dalı politikasıyla korunur.
 
 Yayın için offline hazırlanan statik registry ağacını `registry-site/registry/`
 altına koyun. `registry-site/package-public-key.pem` paket anahtarının açık
@@ -264,9 +261,7 @@ Site kökünde bir Pages giriş dosyası, `.nojekyll` ve `/registry/` ağacı
 oluşturulur. Beklenen registry URL'si project-site yolu kullanılırsa
 `https://jaminakoai.github.io/axiom/registry` olur. Workflow izinleri deploy
 işinde `pages: write` ve `id-token: write` ile sınırlıdır. `publish` seçimi
-manuel teyittir; tek başına reviewer onayı sağlamaz. Deploy öncesi repository
-Settings'te Pages kaynağı Actions yapılmalı; `github-pages` environment için
-yalnız `master` branch'ine izin verilip required reviewer eklenmelidir.
+manuel teyittir; buna ek olarak GitHub environment onayı gerekir.
 
 ---
 

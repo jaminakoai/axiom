@@ -40,11 +40,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
   Bu karar bağımsız usability, market-fit veya gerçek kullanıcı girdisi kanıtı
   değildir; dış deneme rehberi isteğe bağlı geri bildirim için duruyor.
-- Registry için örnek paket (`packages/axiom-scan-report`) var. Resmî Pages adresi
-  `https://jaminakoai.github.io/axiom/registry` olarak seçildi; default URL ve
-  paketlenmiş public trust anchor’lar `0b53c17` ile eklendi. Yerel signing key’ler
-  repo dışında tutuluyor. İmzalı schema 2 snapshot hazırlandı; Pages etkinleştirme,
-  environment koruması ve gerçek HTTPS tüketici doğrulaması bu G4 adımında sürüyor.
+- Registry için örnek paket (`packages/axiom-scan-report`) var ve imzalı sürüm
+  `0.1.0` GitHub Pages'te yayında. Resmî adres, default URL ve paketlenmiş public
+  trust anchor’lar `0b53c17` ile eklendi; release snapshot `355fe20` ile gönderildi.
+  Canlı default URL'den imzalı schema 2 index doğrulandı ve temiz tüketici
+  ayarsız install/test yaptı. Private key'ler repo dışındadır.
 - Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
   imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
   regresyon kanıtı eklendi. Ayrı anahtarlı imzalı schema 2 index ve gözlemlenmiş
@@ -57,12 +57,12 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - G1 kapandı: YARA 4.5.4 differential, C/LLVM parity, runtime limit kontrolleri
   ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
   değildir.
-- İlk güvenilir public release hedefine göre yaklaşık **%85** ilerleme tahmini
+- İlk güvenilir public release hedefine göre yaklaşık **%90** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
   isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
-  doğrulanmış sayılmaz. G4 signing/default trust ve imzalı snapshot hazırlığı
-  tamamlandı; gerçek Pages deploy ve temiz HTTPS tüketici doğrulaması açıktır.
-  Yüzde kaba milestone tahminidir, kullanıcı benimsemesini ölçmez.
+  doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı; key backup/rotation
+  ve kullanımdan doğan geri bildirim sonraki operasyon adımlarıdır. Yüzde kaba
+  milestone tahminidir, kullanıcı benimsemesini ölçmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
   `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
@@ -344,11 +344,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Pages validator geçsin ve ayrı temiz tüketici local `file://` registry'den
   paketi indirip doğrulasın/kurup test etsin. `axpm test` 2/2 geçti. Tam test
   paketi `python -m pytest -q --tb=short`: **1616 geçti, 0 hata, 0 skip**
-  (1341 sn). Snapshot `registry-site/` altında hazır; henüz commit/publish edilmedi.
-- [ ] Pages’i workflow kaynağıyla etkinleştir, `github-pages` environment’i
-  reviewer + yalnız `master` dalı ile koru, imzalı snapshot’ı deploy et ve resmi
-  default URL üzerinden temiz tüketici kurulumunu doğrula. Bu tamamlanana dek G4
-  örnek paket yayını kapanmış sayılmaz.
+  (1341 sn; snapshot commit'inden hemen önceki aynı içerik). Canlı default URL
+  üzerinden imzalı schema 2 index doğrulandı; temiz tüketici explicit URL/key
+  olmadan 0.1.0 kurdu ve `axpm test` 2/2 geçti.
+- [x] GitHub Pages'i workflow kaynağıyla etkinleştir; `github-pages` environment'i
+  required reviewer ve yalnız `master` dalı ile koru; signed snapshot'ı yayınla.
+  Workflow `44053918679` build/deploy **2/2 başarılı**. Pages API HTTPS enforcement
+  açık. Anahtarların çevrimdışı yedeğini ve rotasyon prosedürünü ayrıca sürdür.
 - [x] GitHub Pages için manuel, master dalı ve açık `publish` seçimi isteyen
   statik registry taslağı eklendi. Build öncesi kaynak ağacı, Ed25519 paket ve
   v2 index imzaları, SHA-256, manifest/bağımlılık eşleşmesi, arşiv ve artifact
@@ -359,22 +361,18 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   denemesi, assembler'ın `<ad>/<sürüm>.tar.gz` yolunu doğrulayıcıyla
   uyumsuz buldu; validator istemciyle aynı yolu kullansın diye düzeltildi ve
   `test_sample_scan_report_signed_registry_release_preflight` içine bağlandı.
-  Temiz klon + geçici anahtarlarla uçtan uca prova geçti. Pages'i açmaz, deploy
-  başlatmaz; hosting/anahtar ve GitHub environment koruma ayarları dış karar
-  olarak açık kalır. İlgili Pages/registry/release-preflight hedef testleri
+  Temiz klon + geçici anahtarlarla uçtan uca prova geçti. Bu madde ilk taslak
+  aşamasındaki preflight kanıtıdır; Pages açma ve deploy işi aşağıdaki yeni G4
+  maddelerinde tamamlandı. İlgili Pages/registry/release-preflight hedef testleri
   **14 geçti**. Güncel `586de93` CI **7/7 başarılı**: Python 3.10–3.13'te
   her biri 1583 geçti/27 ortam skip'i, 55 doküman testi; native Linux/Windows/
   macOS smoke **3/3**. Önceki `8d633b5` yerel tam paketinde Pages taslağı
   dâhil **1610 geçti, 0 hata, 0 skip** (1396,94 sn). İnceleme raporu:
   [`2026-11-17-github-pages-registry-draft.md`](docs/reports/2026-11-17-github-pages-registry-draft.md).
-- [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
-  `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
-  sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
-  → registry assemble → temiz tüketicide install/test akışını belgele ve
-  regresyon testi ekle. Akış yerel tüketici testlerinde 2/2 geçti; bu resmi
-  yayın değildir. Ayrı anahtarlı Registry v2 imza/sequence akışı bu turda eklendi;
-  hosting, üretim anahtarı işletimi ve ilk kullanımda eski index'in
-  önlenememesi hâlâ açık yayın sınırlarıdır.
+- [x] `docs/REGISTRY.md` canlı default endpoint'i, trust anchor varsayılanlarını,
+  local `file://` tüketici akışını ve Pages yayın prosedürünü açıklıyor; docs/
+  registry Pages hedef testleri **15 geçti**. İlk bağlantıda eski imzalı index
+  riski teknik sınır olarak belgeli kalır.
 - [x] İmzalı örnek paket yayın ön kontrolünü Windows/macOS dâhil native smoke'a
   ekle. Windows'ta eski konsol kodlamalarının Türkçe çıktıyı kaçış dizisine
   çevirmesi nedeniyle testteki iki metin karşılaştırması sayısal özete
