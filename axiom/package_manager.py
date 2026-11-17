@@ -53,6 +53,20 @@ _REGISTRY_INDEX_ENTRY_KEYS = {"version", "sha256", "sig", "dependencies", "yanke
 _REGISTRY_CONSTRAINT_PART_RE = re.compile(
     r"^(?:>=|<=|>|<|=|\^|~)?\s*\d+(?:\.\d+){0,2}$"
 )
+
+
+def _configure_cli_output() -> None:
+    """Escape characters that the active console encoding cannot represent."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is None:
+            continue
+        try:
+            reconfigure(errors="backslashreplace")
+        except (OSError, ValueError):
+            pass
+
+
 class TomlWriter:
     """Temiz ve standart TOML çıktı serileştirici."""
     @staticmethod
@@ -1520,6 +1534,7 @@ fn main() -> void {{
 
 
 def main(argv: Optional[List[str]] = None):
+    _configure_cli_output()
     parser = argparse.ArgumentParser(
         prog="axpm",
         description=f"{CLR_BOLD}axpm (Axiom Package Manager){CLR_RESET} - Deterministik Axiom Paket ve Bağımlılık Yöneticisi"

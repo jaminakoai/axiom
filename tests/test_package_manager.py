@@ -761,6 +761,18 @@ def test_cli_axpm_integration(tmp_path):
     assert "Axiom Paketi Çalışıyor: cli_test_pkg" in res_r.stdout
 
 
+def test_axpm_cli_survives_ascii_console_encoding(tmp_path):
+    env = os.environ.copy()
+    env["PYTHONIOENCODING"] = "ascii:strict"
+    result = subprocess.run(
+        _axpm_command("init", tmp_path / "ascii-console-package"),
+        env=env, capture_output=True, text=True,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert r"\u2713" in result.stdout
+
+
 def test_git_dependency_clone_and_lock_verification(tmp_path):
     # 1. Uzak sahte Git deposu oluştur (bare veya yerel git repo)
     git_repo = tmp_path / "remote_git_lib"
