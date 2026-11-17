@@ -168,12 +168,14 @@ design*; measurements and caveats are in "Claims and evidence" below:
   Python 3.10+, `clang` or `gcc`, and OpenSSL/zlib development headers
   (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`). **ARM64 is experimental and
   unverified.**
-* **Windows:** A clean install and native example build/run smoke test pass in
-  CI with Python 3.12, LLVM `clang`, and the MSVC/Windows SDK toolchain. The full
-  suite, `axiom-scan`, and manual installation steps are not yet verified.
-* **macOS:** The same smoke test passes in CI with Python 3.12 and Xcode Command
-  Line Tools `clang`. The full suite, `axiom-scan`, and manual installation
-  steps are not yet verified.
+* **Windows:** Native example build/run and the documented harmless
+  `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
+  and MSVC/Windows SDK ([run 44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057)).
+  The full suite, real file/PCAP workflow, and manual installation are not yet
+  verified.
+* **macOS:** The same native build/run and sentinel smoke tests pass in CI with
+  Python 3.12 and Xcode Command Line Tools `clang` (same CI run). The full
+  suite, real file/PCAP workflow, and manual installation are not yet verified.
 
 See [docs/VERSIONING.md](docs/VERSIONING.md) for versioning and the verified
 platform support matrix.

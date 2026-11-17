@@ -56,10 +56,11 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
 | Platform | Verified scope | Limit |
 |---|---|---|
 | Linux x86_64 | Full CI suite on Python 3.10–3.13; native build and `axiom-scan` | Documented Linux system libraries are required |
-| Windows | Clean install and native example build/run smoke test with Python 3.12 | Full pytest suite, `axiom-scan`, and manual install are unverified |
-| macOS | Clean install and native example build/run smoke test with Python 3.12 | Full pytest suite, `axiom-scan`, and manual install are unverified; no general CPU-architecture claim |
+| Windows | Native example build/run and harmless `axiom-scan` sentinel smoke with Python 3.12 (run 44020276057) | Full pytest suite, real file/PCAP workflow, and manual install are unverified |
+| macOS | Native example build/run and harmless `axiom-scan` sentinel smoke with Python 3.12 (run 44020276057) | Full pytest suite, real file/PCAP workflow, and manual install are unverified; no general CPU-architecture claim |
 | Linux ARM64 | Experimental target | No native full-suite or `axiom-scan` verification |
 | AArch64/WASM cross-targets | Experimental | Require an external toolchain and sysroot; no general support promise |
 
 Update this table, both READMEs, and CI together when platform evidence changes.
-A smoke test is not presented as full-suite or product-workflow verification.
+The sentinel smoke is limited to the documented synthetic onboarding path; it
+does not establish full-suite or real file/PCAP workflow support.

@@ -168,12 +168,14 @@ bölümündedir:
   Python 3.10+, `clang` veya `gcc`, OpenSSL ve zlib geliştirme başlıkları
   gerekir (Debian/Ubuntu: `libssl-dev`, `zlib1g-dev`). **ARM64 deneysel olup
   doğrulanmamıştır.**
-* **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile temiz kurulum +
-  native örnek derle/çalıştır duman testi CI'da geçti. Tam test paketi,
-  `axiom-scan` ve el ile kurulum adımları henüz doğrulanmadı.
-* **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı duman
-  testi geçti. Tam test paketi, `axiom-scan` ve el ile kurulum adımları henüz
+* **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile native örnek
+  derleme/çalıştırma ve belgelenen zararsız `axiom-scan` sentinel smoke testi
+  CI'da geçti ([run 44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057)).
+  Tam test paketi, gerçek dosya/PCAP iş akışı ve elle kurulum adımları henüz
   doğrulanmadı.
+* **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı native
+  derleme/çalıştırma ve sentinel smoke testleri geçti (aynı CI run). Tam test
+  paketi, gerçek dosya/PCAP iş akışı ve elle kurulum adımları doğrulanmadı.
 
 Sürümleme ve doğrulanmış platform kapsamı: [docs/VERSIONING.md](docs/VERSIONING.md).
 

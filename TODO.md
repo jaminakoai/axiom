@@ -15,7 +15,7 @@
 | Son tamamlanmış tam test paketi | GitHub Actions `3da8291`: Python 3.10–3.13'te her biri 1586 geçti / 27 skip, doküman blokları 55 geçti; [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
 | Son CI denemesi | `3da8291` [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
 | Son başarılı tam CI | `3da8291` [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
-| Son platform smoke | `3da8291`, native build/registry/PCAP Linux/Windows/macOS run [44017836492](https://github.com/jaminakoai/axiom/actions/runs/44017836492), **3/3 başarılı** |
+| Son platform smoke | `09c4206`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `586de93` — [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
@@ -301,19 +301,20 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   paket CI'si Linux'ta kalıyor.
 - [x] Temiz runner'larda kurulum/yerel örnek derle-çalıştır akışını doğrula;
   Linux, Windows ve macOS test kapsamını ve Linux sistem kütüphanesi
-  gereksinimlerini iki README'de açıkça yaz. Windows/macOS için tam test paketi,
-  `axiom-scan` ve elle kurulum adımlarının henüz doğrulanmadığı açıkça belirtili.
+  gereksinimlerini iki README'de açıkça yaz. Tam test paketi ve elle kurulum
+  adımlarının Windows/macOS'ta doğrulanmadığı açıkça belirtili.
 - [x] Yeni fail-closed classic PCAP okuyucu sınır testlerini native
   Linux/Windows/macOS smoke matrisinde çalıştır; run
   [43998977308](https://github.com/jaminakoai/axiom/actions/runs/43998977308),
-  3/3 geçti. Bu dar PCAP testi geçse bile tam
-  `axiom-scan` iş akışı ve tam pytest paketi bu platformlarda doğrulanmış
-  sayılmaz.
-- [ ] Belgelenen zararsız `axiom-scan` onboarding akışını (`rules` + sentinel
-  `scan`) Windows/macOS native smoke'a ekle. Linux'ta yerel hedef testi geçti;
-  çapraz platform kanıtı yeni CI koşusunda bekleniyor. Bu yalnız sentetik
-  başlangıç akışını kanıtlar; tam test paketi ve kullanıcı verisiyle deneme
-  yerine geçmez.
+  3/3 geçti. Bu dar PCAP testi geçse bile gerçek kullanıcı girdili tam iş akışı
+  ve tam pytest paketi bu platformlarda doğrulanmış sayılmaz.
+- [x] Belgelenen zararsız `axiom-scan` onboarding akışını (`rules` + sentinel
+  `scan`) native smoke'a ekle. GitHub Actions run
+  [44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057)
+  Linux, Windows ve macOS'ta **3/3 başarılı**: örnek derlendi, tek sentinel
+  kuralı doğrulandı ve beklenen offset/length/hash ile tarandı. Bu sentetik
+  başlangıç akışını kanıtlar; tam pytest paketi veya bağımsız gerçek dosya/PCAP
+  denemesinin yerine geçmez.
 - [x] Registry paketlerinin imza/checksum/bozuk cache testleri zaten vardı;
   sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;
@@ -558,7 +559,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 | Blok | Durum | Etki |
 |---|---|---|
 | Paket sayısı | altyapı hazır, **0 yayınlanmış paket** | Dış katkı pratikte yok |
-| Windows/macOS | Native build + registry cache smoke Linux/Windows/macOS'ta 3/3 geçti; tam pytest ve `axiom-scan` yalnız Linux'ta doğrulanıyor | Platform kapsamı hâlâ sınırlı |
+| Windows/macOS | Native build + registry/PCAP + sentinel `axiom-scan` onboarding smoke Linux/Windows/macOS'ta 3/3 geçti; tam pytest ve gerçek kullanıcı girdisi sınanmadı | Platform kapsamı hâlâ sınırlı |
 | Self-hosted eşitlik | **21/21** ✅ (4→8→11→12→15→21) | Tam parite |
 | IANA saat dilimi / DST | sabit ofset (bilinçli sınır) | Takvim uygulamaları için yetersiz |
 | NFKC/NFKD | yok (NFC/NFD tam) | Homoglif normalleştirmesi yok |
@@ -1367,8 +1368,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `4d81ffe`: Python 3.10–13’te her biri 1573 geçti/27 skip; doküman 55, YARA differential 29, sanitizer 40, LLVM 20 geçti; 7/7 başarılı | Run 43998977282 | 2000 |
-| Son native platform smoke | `4d81ffe`: PCAP + cache/file URL + signed index + build/run Linux/Windows/macOS 3/3 başarılı | Run 43998977308 | — |
+| Son tam CI | `3da8291`: Python 3.10–13'te her biri 1586 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44017836432 | 2000 |
+| Son native platform smoke | `09c4206`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44020276057 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1377,7 +1378,7 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 | Üretim kullanıcısı | 0 | 1 | 3 |
 | Self-hosted örnek | **21/21** ✅ | 8/21 | 21/21 |
 | C'ye hız oranı (aritmetik) | 1,5–2,2× | ≤2× | ≤1,5× |
-| Platform | Linux tam CI; Windows/macOS native smoke 3/3; tam pytest/scan doğrulaması Linux'ta | 2 işletim sistemi runner'ı | 2+ gerçek runner |
+| Platform | Linux tam CI; Windows/macOS native scan sentinel smoke 3/3; tam pytest ve gerçek kullanıcı girdili scan doğrulaması henüz yok | 2 işletim sistemi runner'ı | 2+ gerçek runner |
 
 ---
 
@@ -1406,8 +1407,9 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    gizli olmayan geri bildirimi kaydet ve bulguları önceliklendir.
 2. **G4:** örnek paket için upload/hosted registry yazma yolunu ve resmi imza
    anahtarı işletimini kararlaştır; en az bir sürümlü paketi gerçekten yayımla.
-   G4 platform smoke kısmı Linux/Windows/macOS'ta geçti, fakat tam test/scan
-   kapsamı Windows/macOS'ta doğrulanmış değildir.
+   G4 platform smoke Linux/Windows/macOS'ta geçti; sentetik onboarding scan'i
+   üçünde doğrulandı. Tam pytest paketi ve gerçek kullanıcı girdisiyle scan
+   Windows/macOS'ta doğrulanmış değildir.
 3. **G5:** kullanıcı kanıtı ve bakım kapasitesi oluştuktan sonra 1.0 ve ekosistem
    hedeflerini kararlaştır.
 
