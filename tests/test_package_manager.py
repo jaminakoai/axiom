@@ -595,7 +595,10 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
         capture_output=True, text=True,
     )
     assert installed_tests.returncode == 0, installed_tests.stdout + installed_tests.stderr
-    assert "1/1 test başarılı" in installed_tests.stdout
+    # Console encodings such as Windows' cp1252 cannot represent every Turkish
+    # character, so axpm intentionally emits backslash escapes in that case.
+    # The numeric summary is stable across both UTF-8 and legacy consoles.
+    assert "1/1 test" in installed_tests.stdout
 
     (app / "tests" / "test_main.ax").write_text(
         'import "axiom-scan-report"\n\n'
