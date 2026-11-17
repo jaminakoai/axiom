@@ -19,7 +19,7 @@
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `2b73fea` — [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
-| Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
+| Son tam yerel test paketi | `0b53c17` içeriği: **1616 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1341 sn) |
 
 ---
 
@@ -40,10 +40,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
   Bu karar bağımsız usability, market-fit veya gerçek kullanıcı girdisi kanıtı
   değildir; dış deneme rehberi isteğe bağlı geri bildirim için duruyor.
-- Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
-  paket hazırlama akışı var; resmi paket yayımlanmış değil. Yükleme yolu ve resmi
-  imza anahtarı işletimi hâlâ belirlenmeli. Varsayılan registry alan adı henüz
-  dağıtılmadı; doküman bunu açıkça belirtiyor ve çalışan yerel `file://` akışını gösteriyor.
+- Registry için örnek paket (`packages/axiom-scan-report`) var. Resmî Pages adresi
+  `https://jaminakoai.github.io/axiom/registry` olarak seçildi; default URL ve
+  paketlenmiş public trust anchor’lar `0b53c17` ile eklendi. Yerel signing key’ler
+  repo dışında tutuluyor. İmzalı schema 2 snapshot hazırlandı; Pages etkinleştirme,
+  environment koruması ve gerçek HTTPS tüketici doğrulaması bu G4 adımında sürüyor.
 - Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
   imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
   regresyon kanıtı eklendi. Ayrı anahtarlı imzalı schema 2 index ve gözlemlenmiş
@@ -56,11 +57,12 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - G1 kapandı: YARA 4.5.4 differential, C/LLVM parity, runtime limit kontrolleri
   ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
   değildir.
-- İlk güvenilir public release hedefine göre yaklaşık **%75** ilerleme tahmini
+- İlk güvenilir public release hedefine göre yaklaşık **%85** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
   isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
-  doğrulanmış sayılmaz. G4 resmi örnek paket yayını ve operasyon kararları
-  açıktır. Yüzde kaba milestone tahminidir; yayın altyapısı süresini öngörmez.
+  doğrulanmış sayılmaz. G4 signing/default trust ve imzalı snapshot hazırlığı
+  tamamlandı; gerçek Pages deploy ve temiz HTTPS tüketici doğrulaması açıktır.
+  Yüzde kaba milestone tahminidir, kullanıcı benimsemesini ölçmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
   `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
@@ -333,83 +335,20 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   için tam CI 7/7 geçti: Python 3.10–3.13'te her biri 1508 geçti/27 skip,
   doküman kod blokları 55 geçti. Platform smoke Linux/Windows/macOS'ta 3/3
   geçti (run 43895118939); önceki parite hatası kapandı.
-- [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
-  Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
-  genel amaçlı upload komutu ve resmi imza anahtarı işletimi yok. GitHub Pages
-  için yalnız manuel çalıştırılan taslak yayın workflow'u eklendi; Pages henüz
-  etkin değil ve hiçbir registry yayımlanmadı. **Yayın workflow'unda
-  `registry-site/` kaynağı depoda bulunmuyor; mevcut haliyle elle tetiklenen
-  yayın doğrulaması kaynak dizini olmadığı için başarısız olur.** İmzalı,
-  sürümlü kaynak ağacı güvenli biçimde hazırlandıktan sonra commit edilmeli ya da
-  workflow bu girdiyi üretim anahtarı işletimine uygun bir yoldan oluşturmalı.
-  `docs/REGISTRY.md` şimdi onaylanmış yerel release anahtarlarıyla schema 2
-  `registry-site` snapshot'ını hazırlama ve doğrulama adımlarını belgeliyor;
-  adımlar temiz klonda geçici anahtarlarla uçtan uca tekrar çalıştırıldı;
-  artifact doğrulandı ve özel anahtar içermedi. Gerçek kaynak, üretim anahtar
-  politikası kararlaştırılmadan oluşturulmuş sayılmaz.
-  Güncel `7f14d0b` worktree'sinde release preflight, Pages validator ve registry
-  dokümantasyon testleri **16 geçti** (3,06 sn): geçici Ed25519 anahtarları,
-  schema 2 assemble ve Pages artifact doğrulaması. Bu test herhangi bir yeri
-  yayımlamaz; ayrıntı [G4 preflight raporunda](docs/reports/2026-11-17-g4-registry-preflight.md).
-  `packages/axiom-scan-report`
-  kaynak örneği ve gerçek path bağımlılık testi hazır, ancak bunlar resmi yayın
-  sayılmaz. Bunlar çözülüp örnek paket gerçekten
-  yayınlanmadan bu madde kapanmaz.
-  Hosting kararı için anlık kanıt: GitHub deposu public (`master`), Pages etkin
-  değil (`gh api repos/jaminakoai/axiom/pages` → HTTP 404) ve
-  `registry.axiom-lang.org` DNS'te çözülmüyor. Taslak Pages URL'si proje yolu
-  için `https://jaminakoai.github.io/axiom/registry`; varsayılan registry URL'i,
-  Pages'i etkinleştirme, `github-pages` environment reviewer/branch koruması ve
-  resmi imza anahtarı politikası hâlâ maintainer kararı bekliyor. Taslak workflow
-  yalnızca public key dosyalarını doğrulamada kullanır; artifact'e koymaz ve özel
-  anahtar/secret gerektirmez.
-  Yerel teknik akış uçtan uca doğrulandı: imzalı `pack`, Ed25519 doğrulaması,
-  geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
-  kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
-  CI'da gerçek `axiom-scan-report` örneğini geçici anahtarla paketleyip imzalayan,
-  yerel registry'den temiz tüketiciye kuran, kurulu paketin kendi testini ve
-  tüketici import testini `axpm test` ile çalıştıran yayın ön kontrolü eklendi.
-  `axpm registry assemble --from ... --output ... --public-key ...` komutu
-  paket çıktısını imza/SHA/manifest kontrollerinden geçirerek deterministik,
-  çevrimdışı statik Registry v1 veya ayrı anahtarla imzalı v2 dosya düzenine
-  dönüştürüyor. Pages yayın doğrulaması artık yalnız schema 2'yi kabul ediyor;
-  imzasız v1 index üretim yayınına alınamıyor. Schema 2, 90 günlük süre ve
-  gözlemlenmiş sequence rollback kontrollerini içeriyor; ilk bağlantıdaki eski
-  index'i kanıtlayamaz ve yerel
-  rollback state silinebilir. Hiçbir yere yükleme yapmıyor. Kanıt:
-  `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
-  İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;
-  kötü niyetli arşiv regresyonları test edildi. Cache isabetlerinde güncel imza/
-  unsigned politikası ve açılmış dosyaların tarball bütünlüğü de yeniden
-  doğrulanıyor; `docs/reports/2026-11-16-registry-cache-integrity.md` içinde 73
-  registry/paket-yöneticisi testiyle kanıtlandı. Son güvenlik incelemesi ayrıca
-  istemcinin tarball içindeki imzalı `axiom.toml` adını, sürümünü ve bağımlılık
-  haritasını unsigned index kaydıyla karşılaştırmadığını gösterdi. Client artık
-  bu karşılaştırmayı hem indirmede hem cache hit'te yapıyor; PackageManager
-  çözümlediği bağımlılık haritasını doğrulamaya geçiriyor. Registry ve paket
-  yöneticisi hedef testleri yeni regresyonlarla **104 geçti**; kayıt şeması
-  doğrulaması da buna dahildir. Güncel doküman+registry+paket yöneticisi hedef
-  paketi **118 geçti** (cc7de3a), MinGW/Windows taşınabilirlik testi **34 geçti**. Ayrıntı
-  ve kalan ilk-bağlantı rollback sınırı
-  `docs/reports/2026-11-16-registry-index-metadata-binding.md`. İmzalı schema 2
-  biçimi uygulanmıştır; resmi yayın öncesi hosting, üretim anahtarı koruma/
-  rotasyonu ve ilk bağlantı rollback sınırını operasyonel olarak kabul et.
-  Sequence-state kilidinin iki süreç arasındaki bloklama testi `cc7de3a` ile
-  Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
-  OpenSSL Ed25519 doğrulama/rollback testleri de `4bf3b8b` ile native smoke'a
-  eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
-  Önceki tam CI `52544da` [run 43987784851](https://github.com/jaminakoai/axiom/actions/runs/43987784851)
-  için 7/7 geçti: Python 3.10–3.13'ün her birinde 1558 geçti/27 skip ve 55
-  doküman testi geçti. Son tam CI `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282)
-  için 7/7 geçti: Python 3.10–3.13'ün her birinde **1573 geçti/27 skip**,
-  doküman kod bloklarında 55, sabitlenmiş YARA differential testinde 29 geçti;
-  ASan/UBSan paketi 40 geçti ve LLVM testi 20 geçti. Son native smoke `4d81ffe`
-  [run 43998977308](https://github.com/jaminakoai/axiom/actions/runs/43998977308)
-  Linux, Windows ve macOS'ta 3/3 geçti; classic PCAP smoke adımı da üçünde başarılı.
-  27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
-  11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
-  tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `52544da`
-  için Linux/Windows/macOS'ta 3/3 başarılı: [run 43987784833](https://github.com/jaminakoai/axiom/actions/runs/43987784833).
+- [x] Resmî registry adresi ve iki ayrı Ed25519 trust anchor belirle; istemcinin
+  varsayılan URL ve anahtarları wheel paketinde taşıdığını doğrula. Anahtarlar
+  `~/.config/axiom/registry-keys` altında (dizin 0700, private PEM 0600),
+  repo dışındadır. `0b53c17` commit'i push edildi. Registry hedef testleri ve
+  docs testleri 117/117 geçti; wheel içindeki iki PEM kontrol edildi.
+- [x] `axiom-scan-report` 0.1.0 için Ed25519 imzalı schema 2 snapshot oluştur;
+  Pages validator geçsin ve ayrı temiz tüketici local `file://` registry'den
+  paketi indirip doğrulasın/kurup test etsin. `axpm test` 2/2 geçti. Tam test
+  paketi `python -m pytest -q --tb=short`: **1616 geçti, 0 hata, 0 skip**
+  (1341 sn). Snapshot `registry-site/` altında hazır; henüz commit/publish edilmedi.
+- [ ] Pages’i workflow kaynağıyla etkinleştir, `github-pages` environment’i
+  reviewer + yalnız `master` dalı ile koru, imzalı snapshot’ı deploy et ve resmi
+  default URL üzerinden temiz tüketici kurulumunu doğrula. Bu tamamlanana dek G4
+  örnek paket yayını kapanmış sayılmaz.
 - [x] GitHub Pages için manuel, master dalı ve açık `publish` seçimi isteyen
   statik registry taslağı eklendi. Build öncesi kaynak ağacı, Ed25519 paket ve
   v2 index imzaları, SHA-256, manifest/bağımlılık eşleşmesi, arşiv ve artifact
