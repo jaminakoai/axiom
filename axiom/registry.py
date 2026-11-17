@@ -41,7 +41,7 @@ except ModuleNotFoundError:  # Python 3.10
     import tomli as tomllib
 
 SCHEMA_VERSION = 1
-DEFAULT_REGISTRY = "https://registry.axiom-lang.org"
+DEFAULT_REGISTRY = "https://jaminakoai.github.io/axiom/registry"
 _SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _REGISTRY_PACKAGE_NAME_RE = re.compile(r"^(@[A-Za-z0-9_.-]+/)?[A-Za-z0-9_.-]+$")
 _MAX_REGISTRY_INDEX_BYTES = 16 * 1024 * 1024
@@ -519,6 +519,15 @@ class RegistryConfig:
         key = os.environ.get("AXIOM_REGISTRY_KEY") or reg.get("public_key")
         index_key = (os.environ.get("AXIOM_REGISTRY_INDEX_KEY")
                      or reg.get("index_public_key"))
+        # Ship trust anchors for the official endpoint so a clean consumer can
+        # verify packages and the signed schema-2 index without per-project PEMs.
+        if url.rstrip("/") == DEFAULT_REGISTRY:
+            key = key or Path(__file__).with_name("registry-package-public.pem").read_text(
+                encoding="ascii"
+            )
+            index_key = index_key or Path(__file__).with_name(
+                "registry-index-public.pem"
+            ).read_text(encoding="ascii")
         allow = (os.environ.get("AXIOM_ALLOW_UNSIGNED") == "1"
                  or bool(reg.get("allow_unsigned", False)))
         return cls(url=url, public_key=key, index_public_key=index_key,

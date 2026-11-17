@@ -19,17 +19,19 @@ Registry v1 bunları çözer: **içerik-adresli depo + ed25519 imza + semver + t
 
 ## 2. Yapılandırma
 
-> **Yayın durumu:** `registry.axiom-lang.org` henüz dağıtılmamıştır ve şu anda
-> çalışan bir registry adresi değildir. İstemcideki `DEFAULT_REGISTRY` değeri
-> geçici hedef olarak bu alan adını gösterir. Registry adresi açıkça
-> yapılandırılmadan `axpm add`, `install` veya `search` komutlarının bu adreste
-> çalışmasını beklemeyin. Resmî hosting ve imza anahtarı işletimi hazır değildir.
+> **Resmî adres:** `https://jaminakoai.github.io/axiom/registry`. İstemci bu
+> adresi varsayılan kullanır ve Axiom dağıtımındaki paket/index açık anahtarları
+> ile imzaları doğrular. Özel registry kullanırken kendi açık anahtarlarınızı
+> yapılandırın. Yayındaki paket ve index imzaları ayrı Ed25519 özel anahtarlarıyla
+> oluşturulur; özel anahtarlar depoya eklenmez.
+> Bu URL, istemcideki `DEFAULT_REGISTRY` değeridir.
 
 `axiom.toml` içinde:
 
 ```toml
 [registry]
-url = "https://registry.axiom-lang.org" # henüz dağıtılmadı; aktif adres değildir
+url = "https://jaminakoai.github.io/axiom/registry"
+# Resmî adres için public_key ve index_public_key varsayılan olarak gelir.
 public_key = """
 -----BEGIN PUBLIC KEY-----
 MCowBQYDK2VwAyEAG...
@@ -184,13 +186,11 @@ her değişiklikte artırmalı, özel anahtarı korumalı ve istemcilerdeki güv
 anahtar dağıtımını yönetmelidir. Komut hiçbir yere yükleme yapmaz; hosting ve
 üretim anahtarı işletimi ayrıca çözülmelidir.
 
-### GitHub Pages yayın taslağı (henüz etkin değil)
+### GitHub Pages yayını
 
-Repository Pages şu anda etkin değildir ve bu rehber resmi yayın yapıldığı
-anlamına gelmez. İsteğe bağlı manuel workflow
+İmzalı registry snapshot'ı GitHub Pages üzerinde barındırılır. Manuel workflow
 `.github/workflows/publish-registry-pages.yml` yalnızca `master` üzerinde
-`publish` onayıyla çalışır. GitHub Pages repository ayarında Actions kaynağı
-etkinleştirilmeden deploy adımı başarılı olamaz.
+`publish` onayıyla çalışır. GitHub Pages repository kaynağı Actions olmalıdır.
 
 Yayın için offline hazırlanan statik registry ağacını `registry-site/registry/`
 altına koyun. `registry-site/package-public-key.pem` paket anahtarının açık
@@ -256,19 +256,17 @@ cp -a "$SOURCE" "$REPO_ROOT/registry-site"
 Bu adım yalnızca yerel snapshot hazırlar; `registry-site/` içeriği ve release
 metadata'sı gözden geçirilmeden commit edilmemeli. Sonra iki açık PEM ile
 `registry/index.json`, imzası ve sürümlü tarball commit edilebilir. Index
-sequence her yeni yayında artırılmalı. Özel anahtarların yönetimi ve
-`github-pages` environment koruması ayrı release kararlarıdır; bu tarif yeni
-anahtar üretmez veya yayın workflow'unu çalıştırmaz.
+sequence her yeni yayında artırılmalı. Yayın anahtarlarının şifreli yedeğini
+güvenli bir çevrimdışı konumda tutun; kayıp veya sızıntı halinde istemcilerdeki
+güven anahtarlarını güncelleyen bir Axiom sürümü gerekir.
 
 Site kökünde bir Pages giriş dosyası, `.nojekyll` ve `/registry/` ağacı
 oluşturulur. Beklenen registry URL'si project-site yolu kullanılırsa
-`https://jaminakoai.github.io/axiom/registry` olur. Bu taslak hosting'i açmaz,
-siteyi deploy etmez ve resmi imza anahtarı üretmez. Workflow izinleri deploy
+`https://jaminakoai.github.io/axiom/registry` olur. Workflow izinleri deploy
 işinde `pages: write` ve `id-token: write` ile sınırlıdır. `publish` seçimi
 manuel teyittir; tek başına reviewer onayı sağlamaz. Deploy öncesi repository
 Settings'te Pages kaynağı Actions yapılmalı; `github-pages` environment için
-yalnız `master` branch'ine izin verilip required reviewer eklenmelidir. Bu
-GitHub ayarları henüz uygulanmadı.
+yalnız `master` branch'ine izin verilip required reviewer eklenmelidir.
 
 ---
 

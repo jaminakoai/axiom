@@ -6,12 +6,12 @@ ROOT = Path(__file__).resolve().parent.parent
 REGISTRY_GUIDE = ROOT / "docs" / "REGISTRY.md"
 
 
-def test_registry_guide_marks_default_host_as_not_deployed():
+def test_registry_guide_documents_official_default_and_bundled_trust_anchors():
     text = REGISTRY_GUIDE.read_text(encoding="utf-8")
 
-    assert "registry.axiom-lang.org` henüz dağıtılmamıştır" in text
+    assert "https://jaminakoai.github.io/axiom/registry" in text
     assert "`DEFAULT_REGISTRY`" in text
-    assert 'url = "https://registry.axiom-lang.org" # henüz dağıtılmadı' in text
+    assert "paket/index açık anahtarları" in text
 
 
 def test_registry_guide_documents_local_file_registry_round_trip():

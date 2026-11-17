@@ -44,7 +44,12 @@ axiom-lsp = "axiom.lsp:main"
 packages = ["axiom"]
 
 [tool.setuptools.package-data]
-axiom = ["runtime.h", "axiom_llvm_runtime.c"]
+axiom = [
+    "runtime.h",
+    "axiom_llvm_runtime.c",
+    "registry-package-public.pem",
+    "registry-index-public.pem",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

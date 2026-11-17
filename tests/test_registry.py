@@ -80,6 +80,28 @@ def test_registry_config_keeps_existing_positional_arguments_compatible(tmp_path
     assert config.cache_dir == tmp_path
 
 
+def test_official_registry_defaults_to_bundled_package_and_index_trust_anchors(monkeypatch):
+    for name in ("AXIOM_REGISTRY", "AXIOM_REGISTRY_KEY", "AXIOM_REGISTRY_INDEX_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+    config = RegistryConfig.from_manifest({})
+
+    assert config.url == registry_module.DEFAULT_REGISTRY
+    assert "BEGIN PUBLIC KEY" in config.public_key
+    assert "BEGIN PUBLIC KEY" in config.index_public_key
+    assert config.public_key != config.index_public_key
+
+
+def test_custom_registry_does_not_inherit_official_trust_anchors(monkeypatch):
+    for name in ("AXIOM_REGISTRY_KEY", "AXIOM_REGISTRY_INDEX_KEY"):
+        monkeypatch.delenv(name, raising=False)
+
+    config = RegistryConfig.from_manifest({"registry": {"url": "https://mirror.example"}})
+
+    assert config.public_key is None
+    assert config.index_public_key is None
+
+
 # ---------------------------------------------------------------------------
 # Çözümleme
 # ---------------------------------------------------------------------------
