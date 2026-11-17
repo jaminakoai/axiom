@@ -184,6 +184,39 @@ her değişiklikte artırmalı, özel anahtarı korumalı ve istemcilerdeki güv
 anahtar dağıtımını yönetmelidir. Komut hiçbir yere yükleme yapmaz; hosting ve
 üretim anahtarı işletimi ayrıca çözülmelidir.
 
+### GitHub Pages yayın taslağı (henüz etkin değil)
+
+Repository Pages şu anda etkin değildir ve bu rehber resmi yayın yapıldığı
+anlamına gelmez. İsteğe bağlı manuel workflow
+`.github/workflows/publish-registry-pages.yml` yalnızca `master` üzerinde
+`publish` onayıyla çalışır. GitHub Pages repository ayarında Actions kaynağı
+etkinleştirilmeden deploy adımı başarılı olamaz.
+
+Yayın için offline hazırlanan statik registry ağacını `registry-site/registry/`
+altına koyun. `registry-site/package-public-key.pem` paket anahtarının açık
+anahtarıdır; schema 2 kullanılıyorsa `registry-site/index-public-key.pem` ayrı
+index açık anahtarını içerir. Bu dosyalar yalnızca açık anahtardır. Workflow
+özel anahtara erişmez; registry build adımı her tarball'ın SHA-256 ve Ed25519
+imzasını, arşiv sınırlarını ve imzalı manifest/bağımlılık eşleşmesini doğrular.
+Schema 2 index imzası, geçerlilik süresi ve 90 günlük üst sınır da doğrulanır.
+Bu PEM dosyaları doğrulama girdisidir; yayımlanan Pages artifact'ine kopyalanmaz.
+
+Deploy öncesi aynı kontrolü yerelde çalıştırabilirsiniz:
+
+```bash
+python -m axiom.registry_pages --source registry-site --output /tmp/axiom-pages
+```
+
+Site kökünde bir Pages giriş dosyası, `.nojekyll` ve `/registry/` ağacı
+oluşturulur. Beklenen registry URL'si project-site yolu kullanılırsa
+`https://jaminakoai.github.io/axiom/registry` olur. Bu taslak hosting'i açmaz,
+siteyi deploy etmez ve resmi imza anahtarı üretmez. Workflow izinleri deploy
+işinde `pages: write` ve `id-token: write` ile sınırlıdır. `publish` seçimi
+manuel teyittir; tek başına reviewer onayı sağlamaz. Deploy öncesi repository
+Settings'te Pages kaynağı Actions yapılmalı; `github-pages` environment için
+yalnız `master` branch'ine izin verilip required reviewer eklenmelidir. Bu
+GitHub ayarları henüz uygulanmadı.
+
 ---
 
 ## 4. Depo biçimi

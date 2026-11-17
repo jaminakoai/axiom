@@ -20,6 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `4d81ffe` — [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
 | Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
+| Güncel çalışma ağacı tam test paketi | Pages taslağı ve testleri dâhil: **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn); henüz commit edilmedi |
 
 ---
 
@@ -327,14 +328,20 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   geçti (run 43895118939); önceki parite hatası kapandı.
 - [ ] En az bir resmi, sürümlenmiş örnek paketi yayınla. `axpm pack` artık temiz
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
-  upload komutu, barındırılan registry yazma yolu ve resmi imza anahtarı yönetimi
-  yok. `packages/axiom-scan-report` kaynak örneği ve gerçek path bağımlılık testi
-  hazır, ancak bunlar resmi yayın sayılmaz. Bunlar çözülüp örnek paket gerçekten
+  genel amaçlı upload komutu ve resmi imza anahtarı işletimi yok. GitHub Pages
+  için yalnız manuel çalıştırılan taslak yayın workflow'u eklendi; Pages henüz
+  etkin değil ve hiçbir registry yayımlanmadı. `packages/axiom-scan-report`
+  kaynak örneği ve gerçek path bağımlılık testi hazır, ancak bunlar resmi yayın
+  sayılmaz. Bunlar çözülüp örnek paket gerçekten
   yayınlanmadan bu madde kapanmaz.
   Hosting kararı için anlık kanıt: GitHub deposu public (`master`), Pages etkin
   değil (`gh api repos/jaminakoai/axiom/pages` → HTTP 404) ve
-  `registry.axiom-lang.org` DNS'te çözülmüyor. Uygun hedef seçilmeden yayın
-  altyapısı veya resmi imza anahtarı oluşturulamaz.
+  `registry.axiom-lang.org` DNS'te çözülmüyor. Taslak Pages URL'si proje yolu
+  için `https://jaminakoai.github.io/axiom/registry`; varsayılan registry URL'i,
+  Pages'i etkinleştirme, `github-pages` environment reviewer/branch koruması ve
+  resmi imza anahtarı politikası hâlâ maintainer kararı bekliyor. Taslak workflow
+  yalnızca public key dosyalarını doğrulamada kullanır; artifact'e koymaz ve özel
+  anahtar/secret gerektirmez.
   Yerel teknik akış uçtan uca doğrulandı: imzalı `pack`, Ed25519 doğrulaması,
   geçici `file://` registry indirmesi ve çıkarılan pakette `axpm test` 1/1 geçti;
   kanıt `docs/reports/2026-11-16-axpm-pack-local-registry-smoke.md`.
@@ -380,6 +387,18 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
   tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `52544da`
   için Linux/Windows/macOS'ta 3/3 başarılı: [run 43987784833](https://github.com/jaminakoai/axiom/actions/runs/43987784833).
+- [x] GitHub Pages için manuel, master dalı ve açık `publish` seçimi isteyen
+  statik registry taslağı eklendi. Build öncesi kaynak ağacı, Ed25519 paket ve
+  v2 index imzaları, SHA-256, manifest/bağımlılık eşleşmesi, arşiv ve artifact
+  boyutları doğrulanıyor; özel anahtar kabul edilmiyor ve public key dosyaları
+  yayımlanan artifact'e kopyalanmıyor. Symlink/special file ve tree/index
+  uyuşmazlığı fail-closed. Dört GitHub Action SHA ile sabitli; deploy izni
+  yalnız deploy job'unda. Pages'i açmaz, deploy başlatmaz; hosting/anahtar ve
+  GitHub environment koruma ayarları dış karar olarak açık kalır.
+  `tests/test_registry_pages.py` + registry doküman testleri **13 geçti**;
+  güncel çalışma ağacının tam `python -m pytest -q -rs` paketi **1610 geçti,
+  0 hata, 0 skip** (1396,94 sn). İnceleme raporu:
+  [`2026-11-17-github-pages-registry-draft.md`](docs/reports/2026-11-17-github-pages-registry-draft.md).
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket

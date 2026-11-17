@@ -1,0 +1,58 @@
+name: Publish signed registry to GitHub Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Confirm that the committed signed registry may become public
+        type: choice
+        required: true
+        options:
+          - cancel
+          - publish
+
+permissions:
+  contents: read
+
+concurrency:
+  group: axiom-registry-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    if: github.ref == 'refs/heads/master' && inputs.confirmation == 'publish'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Source'u salt okunur al
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: GitHub Pages yapılandırmasını doğrula
+        uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5
+
+      - name: İmzalı registry'yi doğrula ve site artifact'ini oluştur
+        run: python -m axiom.registry_pages --source registry-site --output _site
+
+      - name: Pages artifact'ini yükle
+        uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4
+        with:
+          path: _site
+
+  deploy:
+    if: github.ref == 'refs/heads/master' && inputs.confirmation == 'publish'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Pages artifact'ini yayınla
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4
