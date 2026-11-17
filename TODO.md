@@ -347,6 +347,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   adımlar temiz klonda geçici anahtarlarla uçtan uca tekrar çalıştırıldı;
   artifact doğrulandı ve özel anahtar içermedi. Gerçek kaynak, üretim anahtar
   politikası kararlaştırılmadan oluşturulmuş sayılmaz.
+  Güncel `7f14d0b` worktree'sinde release preflight, Pages validator ve registry
+  dokümantasyon testleri **16 geçti** (3,06 sn): geçici Ed25519 anahtarları,
+  schema 2 assemble ve Pages artifact doğrulaması. Bu test herhangi bir yeri
+  yayımlamaz; ayrıntı [G4 preflight raporunda](docs/reports/2026-11-17-g4-registry-preflight.md).
   `packages/axiom-scan-report`
   kaynak örneği ve gerçek path bağımlılık testi hazır, ancak bunlar resmi yayın
   sayılmaz. Bunlar çözülüp örnek paket gerçekten

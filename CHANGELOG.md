@@ -122,6 +122,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   okur; hata `Err`, boş dosya geçerli ve uzunluğu sıfır olan buffer'dır.
 
 ### Testler
+- Güncel G4 release preflight'ında geçici Ed25519 anahtarlarıyla sample pack,
+  schema 2 registry assemble ve Pages artifact doğrulaması 16 testle geçti;
+  hiçbir şey yayımlanmadı.
 - Maintainer isteğiyle G3 bağımsız kullanıcı kapısı, temiz klon ve YARA/Sigma/
   security/PCAP denetimiyle değiştirildi; üç hedefli grupta 258 test geçti.
 - Node.js 24 action güncellemesinden sonra tam CI 7/7 ve Linux/Windows/macOS
