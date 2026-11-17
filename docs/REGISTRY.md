@@ -194,8 +194,9 @@ etkinleştirilmeden deploy adımı başarılı olamaz.
 
 Yayın için offline hazırlanan statik registry ağacını `registry-site/registry/`
 altına koyun. `registry-site/package-public-key.pem` paket anahtarının açık
-anahtarıdır; schema 2 kullanılıyorsa `registry-site/index-public-key.pem` ayrı
-index açık anahtarını içerir. Bu dosyalar yalnızca açık anahtardır. Workflow
+anahtarıdır; `registry-site/index-public-key.pem` ayrı schema 2 index açık
+anahtarını içerir. Pages yayın doğrulaması schema 2 index'i zorunlu tutar; eski
+imzasız schema 1 registry'leri yayımlamaz. Bu dosyalar yalnızca açık anahtardır. Workflow
 özel anahtara erişmez; registry build adımı her tarball'ın SHA-256 ve Ed25519
 imzasını, arşiv sınırlarını ve imzalı manifest/bağımlılık eşleşmesini doğrular.
 Schema 2 index imzası, geçerlilik süresi ve 90 günlük üst sınır da doğrulanır.

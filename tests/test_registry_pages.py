@@ -55,7 +55,7 @@ def _archive(name: str = "axiom-scan-report", version: str = "0.1.0") -> bytes:
     return payload.getvalue()
 
 
-def _registry_tree(root: Path, *, schema: int = 1) -> tuple[Path, bytes]:
+def _registry_tree(root: Path, *, schema: int = 2) -> tuple[Path, bytes]:
     site = root / "registry-site"
     registry = site / "registry"
     (registry / "axiom-scan-report").mkdir(parents=True)
@@ -109,6 +109,13 @@ def test_pages_build_verifies_separately_signed_v2_index(tmp_path):
     assert (output / "registry" / "index.json.sig").is_file()
 
 
+def test_pages_build_rejects_unsigned_v1_index(tmp_path):
+    site, _ = _registry_tree(tmp_path, schema=1)
+
+    with pytest.raises(RegistryPagesError, match="yalnızca.*Registry v2"):
+        build_pages_site(site, tmp_path / "_site")
+
+
 def test_pages_build_rejects_tampered_package_and_does_not_create_output(tmp_path):
     site, _ = _registry_tree(tmp_path)
     archive = site / "registry" / "axiom-scan-report" / "0.1.0.tar.gz"
@@ -133,6 +140,11 @@ def test_pages_build_rejects_invalid_package_signature_after_hash_matches(tmp_pa
         json.dumps(index, sort_keys=True, separators=(",", ":")) + "\n",
         encoding="utf-8",
     )
+    raw_index = index_path.read_bytes()
+    signature = _sign(
+        tmp_path / "index-private.pem", raw_index, tmp_path / "updated-index.sig"
+    )
+    (index_path.parent / "index.json.sig").write_text(signature + "\n", encoding="ascii")
 
     with pytest.raises(RegistryPagesError, match="imza geçersiz"):
         build_pages_site(site, tmp_path / "_site")

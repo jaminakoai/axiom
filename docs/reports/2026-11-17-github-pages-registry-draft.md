@@ -15,8 +15,9 @@ yayımlanmamıştır.
   dosyalar reddedilir. Beklenmeyen, eksik veya index'te yer almayan dosyalar
   reddedilir.
 - Paket SHA-256 ve Ed25519 imzası, arşiv sınırları, manifest kimliği ve imzalı
-  bağımlılık metadata'sı doğrulanır. Schema 2'de index imzası ve sona erme zamanı
-  da doğrulanır.
+  bağımlılık metadata'sı doğrulanır. Pages yayınında schema 2 zorunludur; index
+  imzası, sona erme zamanı ve en çok 90 günlük geçerlilik doğrulanır. Eski,
+  imzasız schema 1 index'i reddedilir.
 - Yalnız açık PEM anahtarları doğrulama girdisi olarak kabul edilir. Anahtarlar
   Pages artifact'ine kopyalanmaz; workflow özel anahtar veya GitHub secret
   kullanmaz.
@@ -48,7 +49,12 @@ yayımlanmamıştır.
   Linux, Windows ve macOS'ta **3/3 başarılı**.
 - `git diff --check` — başarılı.
 
-Regresyon testleri geçerli v1/v2 paket üretimini, başarısız paket ve index
+Yayın doğrulayıcısı ayrıca schema 1 index'i açıkça reddeder. Hedefli doğrulama:
+`tests/test_registry_pages.py`, `tests/test_registry_docs.py` ve gerçek assemble
+çıktısı release-preflight testi — **15 passed**.
+
+Regresyon testleri v1/v2 registry biçimlerinin doğru kabul/ret davranışını,
+başarısız paket ve index
 imzalarını, hatalı SHA, süresi dolmuş v2 index'i, eksik imza, symlink ve
 beklenmeyen dosyaları, açık anahtarların artifact dışında kalmasını ve workflow
 tetikleme/izin/Action SHA şartlarını kapsar.

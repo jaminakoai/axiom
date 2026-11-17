@@ -359,8 +359,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   `axpm registry assemble --from ... --output ... --public-key ...` komutu
   paket çıktısını imza/SHA/manifest kontrollerinden geçirerek deterministik,
   çevrimdışı statik Registry v1 veya ayrı anahtarla imzalı v2 dosya düzenine
-  dönüştürüyor. Schema 2, 90 günlük süre ve gözlemlenmiş sequence rollback
-  kontrollerini içeriyor; ilk bağlantıdaki eski index'i kanıtlayamaz ve yerel
+  dönüştürüyor. Pages yayın doğrulaması artık yalnız schema 2'yi kabul ediyor;
+  imzasız v1 index üretim yayınına alınamıyor. Schema 2, 90 günlük süre ve
+  gözlemlenmiş sequence rollback kontrollerini içeriyor; ilk bağlantıdaki eski
+  index'i kanıtlayamaz ve yerel
   rollback state silinebilir. Hiçbir yere yükleme yapmıyor. Kanıt:
   `docs/reports/2026-11-16-axpm-signed-release-preflight.md`.
   İndirme tarafında tar symlink/hardlink ve özel dosya kaçışları reddediliyor;

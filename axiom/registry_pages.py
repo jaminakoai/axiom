@@ -115,6 +115,11 @@ def validate_registry_tree(source_root: Path, *, now: datetime | None = None) ->
         index = RegistryIndex.from_json(parsed_index, "https://registry.invalid/registry")
     except (OSError, UnicodeDecodeError, json.JSONDecodeError, ValueError) as exc:
         raise RegistryPagesError(f"registry/index.json geçersiz: {exc}") from exc
+    if index.schema != 2:
+        raise RegistryPagesError(
+            "Pages yayını yalnızca Registry v2 index kabul eder; ayrı anahtar "
+            "imzası ve süre doğrulanmalıdır"
+        )
     if not index.packages:
         raise RegistryPagesError("yayın registry'si en az bir imzalı paket içermeli")
 
