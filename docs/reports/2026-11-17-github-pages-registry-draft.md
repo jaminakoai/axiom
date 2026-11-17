@@ -38,6 +38,12 @@ yayımlanmamıştır.
   an ephemeral package/index key pair. The generated Pages artifact contained
   `registry/<name>/<version>.tar.gz` and the signed index, and omitted both PEM
   public-key files.
+- Re-ran the documented offline source-preparation commands in a clean clone of
+  `18a364f` using temporary Ed25519 keys: `axpm pack` → schema 2 `assemble` →
+  Pages validation passed. Artifact contained `.nojekyll`, `index.html`, the
+  package tarball, `index.json`, and `index.json.sig`; it contained no key file.
+  This verifies the procedure only; no temporary key or source snapshot was
+  copied into the repository.
 - `python -m pytest -q -rs` — **1610 passed, 0 failed, 0 skipped** in 1396.94 s
   (bu raporun oluşturulduğu yerel çalışma ağacı).
 - Commit `586de93` GitHub CI run
@@ -52,6 +58,11 @@ yayımlanmamıştır.
 Yayın doğrulayıcısı ayrıca schema 1 index'i açıkça reddeder. Hedefli doğrulama:
 `tests/test_registry_pages.py`, `tests/test_registry_docs.py` ve gerçek assemble
 çıktısı release-preflight testi — **15 passed**.
+
+Offline `registry-site` hazırlama tarifi eklendikten sonra shell syntax kontrolü
+ve temiz klondaki geçici anahtarlı pack/assemble/Pages provası tekrar geçti;
+`tests/test_registry_docs.py`, `tests/test_registry_pages.py` ve onboarding docs
+paketi **20 passed**.
 
 Regresyon testleri v1/v2 registry biçimlerinin doğru kabul/ret davranışını,
 başarısız paket ve index
@@ -69,6 +80,10 @@ aynı gerçek assemble çıktısını Pages builder'ından geçiriyor.
 
 ## Kalan yayın kapıları
 
+- `registry-site/` yayın girdisi depoda henüz yoktur. `docs/REGISTRY.md`, mevcut
+  onaylı offline paket/index anahtarlarıyla schema 2 snapshot üretip yerel
+  validator'dan geçirme komutlarını belgeler; burada hiçbir anahtar üretilmedi
+  veya yayın girdisi commit edilmedi.
 - GitHub Pages ayarı hâlâ kapalı; `github-pages` environment için master dalı
   kısıtı ve reviewer kuralı ayrıca GitHub repository ayarlarında belirlenmeli.
 - Varsayılan registry adresi ve resmi imza anahtarı saklama, rotasyon ve ilk

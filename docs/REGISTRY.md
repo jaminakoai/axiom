@@ -208,6 +208,58 @@ Deploy öncesi aynı kontrolü yerelde çalıştırabilirsiniz:
 python -m axiom.registry_pages --source registry-site --output /tmp/axiom-pages
 ```
 
+#### Yayın kaynağını offline hazırlama
+
+Workflow yalnızca `registry-site/` içindeki, imzaları doğrulanmış yayın
+snapshot'ını kullanır. Aşağıdaki örnek bir paketi yeni bir geçici ağaçta
+paketler, ayrı index anahtarıyla schema 2 index oluşturur ve Pages validator'ı
+çalıştırır. `PACKAGE_SIGNING_KEY` ve `INDEX_SIGNING_KEY` mevcut, projece
+onaylanmış özel anahtar yollarına ayarlanmalıdır; özel anahtarları depoya veya
+Actions artifact'ine koymayın. `INDEX_SEQUENCE` önceki yayın sequence değerinden
+büyük olmalı; ilk yayın örneğinde `1` kullanılmıştır. `axpm pack` temiz ve commit
+edilmiş checkout istediği için bu hazırlığa başlamadan kaynak değişikliklerini
+commit edin; henüz `registry-site/` yoksa aşağıdaki snapshot'ı üretebilirsiniz.
+
+```bash
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+AXPM="$REPO_ROOT/bin/axpm"
+PACKAGE_SIGNING_KEY="/secure/release/package-signing.pem"
+INDEX_SIGNING_KEY="/secure/release/registry-index-signing.pem"
+INDEX_SEQUENCE=1
+INDEX_EXPIRES="$(python3 -c 'from datetime import datetime, timedelta, timezone; print((datetime.now(timezone.utc) + timedelta(days=80)).replace(microsecond=0).isoformat().replace("+00:00", "Z"))')"
+STAGING="$(mktemp -d)"
+PACKED="$STAGING/packed"
+SOURCE="$STAGING/registry-site"
+mkdir -p "$SOURCE"
+
+openssl pkey -in "$PACKAGE_SIGNING_KEY" -pubout \
+  -out "$SOURCE/package-public-key.pem"
+openssl pkey -in "$INDEX_SIGNING_KEY" -pubout \
+  -out "$SOURCE/index-public-key.pem"
+
+(cd "$REPO_ROOT/packages/axiom-scan-report" && \
+  "$AXPM" pack --signing-key "$PACKAGE_SIGNING_KEY" --output "$PACKED")
+
+"$AXPM" registry assemble --from "$PACKED" \
+  --output "$SOURCE/registry" \
+  --public-key "$SOURCE/package-public-key.pem" \
+  --index-signing-key "$INDEX_SIGNING_KEY" \
+  --index-sequence "$INDEX_SEQUENCE" \
+  --index-expires "$INDEX_EXPIRES"
+
+(cd "$REPO_ROOT" && \
+  python -m axiom.registry_pages --source "$SOURCE" --output "$STAGING/_site")
+test ! -e "$REPO_ROOT/registry-site"
+cp -a "$SOURCE" "$REPO_ROOT/registry-site"
+```
+
+Bu adım yalnızca yerel snapshot hazırlar; `registry-site/` içeriği ve release
+metadata'sı gözden geçirilmeden commit edilmemeli. Sonra iki açık PEM ile
+`registry/index.json`, imzası ve sürümlü tarball commit edilebilir. Index
+sequence her yeni yayında artırılmalı. Özel anahtarların yönetimi ve
+`github-pages` environment koruması ayrı release kararlarıdır; bu tarif yeni
+anahtar üretmez veya yayın workflow'unu çalıştırmaz.
+
 Site kökünde bir Pages giriş dosyası, `.nojekyll` ve `/registry/` ağacı
 oluşturulur. Beklenen registry URL'si project-site yolu kullanılırsa
 `https://jaminakoai.github.io/axiom/registry` olur. Bu taslak hosting'i açmaz,

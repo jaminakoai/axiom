@@ -338,6 +338,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   yayın doğrulaması kaynak dizini olmadığı için başarısız olur.** İmzalı,
   sürümlü kaynak ağacı güvenli biçimde hazırlandıktan sonra commit edilmeli ya da
   workflow bu girdiyi üretim anahtarı işletimine uygun bir yoldan oluşturmalı.
+  `docs/REGISTRY.md` şimdi onaylanmış yerel release anahtarlarıyla schema 2
+  `registry-site` snapshot'ını hazırlama ve doğrulama adımlarını belgeliyor;
+  adımlar temiz klonda geçici anahtarlarla uçtan uca tekrar çalıştırıldı;
+  artifact doğrulandı ve özel anahtar içermedi. Gerçek kaynak, üretim anahtar
+  politikası kararlaştırılmadan oluşturulmuş sayılmaz.
   `packages/axiom-scan-report`
   kaynak örneği ve gerçek path bağımlılık testi hazır, ancak bunlar resmi yayın
   sayılmaz. Bunlar çözülüp örnek paket gerçekten

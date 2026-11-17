@@ -48,3 +48,20 @@ def test_registry_guide_states_index_binding_and_unsigned_index_limits():
         "test_download_rejects_unsigned_index_metadata_mismatch",
     ):
         assert required in text, f"docs/REGISTRY.md güven sınırı eksik: {required}"
+
+
+def test_registry_guide_documents_offline_pages_snapshot_preparation():
+    text = REGISTRY_GUIDE.read_text(encoding="utf-8")
+
+    for required in (
+        "Yayın kaynağını offline hazırlama",
+        '"$SOURCE/registry"',
+        "--index-signing-key",
+        "--index-sequence",
+        "--index-expires",
+        'python -m axiom.registry_pages --source "$SOURCE"',
+        'cp -a "$SOURCE" "$REPO_ROOT/registry-site"',
+        "özel anahtarları depoya",
+        "Bu adım yalnızca yerel snapshot hazırlar",
+    ):
+        assert required in text, f"docs/REGISTRY.md eksik: {required}"
