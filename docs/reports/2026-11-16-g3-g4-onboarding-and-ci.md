@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
 **Date:** 17 November 2026
-**Reviewed source commit:** `dd0f997` (includes the guide, issue form, tests, and latest CI record)
+**Reviewed source commit:** `dd0f997` (includes the guide, issue form, tests, and the clean-clone validation below)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed

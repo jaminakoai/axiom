@@ -1,8 +1,8 @@
 # G4 — Registry client archive resource bounds
 
 **Date:** 17 November 2026
-**Status:** Implementation and focused local tests pass. Full GitHub CI for
-this code change is pending.
+**Status:** Implementation, focused local tests, full GitHub CI, and native
+platform smoke pass.
 
 ## Finding
 
@@ -62,12 +62,14 @@ payload was installed by the client and accepted by the assembler using the
 same archive, confirming payload bytes do not consume the 32 MiB metadata
 budget.
 
-Before this change, commit `dd0f997` passed full GitHub CI [run
-43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183),
-7/7 jobs, and native platform smoke [run
-43980332305](https://github.com/jaminakoai/axiom/actions/runs/43980332305),
-3/3 platforms. Those runs do not validate this uncommitted code change; its
-post-push CI remains required.
+Commit `476e06f` passed full GitHub CI [run
+43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720):
+**7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
+**1558 passed, 27 skipped**; documentation code blocks reported **55 passed**.
+The pinned real-YARA corpus differential job reported **29 passed** on each
+Python version. Native platform smoke [run
+43984657727](https://github.com/jaminakoai/axiom/actions/runs/43984657727)
+passed **Linux, Windows, and macOS 3/3**.
 
 ## Limits and remaining work
 
@@ -77,6 +79,5 @@ post-push CI remains required.
 - `axpm pack` still builds bounded archive buffers in memory; the size cap
   prevents unbounded growth but does not make peak memory usage equal to the
   compressed archive size.
-- The host-backed full test suite and native smoke must pass on the commit that
-  contains this change. G4 still requires a hosting decision, production key
-  custody/rotation, and an officially published versioned package.
+- G4 still requires a hosting decision, production key custody/rotation, and
+  an officially published versioned package.

@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `dd0f997`: Python 3.10–3.13'te her biri 1539 geçti / 27 skip, doküman blokları 55 geçti; [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183), **7/7 başarılı** |
-| Son CI denemesi | `dd0f997` [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183), **7/7 başarılı** |
-| Son başarılı tam CI | `dd0f997` [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183), **7/7 başarılı** |
-| Son platform smoke | `dd0f997`, native build/run, cache/file URL, süreçler arası kilit ve imzalı index doğrulaması Linux/Windows/macOS run 43980332305 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `476e06f`: Python 3.10–3.13'te her biri 1558 geçti / 27 skip, doküman blokları 55 geçti; [run 43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720), **7/7 başarılı** |
+| Son CI denemesi | `476e06f` [run 43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720), **7/7 başarılı** |
+| Son başarılı tam CI | `476e06f` [run 43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720), **7/7 başarılı** |
+| Son platform smoke | `476e06f`, native build/run, cache/file URL, süreçler arası kilit ve imzalı index doğrulaması Linux/Windows/macOS run 43984657727 **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `dd0f997` — [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `476e06f` — [run 43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720), **7/7 başarılı** |
 | Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
 
 ---
@@ -347,12 +347,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Linux/Windows/macOS smoke matrisine eklendi ve 3/3 geçti; imzalı index'in
   OpenSSL Ed25519 doğrulama/rollback testleri de `4bf3b8b` ile native smoke'a
   eklendi; Linux, Windows ve macOS'ta OpenSSL 3 altında 9'ar test geçti.
-  Son tam CI `dd0f997` [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183)
-  için 7/7 geçti: Python 3.10–3.13'ün her birinde 1539 geçti/27 skip ve 55
+  Son tam CI `476e06f` [run 43984657720](https://github.com/jaminakoai/axiom/actions/runs/43984657720)
+  için 7/7 geçti: Python 3.10–3.13'ün her birinde 1558 geçti/27 skip ve 55
   doküman testi geçti. 27 Linux CI skip'i MinGW gerektiren 16 ve Wine gerektiren
   11 taşınabilirlik testidir; MinGW ve Wine kurulu yerel ortamda bu dosyanın
-  tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `dd0f997`
-  için Linux/Windows/macOS'ta 3/3 başarılı: [run 43980332305](https://github.com/jaminakoai/axiom/actions/runs/43980332305).
+  tamamı **34 geçti, 0 skip** (100,70 sn). Native platform smoke `476e06f`
+  için Linux/Windows/macOS'ta 3/3 başarılı: [run 43984657727](https://github.com/jaminakoai/axiom/actions/runs/43984657727).
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi
   sunma. Ürün davranışını değiştirmeden çalışan yerel `file://` imzalı paket
@@ -368,8 +368,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   fazla büyük cache'i sınırlı okuma/tarama ile ele al. `axpm pack` de bu
   sınırlara uymayan girdileri payload'ı okumadan önce reddeder. Büyük geçerli
   33 MiB payload'ın client ve assembler tarafından kabul edildiği ayrıca
-  doğrulandı. Yerel hedefli doğrulama: **137 geçti**, `make fmt-check`, Python
-  derleme kontrolü ve `git diff --check` geçti. Ayrıntı:
+  doğrulandı. Yerel hedefli doğrulama: **137 geçti**; `476e06f` tam CI'si
+  Python 3.10–3.13'te her birinde **1558 geçti/27 skip**, doküman testlerinde
+  55 geçti ve 7/7 iş başarılı; native smoke 3/3 geçti. `make fmt-check`, Python
+  derleme kontrolü ve `git diff --check` de geçti. Ayrıntı:
   [`2026-11-17-registry-client-archive-bounds.md`](docs/reports/2026-11-17-registry-client-archive-bounds.md).
 - [x] `v1.0` öncesi sürümleme ve doğrulanmış platform matrisi kararı yazıldı:
   [`docs/VERSIONING.md`](docs/VERSIONING.md). İki sürüm geriye uyumluluk
@@ -431,8 +433,8 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 
 | Metrik | Değer | Doğrulama komutu |
 |---|---|---|
-| Son tamamlanmış tam test paketi | CI `dd0f997`: Python 3.10–3.13'te her biri 1539 geçti/27 skip; 1565 yerel test `23a0aca` commit'inde geçti | GitHub Actions run 43980332183; `python3 -m pytest -q` |
-| Son native platform smoke | `dd0f997`: süreçler arası registry kilidi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43980332305 |
+| Son tamamlanmış tam test paketi | CI `476e06f`: Python 3.10–3.13'te her biri 1558 geçti/27 skip; 1565 yerel test `23a0aca` commit'inde geçti | GitHub Actions run 43984657720; `python3 -m pytest -q` |
+| Son native platform smoke | `476e06f`: süreçler arası registry kilidi + native build/run Linux/Windows/macOS 3/3 geçti | GitHub Actions run 43984657727 |
 | G1 hedefli testler | YARA/scanner/differential/stress/AST limits/backend parity: 490 geçti, 0 skip (224,36 sn) | G1 kapanış raporundaki komut |
 | Redteam testleri | 17 (varsayılan; `AXIOM_SKIP_REDTEAM=1` ile atlanır) | `... tests/test_redteam_*.py` |
 | Stdlib | 52 dosya / 385 fonksiyon / 3.946 satır | `find std -name '*.ax' \| wc -l` |
@@ -1277,8 +1279,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `dd0f997`: Python 3.10–13’te her biri 1539 geçti/27 skip; doküman 55 geçti; 7/7 başarılı | Run 43980332183 | 2000 |
-| Son native platform smoke | `dd0f997`: cache/file URL + signed index + build/run Linux/Windows/macOS 3/3 başarılı | Run 43980332305 | — |
+| Son tam CI | `476e06f`: Python 3.10–13’te her biri 1558 geçti/27 skip; doküman 55 geçti; 7/7 başarılı | Run 43984657720 | 2000 |
+| Son native platform smoke | `476e06f`: cache/file URL + signed index + build/run Linux/Windows/macOS 3/3 başarılı | Run 43984657727 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1322,6 +1324,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    hedeflerini kararlaştır.
 
 **G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`dd0f997` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
+`476e06f` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
 doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
 kanıt ve açık kapsam sınırlarıyla eklenir.
