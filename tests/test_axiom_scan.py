@@ -7,6 +7,7 @@ import json
 import os
 import struct
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -47,11 +48,14 @@ rule Both_Required {
 def scanner(tmp_path_factory):
     if not EXAMPLE.exists():
         pytest.skip("ornek bulunamadi")
-    out = tmp_path_factory.mktemp("scan") / "axiom-scan"
+    exe = ".exe" if os.name == "nt" else ""
+    out = tmp_path_factory.mktemp("scan") / f"axiom-scan{exe}"
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
-    res = subprocess.run([str(AXIOM), "build", str(EXAMPLE), "-o", str(out)],
-                         capture_output=True, text=True, timeout=600, env=env)
+    res = subprocess.run(
+        [sys.executable, str(AXIOM), "build", str(EXAMPLE), "-o", str(out)],
+        capture_output=True, text=True, timeout=600, env=env,
+    )
     assert res.returncode == 0, res.stdout + res.stderr
     return out
 
@@ -870,6 +874,124 @@ def test_scan_pcap_packet(scanner, tmp_path):
     assert data["packets"][0]["rules"] == ["Suspicious_Powershell"]
 
 
+def test_scan_pcap_counts_empty_packet_and_continues(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "empty-then-valid.pcap"
+    global_header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    empty_record = struct.pack("<IIII", 1700000000, 0, 0, 0)
+    payload = b"NEEDLE"
+    valid_record = struct.pack(
+        "<IIII", 1700000001, 0, len(payload), len(payload)
+    ) + payload
+    pcap.write_bytes(global_header + empty_record + valid_record)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["ok"] is True
+    assert report["packet_count"] == 2
+    assert report["match_count"] == 1
+    assert report["packets"][0]["index"] == 1
+    assert report["packets"][0]["rules"] == ["PacketNeedle"]
+
+
+def test_scan_pcap_opposite_endian_classic_file(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "big-endian.pcap"
+    global_header = struct.pack(">IHHIIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    payload = b"NEEDLE"
+    record = struct.pack(">IIII", 1700000000, 0, len(payload), len(payload)) + payload
+    pcap.write_bytes(global_header + record)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["ok"] is True
+    assert report["packet_count"] == 1
+    assert report["match_count"] == 1
+    assert report["packets"][0]["rules"] == ["PacketNeedle"]
+
+
+@pytest.mark.parametrize("byte_order,label", [("<", "little"), (">", "big")])
+def test_scan_pcap_nanosecond_timestamp_magic(scanner, tmp_path, byte_order, label):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / f"nanosecond-{label}.pcap"
+    global_header = struct.pack(
+        f"{byte_order}IHHIIII", 0xA1B23C4D, 2, 4, 0, 0, 65535, 1
+    )
+    payload = b"NEEDLE"
+    record = struct.pack(
+        f"{byte_order}IIII", 1700000000, 123456789, len(payload), len(payload)
+    ) + payload
+    pcap.write_bytes(global_header + record)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["ok"] is True
+    assert report["packet_count"] == 1
+    assert report["match_count"] == 1
+    assert report["packets"][0]["rules"] == ["PacketNeedle"]
+
+
+@pytest.mark.parametrize("truncated", [
+    b"\xd4\xc3\xb2\xa1\x02\x00\x04",  # truncated global header
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    + b"\x00" * 8,  # truncated per-packet header
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    + struct.pack("<IIII", 1700000000, 0, 6, 6) + b"NEE",  # short payload
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    + struct.pack("<IIII", 1700000000, 0, 1, 0) + b"x",  # incl_len > orig_len
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    + struct.pack("<IIII", 1700000000, 0, 65536, 65536),  # incl_len > snaplen cap
+])
+def test_scan_pcap_malformed_or_truncated_records_fail_closed(scanner, tmp_path, truncated):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "truncated.pcap"
+    pcap.write_bytes(truncated)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert '"ok":true' not in result.stdout
+
+
+def test_scan_rejects_pcapng(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcapng = tmp_path / "capture.pcapng"
+    # Section Header Block magic followed by a minimal recognizable prefix.
+    pcapng.write_bytes(b"\x0a\x0d\x0d\x0a" + b"\x1c\x00\x00\x00" + b"\x4d\x3c\x2b\x1a")
+
+    result = _run(scanner, "pcap", str(pcapng), "--rules", str(rules))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert '"ok":true' not in result.stdout
+    assert "pcapng desteklenmiyor" in (result.stdout + result.stderr).lower()
+
+
 def test_scan_pcap_binary_payload_matches_after_nul(scanner, tmp_path):
     rules = tmp_path / "pcap-binary.yar"
     rules.write_text(
@@ -934,11 +1056,14 @@ def scanner_llvm(tmp_path_factory):
     """Aynı tarayıcı LLVM arka ucuyla (P1-03b regresyonu)."""
     if not EXAMPLE.exists():
         pytest.skip("ornek bulunamadi")
-    out = tmp_path_factory.mktemp("scan_llvm") / "axiom-scan-llvm"
+    exe = ".exe" if os.name == "nt" else ""
+    out = tmp_path_factory.mktemp("scan_llvm") / f"axiom-scan-llvm{exe}"
     env = os.environ.copy()
     env["PYTHONPATH"] = str(ROOT)
-    res = subprocess.run([str(AXIOM), "build", str(EXAMPLE), "--backend=llvm", "-o", str(out)],
-                         capture_output=True, text=True, timeout=900, env=env)
+    res = subprocess.run(
+        [sys.executable, str(AXIOM), "build", str(EXAMPLE), "--backend=llvm", "-o", str(out)],
+        capture_output=True, text=True, timeout=900, env=env,
+    )
     assert res.returncode == 0, res.stdout + res.stderr
     return out
 
@@ -961,6 +1086,25 @@ def test_llvm_scanner_matches_c(scanner, scanner_llvm, tmp_path):
     l_bin = _run(scanner_llvm, "scan", str(bin_target), "--rules", str(r))
     assert json.loads(c_bin.stdout) == json.loads(l_bin.stdout)
     assert json.loads(l_bin.stdout)["matches"][0]["rule"] == "Hex_Shellcode"
+
+    # Exercise the new reader-status builtin through both code generators.
+    pcap = tmp_path / "empty_then_match_big_endian.pcap"
+    payload = b"powershell -enc AAAA"
+    global_header = struct.pack(">IHHIIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    empty_record = struct.pack(">IIII", 1700000000, 0, 0, 0)
+    packet_record = struct.pack(
+        ">IIII", 1700000001, 0, len(payload), len(payload)
+    ) + payload
+    pcap.write_bytes(global_header + empty_record + packet_record)
+    c_pcap = _run(scanner, "pcap", str(pcap), "--rules", str(r))
+    l_pcap = _run(scanner_llvm, "pcap", str(pcap), "--rules", str(r))
+    assert c_pcap.returncode == l_pcap.returncode == 0
+    c_pcap_data = json.loads(c_pcap.stdout)
+    l_pcap_data = json.loads(l_pcap.stdout)
+    assert c_pcap_data == l_pcap_data
+    assert c_pcap_data["packet_count"] == 2
+    assert c_pcap_data["packets"][0]["index"] == 1
+    assert c_pcap_data["match_count"] == 1
 
 
 def test_binary_nul_text_hex_and_crossing_matches_have_c_llvm_parity(

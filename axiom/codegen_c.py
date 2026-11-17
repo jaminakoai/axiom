@@ -328,6 +328,7 @@ BUILTIN_MAP = {
     'rt_pcap_write_packet': 'axiom_pcap_write_packet',
     'rt_pcap_open_file': 'axiom_pcap_open_file',
     'rt_pcap_next_packet': 'axiom_pcap_next_packet',
+    'rt_pcap_reader_status': 'axiom_pcap_reader_status',
     'rt_pcap_packet_count': 'axiom_pcap_packet_count',
     'rt_pcap_close': 'axiom_pcap_close',
     'rt_fim_hash_file': 'axiom_fim_hash_file',

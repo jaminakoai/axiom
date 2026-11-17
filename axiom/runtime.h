@@ -7650,10 +7650,42 @@ typedef struct {
     FILE* fp;
     int is_writer;
     uint32_t packet_count;
+    uint32_t snaplen;
+    int little_endian;
+    int last_read_status;
+    int read_error;
+    int write_error;
 } AxiomPcapHandle;
 
 #define AXIOM_MAX_PCAP_HANDLES 32
 static AxiomPcapHandle* g_pcap_handles[AXIOM_MAX_PCAP_HANDLES] = {0};
+
+static uint16_t axiom_pcap_u16(const uint8_t* p, int little_endian) {
+    if (little_endian) return (uint16_t)((uint16_t)p[0] | ((uint16_t)p[1] << 8));
+    return (uint16_t)(((uint16_t)p[0] << 8) | (uint16_t)p[1]);
+}
+
+static uint32_t axiom_pcap_u32(const uint8_t* p, int little_endian) {
+    if (little_endian) {
+        return (uint32_t)p[0] | ((uint32_t)p[1] << 8) |
+               ((uint32_t)p[2] << 16) | ((uint32_t)p[3] << 24);
+    }
+    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
+           ((uint32_t)p[2] << 8) | (uint32_t)p[3];
+}
+
+static int axiom_pcap_hex_nibble(unsigned char c) {
+    if (c >= '0' && c <= '9') return (int)(c - '0');
+    if (c >= 'a' && c <= 'f') return (int)(c - 'a') + 10;
+    if (c >= 'A' && c <= 'F') return (int)(c - 'A') + 10;
+    return -1;
+}
+
+static ax_str axiom_pcap_reader_fail(AxiomPcapHandle* h) {
+    h->last_read_status = -1;
+    h->read_error = 1;
+    return axiom_owned_str_wrap("");
+}
 
 AXIOM_RUNTIME_FN ax_int axiom_pcap_create_writer(const char* path) {
     if (!path) return -1;
@@ -7678,9 +7710,19 @@ AXIOM_RUNTIME_FN ax_int axiom_pcap_create_writer(const char* path) {
     for (int i = 1; i < AXIOM_MAX_PCAP_HANDLES; i++) {
         if (!g_pcap_handles[i]) {
             AxiomPcapHandle* h = (AxiomPcapHandle*)malloc(sizeof(AxiomPcapHandle));
+            if (!h) {
+                fclose(fp);
+                return -1;
+            }
             h->fp = fp;
             h->is_writer = 1;
             h->packet_count = 0;
+            h->snaplen = snaplen;
+            uint16_t endian_probe = 1;
+            h->little_endian = *((uint8_t*)&endian_probe) == 1;
+            h->last_read_status = -1;
+            h->read_error = 0;
+            h->write_error = 0;
             g_pcap_handles[i] = h;
             return (ax_int)i;
         }
@@ -7692,32 +7734,39 @@ AXIOM_RUNTIME_FN ax_int axiom_pcap_create_writer(const char* path) {
 AXIOM_RUNTIME_FN ax_bool axiom_pcap_write_packet(ax_int handle, const char* packet_hex) {
     if (handle <= 0 || handle >= AXIOM_MAX_PCAP_HANDLES || !g_pcap_handles[handle]) return false;
     AxiomPcapHandle* h = g_pcap_handles[handle];
-    if (!h->is_writer || !packet_hex) return false;
+    if (!h->is_writer || !packet_hex || h->write_error) return false;
 
     size_t hex_len = strlen(packet_hex);
     if (hex_len % 2 != 0) return false;
-    uint32_t byte_len = (uint32_t)(hex_len / 2);
+    size_t decoded_len = hex_len / 2;
+    if (decoded_len > h->snaplen || decoded_len > UINT32_MAX) return false;
+    uint32_t byte_len = (uint32_t)decoded_len;
+
+    uint8_t* buf = byte_len ? (uint8_t*)malloc(byte_len) : NULL;
+    if (byte_len && !buf) return false;
+    for (size_t i = 0; i < byte_len; i++) {
+        int high = axiom_pcap_hex_nibble((unsigned char)packet_hex[i * 2]);
+        int low = axiom_pcap_hex_nibble((unsigned char)packet_hex[i * 2 + 1]);
+        if (high < 0 || low < 0) {
+            free(buf);
+            return false;
+        }
+        buf[i] = (uint8_t)((high << 4) | low);
+    }
 
     long long now_ms = ax_os_time_ms();
     uint32_t ts_sec = (uint32_t)(now_ms / 1000);
     uint32_t ts_usec = (uint32_t)((now_ms % 1000) * 1000);
 
-    /* PCAP Packet Header (16 bytes) */
-    fwrite(&ts_sec, 4, 1, h->fp);
-    fwrite(&ts_usec, 4, 1, h->fp);
-    fwrite(&byte_len, 4, 1, h->fp);
-    fwrite(&byte_len, 4, 1, h->fp);
-
-    /* Payload */
-    uint8_t* buf = (uint8_t*)malloc(byte_len);
-    for (size_t i = 0; i < byte_len; i++) {
-        unsigned int v = 0;
-        sscanf(packet_hex + i * 2, "%02x", &v);
-        buf[i] = (uint8_t)v;
+    uint32_t record_header[4] = {ts_sec, ts_usec, byte_len, byte_len};
+    if (fwrite(record_header, sizeof(record_header), 1, h->fp) != 1 ||
+        (byte_len && fwrite(buf, 1, byte_len, h->fp) != byte_len) ||
+        fflush(h->fp) != 0) {
+        free(buf);
+        h->write_error = 1;
+        return false;
     }
-    fwrite(buf, 1, byte_len, h->fp);
     free(buf);
-    fflush(h->fp);
     h->packet_count++;
     return true;
 }
@@ -7727,19 +7776,60 @@ AXIOM_RUNTIME_FN ax_int axiom_pcap_open_file(const char* path) {
     FILE* fp = fopen(path, "rb");
     if (!fp) return -1;
 
-    uint32_t magic = 0;
-    if (fread(&magic, 4, 1, fp) != 1 || (magic != 0xa1b2c3d4 && magic != 0xd4c3b2a1)) {
+    uint8_t global_header[24];
+    size_t header_bytes = fread(global_header, 1, sizeof(global_header), fp);
+    if (header_bytes >= 4 && global_header[0] == 0x0a && global_header[1] == 0x0d &&
+        global_header[2] == 0x0d && global_header[3] == 0x0a) {
         fclose(fp);
-        return -2; /* Gecersiz PCAP magic */
+        return -3; /* PCAPNG is recognized but unsupported by this reader. */
     }
-    fseek(fp, 24, SEEK_SET); /* Global header'i gec */
+
+    if (header_bytes != sizeof(global_header)) {
+        fclose(fp);
+        return -2; /* Truncated global header. */
+    }
+
+    int little_endian = 0;
+    if (global_header[0] == 0xd4 && global_header[1] == 0xc3 &&
+        global_header[2] == 0xb2 && global_header[3] == 0xa1) {
+        little_endian = 1; /* Microsecond timestamps, little endian. */
+    } else if (global_header[0] == 0xa1 && global_header[1] == 0xb2 &&
+               global_header[2] == 0xc3 && global_header[3] == 0xd4) {
+        little_endian = 0; /* Microsecond timestamps, big endian. */
+    } else if (global_header[0] == 0x4d && global_header[1] == 0x3c &&
+               global_header[2] == 0xb2 && global_header[3] == 0xa1) {
+        little_endian = 1; /* Nanosecond timestamps, little endian. */
+    } else if (global_header[0] == 0xa1 && global_header[1] == 0xb2 &&
+               global_header[2] == 0x3c && global_header[3] == 0x4d) {
+        little_endian = 0; /* Nanosecond timestamps, big endian. */
+    } else {
+        fclose(fp);
+        return -2; /* Invalid classic PCAP magic. */
+    }
+
+    uint16_t major = axiom_pcap_u16(global_header + 4, little_endian);
+    uint16_t minor = axiom_pcap_u16(global_header + 6, little_endian);
+    uint32_t snaplen = axiom_pcap_u32(global_header + 16, little_endian);
+    if (major != 2 || minor != 4 || snaplen == 0) {
+        fclose(fp);
+        return -2; /* Invalid global header version or snap length. */
+    }
 
     for (int i = 1; i < AXIOM_MAX_PCAP_HANDLES; i++) {
         if (!g_pcap_handles[i]) {
             AxiomPcapHandle* h = (AxiomPcapHandle*)malloc(sizeof(AxiomPcapHandle));
+            if (!h) {
+                fclose(fp);
+                return -1;
+            }
             h->fp = fp;
             h->is_writer = 0;
             h->packet_count = 0;
+            h->snaplen = snaplen;
+            h->little_endian = little_endian;
+            h->last_read_status = -1;
+            h->read_error = 0;
+            h->write_error = 0;
             g_pcap_handles[i] = h;
             return (ax_int)i;
         }
@@ -7751,29 +7841,58 @@ AXIOM_RUNTIME_FN ax_int axiom_pcap_open_file(const char* path) {
 AXIOM_RUNTIME_FN ax_str axiom_pcap_next_packet(ax_int handle) {
     if (handle <= 0 || handle >= AXIOM_MAX_PCAP_HANDLES || !g_pcap_handles[handle]) return axiom_owned_str_wrap("");
     AxiomPcapHandle* h = g_pcap_handles[handle];
-    if (h->is_writer) return axiom_owned_str_wrap("");
+    if (h->is_writer || h->read_error) return axiom_pcap_reader_fail(h);
 
-    uint32_t ts_sec, ts_usec, incl_len, orig_len;
-    if (fread(&ts_sec, 4, 1, h->fp) != 1) return axiom_owned_str_wrap("");
-    if (fread(&ts_usec, 4, 1, h->fp) != 1) return axiom_owned_str_wrap("");
-    if (fread(&incl_len, 4, 1, h->fp) != 1) return axiom_owned_str_wrap("");
-    if (fread(&orig_len, 4, 1, h->fp) != 1) return axiom_owned_str_wrap("");
+    uint8_t record_header[16];
+    size_t header_bytes = fread(record_header, 1, sizeof(record_header), h->fp);
+    if (header_bytes == 0 && feof(h->fp) && !ferror(h->fp)) {
+        h->last_read_status = 0; /* Clean EOF between records. */
+        return axiom_owned_str_wrap("");
+    }
+    if (header_bytes != sizeof(record_header)) return axiom_pcap_reader_fail(h);
 
-    if (incl_len == 0 || incl_len > 65535) return axiom_owned_str_wrap("");
-    uint8_t* raw = (uint8_t*)malloc(incl_len);
-    if (fread(raw, 1, incl_len, h->fp) != incl_len) {
+    uint32_t incl_len = axiom_pcap_u32(record_header + 8, h->little_endian);
+    uint32_t orig_len = axiom_pcap_u32(record_header + 12, h->little_endian);
+    if (incl_len > h->snaplen || incl_len > orig_len || incl_len > 65535 ||
+        (uint64_t)incl_len * 2u + 1u > (uint64_t)SIZE_MAX) {
+        return axiom_pcap_reader_fail(h);
+    }
+
+    uint8_t* raw = incl_len ? (uint8_t*)malloc(incl_len) : NULL;
+    if (incl_len && !raw) return axiom_pcap_reader_fail(h);
+    if (incl_len && fread(raw, 1, incl_len, h->fp) != incl_len) {
         free(raw);
+        return axiom_pcap_reader_fail(h);
+    }
+
+    if (incl_len == 0) {
+        h->last_read_status = 1; /* A zero-byte packet is still a packet. */
+        h->packet_count++;
         return axiom_owned_str_wrap("");
     }
 
     char* out = (char*)malloc(incl_len * 2 + 1);
+    if (!out) {
+        free(raw);
+        return axiom_pcap_reader_fail(h);
+    }
+    static const char hex[] = "0123456789abcdef";
     for (size_t i = 0; i < incl_len; i++) {
-        sprintf(out + i * 2, "%02x", raw[i]);
+        out[i * 2] = hex[raw[i] >> 4];
+        out[i * 2 + 1] = hex[raw[i] & 0x0f];
     }
     out[incl_len * 2] = '\0';
     free(raw);
     h->packet_count++;
+    h->last_read_status = 1;
     return axiom_owned_str_wrap(out);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_pcap_reader_status(ax_int handle) {
+    if (handle <= 0 || handle >= AXIOM_MAX_PCAP_HANDLES || !g_pcap_handles[handle]) return -1;
+    AxiomPcapHandle* h = g_pcap_handles[handle];
+    if (h->is_writer) return -1;
+    return (ax_int)h->last_read_status;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_pcap_packet_count(ax_int handle) {

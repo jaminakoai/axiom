@@ -58,6 +58,9 @@ jobs:
           python -m pytest -q
           tests/test_package_manager.py::test_sample_scan_report_signed_registry_release_preflight
 
+      - name: Classic PCAP scanner smoke tests
+        run: python -m pytest -q tests/test_axiom_scan.py -k pcap
+
       - name: Derleyici sürümünü doğrula
         run: |
           axiom --version

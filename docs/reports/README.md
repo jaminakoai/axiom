@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 60 rapor** · 61 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 61 rapor** · 62 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -111,6 +111,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 - [G4 — Signed Registry index v2](2026-11-17-signed-registry-index-v2.md)
 - [G4 — Registry indirme ve arşiv kaynak sınırları](2026-11-17-registry-client-archive-bounds.md)
+- [PCAP okuyucusu — eksik/kesik kayıtlarda fail-closed davranışı](2026-11-17-pcap-reader-fail-closed.md)
 
 ## Okuma sırası (yeni gelen için)
 

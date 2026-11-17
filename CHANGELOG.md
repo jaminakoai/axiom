@@ -6,6 +6,13 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 ## [Unreleased]
 
 ### Eklendi
+- PCAP okuyucu klasik PCAP'in iki byte order ve mikro/nanosaniye biçimlerini
+  destekliyor; pcap_read_status boş paket, temiz EOF ve okuma hatasını ayırıyor.
+  pcapng, kesik/bozuk kayıtlar ve 65.535 baytı aşan paketler açıkça reddediliyor;
+  PCAP yazıcısı da aynı boyut sınırını ve hex/yazma hatalarını doğruluyor.
+- axiom-scan pcap için sentetik bozuk girdi sınırları ve C/LLVM parity
+  regresyonları eklendi; Windows/macOS/Linux native smoke'a sınırlı klasik PCAP
+  test alt kümesi eklendi.
 - Registry istemcisi ve `axpm registry assemble`, ayrı Ed25519 index anahtarıyla
   imzalı Registry schema 2 destekliyor. İmza, 90 günlük son kullanma süresi ve
   URL başına kalıcı sequence/hash kontrolü doğrulanıyor; bu, ilk bağlantıdaki

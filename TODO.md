@@ -252,6 +252,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   `1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405`.
   Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir; ayrıntı G3/G4
   onboarding raporundadır.
+- [x] PCAP başlangıç yönergesini gerçek okuyucu davranışıyla eşleştir: yalnız
+  klasik PCAP, mikro/nanosaniye ve iki byte order; raw yakalanmış frame taraması;
+  pcapng açık ret. Temiz EOF, boş paket ve bozuk/kesik kayıt artık ayrı
+  durumlarla raporlanıyor. Yazıcı da 65.535 bayt sınırını, hex doğrulamasını ve
+  yazma hatalarını denetliyor. Sentetik sınır testleri, C/LLVM parity ve writer
+  sınır/readback regresyonları geçti. Kanıt:
+  [PCAP okuyucu raporu](docs/reports/2026-11-17-pcap-reader-fail-closed.md).
+  Bu yerel doğrulama bağımsız kullanıcı kapısını kapatmaz.
 - [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
   çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
 - [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
@@ -279,6 +287,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Linux, Windows ve macOS test kapsamını ve Linux sistem kütüphanesi
   gereksinimlerini iki README'de açıkça yaz. Windows/macOS için tam test paketi,
   `axiom-scan` ve elle kurulum adımlarının henüz doğrulanmadığı açıkça belirtili.
+- [ ] Yeni fail-closed classic PCAP okuyucu sınır testlerini native
+  Windows/macOS smoke matrisinde çalıştır; bu dar PCAP testi geçse bile tam
+  `axiom-scan` iş akışı ve tam pytest paketi bu platformlarda doğrulanmış
+  sayılmaz.
 - [x] Registry paketlerinin imza/checksum/bozuk cache testleri zaten vardı;
   sürüm yükseltmede yerel içeriğin atomik yenilenmesi ve `remove` ile
   erişilemeyen transitive registry bağımlılıklarının temizlenmesi eklendi;

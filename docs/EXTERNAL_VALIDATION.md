@@ -102,10 +102,17 @@ before sharing a command.
 /tmp/axiom-scan scan /absolute/path/to/authorized-file --rules /absolute/path/to/your-rules.yar
 ```
 
-PCAP taramasında her paket ayrı taranır; TCP akışı yeniden birleştirilmez.
+Yalnız klasik PCAP dosyaları desteklenir (mikro/nanosaniye zaman damgası, iki
+bayt sırası); pcapng desteklenmez. Yakalanmış ham frame baytları başlıklar dâhil
+aynen ve paket başına taranır; protokol çözümleme ve TCP akışı yeniden
+birleştirme yoktur. Boş paket geçerlidir; bozuk veya kesik kayıt tüm taramayı
+hata ile durdurur.
 
-For PCAP scans, each packet is scanned separately; TCP streams are not
-reassembled.
+Only classic PCAP files are supported (micro/nanosecond timestamps, either byte
+order); pcapng is unsupported. Captured raw frame bytes are scanned as-is,
+including headers, one packet at a time; there is no protocol decoding or TCP
+stream reassembly. Empty packets are valid; malformed or truncated records stop
+the scan with an error.
 
 ```bash
 /tmp/axiom-scan pcap /absolute/path/to/authorized-capture.pcap --rules /absolute/path/to/your-rules.yar

@@ -368,6 +368,7 @@ BUILTIN_FUNCTIONS = {
     'rt_pcap_write_packet': (['int', 'str'], 'bool'),
     'rt_pcap_open_file': (['str'], 'int'),
     'rt_pcap_next_packet': (['int'], 'str'),
+    'rt_pcap_reader_status': (['int'], 'int'),
     'rt_pcap_packet_count': (['int'], 'int'),
     'rt_pcap_close': (['int'], 'void'),
     'rt_fim_hash_file': (['str'], 'str'),

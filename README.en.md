@@ -107,7 +107,10 @@ in their own language.
   scanned length. If a target containing NUL also uses a regex pattern, the
   scanner returns an explicit error instead of a potentially incorrect result.
   Regex on targets without NUL continues to use the existing POSIX ERE path.
-- PCAP packets are scanned individually; there is **no TCP reassembly**.
+- Only classic PCAP files are supported (micro/nanosecond timestamps, either
+  byte order); pcapng is explicitly rejected. Each captured raw frame is scanned
+  as-is, including headers; there is no protocol decoding or **TCP stream
+  reassembly**. Malformed or truncated records return an error.
 - The DFIR tool is Linux `/proc` based; no process/port collection on
   Windows/macOS. It is not a policy engine: it produces a risk score but does
   not change the exit code.

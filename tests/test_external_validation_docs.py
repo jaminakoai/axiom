@@ -39,6 +39,23 @@ def test_smoke_instructions_and_expected_result_are_documented_in_both_languages
     assert "The match offset is 36 and its length is 37." in guide
 
 
+def test_pcap_guidance_documents_format_limits_and_fail_closed_behavior():
+    guide = _read_guide()
+    readmes = [
+        (ROOT / "README.md").read_text(encoding="utf-8"),
+        (ROOT / "README.en.md").read_text(encoding="utf-8"),
+    ]
+    for text in [guide, *readmes]:
+        assert "classic PCAP" in text or "klasik PCAP" in text
+        assert "pcapng" in text
+        assert "truncated" in text.lower() or "kesik" in text.lower()
+        assert "TCP" in text
+    assert "Yakalanmış ham frame baytları" in guide
+    assert "Captured raw frame bytes" in guide
+    assert "protokol çözümleme" in guide
+    assert "protocol decoding" in guide
+
+
 def test_feedback_routing_separates_public_usability_from_security_reports():
     guide = _read_guide()
     security = (ROOT / "SECURITY.md").read_text(encoding="utf-8")

@@ -220,6 +220,9 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
     }
 
     let handle = pcap_open_reader(pcap_path)
+    if handle == -3 {
+        return result_err_int("pcapng desteklenmiyor; klasik PCAP dosyasi gerekli")
+    }
     if handle <= 0 {
         return result_err_int("pcap acilamadi (gecersiz dosya?): " + pcap_path)
     }
@@ -236,41 +239,51 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
 
     while true {
         let pkt_hex = pcap_read_next(handle)
-        if len(pkt_hex) == 0 {
+        let pkt_status = pcap_read_status(handle)
+        if pkt_status == 0 {
             break
         }
-        // Paketi uzunlugu korunan buffer'a decode et; payload NUL icerebilir.
-        let pkt_raw = buf_from_hex(pkt_hex)
-        if pkt_raw <= 0 {
+        if pkt_status < 0 {
             pcap_file_close(handle)
-            return result_err_int("pcap paketi byte buffer'a decode edilemedi")
+            return result_err_int("pcap kaydi eksik veya bozuk")
         }
-        let packet_result = yara_ruleset_scan_buffer_with_filesize(pkt_raw, sets, buf_len(pkt_raw))
-        if not packet_result.ok {
-            buf_free(pkt_raw)
-            pcap_file_close(handle)
-            return result_err_int(packet_result.error)
-        }
-        if len(packet_result.matches) > 0 {
-            if written > 0 {
-                out = out + ","
+        if len(pkt_hex) == 0 {
+            // Sifir uzunluklu kayit gecerli bir paket olabilir; EOF degildir.
+            packet_index = packet_index + 1
+        } else {
+            // Paketi uzunlugu korunan buffer'a decode et; payload NUL icerebilir.
+            let pkt_raw = buf_from_hex(pkt_hex)
+            if pkt_raw <= 0 {
+                pcap_file_close(handle)
+                return result_err_int("pcap paketi byte buffer'a decode edilemedi")
             }
-            out = out + "{\"index\":" + int_to_str(packet_index)
-            out = out + ",\"rules\":["
-            let mut j = 0
-            while j < len(packet_result.matches) {
-                if j > 0 {
+            let packet_result = yara_ruleset_scan_buffer_with_filesize(pkt_raw, sets, buf_len(pkt_raw))
+            if not packet_result.ok {
+                buf_free(pkt_raw)
+                pcap_file_close(handle)
+                return result_err_int(packet_result.error)
+            }
+            if len(packet_result.matches) > 0 {
+                if written > 0 {
                     out = out + ","
                 }
-                out = out + "\"" + _json_escape(packet_result.matches[j].rule_name) + "\""
-                j = j + 1
+                out = out + "{\"index\":" + int_to_str(packet_index)
+                out = out + ",\"rules\":["
+                let mut j = 0
+                while j < len(packet_result.matches) {
+                    if j > 0 {
+                        out = out + ","
+                    }
+                    out = out + "\"" + _json_escape(packet_result.matches[j].rule_name) + "\""
+                    j = j + 1
+                }
+                out = out + "]}"
+                written = written + 1
+                matches_total = matches_total + len(packet_result.matches)
             }
-            out = out + "]}"
-            written = written + 1
-            matches_total = matches_total + len(packet_result.matches)
+            buf_free(pkt_raw)
+            packet_index = packet_index + 1
         }
-        buf_free(pkt_raw)
-        packet_index = packet_index + 1
     }
 
     pcap_file_close(handle)

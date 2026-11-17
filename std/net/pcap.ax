@@ -26,6 +26,12 @@ fn pcap_read_next(reader_handle: int) -> str
     return rt_pcap_next_packet(reader_handle)
 }
 
+// Last pcap_read_next status: -1 invalid/error, 0 clean EOF, 1 packet.
+// A zero-byte packet is distinguished from EOF by this status.
+fn pcap_read_status(reader_handle: int) -> int {
+    return rt_pcap_reader_status(reader_handle)
+}
+
 fn pcap_get_packet_count(handle: int) -> int
     requires handle > 0
 {
