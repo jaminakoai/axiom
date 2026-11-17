@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `09c4206`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, doküman blokları 55 geçti; [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
-| Son CI denemesi | `09c4206` [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
-| Son başarılı tam CI | `09c4206` [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
-| Son platform smoke | `09c4206`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `b4ef7b5`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, YARA differential 29 ve doküman blokları 55 geçti; [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
+| Son CI denemesi | `b4ef7b5` [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
+| Son başarılı tam CI | `b4ef7b5` [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
+| Son platform smoke | `b4ef7b5`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44023214456](https://github.com/jaminakoai/axiom/actions/runs/44023214456), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `09c4206` — [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `b4ef7b5` — [run 44023214490](https://github.com/jaminakoai/axiom/actions/runs/44023214490), **7/7 başarılı** |
 | Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
 
 ---
@@ -69,8 +69,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   gerçek parity testi beş tekrarda 5/5 geçti. `3da8291` run `44017836432` ile
   düzeltme doğrulandı; `09c4206` run `44020276090` Python 3.10–3.13'te her biri
   1587 geçti/27 skip, doküman blokları 55 geçti ve tam CI 7/7 başarılı oldu.
-  Aynı commit'in native platform smoke'u `44020276057` Linux, Windows ve
-  macOS'ta, sentinel onboarding testi dâhil 3/3 geçti.
+  Ardından `b4ef7b5` güncel G3 temiz-klon kanıtı ile kaydedildi: run
+  `44023214490` yine Python 3.10–3.13'te her biri 1587 geçti/27 skip, YARA
+  differential 29, doküman blokları 55 ve 7/7 başarılı; native platform smoke
+  `44023214456` Linux, Windows ve macOS'ta 3/3 başarılı. Ayrıntı:
+  [`b4ef7b5 CI raporu`](docs/reports/2026-11-17-b4ef7b5-ci.md).
 
 ### İş sırası ve kabul kapıları
 
@@ -1374,8 +1377,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `3da8291`: Python 3.10–13'te her biri 1586 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44017836432 | 2000 |
-| Son native platform smoke | `09c4206`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44020276057 | — |
+| Son tam CI | `b4ef7b5`: Python 3.10–13'te her biri 1587 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44023214490 | 2000 |
+| Son native platform smoke | `b4ef7b5`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44023214456 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 385 | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |

@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 62 rapor** · 63 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 63 rapor** · 64 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -109,6 +109,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 ## 17 Kasım 2026
 
+- [`b4ef7b5` — G3 güncel smoke ve tam CI doğrulaması](2026-11-17-b4ef7b5-ci.md)
 - [G3 — Güncel master onboarding smoke doğrulaması](2026-11-17-g3-current-master-smoke.md)
 - [G4 — Signed Registry index v2](2026-11-17-signed-registry-index-v2.md)
 - [G4 — Registry indirme ve arşiv kaynak sınırları](2026-11-17-registry-client-archive-bounds.md)
