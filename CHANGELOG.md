@@ -91,6 +91,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   Selector başına sayım YARA 4.5.4 ile karşılaştırmalı test edildi.
 
 ### Değiştirilen
+- CI ve registry Pages workflow'larındaki checkout/setup-python eylemleri,
+  Node.js 24 kullanan resmi sürümlerin tam commit SHA'larına sabitlendi.
 - `axiom-scan` dosya ve PCAP hedeflerini ByteBuffer uzunluğuyla tarar; NUL
   baytından sonraki içerik ve bayt sınırını aşan eşleşmeler korunur. NUL içeren
   hedefte regex kullanımı, byte-span regex desteği olmadığı için yapılandırılmış
