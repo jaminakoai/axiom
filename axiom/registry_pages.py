@@ -149,7 +149,9 @@ def validate_registry_tree(source_root: Path, *, now: datetime | None = None) ->
         for name in sorted(index.packages):
             for entry in index.packages[name]:
                 version = entry["version"]
-                relative = Path(*name.split("/"), version, f"{version}.tar.gz")
+                # RegistryClient downloads `<registry>/<name>/<version>.tar.gz`;
+                # keep the Pages tree identical to the actual client URL layout.
+                relative = Path(*name.split("/"), f"{version}.tar.gz")
                 archive_path = registry_root / relative
                 if archive_path.is_symlink() or not archive_path.is_file():
                     raise RegistryPagesError(f"registry paket arşivi yok/geçersiz: {relative}")

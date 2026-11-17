@@ -58,12 +58,12 @@ def _archive(name: str = "axiom-scan-report", version: str = "0.1.0") -> bytes:
 def _registry_tree(root: Path, *, schema: int = 1) -> tuple[Path, bytes]:
     site = root / "registry-site"
     registry = site / "registry"
-    (registry / "axiom-scan-report" / "0.1.0").mkdir(parents=True)
+    (registry / "axiom-scan-report").mkdir(parents=True)
     package_private, package_public = _keypair(root, "package")
     shutil.copyfile(package_public, site / "package-public-key.pem")
 
     archive = _archive()
-    archive_path = registry / "axiom-scan-report" / "0.1.0" / "0.1.0.tar.gz"
+    archive_path = registry / "axiom-scan-report" / "0.1.0.tar.gz"
     archive_path.write_bytes(archive)
     entry = {
         "version": "0.1.0",
@@ -98,7 +98,7 @@ def test_pages_build_validates_signed_package_and_generates_project_site(tmp_pat
     assert "registry/index.json" in (output / "index.html").read_text()
     assert (output / ".nojekyll").is_file()
     assert (output / "registry" / "index.json").read_bytes() == raw_index
-    assert (output / "registry" / "axiom-scan-report" / "0.1.0" / "0.1.0.tar.gz").is_file()
+    assert (output / "registry" / "axiom-scan-report" / "0.1.0.tar.gz").is_file()
     assert not (output / "package-public-key.pem").exists()
     assert not (output / "index-public-key.pem").exists()
 
@@ -111,7 +111,7 @@ def test_pages_build_verifies_separately_signed_v2_index(tmp_path):
 
 def test_pages_build_rejects_tampered_package_and_does_not_create_output(tmp_path):
     site, _ = _registry_tree(tmp_path)
-    archive = site / "registry" / "axiom-scan-report" / "0.1.0" / "0.1.0.tar.gz"
+    archive = site / "registry" / "axiom-scan-report" / "0.1.0.tar.gz"
     archive.write_bytes(archive.read_bytes() + b"tampered")
     output = tmp_path / "_site"
 
@@ -122,7 +122,7 @@ def test_pages_build_rejects_tampered_package_and_does_not_create_output(tmp_pat
 
 def test_pages_build_rejects_invalid_package_signature_after_hash_matches(tmp_path):
     site, _ = _registry_tree(tmp_path)
-    archive_path = site / "registry" / "axiom-scan-report" / "0.1.0" / "0.1.0.tar.gz"
+    archive_path = site / "registry" / "axiom-scan-report" / "0.1.0.tar.gz"
     archive = archive_path.read_bytes() + b"tampered"
     archive_path.write_bytes(archive)
     index_path = site / "registry" / "index.json"

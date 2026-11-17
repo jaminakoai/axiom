@@ -392,11 +392,16 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   boyutları doğrulanıyor; özel anahtar kabul edilmiyor ve public key dosyaları
   yayımlanan artifact'e kopyalanmıyor. Symlink/special file ve tree/index
   uyuşmazlığı fail-closed. Dört GitHub Action SHA ile sabitli; deploy izni
-  yalnız deploy job'unda. Pages'i açmaz, deploy başlatmaz; hosting/anahtar ve
-  GitHub environment koruma ayarları dış karar olarak açık kalır.
-  `tests/test_registry_pages.py` + registry doküman testleri **13 geçti**;
-  güncel çalışma ağacının tam `python -m pytest -q -rs` paketi **1610 geçti,
-  0 hata, 0 skip** (1396,94 sn). İnceleme raporu:
+  yalnız deploy job'unda. Gerçek `axpm pack → schema 2 assemble → Pages build`
+  denemesi, assembler'ın `<ad>/<sürüm>.tar.gz` yolunu doğrulayıcıyla
+  uyumsuz buldu; validator istemciyle aynı yolu kullansın diye düzeltildi ve
+  `test_sample_scan_report_signed_registry_release_preflight` içine bağlandı.
+  Temiz klon + geçici anahtarlarla uçtan uca prova geçti. Pages'i açmaz, deploy
+  başlatmaz; hosting/anahtar ve GitHub environment koruma ayarları dış karar
+  olarak açık kalır. İlgili Pages/registry/release-preflight hedef testleri
+  **14 geçti**. Önceki `8d633b5` çalışma ağacı tam paketi **1610 geçti, 0 hata,
+  0 skip** (1396,94 sn); yeni yol düzeltmesi ayrıca 14 hedef test ve CI ile
+  doğrulanacak. İnceleme raporu:
   [`2026-11-17-github-pages-registry-draft.md`](docs/reports/2026-11-17-github-pages-registry-draft.md).
 - [x] Henüz dağıtılmamış `registry.axiom-lang.org` varsayılan adresini
   `docs/REGISTRY.md` içinde açıkça etiketle; gerçek upload/hosting varmış gibi

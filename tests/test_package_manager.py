@@ -23,6 +23,7 @@ import pytest
 from axiom.package_manager import (
     Manifest, LockFile, PackageManager, compute_dir_checksum, TomlWriter, parse_toml
 )
+from axiom.registry_pages import build_pages_site
 
 AXIOM_BIN = Path(__file__).resolve().parent.parent / "bin" / "axiom"
 AXPM_BIN = Path(__file__).resolve().parent.parent / "bin" / "axpm"
@@ -542,6 +543,19 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     assert assembled_index["sequence"] == 1
     assert assembled_index["packages"] == {"axiom-scan-report": [index_entry]}
     assert (registry / "index.json.sig").is_file()
+
+    # Validate the exact v2 tree produced above through the Pages builder; this
+    # guards the hosted static path layout against drifting from RegistryClient.
+    pages_source = tmp_path / "pages-registry-site"
+    pages_source.mkdir()
+    shutil.copytree(registry, pages_source / "registry")
+    shutil.copyfile(public_key_path, pages_source / "package-public-key.pem")
+    shutil.copyfile(index_public_key_path, pages_source / "index-public-key.pem")
+    pages_site = build_pages_site(pages_source, tmp_path / "pages-output")
+    assert (pages_site / "registry" / "index.json.sig").is_file()
+    assert (pages_site / "registry" / "axiom-scan-report" / "0.1.0.tar.gz").is_file()
+    assert not (pages_site / "package-public-key.pem").exists()
+    assert not (pages_site / "index-public-key.pem").exists()
 
     second_registry = tmp_path / "second-registry"
     second_build = subprocess.run(

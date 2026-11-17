@@ -28,7 +28,15 @@ yayımlanmamıştır.
 
 - `python -m py_compile axiom/registry_pages.py tests/test_registry_pages.py`
 - `pytest -q --tb=short tests/test_registry_pages.py tests/test_registry_docs.py`
-  — **13 passed**.
+  — **13 passed** before adding the release-preflight integration.
+- `pytest -q --tb=short tests/test_registry_pages.py tests/test_registry_docs.py
+  tests/test_package_manager.py::test_sample_scan_report_signed_registry_release_preflight`
+  — **14 passed** after connecting the real assemble output to the Pages builder.
+- A clean temporary clone ran the sample through `axpm pack`, schema 2
+  `axpm registry assemble`, then `axiom.registry_pages`; the build passed with
+  an ephemeral package/index key pair. The generated Pages artifact contained
+  `registry/<name>/<version>.tar.gz` and the signed index, and omitted both PEM
+  public-key files.
 - `python -m pytest -q -rs` — **1610 passed, 0 failed, 0 skipped** in 1396.94 s
   (bu raporun oluşturulduğu yerel çalışma ağacı).
 - Commit `8d633b5` GitHub CI run
@@ -44,6 +52,14 @@ Regresyon testleri geçerli v1/v2 paket üretimini, başarısız paket ve index
 imzalarını, hatalı SHA, süresi dolmuş v2 index'i, eksik imza, symlink ve
 beklenmeyen dosyaları, açık anahtarların artifact dışında kalmasını ve workflow
 tetikleme/izin/Action SHA şartlarını kapsar.
+
+## Bulunan ve düzeltilen entegrasyon hatası
+
+İlk gerçek paketleme provasında Pages doğrulayıcı arşivi
+`<ad>/<sürüm>/<sürüm>.tar.gz` yolunda arıyordu. `axpm registry assemble` ve
+RegistryClient'in gerçek URL düzeni `<ad>/<sürüm>.tar.gz` olduğundan validator
+geçerli registry'yi reddetti. Yol düzeltildi ve release-preflight testi artık
+aynı gerçek assemble çıktısını Pages builder'ından geçiriyor.
 
 ## Kalan yayın kapıları
 
