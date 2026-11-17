@@ -44,12 +44,14 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   `0.1.0` GitHub Pages'te yayında. Resmî adres, default URL ve paketlenmiş public
   trust anchor’lar `0b53c17` ile eklendi; release snapshot `355fe20` ile gönderildi.
   Canlı default URL'den imzalı schema 2 index doğrulandı ve temiz tüketici
-  ayarsız install/test yaptı. Private key'ler repo dışındadır.
+  ayarsız install/test yaptı. Private key'ler repo dışındadır. Age ile SSH
+  Ed25519 alıcısına şifreli recovery arşivi oluşturulup geri açılarak doğrulandı;
+  ciphertext'in harici/off-device kopyası ve rotasyon overlap desteği açıktır.
 - Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
   imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
   regresyon kanıtı eklendi. Ayrı anahtarlı imzalı schema 2 index ve gözlemlenmiş
   sequence rollback kontrolü de eklendi; ilk kullanım/yerel state silinmesi
-  sınırı ile üretim anahtarı ve hosting kararı açık kapıdır:
+  sınırı ile tekil trust anchor nedeniyle aşamalı rotasyon sınırı sürmektedir:
   [G4 metadata binding raporu](docs/reports/2026-11-16-registry-index-metadata-binding.md).
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
@@ -350,7 +352,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] GitHub Pages'i workflow kaynağıyla etkinleştir; `github-pages` environment'i
   required reviewer ve yalnız `master` dalı ile koru; signed snapshot'ı yayınla.
   Workflow `44053918679` build/deploy **2/2 başarılı**. Pages API HTTPS enforcement
-  açık. Anahtarların çevrimdışı yedeğini ve rotasyon prosedürünü ayrıca sürdür.
+  açık.
+- [x] İki signing key için age şifreli recovery arşivi oluşturup eşleşen SSH
+  Ed25519 identity ile geri açarak doğrula. Yerel ciphertext:
+  `~/.config/axiom/registry-key-backups/registry-signing-keys-2026-11-17.tar.age`.
+- [ ] Arşivi ayrı fiziksel/off-device saklama alanına kopyala ve yedek SSH
+  identity'sinin kurtarılabilirliğini doğrula. İstemci şu an tek public anchor
+  taşıdığından, kesintisiz anahtar rotasyonu öncesi eski/yeni anchor overlap'ini
+  uygula ve test et. Runbook: `docs/REGISTRY_OPERATIONS.md`.
 - [x] GitHub Pages için manuel, master dalı ve açık `publish` seçimi isteyen
   statik registry taslağı eklendi. Build öncesi kaynak ağacı, Ed25519 paket ve
   v2 index imzaları, SHA-256, manifest/bağımlılık eşleşmesi, arşiv ve artifact

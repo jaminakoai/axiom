@@ -33,12 +33,16 @@ review and permits deployments from `master` only.
 
 ## Remaining operational work
 
-The private signing keys currently have restrictive filesystem permissions but
-no verified encrypted offline backup. Create and verify a backup, document
-custodianship and rotation, and retain the existing private keys securely. If a
-key is lost or exposed, rotate the corresponding public trust anchor through an
-Axiom client release. Schema 2 sequence rollback protection cannot detect a
-stale signed index on first use or after local rollback state is deleted.
+An age-encrypted backup was created at
+`~/.config/axiom/registry-key-backups/registry-signing-keys-2026-11-17.tar.age`
+and decrypted to a temporary directory to verify both private keys against the
+archive. It is still on the same machine; copy it to removable/off-device
+storage before treating it as disaster recovery. The matching SSH identity
+must also remain recoverable. Rotation is documented in
+[`REGISTRY_OPERATIONS.md`](../REGISTRY_OPERATIONS.md); the client currently has
+single-key trust and needs overlapping-key support before a seamless planned
+rotation. Schema 2 sequence rollback protection cannot detect a stale signed
+index on first use or after local rollback state is deleted.
 
 GitHub Actions emitted Node.js 20 deprecation warnings for pinned Pages
 deployment actions (currently executed under Node.js 24) and an upcoming

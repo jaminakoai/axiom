@@ -345,8 +345,8 @@ değeri değiştirilebilir, kayıtlar silinebilir veya aynı kimlikteki eski ama
 geçerli imzalı bir paket tekrar sunulabilir. İmzalı Registry v2 mode index
 kurcalamasını ve istemcinin daha yüksek sequence gözlemledikten sonraki rollback'i
 tespit eder; ilk bağlantı veya yerel state silindikten sonraki eski index sunumunu
-tek başına engellemez. Üretim anahtar rotasyonu ve hosting hâlâ yayın öncesi
-karardır.
+tek başına engellemez. Anahtar yedeği ve tekil güven anahtarından aşamalı
+rotasyona geçiş için [işletim runbook'una](REGISTRY_OPERATIONS.md) bakın.
 
 **Kritik not:** Tarball'ın SHA-256 ve imzası doğrulanmadan arşiv açılmaz; güvenli
 üye kontrollerinden sonra çıkarılan imzalı manifesto index metadata'sıyla
