@@ -10,8 +10,8 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-17 |
-| Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
+| Son güncelleme | 2026-11-18 |
+| Aşama | **G5 başlangıcı — 1.0 öncesi API kararlılığı ve gerçek kullanım kanıtı** |
 | Son tamamlanmış tam test paketi | GitHub Actions `2b73fea`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, YARA differential 29 ve doküman blokları 55 geçti; [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
 | Son CI denemesi | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
 | Son başarılı tam CI | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
@@ -64,9 +64,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - İlk güvenilir public release hedefine göre yaklaşık **%90** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
   isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
-  doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı; key backup/rotation
-  ve kullanımdan doğan geri bildirim sonraki operasyon adımlarıdır. Yüzde kaba
-  milestone tahminidir, kullanıcı benimsemesini ölçmez.
+  doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı. G5 başladı; ilk iş
+  olan public API envanteri ve 1.0 uyumluluk taslağı
+  [`G5 API stability proposal`](docs/G5_API_STABILITY_PROPOSAL.md) içinde.
+  Yüzde kaba milestone tahminidir, kullanıcı benimsemesini ölçmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
   `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
@@ -411,11 +412,21 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - **Kapı:** temiz ortamda kurulumdan örnek taramaya kadar belgelenmiş akış
   çalışıyor; desteklenmeyen ortamlar açıkça belirtiliyor.
 
-#### G5 — Nişte büyüme ve 1.0 `[ ]` — G3/G4 sonrası
+#### G5 — Nişte büyüme ve 1.0 `[~]` — 18 Kasım 2026 başladı
+
+- [x] G5.1 ilk public API yüzey envanterini ve SemVer/iki-sürüm uyumluluk
+  önerisini hazırla. Taslak maintainer onayı değildir:
+  [`docs/G5_API_STABILITY_PROPOSAL.md`](docs/G5_API_STABILITY_PROPOSAL.md).
+- [ ] Dil sözdizimi veya stdlib genişletmeden önce stable/experimental API
+  sınırını ve “iki sürüm” taahhüdünün anlamını onayla.
+- [ ] `docs/VERSIONING.md` içindeki bağımsız kullanıcı doğrulaması → `v1.0`
+  kapısını koru veya değiştir; G3 iç teknik kabulünü kullanıcı kanıtı gibi
+  göstermeden kararı belgele.
+- [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
+  ihtiyacı çözen dikey dil geliştirmesini, iki backend regresyonlarıyla seç.
 
 - [ ] Gerçek kullanıcı ve bakım kapasitesi oluştukça paket/yazar hedefleri koy;
   hedef sayısını kullanıcı ihtiyacının yerine geçirme.
-- [ ] 1.0 API kararlılığı ve iki sürüm geriye uyumluluk politikasını onayla.
 - [ ] Regülasyon kanıt paketi, fon başvurusu ve genel amaçlı dil hedeflerini
   yalnız somut talep/ortak bulunduğunda başlat.
 
@@ -423,7 +434,9 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 **G3 iç teknik denetimi kapandı**; bağımsız kullanıcı geri bildirimi artık
 isteğe bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir.
-G4 resmi örnek paket yayını ve operasyon kararları açık kalır. G1 ve G2 kapandı.
+G4 imzalı örnek paket yayını tamamlandı. G5 başladı: ilk iş API/uyumluluk
+politikasını netleştirmek; kullanıcı kanıtı olmadan genel amaçlı özellik kapsamı
+büyütülmeyecek. G1 ve G2 kapandı.
 G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
@@ -1347,16 +1360,16 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 
 1. **G3:** maintainer isteğiyle iç teknik denetim kapandı;
    [258 test ve temiz-klon kanıtı](docs/reports/2026-11-17-g3-internal-audit.md).
-   Bağımsız kullanıcı geri bildirimi isteğe bağlı ürün kanıtı olarak tutulur.
-2. **G4:** örnek paket için upload/hosted registry yazma yolunu ve resmi imza
-   anahtarı işletimini kararlaştır; en az bir sürümlü paketi gerçekten yayımla.
-   G4 platform smoke Linux/Windows/macOS'ta geçti; sentetik onboarding scan'i
-   üçünde doğrulandı. Tam pytest paketi ve gerçek kullanıcı girdisiyle scan
-   Windows/macOS'ta doğrulanmış değildir.
-3. **G5:** kullanıcı kanıtı ve bakım kapasitesi oluştuktan sonra 1.0 ve ekosistem
-   hedeflerini kararlaştır.
+   Bağımsız kullanıcı doğrulaması yapılmadı; mevcut `v1.0` politikası bunu
+   kapı olarak tutuyor.
+2. **G4:** tamamlandı. `axiom-scan-report` 0.1.0 signed registry'de yayında;
+   [yayın kanıtı](docs/reports/2026-11-17-g4-registry-publication.md).
+3. **G5 (aktif):** önce public API envanterini ve uyumluluk sözünü kararlaştır;
+   taslak [`G5_API_STABILITY_PROPOSAL.md`](docs/G5_API_STABILITY_PROPOSAL.md).
+   Ardından gerçek kullanım akışındaki dil/stdlib engeline göre geliştirme seç.
 
-**G0, G1, G2 ve iç teknik G3 kapandı.** Native platform smoke doğrulaması da
-tamamlandı; `2b73fea` tam CI'si 7/7 başarılı. Sıradaki kabul kapısı G4 resmi
-örnek paket yayınıdır. Yeni YARA sözdizimi differential kanıt ve açık kapsam
-sınırlarıyla eklenir.
+**G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
+da tamamlandı; son kaydedilmiş CI `2b73fea` 7/7 başarılıdır. G5 başladı; yeni
+dil kapsamı, API/uyumluluk politikası ve kanıtlanmış kullanıcı ihtiyacına göre
+seçilecek. Yeni YARA sözdizimi differential kanıt ve açık kapsam sınırlarıyla
+eklenir.

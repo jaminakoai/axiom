@@ -15,8 +15,12 @@ Destek iddiaları doğrulanmış CI ve kullanıcı akışlarına dayanır.
   `rc`) üretim kararlılığı ya da uyumluluk garantisi vermez.
 - Kırıcı değişiklikler changelog'da açıkça işaretlenir; README ve sürüm notları
   etkilenen sözdizimini, API'yi veya veri biçimini belirtir.
-- `v1.0` yayımlanmış değildir. `v1.0` kararı; G3 bağımsız kullanıcı doğrulaması,
-  G4 dağıtım kapıları ve kamuya açık kararlı API envanteri tamamlanmadan alınmaz.
+- `v1.0` yayımlanmış değildir. G3'ün iç teknik denetimi maintainer kararıyla
+  kapatılmıştır; bu, bağımsız kullanıcı doğrulaması değildir. Mevcut politika,
+  bağımsız kullanıcı doğrulamasını, G4 dağıtım kapılarını ve kamuya açık kararlı
+  API envanterini `v1.0` ön koşulu sayar. G4 tamamlandı; G5 API envanteri ve
+  uyumluluk politikası taslağı üzerinde çalışıyor. G5 hazırlıkları `v1.0`
+  kararını tek başına onaylamaz.
 - `v1.0` sonrasındaki iki sürüm geriye uyumluluk taahhüdü henüz verilmemiştir;
   bu politika 1.0 kararı öncesinde ayrıca belirlenmelidir.
 
@@ -45,9 +49,12 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
   `beta`, `rc`) carry no production-stability or compatibility guarantee.
 - Mark breaking changes in the changelog and describe affected syntax, APIs, or
   data formats in the README and release notes.
-- `v1.0` has not been released. Do not make the `v1.0` decision until G3
-  independent-user validation, G4 distribution gates, and a public stable-API
-  inventory are complete.
+- `v1.0` has not been released. The maintainer closed G3 with an internal
+  technical audit; this is not independent user validation. The current policy
+  keeps independent user validation, G4 distribution gates, and a public
+  stable-API inventory as prerequisites for `v1.0`. G4 is complete; G5 is
+  drafting the API inventory and compatibility policy. G5 preparation alone
+  does not approve a `v1.0` decision.
 - No two-release backward-compatibility promise has been made for post-`v1.0`;
   decide that policy separately before the 1.0 decision.
 
