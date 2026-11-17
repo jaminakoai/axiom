@@ -92,3 +92,24 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 Bu güncel sentetik doğrulama onboarding komutlarını ve dosya tarama yolunu
 kanıtlar; bağımsız kullanıcının yetkili gerçek dosya veya PCAP denemesinin
 yerini tutmaz. G3 kullanıcı kabul kapısı bu nedenle açık kalır.
+
+## `f3a6411` commit'inde temiz klonda tekrar doğrulama
+
+17 Kasım 2026'da yerel `master` HEAD'i `f3a6411173ba` yeni bir geçici dizine
+temiz klonlandı. Python 3.13.14 venv, editable kurulum, sürüm kontrolü, örnek
+derleme, kural doğrulama ve sentetik sentinel taraması başarılı oldu.
+
+```text
+commit: f3a6411173ba
+python: 3.13.14
+axiom --version: Axiom (λx) v0.5.0-alpha
+build: examples/21_axiom_scan.ax succeeded
+rules: ok=true, rules=1
+scan: ok=true, match_count=1
+match: Axiom_External_Validation, offset=36, length=37
+target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
+elapsed: 12.3 s
+```
+
+Bu sentetik kontrol güncel master'daki onboarding yolunu doğrular; bağımsız
+kullanıcı denemesi veya gerçek dosya/PCAP kabulü değildir. G3 kapısı açık kalır.

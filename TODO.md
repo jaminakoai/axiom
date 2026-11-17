@@ -253,6 +253,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   `1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405`.
   Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir; ayrıntı G3/G4
   onboarding raporundadır.
+- [x] Güncel `f3a6411` temiz klonunda yeniden doğrula: Python 3.13.14,
+  kurulum/örnek derleme/`rules`/sentinel `scan` başarılı; 12,3 saniye,
+  `match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız kullanıcı
+  kabulü değildir; ayrıntı G3 onboarding raporundadır.
 - [x] PCAP başlangıç yönergesini gerçek okuyucu davranışıyla eşleştir: yalnız
   klasik PCAP, mikro/nanosaniye ve iki byte order; raw yakalanmış frame taraması;
   pcapng açık ret. Temiz EOF, boş paket ve bozuk/kesik kayıt artık ayrı
@@ -329,7 +333,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Git commit'inden deterministik tarball ve imzalı index girdisi hazırlar; ancak
   genel amaçlı upload komutu ve resmi imza anahtarı işletimi yok. GitHub Pages
   için yalnız manuel çalıştırılan taslak yayın workflow'u eklendi; Pages henüz
-  etkin değil ve hiçbir registry yayımlanmadı. `packages/axiom-scan-report`
+  etkin değil ve hiçbir registry yayımlanmadı. **Yayın workflow'unda
+  `registry-site/` kaynağı depoda bulunmuyor; mevcut haliyle elle tetiklenen
+  yayın doğrulaması kaynak dizini olmadığı için başarısız olur.** İmzalı,
+  sürümlü kaynak ağacı güvenli biçimde hazırlandıktan sonra commit edilmeli ya da
+  workflow bu girdiyi üretim anahtarı işletimine uygun bir yoldan oluşturmalı.
+  `packages/axiom-scan-report`
   kaynak örneği ve gerçek path bağımlılık testi hazır, ancak bunlar resmi yayın
   sayılmaz. Bunlar çözülüp örnek paket gerçekten
   yayınlanmadan bu madde kapanmaz.
