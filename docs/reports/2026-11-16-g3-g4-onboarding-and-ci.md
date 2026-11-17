@@ -1,7 +1,7 @@
 # G3/G4 onboarding fixes and current CI evidence
 
-**Date:** 16 November 2026  
-**Reviewed source commit:** `468e3d9` (includes the guide, issue form, tests, and CI record)
+**Date:** 17 November 2026
+**Reviewed source commit:** `dd0f997` (includes the guide, issue form, tests, and latest CI record)
 **Status:** Documentation improvements and local checks complete; external G3 and official G4 release gates remain open.
 
 ## What changed
@@ -50,7 +50,33 @@ target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
 The target was the harmless sentinel from the guide. This is install/build/smoke
 evidence only and does **not** satisfy independent-user validation.
 
-### GitHub checks for source commit `468e3d9`
+Repeated from a fresh shallow clone after the latest roadmap/documentation
+commit:
+
+```text
+commit: dd0f9977be99a3ca89b09c41fdd3ea502205351a
+environment: Linux x86_64, Python 3.13
+axiom --version: Axiom (λx) v0.5.0-alpha
+rules: ok=true, rules=1
+scan: ok=true, match_count=1
+match: Axiom_External_Validation, offset=36, length=37
+target_sha256: 1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405
+```
+
+This repeated check proves the onboarding steps still work at `dd0f997`; it is
+still only a synthetic smoke test and does **not** satisfy G3 acceptance.
+
+### GitHub checks for source commit `dd0f997`
+
+- Full CI [run 43980332183](https://github.com/jaminakoai/axiom/actions/runs/43980332183):
+  **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported
+  **1539 passed, 27 skipped**; documentation code blocks reported **55 passed**.
+  The pinned real-YARA corpus differential job reported **29 passed** on each
+  Python version.
+- Native platform smoke [run 43980332305](https://github.com/jaminakoai/axiom/actions/runs/43980332305):
+  **Linux, Windows, and macOS 3/3 passed**.
+
+### Earlier GitHub checks for source commit `468e3d9`
 
 - Full CI [run 43936054939](https://github.com/jaminakoai/axiom/actions/runs/43936054939):
   **7/7 jobs passed**. Python 3.10, 3.11, 3.12, and 3.13 each reported

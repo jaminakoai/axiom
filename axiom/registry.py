@@ -17,6 +17,7 @@ Güvenlik:
 from __future__ import annotations
 
 import hashlib
+import gzip
 import io
 import json
 import os
@@ -25,6 +26,7 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import zlib
 from datetime import datetime, timezone
 import urllib.error
 import urllib.parse
@@ -44,7 +46,166 @@ _SHA256_HEX_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 _REGISTRY_PACKAGE_NAME_RE = re.compile(r"^(@[A-Za-z0-9_.-]+/)?[A-Za-z0-9_.-]+$")
 _MAX_REGISTRY_INDEX_BYTES = 16 * 1024 * 1024
 _MAX_REGISTRY_INDEX_SIGNATURE_BYTES = 1024
+_MAX_REGISTRY_PACK_BYTES = 256 * 1024 * 1024
+_MAX_REGISTRY_ARCHIVE_BYTES = 256 * 1024 * 1024
+_MAX_REGISTRY_ARCHIVE_MEMBERS = 20_000
+_MAX_REGISTRY_MANIFEST_BYTES = 1024 * 1024
+_MAX_REGISTRY_SIDECAR_BYTES = 1024 * 1024
+_MAX_REGISTRY_PACKAGES = 10_000
+_MAX_REGISTRY_PACK_DIRECTORIES = 30_000
+_MAX_REGISTRY_TAR_METADATA_READ = 1024 * 1024
+_MAX_REGISTRY_TAR_METADATA_TOTAL = 32 * 1024 * 1024
+_MAX_REGISTRY_TAR_EXPANDED_BYTES = (
+    _MAX_REGISTRY_ARCHIVE_BYTES + _MAX_REGISTRY_TAR_METADATA_TOTAL
+    + _MAX_REGISTRY_ARCHIVE_MEMBERS * 1024 + 1024
+)
 _MAX_SIGNED_INDEX_LIFETIME_SECONDS = 90 * 24 * 60 * 60
+
+
+class _BoundedTarReader:
+    """Bound individual and cumulative metadata reads performed by tarfile."""
+
+    def __init__(self, source, max_read: int, max_total: int):
+        self.source = source
+        self.max_read = max_read
+        self.max_total = max_total
+        self.total_read = 0
+        self.payload_read = False
+
+    def begin_payload_read(self) -> None:
+        self.payload_read = True
+
+    def end_payload_read(self) -> None:
+        self.payload_read = False
+
+    def read(self, size: int = -1) -> bytes:
+        if not self.payload_read and (size < 0 or size > self.max_read):
+            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
+        data = self.source.read(size)
+        if not self.payload_read:
+            self.total_read += len(data)
+            if self.total_read > self.max_total:
+                raise ValueError("tar başlık/manifest verisi toplam 32 MiB sınırını aşıyor")
+        return data
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        if whence != 0:
+            raise ValueError("tar akışında yalnızca mutlak seek desteklenir")
+        return self.source.seek(offset)
+
+    def tell(self) -> int:
+        return self.source.tell()
+
+    def close(self) -> None:
+        self.source.close()
+
+    def __getattr__(self, name: str):
+        return getattr(self.source, name)
+
+
+class _BoundedRegistryTarInfo(tarfile.TarInfo):
+    """Reject oversized PAX/GNU extension data before tarfile parses it."""
+
+    def _proc_pax(self, archive):
+        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
+            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
+        return super()._proc_pax(archive)
+
+    def _proc_gnulong(self, archive):
+        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
+            raise ValueError("GNU tar uzantı başlığı 1 MiB sınırını aşıyor")
+        return super()._proc_gnulong(archive)
+
+
+def _validate_package_archive_limits(raw: bytes) -> None:
+    """Bound compressed input, gzip expansion, tar metadata and file payloads.
+
+    Run before extracting both downloaded archives and cache hits. A spooled
+    stream caps memory use while ensuring tarfile sees bounded, uncompressed
+    input and a TarInfo subclass before it parses the first member.
+    """
+    if len(raw) > _MAX_REGISTRY_PACK_BYTES:
+        raise RuntimeError(
+            f"registry paket arşivi sıkıştırılmış {_MAX_REGISTRY_PACK_BYTES} bayt sınırını aşıyor"
+        )
+
+    try:
+        with gzip.GzipFile(fileobj=io.BytesIO(raw), mode="rb") as compressed, \
+                tempfile.SpooledTemporaryFile(max_size=8 * 1024 * 1024, mode="w+b") as tar_data:
+            expanded_size = 0
+            while True:
+                chunk = compressed.read(64 * 1024)
+                if not chunk:
+                    break
+                expanded_size += len(chunk)
+                if expanded_size > _MAX_REGISTRY_TAR_EXPANDED_BYTES:
+                    raise RuntimeError("registry paket tar akışı açılmış boyut sınırını aşıyor")
+                tar_data.write(chunk)
+
+            tar_data.seek(0)
+            bounded_tar = _BoundedTarReader(
+                tar_data,
+                _MAX_REGISTRY_TAR_METADATA_READ,
+                _MAX_REGISTRY_TAR_METADATA_TOTAL,
+            )
+            with tarfile.open(
+                fileobj=bounded_tar, mode="r:", tarinfo=_BoundedRegistryTarInfo
+            ) as archive:
+                member_count = 0
+                total_payload = 0
+                while True:
+                    member = archive.next()
+                    if member is None:
+                        break
+                    member_count += 1
+                    if member_count > _MAX_REGISTRY_ARCHIVE_MEMBERS:
+                        raise RuntimeError(
+                            f"registry paket arşivi {_MAX_REGISTRY_ARCHIVE_MEMBERS} üye sınırını aşıyor"
+                        )
+                    if member.isfile():
+                        if member.size < 0:
+                            raise RuntimeError("registry paket arşivinde negatif dosya boyutu")
+                        total_payload += member.size
+                        if total_payload > _MAX_REGISTRY_ARCHIVE_BYTES:
+                            raise RuntimeError(
+                                "registry paket arşivi açılmış dosya boyutu sınırını aşıyor"
+                            )
+                        if PurePosixPath(member.name).parts == ("axiom.toml",) \
+                                and member.size > _MAX_REGISTRY_MANIFEST_BYTES:
+                            raise RuntimeError("registry paket axiom.toml 1 MiB sınırını aşıyor")
+                        source = archive.extractfile(member)
+                        if source is None:
+                            raise RuntimeError(f"registry arşiv girdisi okunamadı: {member.name}")
+                        actual_size = 0
+                        bounded_tar.begin_payload_read()
+                        try:
+                            with source:
+                                while True:
+                                    try:
+                                        chunk = source.read(64 * 1024)
+                                    except (EOFError, tarfile.ReadError) as exc:
+                                        raise RuntimeError(
+                                            f"registry arşiv girdisi kesik: {member.name}"
+                                        ) from exc
+                                    if not chunk:
+                                        break
+                                    actual_size += len(chunk)
+                                    if actual_size > member.size:
+                                        raise RuntimeError(
+                                            "registry arşiv girdisi bildirilen boyutu aşıyor: "
+                                            f"{member.name}"
+                                        )
+                        finally:
+                            bounded_tar.end_payload_read()
+                        if actual_size != member.size:
+                            raise RuntimeError(
+                                f"registry arşiv girdisi kesik: {member.name} "
+                                f"(beklenen {member.size}, okunan {actual_size})"
+                            )
+    except RuntimeError:
+        raise
+    except (OSError, EOFError, tarfile.TarError, ValueError, zlib.error) as exc:
+        raise RuntimeError(f"registry paket arşivi sınır/biçim doğrulaması başarısız: {exc}") from exc
 
 
 def _extract_package_archive(raw: bytes, destination: Path) -> None:
@@ -94,17 +255,38 @@ def _extract_package_archive(raw: bytes, destination: Path) -> None:
             source = archive.extractfile(member)
             if source is None:
                 raise RuntimeError(f"arşiv girdisi okunamadı: {member.name}")
+            copied = 0
             with source, target.open("xb") as output:
-                shutil.copyfileobj(source, output)
+                while True:
+                    try:
+                        chunk = source.read(64 * 1024)
+                    except (EOFError, tarfile.ReadError) as exc:
+                        raise RuntimeError(f"arşiv girdisi kesik: {member.name}") from exc
+                    if not chunk:
+                        break
+                    copied += len(chunk)
+                    if copied > member.size:
+                        raise RuntimeError(f"arşiv girdisi bildirilen boyutu aşıyor: {member.name}")
+                    output.write(chunk)
+            if copied != member.size:
+                raise RuntimeError(
+                    f"arşiv girdisi kesik: {member.name} "
+                    f"(beklenen {member.size}, yazılan {copied})"
+                )
             target.chmod(0o755 if member.mode & 0o111 else 0o644)
 
 
 def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
     """Ensure extracted cache files still equal the verified archive contents."""
     expected: Dict[str, Tuple[int, str, int]] = {}
+    expected_directories = set()
     try:
         with tarfile.open(fileobj=io.BytesIO(raw), mode="r:gz") as archive:
+            member_count = 0
             for member in archive.getmembers():
+                member_count += 1
+                if member_count > _MAX_REGISTRY_ARCHIVE_MEMBERS:
+                    return False
                 name = member.name
                 path = PurePosixPath(name)
                 parts = path.parts
@@ -117,6 +299,7 @@ def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
                 ):
                     return False
                 if member.isdir():
+                    expected_directories.add("/".join(parts))
                     continue
                 if member.issym() or member.islnk() or not member.isfile() or not parts:
                     return False
@@ -139,29 +322,57 @@ def _cache_matches_archive(raw: bytes, cache_dir: Path) -> bool:
                     mode &= 0o200
                 expected[relative_name] = (size, digest.hexdigest(), mode)
 
+                parent = PurePosixPath(relative_name).parent
+                while parent != PurePosixPath("."):
+                    expected_directories.add(parent.as_posix())
+                    parent = parent.parent
+
         actual: Dict[str, Tuple[int, str, int]] = {}
+        actual_entries = 0
+        actual_directories = 0
+        actual_bytes = 0
         for path in cache_dir.rglob("*"):
             if path == cache_dir / "pkg.tar.gz":
                 continue
+            actual_entries += 1
+            if actual_entries > _MAX_REGISTRY_ARCHIVE_MEMBERS + _MAX_REGISTRY_PACK_DIRECTORIES:
+                return False
             if path.is_symlink():
                 return False
             if path.is_dir():
+                actual_directories += 1
+                if actual_directories > _MAX_REGISTRY_PACK_DIRECTORIES:
+                    return False
+                relative = path.relative_to(cache_dir).as_posix()
+                if relative not in expected_directories:
+                    return False
                 continue
             if not path.is_file():
+                return False
+            relative = path.relative_to(cache_dir).as_posix()
+            if relative not in expected:
+                return False
+            expected_size = expected[relative][0]
+            if path.stat().st_size != expected_size:
+                return False
+            remaining_bytes = _MAX_REGISTRY_ARCHIVE_BYTES - actual_bytes
+            if path.stat().st_size > remaining_bytes:
                 return False
             digest = hashlib.sha256()
             size = 0
             with path.open("rb") as source:
                 for chunk in iter(lambda: source.read(1024 * 1024), b""):
                     size += len(chunk)
+                    actual_bytes += len(chunk)
+                    if actual_bytes > _MAX_REGISTRY_ARCHIVE_BYTES:
+                        return False
                     digest.update(chunk)
-            relative = path.relative_to(cache_dir).as_posix()
             mode = path.stat().st_mode & 0o777
             if os.name == "nt":
                 mode &= 0o200
             actual[relative] = (size, digest.hexdigest(), mode)
         return actual == expected
-    except (OSError, tarfile.TarError, ValueError):
+    except (tarfile.TarError, ValueError):
         return False
 
 # ---------------------------------------------------------------------------
@@ -621,10 +832,19 @@ def _validate_package_manifest(
 
 def _fetch(url: str, timeout: int = 30, max_bytes: Optional[int] = None) -> bytes:
     def read_limited(source) -> bytes:
-        raw = source.read() if max_bytes is None else source.read(max_bytes + 1)
-        if max_bytes is not None and len(raw) > max_bytes:
-            raise RuntimeError(f"indirilen içerik {max_bytes} bayt sınırını aşıyor")
-        return raw
+        if max_bytes is None:
+            return source.read()
+        chunks = bytearray()
+        while True:
+            remaining = max_bytes + 1 - len(chunks)
+            if remaining <= 0:
+                raise RuntimeError(f"indirilen içerik {max_bytes} bayt sınırını aşıyor")
+            chunk = source.read(min(64 * 1024, remaining))
+            if not chunk:
+                return bytes(chunks)
+            chunks.extend(chunk)
+            if len(chunks) > max_bytes:
+                raise RuntimeError(f"indirilen içerik {max_bytes} bayt sınırını aşıyor")
 
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme.lower() == "file":
@@ -747,21 +967,32 @@ class RegistryClient:
             # Cache isabeti: içeriği YİNE doğrula. Aksi halde bozulmuş/ele
             # geçirilmiş cache doğrulamayı atlatırdı. İmzayı ve unsigned
             # politikasını da mevcut yapılandırmaya göre yeniden uygula.
-            cached = stored_tarball.read_bytes()
-            if verify_sha256(cached, expected_sha):
-                _verify_package_tarball(cached, name, version, expected_sha,
-                                        sig_b64, self.config)
-                if _cache_matches_archive(cached, cache_dir):
-                    _validate_package_manifest(
-                        cache_dir, name, version, indexed_dependencies
-                    )
-                    return cache_dir, True
+            if cache_dir.is_symlink():
+                raise RuntimeError(f"registry önbellek yolu symlink olamaz: {cache_dir}")
+            if not stored_tarball.is_symlink() \
+                    and stored_tarball.stat().st_size <= _MAX_REGISTRY_PACK_BYTES:
+                with stored_tarball.open("rb") as cached_file:
+                    cached = cached_file.read(_MAX_REGISTRY_PACK_BYTES + 1)
+                if len(cached) <= _MAX_REGISTRY_PACK_BYTES \
+                        and verify_sha256(cached, expected_sha):
+                    _verify_package_tarball(cached, name, version, expected_sha,
+                                            sig_b64, self.config)
+                    try:
+                        _validate_package_archive_limits(cached)
+                    except RuntimeError:
+                        shutil.rmtree(cache_dir, ignore_errors=True)
+                        raise
+                    if _cache_matches_archive(cached, cache_dir):
+                        _validate_package_manifest(
+                            cache_dir, name, version, indexed_dependencies
+                        )
+                        return cache_dir, True
             # bozuk cache: temizle ve yeniden indir
             shutil.rmtree(cache_dir, ignore_errors=True)
 
         url = f"{self.config.url}/{name}/{version}.tar.gz"
         try:
-            raw = _fetch(url, self.config.timeout)
+            raw = _fetch(url, self.config.timeout, _MAX_REGISTRY_PACK_BYTES)
         except urllib.error.HTTPError as e:
             raise RuntimeError(f"paket indirilemedi ({url}): HTTP {e.code}")
         except urllib.error.URLError as e:
@@ -769,6 +1000,7 @@ class RegistryClient:
 
         _verify_package_tarball(raw, name, version, expected_sha, sig_b64,
                                 self.config)
+        _validate_package_archive_limits(raw)
 
         # Açma (atomik: geçici dizin -> rename)
         cache_dir.parent.mkdir(parents=True, exist_ok=True)

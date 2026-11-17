@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 58 rapor** · 59 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 59 rapor** · 60 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -109,6 +109,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 ## 17 Kasım 2026
 
 - [G4 — Signed Registry index v2](2026-11-17-signed-registry-index-v2.md)
+- [G4 — Registry indirme ve arşiv kaynak sınırları](2026-11-17-registry-client-archive-bounds.md)
 
 ## Okuma sırası (yeni gelen için)
 

@@ -10,6 +10,7 @@ Kapsam:
   - axpm install uçtan uca (gerçek file:// registry)
 """
 import base64
+import gzip
 import hashlib
 import io
 import json
@@ -585,6 +586,63 @@ def test_download_heals_corrupted_cache(tmp_path):
     assert (d2 / "axiom.toml").exists()
 
 
+def test_cache_hit_preserves_cache_on_transient_tarball_read_error(tmp_path, monkeypatch):
+    registry, raw = _make_untrusted_registry(tmp_path, [
+        (tarfile.TarInfo("axiom.toml"),
+         b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'),
+    ])
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    sha = sha256_bytes(raw)
+    client._index = RegistryIndex({"evil": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+    cache_dir, cache_hit = client.download("evil", "1.0.0", sha, "", {})
+    assert cache_hit is False
+    stored_tarball = cache_dir / "pkg.tar.gz"
+    original_open = Path.open
+
+    def transient_tarball_read_error(path, mode="r", *args, **kwargs):
+        if path == stored_tarball and mode == "rb":
+            raise OSError("temporary storage read error")
+        return original_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", transient_tarball_read_error)
+    with pytest.raises(OSError, match="temporary storage read error"):
+        client.download("evil", "1.0.0", sha, "", {})
+    assert cache_dir.is_dir()
+    assert stored_tarball.is_file()
+
+
+def test_cache_parity_bounds_modified_file_before_hashing(tmp_path, monkeypatch):
+    registry, raw = _make_untrusted_registry(tmp_path, [
+        (tarfile.TarInfo("axiom.toml"),
+         b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'),
+        (tarfile.TarInfo("payload.bin"), b"small"),
+    ])
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    sha = sha256_bytes(raw)
+    client._index = RegistryIndex({"evil": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+    cache_dir, _ = client.download("evil", "1.0.0", sha, "", {})
+    oversized_cached_file = cache_dir / "payload.bin"
+    oversized_cached_file.write_bytes(b"x" * 1024)
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_ARCHIVE_BYTES", 128)
+    original_open = Path.open
+
+    def forbid_oversized_extra_hash(path, mode="r", *args, **kwargs):
+        if path == oversized_cached_file and mode == "rb":
+            raise AssertionError("oversized cache file was hashed before the byte cap")
+        return original_open(path, mode, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", forbid_oversized_extra_hash)
+    assert not registry_module._cache_matches_archive(raw, cache_dir)
+
+
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
 def test_download_heals_modified_extracted_cache(tmp_path):
     """İmzalı tarball ile eşleşmeyen açılmış cache kaynağı kullanılmamalı."""
@@ -767,29 +825,293 @@ def test_download_rejects_path_traversal(tmp_path):
         client.download("evil", "1.0.0", sha256_bytes(data), "")
 
 
-def _download_untrusted_members(tmp_path, members):
-    registry = tmp_path / "registry"
-    package_dir = registry / "evil"
-    package_dir.mkdir(parents=True)
-    tarball = package_dir / "1.0.0.tar.gz"
-    with tarfile.open(tarball, "w:gz") as archive:
+def _make_untrusted_registry(tmp_path, members):
+    archive_buffer = io.BytesIO()
+    with tarfile.open(fileobj=archive_buffer, mode="w:gz") as archive:
         for info, contents in members:
             if contents is None:
                 archive.addfile(info)
             else:
                 info.size = len(contents)
                 archive.addfile(info, io.BytesIO(contents))
-    raw = tarball.read_bytes()
+    raw = archive_buffer.getvalue()
+    registry = _register_untrusted_archive(tmp_path, raw)
+    return registry, raw
+
+
+def _register_untrusted_archive(tmp_path, raw):
+    registry = tmp_path / "registry"
+    package_dir = registry / "evil"
+    package_dir.mkdir(parents=True)
+    (package_dir / "1.0.0.tar.gz").write_bytes(raw)
     (registry / "index.json").write_text(json.dumps({
         "schema": 1,
         "packages": {"evil": [{
             "version": "1.0.0", "sha256": sha256_bytes(raw), "dependencies": {}
         }]},
     }), encoding="utf-8")
+    return registry
+
+
+def _download_untrusted_members(tmp_path, members):
+    registry, raw = _make_untrusted_registry(tmp_path, members)
     client = RegistryClient(RegistryConfig(
         url=f"file://{registry}", allow_unsigned=True, cache_dir=tmp_path / "cache"
     ))
-    client.download("evil", "1.0.0", sha256_bytes(raw), "")
+    return client.download("evil", "1.0.0", sha256_bytes(raw), "")
+
+
+@pytest.mark.parametrize(("body", "accepted"), [(b"1234", True), (b"12345", False)])
+def test_http_fetch_enforces_limit_without_content_length(monkeypatch, body, accepted):
+    class Response:
+        def __init__(self):
+            self.read_sizes = []
+            self.offset = 0
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def read(self, size=-1):
+            self.read_sizes.append(size)
+            if size < 0:
+                return body[self.offset:]
+            chunk_end = min(len(body), self.offset + min(size, 2))
+            chunk = body[self.offset:chunk_end]
+            self.offset = chunk_end
+            return chunk
+
+    response = Response()
+    monkeypatch.setattr(
+        registry_module.urllib.request,
+        "urlopen",
+        lambda _request, timeout: response,
+    )
+
+    if accepted:
+        assert registry_module._fetch("https://registry.example/pkg.tar.gz", max_bytes=4) == body
+    else:
+        with pytest.raises(RuntimeError, match="indirilen içerik 4 bayt sınırını aşıyor"):
+            registry_module._fetch("https://registry.example/pkg.tar.gz", max_bytes=4)
+    assert response.read_sizes == [5, 3, 1]
+
+
+def test_download_bounds_oversized_file_uri_tarball(tmp_path, monkeypatch):
+    registry = tmp_path / "registry"
+    package_dir = registry / "large"
+    package_dir.mkdir(parents=True)
+    raw = b"x" * 65
+    (package_dir / "1.0.0.tar.gz").write_bytes(raw)
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    sha = sha256_bytes(raw)
+    client._index = RegistryIndex({"large": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_PACK_BYTES", 64)
+
+    with pytest.raises(RuntimeError, match="indirilen içerik 64 bayt sınırını aşıyor"):
+        client.download("large", "1.0.0", sha, "", {})
+    assert not (tmp_path / "cache").exists()
+
+
+def test_download_discards_oversized_cache_before_reading_it(tmp_path, monkeypatch):
+    registry = tmp_path / "registry"
+    package_dir = registry / "cache-test"
+    package_dir.mkdir(parents=True)
+    archive_buffer = io.BytesIO()
+    manifest = b'[package]\nname = "cache-test"\nversion = "1.0.0"\n\n[dependencies]\n'
+    with tarfile.open(fileobj=archive_buffer, mode="w:gz") as archive:
+        info = tarfile.TarInfo("axiom.toml")
+        info.size = len(manifest)
+        archive.addfile(info, io.BytesIO(manifest))
+    raw = archive_buffer.getvalue()
+    sha = sha256_bytes(raw)
+    (package_dir / "1.0.0.tar.gz").write_bytes(raw)
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    client._index = RegistryIndex({"cache-test": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+    cache_dir = client.cache_path_for(sha)
+    cache_dir.mkdir(parents=True)
+    stored_tarball = cache_dir / "pkg.tar.gz"
+    stored_tarball.write_bytes(b"x" * (len(raw) + 1))
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_PACK_BYTES", len(raw))
+    original_open = Path.open
+
+    def guard_oversized_cache_open(path, *args, **kwargs):
+        if path == stored_tarball and args and args[0] == "rb":
+            raise AssertionError("oversized cache archive was read before its size check")
+        return original_open(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "open", guard_oversized_cache_open)
+    extracted, cache_hit = client.download("cache-test", "1.0.0", sha, "", {})
+
+    assert cache_hit is False
+    assert (extracted / "axiom.toml").read_bytes() == manifest
+
+
+def test_download_rejects_gzip_expansion_before_creating_cache(tmp_path, monkeypatch):
+    manifest = b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'
+    payload = b"z" * 4096
+    member = tarfile.TarInfo("large.bin")
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_TAR_EXPANDED_BYTES", 1024)
+    with pytest.raises(RuntimeError, match="tar akışı açılmış boyut sınırını aşıyor"):
+        _download_untrusted_members(
+            tmp_path,
+            [(tarfile.TarInfo("axiom.toml"), manifest), (member, payload)],
+        )
+    assert not (tmp_path / "cache").exists()
+
+
+def test_download_rejects_tar_member_with_truncated_payload_before_cache(tmp_path):
+    tar_buffer = io.BytesIO()
+    with tarfile.open(fileobj=tar_buffer, mode="w:") as archive:
+        info = tarfile.TarInfo("payload.bin")
+        info.size = 32
+        archive.addfile(info, io.BytesIO(b"x" * 32))
+    truncated_tar = tar_buffer.getvalue()[:512 + 5]
+    raw = gzip.compress(truncated_tar)
+    registry = _register_untrusted_archive(tmp_path, raw)
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    client._index = RegistryIndex({"evil": [{
+        "version": "1.0.0", "sha256": sha256_bytes(raw), "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+
+    with pytest.raises(RuntimeError, match="arşiv girdisi kesik: payload.bin"):
+        client.download("evil", "1.0.0", sha256_bytes(raw), "", {})
+    assert not (tmp_path / "cache").exists()
+
+
+def test_download_rejects_oversized_manifest_before_extraction(tmp_path):
+    manifest = b"#" * (registry_module._MAX_REGISTRY_MANIFEST_BYTES + 1)
+    with pytest.raises(RuntimeError, match="axiom.toml 1 MiB sınırını aşıyor"):
+        _download_untrusted_members(tmp_path, [(tarfile.TarInfo("axiom.toml"), manifest)])
+    assert not (tmp_path / "cache").exists()
+
+
+def test_download_rejects_excessive_tar_member_count_before_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_ARCHIVE_MEMBERS", 2)
+    manifest = b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'
+    with pytest.raises(RuntimeError, match="2 üye sınırını aşıyor"):
+        _download_untrusted_members(tmp_path, [
+            (tarfile.TarInfo("axiom.toml"), manifest),
+            (tarfile.TarInfo("one.bin"), b"1"),
+            (tarfile.TarInfo("two.bin"), b"2"),
+        ])
+    assert not (tmp_path / "cache").exists()
+
+
+def test_cache_hit_rejects_expansion_limit_and_removes_cache(tmp_path, monkeypatch):
+    registry, raw = _make_untrusted_registry(tmp_path, [
+        (tarfile.TarInfo("axiom.toml"),
+         b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'),
+        (tarfile.TarInfo("payload.bin"), b"a" * 4096),
+    ])
+    sha = sha256_bytes(raw)
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    client._index = RegistryIndex({"evil": [{
+        "version": "1.0.0", "sha256": sha, "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+    cache_dir = client.cache_path_for(sha)
+    cache_dir.mkdir(parents=True)
+    (cache_dir / "pkg.tar.gz").write_bytes(raw)
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_TAR_EXPANDED_BYTES", 1024)
+
+    with pytest.raises(RuntimeError, match="tar akışı açılmış boyut sınırını aşıyor"):
+        client.download("evil", "1.0.0", sha, "", {})
+    assert not cache_dir.exists()
+
+
+def test_download_rejects_oversized_pax_header_before_cache(tmp_path):
+    manifest = b'[package]\nname = "evil"\nversion = "1.0.0"\n\n[dependencies]\n'
+    info = tarfile.TarInfo("axiom.toml")
+    info.pax_headers = {
+        "comment": "x" * (registry_module._MAX_REGISTRY_TAR_METADATA_READ + 64)
+    }
+    with pytest.raises(RuntimeError, match="tar uzantı başlığı"):
+        _download_untrusted_members(tmp_path, [(info, manifest)])
+    assert not (tmp_path / "cache").exists()
+
+
+def test_download_rejects_cumulative_tar_metadata_over_limit(tmp_path, monkeypatch):
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_TAR_METADATA_TOTAL", 2048)
+    pax_files = []
+    for index in range(3):
+        info = tarfile.TarInfo(f"file-{index}.txt")
+        info.pax_headers = {"comment": "x" * 600}
+        pax_files.append((info, b"x"))
+
+    with pytest.raises(RuntimeError, match="tar başlık/manifest verisi toplam"):
+        _download_untrusted_members(tmp_path, pax_files)
+    assert not (tmp_path / "cache").exists()
+
+
+def test_archive_limit_counts_concatenated_gzip_members(tmp_path, monkeypatch):
+    empty_tar = io.BytesIO()
+    with tarfile.open(fileobj=empty_tar, mode="w:"):
+        pass
+    concatenated = (
+        gzip.compress(empty_tar.getvalue())
+        + gzip.compress(b"x" * 4096)
+    )
+    monkeypatch.setattr(registry_module, "_MAX_REGISTRY_TAR_EXPANDED_BYTES", 12 * 1024)
+
+    with pytest.raises(RuntimeError, match="tar akışı açılmış boyut sınırını aşıyor"):
+        registry_module._validate_package_archive_limits(concatenated)
+
+
+def test_archive_limit_wraps_invalid_gzip_header_and_crc():
+    with pytest.raises(RuntimeError, match="arşivi sınır/biçim doğrulaması başarısız"):
+        registry_module._validate_package_archive_limits(b"not a gzip archive")
+
+    tar_data = io.BytesIO()
+    with tarfile.open(fileobj=tar_data, mode="w:"):
+        pass
+    raw = bytearray(gzip.compress(tar_data.getvalue()))
+    raw[-8] ^= 0x01  # Corrupt the gzip CRC while retaining a valid header.
+    with pytest.raises(RuntimeError, match="arşivi sınır/biçim doğrulaması başarısız"):
+        registry_module._validate_package_archive_limits(bytes(raw))
+
+
+def test_large_tar_payload_is_not_charged_to_metadata_budget(tmp_path):
+    from axiom.package_manager import _validate_registry_pack_archive
+
+    manifest = (
+        b'[package]\nname = "evil"\nversion = "1.0.0"\nentry = "large.bin"\n'
+        b'\n[dependencies]\n'
+    )
+    payload_size = 33 * 1024 * 1024
+    archive_buffer = io.BytesIO()
+    with tarfile.open(fileobj=archive_buffer, mode="w:gz") as archive:
+        manifest_info = tarfile.TarInfo("axiom.toml")
+        manifest_info.size = len(manifest)
+        archive.addfile(manifest_info, io.BytesIO(manifest))
+        payload_info = tarfile.TarInfo("large.bin")
+        payload_info.size = payload_size
+        archive.addfile(payload_info, io.BytesIO(b"x" * payload_size))
+    raw = archive_buffer.getvalue()
+    registry = _register_untrusted_archive(tmp_path, raw)
+    client = RegistryClient(RegistryConfig(
+        url=registry.as_uri(), allow_unsigned=True, cache_dir=tmp_path / "cache"
+    ))
+    client._index = RegistryIndex({"evil": [{
+        "version": "1.0.0", "sha256": sha256_bytes(raw), "sig": "", "dependencies": {},
+    }]}, registry.as_uri())
+
+    extracted, cache_hit = client.download("evil", "1.0.0", sha256_bytes(raw), "", {})
+    assert not cache_hit
+    assert (extracted / "large.bin").stat().st_size == payload_size
+    _validate_registry_pack_archive(raw, Path("<generated-test-archive>"), "evil", "1.0.0", {})
 
 
 @pytest.mark.parametrize("link_type", [tarfile.SYMTYPE, tarfile.LNKTYPE])

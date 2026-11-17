@@ -206,6 +206,70 @@ def test_axpm_pack_creates_deterministic_signed_registry_artifact(tmp_path):
 
 
 @pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_preflights_tracked_member_count_before_reading(tmp_path, monkeypatch):
+    import axiom.package_manager as package_manager_module
+
+    root, key, _ = _make_committed_pack_project(tmp_path)
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_ARCHIVE_MEMBERS", 2)
+    original_read_bytes = Path.read_bytes
+    package_files = {root / "axiom.toml", root / "src/main.ax", root / "README.md"}
+
+    def forbid_package_payload_read(path):
+        if path in package_files:
+            raise AssertionError("package payload was read before member-count preflight")
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", forbid_package_payload_read)
+    with pytest.raises(RuntimeError, match="dosya sayısı.*üye sınırını aşıyor"):
+        PackageManager(root).pack(key, tmp_path / "registry")
+    assert not (tmp_path / "registry").exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_preflights_aggregate_payload_before_reading(tmp_path, monkeypatch):
+    import axiom.package_manager as package_manager_module
+
+    root, key, _ = _make_committed_pack_project(tmp_path)
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_ARCHIVE_BYTES", 64)
+    original_read_bytes = Path.read_bytes
+    package_files = {root / "axiom.toml", root / "src/main.ax", root / "README.md"}
+
+    def forbid_package_payload_read(path):
+        if path in package_files:
+            raise AssertionError("package payload was read before size preflight")
+        return original_read_bytes(path)
+
+    monkeypatch.setattr(Path, "read_bytes", forbid_package_payload_read)
+    with pytest.raises(RuntimeError, match="toplam açılmış boyutu.*sınırını aşıyor"):
+        PackageManager(root).pack(key, tmp_path / "registry")
+    assert not (tmp_path / "registry").exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
+def test_axpm_pack_rejects_compressed_output_before_signing_or_staging(tmp_path, monkeypatch):
+    import axiom.package_manager as package_manager_module
+
+    root, key, _ = _make_committed_pack_project(tmp_path)
+    monkeypatch.setattr(package_manager_module, "_MAX_REGISTRY_PACK_BYTES", 8)
+    original_run = subprocess.run
+    signing_calls = []
+
+    def track_signing_call(args, *call_args, **call_kwargs):
+        if isinstance(args, (list, tuple)) and list(args[:3]) == [
+            "openssl", "pkeyutl", "-sign"
+        ]:
+            signing_calls.append(args)
+        return original_run(args, *call_args, **call_kwargs)
+
+    monkeypatch.setattr(package_manager_module.subprocess, "run", track_signing_call)
+    output = tmp_path / "registry"
+    with pytest.raises(RuntimeError, match="üretilen registry paketi.*sıkıştırılmış boyut sınırını aşıyor"):
+        PackageManager(root).pack(key, output)
+    assert signing_calls == []
+    assert not output.exists()
+
+
+@pytest.mark.skipif(shutil.which("openssl") is None, reason="openssl gerekli")
 def test_axpm_pack_requires_clean_commit_and_never_overwrites(tmp_path):
     root, key, _ = _make_committed_pack_project(tmp_path)
     manager = PackageManager(root)

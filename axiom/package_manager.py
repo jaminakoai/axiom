@@ -22,6 +22,12 @@ from pathlib import Path, PurePosixPath
 from typing import Dict, Any, List, Optional, Tuple
 
 from axiom.registry import (
+    _BoundedRegistryTarInfo, _BoundedTarReader,
+    _MAX_REGISTRY_ARCHIVE_BYTES, _MAX_REGISTRY_ARCHIVE_MEMBERS,
+    _MAX_REGISTRY_MANIFEST_BYTES, _MAX_REGISTRY_PACK_BYTES,
+    _MAX_REGISTRY_PACK_DIRECTORIES, _MAX_REGISTRY_PACKAGES,
+    _MAX_REGISTRY_SIDECAR_BYTES, _MAX_REGISTRY_TAR_EXPANDED_BYTES,
+    _MAX_REGISTRY_TAR_METADATA_READ, _MAX_REGISTRY_TAR_METADATA_TOTAL,
     RegistryConfig, RegistryClient, resolve_tree, SemverError, parse_version,
     sha256_bytes, verify_sha256, verify_signature, version_key,
 )
@@ -47,68 +53,6 @@ _REGISTRY_INDEX_ENTRY_KEYS = {"version", "sha256", "sig", "dependencies", "yanke
 _REGISTRY_CONSTRAINT_PART_RE = re.compile(
     r"^(?:>=|<=|>|<|=|\^|~)?\s*\d+(?:\.\d+){0,2}$"
 )
-_MAX_REGISTRY_PACK_BYTES = 256 * 1024 * 1024
-_MAX_REGISTRY_ARCHIVE_BYTES = 256 * 1024 * 1024
-_MAX_REGISTRY_ARCHIVE_MEMBERS = 20_000
-_MAX_REGISTRY_MANIFEST_BYTES = 1024 * 1024
-_MAX_REGISTRY_SIDECAR_BYTES = 1024 * 1024
-_MAX_REGISTRY_PACKAGES = 10_000
-_MAX_REGISTRY_PACK_DIRECTORIES = 30_000
-_MAX_REGISTRY_TAR_METADATA_READ = 1024 * 1024
-_MAX_REGISTRY_TAR_METADATA_TOTAL = 32 * 1024 * 1024
-_MAX_REGISTRY_TAR_EXPANDED_BYTES = (
-    _MAX_REGISTRY_ARCHIVE_BYTES + _MAX_REGISTRY_TAR_METADATA_TOTAL
-    + _MAX_REGISTRY_ARCHIVE_MEMBERS * 1024 + 1024
-)
-
-
-class _BoundedTarReader:
-    """Bound reads performed internally by tarfile for PAX/GNU metadata."""
-
-    def __init__(self, source, max_read: int, max_total: int):
-        self.source = source
-        self.max_read = max_read
-        self.max_total = max_total
-        self.total_read = 0
-
-    def read(self, size: int = -1) -> bytes:
-        if size < 0 or size > self.max_read:
-            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
-        data = self.source.read(size)
-        self.total_read += len(data)
-        if self.total_read > self.max_total:
-            raise ValueError("tar başlık/manifest verisi toplam 32 MiB sınırını aşıyor")
-        return data
-
-    def seek(self, offset: int, whence: int = 0) -> int:
-        if whence != 0:
-            raise ValueError("tar akışında yalnızca mutlak seek desteklenir")
-        return self.source.seek(offset)
-
-    def tell(self) -> int:
-        return self.source.tell()
-
-    def close(self) -> None:
-        self.source.close()
-
-    def __getattr__(self, name: str):
-        return getattr(self.source, name)
-
-
-class _BoundedRegistryTarInfo(tarfile.TarInfo):
-    """Reject oversized extension headers before tarfile parses their payload."""
-
-    def _proc_pax(self, archive):
-        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
-            raise ValueError("tar uzantı başlığı tek okumada 1 MiB sınırını aşıyor")
-        return super()._proc_pax(archive)
-
-    def _proc_gnulong(self, archive):
-        if self.size > _MAX_REGISTRY_TAR_METADATA_READ:
-            raise ValueError("GNU tar uzantı başlığı 1 MiB sınırını aşıyor")
-        return super()._proc_gnulong(archive)
-
-
 class TomlWriter:
     """Temiz ve standart TOML çıktı serileştirici."""
     @staticmethod
@@ -291,8 +235,10 @@ def _validate_registry_pack_archive(
                             manifest_stream = archive.extractfile(member)
                             if manifest_stream is None:
                                 raise ValueError("paket tarball'ındaki axiom.toml okunamadı")
+                            bounded_tar.begin_payload_read()
                             with manifest_stream:
                                 manifest_text = manifest_stream.read(member.size).decode("utf-8")
+                            bounded_tar.end_payload_read()
                     if normalized_name in entries:
                         raise ValueError(f"yinelenen tarball yolu: {normalized_name}")
                     entries[normalized_name] = (is_directory, member)
@@ -882,16 +828,52 @@ fn main() -> void {{
                 raise RuntimeError(f"paket girdisi normal dosya değil: {relative}")
             files.append((relative, source, mode == b"100755"))
         files.sort(key=lambda item: item[0].as_posix())
+        if len(files) > _MAX_REGISTRY_ARCHIVE_MEMBERS:
+            raise RuntimeError(
+                "paket dosya sayısı registry arşiv üye sınırını aşıyor "
+                f"({_MAX_REGISTRY_ARCHIVE_MEMBERS})"
+            )
         file_names = {path.as_posix() for path, _, _ in files}
         if "axiom.toml" not in file_names:
             raise RuntimeError("axiom.toml Git tarafından izlenmeli ve commit edilmiş olmalı")
         if manifest.entry not in file_names:
             raise RuntimeError(f"paket giriş dosyası Git tarafından izlenmiyor: {manifest.entry}")
 
+        # Preflight from filesystem metadata before reading any payload or
+        # allocating the tar buffer. Recheck actual bytes while streaming so a
+        # file changed after stat cannot silently exceed the limit.
+        total_payload = 0
+        for relative, source, _ in files:
+            try:
+                file_size = source.stat().st_size
+            except OSError as exc:
+                raise RuntimeError(f"paket girdisi boyutu okunamadı: {relative}") from exc
+            if file_size < 0:
+                raise RuntimeError(f"paket girdisinin boyutu geçersiz: {relative}")
+            total_payload += file_size
+            if total_payload > _MAX_REGISTRY_ARCHIVE_BYTES:
+                raise RuntimeError(
+                    "paket dosyalarının toplam açılmış boyutu registry sınırını aşıyor "
+                    f"({_MAX_REGISTRY_ARCHIVE_BYTES} bayt)"
+                )
+            if relative.as_posix() == "axiom.toml" and file_size > _MAX_REGISTRY_MANIFEST_BYTES:
+                raise RuntimeError(
+                    f"paket axiom.toml {_MAX_REGISTRY_MANIFEST_BYTES} bayt sınırını aşıyor"
+                )
+
         tar_buffer = io.BytesIO()
+        actual_payload = 0
         with tarfile.open(fileobj=tar_buffer, mode="w", format=tarfile.PAX_FORMAT) as archive:
             for relative, source, executable in files:
-                content = source.read_bytes()
+                remaining_payload = _MAX_REGISTRY_ARCHIVE_BYTES - actual_payload
+                with source.open("rb") as source_file:
+                    content = source_file.read(remaining_payload + 1)
+                if len(content) > remaining_payload:
+                    raise RuntimeError(
+                        "paket dosyalarının toplam açılmış boyutu registry sınırını aşıyor "
+                        f"({_MAX_REGISTRY_ARCHIVE_BYTES} bayt)"
+                    )
+                actual_payload += len(content)
                 info = tarfile.TarInfo(relative.as_posix())
                 info.size = len(content)
                 info.mode = 0o755 if executable else 0o644
@@ -903,6 +885,14 @@ fn main() -> void {{
         with gzip.GzipFile(filename="", mode="wb", fileobj=compressed, mtime=0, compresslevel=9) as gz:
             gz.write(tar_buffer.getvalue())
         archive_bytes = compressed.getvalue()
+        if len(archive_bytes) > _MAX_REGISTRY_PACK_BYTES:
+            raise RuntimeError(
+                "üretilen registry paketi sıkıştırılmış boyut sınırını aşıyor "
+                f"({_MAX_REGISTRY_PACK_BYTES} bayt)"
+            )
+        _validate_registry_pack_archive(
+            archive_bytes, Path("<generated>"), manifest.name, manifest.version, dependencies
+        )
 
         with tempfile.TemporaryDirectory(prefix="axpm-pack-sign-") as temp_dir:
             temp = Path(temp_dir)
