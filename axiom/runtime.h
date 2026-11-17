@@ -211,8 +211,8 @@ static inline ax_int axiom_len_arr_v_(const void* p) {
  * Boylece retain/release veriyle ayni cache satirina dokunur; tablo yok.
  *
  * GUVENLIK: `str` tipi literal ve dis kaynakli isaretcileri de tasiyabilir.
- * Her isaretci icin `hdr_of()` ONCE `axiom_ptr_is_static` (ELF segment
- * araligi) kontrolu yapar, sonra magic dogrular. Sahipsiz isaretcilerde
+ * Her isaretci icin `hdr_of()` ONCE `axiom_ptr_is_static` (platform bellek
+ * bolgesi) kontrolu yapar, sonra magic dogrular. Sahipsiz isaretcilerde
  * retain/release no-op'tur (eski tablo davranisiyla ayni).
  */
 /* --- Result yardimcilari: TIP PARAMETRESI COZULMEMISSE ---
@@ -245,57 +245,14 @@ static inline ax_int axiom_len_arr_v_(const void* p) {
 
 /* --- Statik/literal isaretci tespiti ---
  *
- * Eski kod her string olusturmada `dladdr` cagiriyordu (~17 ns/op, dinamik
- * sembol tablosunu dolasir). Burada ELF'in PT_LOAD (calistirilabilir OLMAYAN)
- * segmentleri BIR KEZ toplanir; kontrol 2-6 aralik karsilastirmasidir.
- *
- * Semantik aynidir: .rodata/.data icindeki literal ve statik metinler
- * sahiplik takibine ALINMAZ; heap/stack isaretcileri alinir.
+ * Platforma ozgu sayfa/segment sorgusu platform.h tarafindan uygulanir.
+ * Ozellikle Windows'ta MEM_IMAGE literal'lari heap gibi ele alip free etmek
+ * heap corruption'a yol acar; sahiplik katmani tum hedeflerde ayni kontrolden
+ * gecmelidir.
  */
-#if defined(__linux__)
-typedef struct { uintptr_t lo; uintptr_t hi; } axiom_seg_t;
-#define AXIOM_MAX_STATIC_SEGS 96
-static axiom_seg_t g_ax_segs[AXIOM_MAX_STATIC_SEGS];
-static int g_ax_seg_count = -1;
-static pthread_once_t g_ax_seg_once = PTHREAD_ONCE_INIT;
-
-static int axiom_seg_collect(struct dl_phdr_info* info, size_t size, void* data) {
-    (void)size; (void)data;
-    for (int i = 0; i < info->dlpi_phnum && g_ax_seg_count < AXIOM_MAX_STATIC_SEGS; i++) {
-        const ElfW(Phdr)* ph = &info->dlpi_phdr[i];
-        if (ph->p_type != PT_LOAD) continue;
-        if (ph->p_flags & PF_X) continue;   /* kod segmente dokunma */
-        uintptr_t lo = (uintptr_t)info->dlpi_addr + (uintptr_t)ph->p_vaddr;
-        g_ax_segs[g_ax_seg_count].lo = lo;
-        g_ax_segs[g_ax_seg_count].hi = lo + (uintptr_t)ph->p_memsz;
-        g_ax_seg_count++;
-    }
-    return 0;
-}
-
-static void axiom_seg_init(void) {
-    g_ax_seg_count = 0;
-    dl_iterate_phdr(axiom_seg_collect, NULL);
-}
-
 static inline ax_bool axiom_ptr_is_static(const void* p) {
-    if (g_ax_seg_count < 0) pthread_once(&g_ax_seg_once, axiom_seg_init);
-    uintptr_t x = (uintptr_t)p;
-    for (int i = 0; i < g_ax_seg_count; i++) {
-        if (x >= g_ax_segs[i].lo && x < g_ax_segs[i].hi) return true;
-    }
-    return false;
+    return ax_os_ptr_is_static(p) ? true : false;
 }
-#else
-static inline ax_bool axiom_ptr_is_static(const void* p) {
-#if defined(__unix__) || defined(__APPLE__)
-    Dl_info info;
-    if (dladdr(p, &info) != 0) return true;
-#endif
-    (void)p;
-    return false;
-}
-#endif
 
 /* Olusturma sirasina gore kayit: temp_release O(gecici sayisi) calisir.
  *

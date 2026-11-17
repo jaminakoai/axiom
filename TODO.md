@@ -32,8 +32,9 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 ### Mevcut konum ve ilerleme tahmini
 
 - Axiom'ın derleyici, iki arka uç, standart kütüphane, paket altyapısı ve
-  `axiom-scan`/DFIR örnekleri mevcut. G0, G1 ve G2 tamamlandı; G4 platform smoke
-  doğrulaması da Linux, Windows ve macOS'ta geçti.
+  `axiom-scan`/DFIR örnekleri mevcut. G0, G1 ve G2 tamamlandı. Genel G4 platform
+  smoke daha önce üç işletim sisteminde geçti; yeni PCAP özel smoke Windows'ta
+  heap corruption açığa çıkardı ve düzeltme doğrulaması sürüyor.
 - Faz 1'in dış kullanıcı kapısı **açılmadı**: `axiom-scan`'i kendi verisinde
   deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
 - Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
@@ -53,11 +54,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
   değildir.
 - İlk güvenilir public release hedefine göre yaklaşık **%75** ilerleme tahmini
-  kullanılıyor. Bu ölçülmüş KPI değildir; G1/G2 kanıtı ve native platform
-  smoke doğrulaması tamamlandığı için tahmin güncellendi.
-  G2 gerçek kural corpus'u ve G4 platform smoke kapandı; G3 bağımsız kullanıcı
-  kanıtı ile G4 resmi örnek paket yayını hâlâ açık. Yüzde yalnız kaba milestone
-  tahminidir, kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
+  kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u kapandı;
+  önceki genel platform smoke geçti, fakat PCAP özel Windows smoke şu anda
+  başarısız olduğundan ilgili G4 maddesi açık. G3 bağımsız kullanıcı kanıtı ve
+  G4 resmi örnek paket yayını da açık. Yüzde kaba milestone tahminidir;
+  kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
 
 ### İş sırası ve kabul kapıları
 

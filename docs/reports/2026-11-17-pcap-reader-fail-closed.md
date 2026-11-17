@@ -1,9 +1,9 @@
 # PCAP reader: fail-closed parsing and status reporting
 
 **Date:** 2026-11-17  
-**Status:** Local targeted validation passed. The first native run exposed a
-Windows test-output encoding issue; its fix is in a follow-up commit and native
-rerun is pending.
+**Status:** PCAP reader implementation and local targeted validation passed.
+Native smoke exposed a Windows heap corruption fault; a runtime ownership fix
+is now prepared and its native three-platform rerun is pending.
 
 ## Finding
 
@@ -37,7 +37,13 @@ not decode protocol headers or reassemble TCP streams.
 - The native smoke workflow now has a targeted PCAP test step; its Linux,
   Windows, and macOS run is pending. Windows' first run failed while the test
   captured the compiler's Unicode checkmark using the legacy console encoding;
-  the test fixture now sets an ASCII-safe Python output encoding.
+  the test fixture now sets an ASCII-safe Python output encoding. The next
+  Windows run then exposed `0xC0000374` while the scanner wrapped a static empty
+  string as an owned result. `axiom_ptr_is_static()` had a Linux ELF segment
+  implementation but returned false on Windows, so `axiom_owned_str_wrap()`
+  attempted to free the literal. It now delegates to `ax_os_ptr_is_static()` in
+  `platform.h`, which uses `VirtualQuery`/`MEM_IMAGE` on Windows and the existing
+  platform checks elsewhere. Independent code review confirmed this root cause.
 
 ## Validation
 
@@ -47,6 +53,12 @@ not decode protocol headers or reassemble TCP streams.
     passed
     git diff --check
     passed
+    pytest -q --tb=short tests/test_axiom_scan.py -k pcap tests/test_pcap_runtime.py
+    16 passed
+    pytest -q --tb=short tests/test_negative_security.py -k str_free_literal
+    1 passed
+    pytest -q --tb=short tests/test_portability.py -k 'windows_target_produces_pe_binary or windows_code_path_runs_natively or windows_binary_runs_under_wine'
+    3 passed (MinGW/Wine; native Windows result still required)
 
 Coverage includes empty packet followed by a matching packet, a valid capture
 with no records, microsecond and nanosecond PCAP in both byte orders, pcapng
