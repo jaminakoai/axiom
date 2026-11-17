@@ -269,6 +269,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kurulum/örnek derleme/`rules`/sentinel `scan` başarılı; 12,3 saniye,
   `match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız kullanıcı
   kabulü değildir; ayrıntı G3 onboarding raporundadır.
+- [x] GitHub `master`'ın güncel `0de28cef21064284683d05c5462a8cd00a284f66`
+  commit'ini yeni temiz klonda doğrula: Python 3.13 venv/kurulum, sürüm kontrolü,
+  örnek derleme, `rules` ve sentinel `scan` başarılı; `match_count=1`, offset
+  36/length 37 ve beklenen SHA-256. Ayrıntı:
+  [`G3 güncel master smoke raporu`](docs/reports/2026-11-17-g3-current-master-smoke.md).
 - [x] PCAP başlangıç yönergesini gerçek okuyucu davranışıyla eşleştir: yalnız
   klasik PCAP, mikro/nanosaniye ve iki byte order; raw yakalanmış frame taraması;
   pcapng açık ret. Temiz EOF, boş paket ve bozuk/kesik kayıt artık ayrı

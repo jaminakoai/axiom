@@ -79,6 +79,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - Bağımsız kullanıcıların Linux'ta `axiom-scan` kurulum ve yetkili yerel girdi
   denemesini tekrarlayabilmesi için iki dilli dış kullanıcı doğrulama rehberi
   eklendi; hassas dosya/PCAP yüklemeden rapor şablonu sunuyor.
+- G3 onboarding akışı güncel `master`'ın temiz klonunda tekrar doğrulandı;
+  sentetik sentinel kuralı beklenen offset/length ve SHA-256 ile eşleşti.
 - YARA koşulları artık geçerli çok satırlı ifadeleri toplar; `filesize` için
   YARA 4.5.4 ile uyumlu onluk `KB`/`MB` birimleri desteklenir. Lisansı ve kaynak
   commit'i sabitlenmiş gerçek kural örneklemi CI'da YARA ile karşılaştırılır;
