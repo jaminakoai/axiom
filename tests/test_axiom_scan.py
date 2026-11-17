@@ -76,6 +76,47 @@ def test_rules_command_counts(scanner, tmp_path):
     assert data["rules"] == 3
 
 
+def test_public_onboarding_sentinel(scanner, tmp_path):
+    """Exercise the documented harmless rules + scan flow on native runners."""
+    import hashlib
+
+    marker = "AXIOM_EXTERNAL_VALIDATION_SENTINEL_v1"
+    rules = tmp_path / "external-validation.yar"
+    rules.write_text(
+        'rule Axiom_External_Validation {\n'
+        '  strings:\n'
+        f'    $marker = "{marker}" ascii\n'
+        '  condition:\n'
+        '    $marker\n'
+        '}\n',
+        encoding="utf-8",
+    )
+    payload = f"Axiom external validation sentinel: {marker}\n".encode("ascii")
+    target = tmp_path / "external-validation.txt"
+    target.write_bytes(payload)
+
+    rules_result = _run(scanner, "rules", str(rules))
+    assert rules_result.returncode == 0, rules_result.stdout + rules_result.stderr
+    rules_report = json.loads(rules_result.stdout)
+    assert rules_report["ok"] is True
+    assert rules_report["rules"] == 1
+
+    scan_result = _run(scanner, "scan", str(target), "--rules", str(rules))
+    assert scan_result.returncode == 0, scan_result.stdout + scan_result.stderr
+    report = json.loads(scan_result.stdout)
+    assert report["ok"] is True
+    assert report["match_count"] == 1
+    assert report["target_sha256"] == hashlib.sha256(payload).hexdigest()
+    assert report["matches"] == [{
+        "rule": "Axiom_External_Validation",
+        "tags": [],
+        "meta": {},
+        "pattern": "$marker",
+        "offset": payload.index(marker.encode("ascii")),
+        "length": len(marker),
+    }]
+
+
 @pytest.mark.parametrize("condition", [
     "entrypoint",
     "uint16(0) == 0x5A4D",

@@ -61,6 +61,9 @@ jobs:
       - name: Classic PCAP scanner smoke tests
         run: python -m pytest -q tests/test_axiom_scan.py -k pcap
 
+      - name: axiom-scan onboarding sentinel smoke
+        run: python -m pytest -q tests/test_axiom_scan.py::test_public_onboarding_sentinel
+
       - name: Derleyici sürümünü doğrula
         run: |
           axiom --version
