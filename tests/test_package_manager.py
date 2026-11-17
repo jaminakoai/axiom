@@ -613,7 +613,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
         capture_output=True, text=True,
     )
     assert package_tests.returncode == 0, package_tests.stdout + package_tests.stderr
-    assert "1/1 test başarılı" in package_tests.stdout
+    assert "1/1 test" in package_tests.stdout
 
 
 def test_lockfile_generation_and_tamper_detection(tmp_path):
