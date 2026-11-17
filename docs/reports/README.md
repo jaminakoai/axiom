@@ -4,7 +4,7 @@ Bu klasör **tüm** geliştirme turlarının raporlarını içerir. Her rapor:
 ne yapıldı, hangi gerçek hata bulundu, nasıl doğrulandı (komut + çıktı) ve
 sıradaki iş. Ölçülmemiş iddia yok.
 
-**Toplam: 64 rapor** · 65 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
+**Toplam: 66 rapor** · 67 dosya (README dahil) · Güncel durum için: [`../../TODO.md`](../../TODO.md)
 
 ---
 
@@ -109,6 +109,7 @@ sıradaki iş. Ölçülmemiş iddia yok.
 
 ## 17 Kasım 2026
 
+- [G3 — Maintainer yönlendirmeli iç teknik denetim](2026-11-17-g3-internal-audit.md)
 - [GitHub Actions — Node 24 action güncellemesi](2026-11-17-node24-github-actions.md)
 - [`b4ef7b5` — G3 güncel smoke ve tam CI doğrulaması](2026-11-17-b4ef7b5-ci.md)
 - [G3 — Güncel master onboarding smoke doğrulaması](2026-11-17-g3-current-master-smoke.md)

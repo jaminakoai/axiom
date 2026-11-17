@@ -35,8 +35,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   `axiom-scan`/DFIR örnekleri mevcut. G0, G1, G2 ve classic PCAP için üç
   işletim sistemli smoke testi tamamlandı. Genel G4 platform smoke da daha önce
   Linux, Windows ve macOS'ta geçti.
-- Faz 1'in dış kullanıcı kapısı **açılmadı**: `axiom-scan`'i kendi verisinde
-  deneyip geri bildirim vermiş bağımsız kullanıcı henüz belgelenmedi.
+- G3 teknik kabul kapısı maintainer'ın isteğiyle bağımsız kullanıcı denemesi
+  yerine iç teknik denetimle kapatıldı. Denetim kapsamı ve kanıtı:
+  [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
+  Bu karar bağımsız usability, market-fit veya gerçek kullanıcı girdisi kanıtı
+  değildir; dış deneme rehberi isteğe bağlı geri bildirim için duruyor.
 - Registry için bir kaynak örneği (`packages/axiom-scan-report`) ve yerel imzalı
   paket hazırlama akışı var; resmi paket yayımlanmış değil. Yükleme yolu ve resmi
   imza anahtarı işletimi hâlâ belirlenmeli. Varsayılan registry alan adı henüz
@@ -54,11 +57,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   ve bounded stress eşiği geçti; `53839c3` CI 7/7 başarılı. Tam YARA uyumluluğu
   değildir.
 - İlk güvenilir public release hedefine göre yaklaşık **%75** ilerleme tahmini
-  kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u kapandı;
-  önceki genel platform smoke ve yeni PCAP özel smoke Linux, Windows ve
-  macOS'ta geçti. G3 bağımsız kullanıcı kanıtı ve G4 resmi örnek paket yayını
-  açık. Yüzde kaba milestone tahminidir;
-  kullanıcı geri bildirimi ve yayın altyapısı süresini öngörmez.
+  kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
+  isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
+  doğrulanmış sayılmaz. G4 resmi örnek paket yayını ve operasyon kararları
+  açıktır. Yüzde kaba milestone tahminidir; yayın altyapısı süresini öngörmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
   `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
@@ -240,64 +242,36 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - **Kapı:** örnek kümesindeki her kural ya doğru eşleşiyor ya neden destek
   dışında olduğu açıkça raporlanıyor.
 
-#### G3 — Dış kullanıcı doğrulaması `[~]` — Faz 1 ürün kapısı
+#### G3 — Maintainer yönlendirmeli iç teknik denetim `[x]` — 17 Kasım 2026
 
-- [x] Bir dış kullanıcı için tekrar üretilebilir kurulum ve 5 dakikalık
-  başlangıç akışı hazırlandı; temiz klon/venv kurulumunda doğrulandı:
-  [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md) ve
-  [`docs/reports/2026-11-16-g3-external-onboarding.md`](docs/reports/2026-11-16-g3-external-onboarding.md).
-- [x] Başlangıç akışını `2871874` commit'inde (doğrulama anındaki güncel master)
-  yeniden doğrula: temiz klon,
-  venv/kurulum, örnek derleme, `rules` ve sentetik sentinel `scan` başarılı;
-  15 saniye, `match_count=1`. Bu sentetik kontrol bağımsız kullanıcı kapısını
-  kapatmaz; güncel kanıt G3 raporundadır.
-- [x] Rehberin yönergelerini ve geri bildirim alanlarını Türkçe/İngilizce sun;
-  kullanılabilirlik ile güvenlik bildirimlerinin kanallarını ayır; kamuya açık
-  `.github/ISSUE_TEMPLATE/external-scan-trial.yml` formunda yalnız temizlenmiş
-  alanlar iste; yetki ve kamuya açık paylaşım onaylarını zorunlu kıl. Formda
-  dosya yükleme alanı yok. Link, içerik, dil ve gizlilik kuralları doküman
-  regresyon testleriyle korunuyor.
-- [x] Aynı temiz klon/kurulum/build/sentinel akışını `1e9dd23` commit'inde
-  yeniden çalıştır: Linux x86_64, Python 3.13, 18,2 saniye, `rules ok=true`,
-  `scan match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız
-  kullanıcı kabulü değildir; tam çıktı G3/G4 raporundadır.
-- [x] Akışı GitHub `master` üzerindeki `dd0f997` temiz klonunda yeniden çalıştır:
-  Python 3.13 kurulumu, `axiom --version`, örnek derleme ve `rules`/sentinel
-  `scan` başarılı; `match_count=1`, offset 36/length 37, hedef SHA-256 alanı
-  64 karakter. Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir;
-  ayrıntı G3/G4 onboarding raporuna eklendi.
-- [x] Aynı akışı `4097bda` temiz klonunda tekrar doğrula: Python 3.13.14,
-  kurulum ve örnek derleme başarılı; `rules ok=true, rules=1`; sentinel
-  `scan ok=true, match_count=1`, offset 36/length 37 ve hedef SHA-256
+- [x] Maintainer, bağımsız kullanıcı denemesi yerine Axiom içinden teknik denetim
+  yapılmasını istedi. Kabul kararı yalnız teknik G3 kapısını değiştirir; bağımsız
+  usability/market-fit kanıtı üretmez.
+- [x] GitHub `master` temiz klonunda (`d44278a6ebb879647f803b227e69c3b42bc820d2`)
+  Python 3.13.14 venv, editable kurulum, `axiom --version`, `axiom-scan`
+  derlemesi, `rules` ve meta/fullword sentinel `scan` adımları başarılı:
+  `match_count=1`, offset 36, length 37, target SHA-256
   `1672850fcdc2a61c372188931ea164f8df197a0f87df96e0dd211a4ff02ed405`.
-  Bu sentetik doğrulama bağımsız kullanıcı kabulü değildir; ayrıntı G3/G4
-  onboarding raporundadır.
-- [x] Güncel `f3a6411` temiz klonunda yeniden doğrula: Python 3.13.14,
-  kurulum/örnek derleme/`rules`/sentinel `scan` başarılı; 12,3 saniye,
-  `match_count=1`, offset 36/length 37. Bu sentetik doğrulama bağımsız kullanıcı
-  kabulü değildir; ayrıntı G3 onboarding raporundadır.
-- [x] GitHub `master`'ın güncel `0de28cef21064284683d05c5462a8cd00a284f66`
-  commit'ini yeni temiz klonda doğrula: Python 3.13 venv/kurulum, sürüm kontrolü,
-  örnek derleme, `rules` ve sentinel `scan` başarılı; `match_count=1`, offset
-  36/length 37 ve beklenen SHA-256. Ayrıntı:
-  [`G3 güncel master smoke raporu`](docs/reports/2026-11-17-g3-current-master-smoke.md).
-- [x] PCAP başlangıç yönergesini gerçek okuyucu davranışıyla eşleştir: yalnız
-  klasik PCAP, mikro/nanosaniye ve iki byte order; raw yakalanmış frame taraması;
-  pcapng açık ret. Temiz EOF, boş paket ve bozuk/kesik kayıt artık ayrı
-  durumlarla raporlanıyor. Yazıcı da 65.535 bayt sınırını, hex doğrulamasını ve
-  yazma hatalarını denetliyor. Sentetik sınır testleri, C/LLVM parity ve writer
-  sınır/readback regresyonları geçti. Kanıt:
-  [PCAP okuyucu raporu](docs/reports/2026-11-17-pcap-reader-fail-closed.md).
-  Bu yerel doğrulama bağımsız kullanıcı kapısını kapatmaz.
-- [ ] Kullanıcı `axiom-scan`'i kendi yetkili dosyası veya PCAP'i üzerinde
-  çalıştırıp sonuç, hata veya eksik kullanım senaryosu paylaşsın.
-- [ ] Geri bildirimi (girdi türü, komut, beklenen/gerçek sonuç, SHA-256 gibi
-  gizli olmayan kanıt) izin verilen sınırlar içinde kaydet; kullanıcı verisini
-  projeye toplamayı varsayılan yapma.
-- [ ] Kullanıcı testindeki bulguları `TODO.md`'ye issue/iş olarak ekle ve
-  önceliklendir.
-- **Kapı:** en az bir bağımsız kullanıcının gerçek iş akışı ve sonucu
-  belgelenmeden Faz 3/1.0 iddiasına geçme.
+- [x] Güncel worktree'de scanner, gerçek YARA kural corpus'u ve condition
+  differential testleri: **198 geçti, 0 skip**.
+- [x] Gerçek YARA/Sigma engine ve kapsam testleri: **27 geçti, 0 skip**.
+- [x] Dış deneme dokümantasyonu/gizlilik, negative security ve security audit
+  regresyonları: **33 geçti, 0 skip**. Toplam hedefli iç denetim: **258 geçti,
+  0 başarısız, 0 skip**. Komutlar ve kapsam:
+  [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
+- [x] Ürün kodunu kapsayan en son tam CI (`2b73fea`) 7/7; Python 3.10–3.13'te
+  her biri 1587 geçti/27 runner skip'i. Native Linux/Windows/macOS smoke 3/3.
+  `d44278a` sonrasındaki değişiklikler dokümantasyondur; hedefli testler
+  `d44278a` üzerinde ayrıca çalıştırıldı.
+- **Kapı (kapandı):** iç teknik denetim kapsamındaki onboarding, fail-closed,
+  differential, C/LLVM parity, PCAP ve gizlilik regresyonları geçti; yeni bulgu
+  çıkmadı. Bu kapı bağımsız gerçek kullanıcı denemesi olarak sunulamaz.
+
+#### G3 sonrası — isteğe bağlı ürün geri bildirimi `[ ]`
+
+- [ ] İsteyen bağımsız kullanıcı `axiom-scan`'i kendi yetkili girdisinde
+  deneyebilir; rehber ve issue formu bunu destekler. Bu geri bildirim G3 teknik
+  kapısını yeniden açmaz; ürün kullanılabilirliği/gerçek kullanım kanıtıdır.
 
 #### G4 — Alfa dağıtımını sağlamlaştır `[~]`
 
@@ -492,13 +466,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Aktif kapı ve paralel hazırlık
 
-**G3 — Dış kullanıcı doğrulaması** hâlâ Faz 1'in açık kabul kapısıdır. G3
-bağımsız kullanıcı geri bildirimi beklerken, G4 için G3 kanıtına bağlı olmayan
-taşınabilirlik hazırlıkları paralel yürütülebilir; bu hazırlıklar G3'ü veya G4
-kapısını kapatmış sayılmaz. G1 ve G2 kapandı. G1: NUL
+**G3 iç teknik denetimi kapandı**; bağımsız kullanıcı geri bildirimi artık
+isteğe bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir.
+G4 resmi örnek paket yayını ve operasyon kararları açık kalır. G1 ve G2 kapandı.
+G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
-overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir. G3 kurulum/başlangıç rehberi temiz klon ve sentetik hedefle doğrulandı; artık kapının kalan kısmı bağımsız kullanıcının yetkili dosya veya PCAP'inde gerçek iş akışını deneyip gizli olmayan geri bildirim vermesidir: [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md).
+overlap vakasında bulunan sessiz yanlış negatif düzeltildi. Tam GitHub CI doğrulaması `53839c3` için Python 3.10–3.13 matrix’inde her biri **1457 geçti/27 genel ortam skip’i** verdi. 15 Kasım hedefli YARA/scanner/differential/stress/AST-limits/C-LLVM parity paketi **490 geçti, 0 skip** (224,36 sn). Doğrudan C runtime testleri `INT64_MIN` min/max offset, `INT64_MAX` üstü hedef uzunluğu, hatalı AST/legacy kodlamaları ve occurrence index sınırlarının fail-closed olduğunu doğruluyor. 64 MiB/999-byte suffix near-match fixture'ına 15 sn regresyon eşiği eklendi; hedefli test **1 geçti**. `53839c3` GitHub Actions [run 43758677082](https://github.com/jaminakoai/axiom/actions/runs/43758677082) **7/7 başarılı**: Python 3.10–3.13’de 1457 geçti/27 genel ortam testi atlandı; doküman testleri 55 geçti. Tek satırlı inline YARA ve NUL içeren regex destek dışı ve açıkça belgeli ret sınırlarıdır. G2 corpus'unun güncel test kanıtı `docs/reports/2026-11-16-g2-yara-real-rule-corpus.md` içindedir. G3'ün güncel iç teknik kabulü, [258 hedefli test ve temiz klon kanıtı](docs/reports/2026-11-17-g3-internal-audit.md) ile kapandı. [`docs/EXTERNAL_VALIDATION.md`](docs/EXTERNAL_VALIDATION.md) isteğe bağlı gerçek kullanıcı geri bildirimi için korunuyor.
 
 ---
 
@@ -617,7 +591,7 @@ yeşil test sessiz yanlış sonucu gizler.
 ### 2.2 Hedef sırası (kullanıcı kararı, onaylanmış)
 
 ```
-FAZ 1: Güvenlik araçları (kod/test)                ✅ tamam; dış kullanıcı kapısı ⬜
+FAZ 1: Güvenlik araçları (kod/test)                ✅ tamam; iç G3 denetimi ✅
    ↓
 FAZ 2: Olgun kütüphane + ekosistem altyapısı      🟡 büyük ölçüde hazır; 0 paket yayınlı
    ↓
@@ -1416,8 +1390,9 @@ Aşağıdakiler **geçmiş kayıttır**, güncel değildir. Çelişki varsa bu d
 Bu bölüm aktif listedeki sırayı tekrarlar; görev ayrıntıları ve kabul kapıları
 belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 
-1. **G3:** en az bir bağımsız kullanıcının `axiom-scan` ile gerçek iş akışı;
-   gizli olmayan geri bildirimi kaydet ve bulguları önceliklendir.
+1. **G3:** maintainer isteğiyle iç teknik denetim kapandı;
+   [258 test ve temiz-klon kanıtı](docs/reports/2026-11-17-g3-internal-audit.md).
+   Bağımsız kullanıcı geri bildirimi isteğe bağlı ürün kanıtı olarak tutulur.
 2. **G4:** örnek paket için upload/hosted registry yazma yolunu ve resmi imza
    anahtarı işletimini kararlaştır; en az bir sürümlü paketi gerçekten yayımla.
    G4 platform smoke Linux/Windows/macOS'ta geçti; sentetik onboarding scan'i
@@ -1426,7 +1401,7 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 3. **G5:** kullanıcı kanıtı ve bakım kapasitesi oluştuktan sonra 1.0 ve ekosistem
    hedeflerini kararlaştır.
 
-**G0, G1 ve G2 kapandı.** Native platform smoke doğrulaması da tamamlandı;
-`52544da` tam CI'si 7/7 başarılı. Sıradaki kabul kapıları G3 dış kullanıcı
-doğrulaması ve G4 resmi örnek paket yayınıdır. Yeni YARA sözdizimi differential
-kanıt ve açık kapsam sınırlarıyla eklenir.
+**G0, G1, G2 ve iç teknik G3 kapandı.** Native platform smoke doğrulaması da
+tamamlandı; `2b73fea` tam CI'si 7/7 başarılı. Sıradaki kabul kapısı G4 resmi
+örnek paket yayınıdır. Yeni YARA sözdizimi differential kanıt ve açık kapsam
+sınırlarıyla eklenir.

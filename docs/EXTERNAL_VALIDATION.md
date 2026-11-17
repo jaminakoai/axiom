@@ -1,14 +1,18 @@
-# Axiom dış kullanıcı denemesi / External user trial
+# Axiom dış kullanıcı geri bildirimi / Optional external user feedback
 
-Bu rehber G3 doğrulaması içindir. Önce zararsız, sentetik bir hedefle kurulum
-ve duman testi yapın; ardından yalnızca kullanma yetkiniz olan bir dosya veya
-PCAP üzerinde kendi gerçek iş akışınızı deneyin. Beş dakikalık tahmin, Debian/
-Ubuntu sistem araçlarının önceden kurulu olduğunu varsayar.
+G3 teknik kabul kapısı maintainer'ın isteğiyle iç denetimle kapatılmıştır;
+bağımsız kullanıcı denemesi bu kapının şartı değildir. Bu rehber, ürünü kendi
+yetkili girdinizle denemek ve isterseniz temizlenmiş geri bildirim paylaşmak
+için isteğe bağlıdır. Önce zararsız, sentetik hedefle kurulum ve smoke testi
+yapın. Beş dakikalık tahmin, Debian/Ubuntu sistem araçlarının önceden kurulu
+olduğunu varsayar.
 
-This guide supports roadmap gate G3. First install and run a smoke test against
-a harmless synthetic target. Then try your real workflow only on a file or PCAP
-you are authorized to use. The five-minute estimate assumes the Debian/Ubuntu
-system tools are already installed.
+The G3 technical acceptance gate was closed through an internal audit at the
+maintainer's request; an independent user trial is not required for that gate.
+This guide remains optional for trying your own authorized input and sharing
+sanitized feedback. First install and run a smoke test against a harmless
+synthetic target. The five-minute estimate assumes the Debian/Ubuntu system
+tools are already installed.
 
 ## Ön koşullar / Prerequisites
 
@@ -78,14 +82,13 @@ Expected: `rules` returns `"ok":true` and `"rules":1`; `scan` returns
 64-character `target_sha256`. The match offset is 36 and its length is 37.
 
 Bu akışın temiz klondan kurulumu ve sentetik taraması Linux x86_64 üzerinde
-doğrulanmıştır. Ayrıntılı commit, süre ve çıktı kanıtı aşağıdaki G3 raporundadır.
-Bu kanıt kurulum/duman testini gösterir; bağımsız kullanıcı doğrulaması sayılmaz.
+doğrulanmıştır. Güncel iç denetim kanıtı aşağıdaki rapordadır.
 
 The clean-clone install and synthetic scan have been verified on Linux x86_64.
-The G3 report below records the commit, duration, and output. This proves the
-setup/smoke path only; it does not count as independent user validation.
+The current internal audit report below records the commit and outputs. It
+proves the checked technical paths, not independent user experience.
 
-[G3 onboarding evidence / G3 başlangıç kanıtı](reports/2026-11-16-g3-external-onboarding.md)
+[G3 internal audit / G3 iç denetim kanıtı](reports/2026-11-17-g3-internal-audit.md)
 
 ## Yetkili girdinizle gerçek deneme / Try your authorized input
 
