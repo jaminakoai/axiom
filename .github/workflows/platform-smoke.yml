@@ -53,6 +53,11 @@ jobs:
           signed_index_rejects_rollback_and_same_sequence_equivocation or
           signed_index_rejects_expired_and_excessively_long_expiration"
 
+      - name: Signed sample package release preflight
+        run: >-
+          python -m pytest -q
+          tests/test_package_manager.py::test_sample_scan_report_signed_registry_release_preflight
+
       - name: Derleyici sürümünü doğrula
         run: |
           axiom --version

@@ -28,6 +28,11 @@ AXIOM_BIN = Path(__file__).resolve().parent.parent / "bin" / "axiom"
 AXPM_BIN = Path(__file__).resolve().parent.parent / "bin" / "axpm"
 
 
+def _axpm_command(*args):
+    """Invoke the repository's Python CLI consistently on Unix and Windows."""
+    return [sys.executable, str(AXPM_BIN), *(str(arg) for arg in args)]
+
+
 def test_toml_writer_and_parser():
     data = {
         "package": {
@@ -521,11 +526,13 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
 
     registry = tmp_path / "local-registry"
     registry_build = subprocess.run(
-        [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
-         "--output", str(registry), "--public-key", str(public_key_path),
-         "--index-signing-key", str(index_signing_key), "--index-sequence", "1",
-         "--index-expires", (datetime.now(timezone.utc) + timedelta(days=7))
-         .isoformat().replace("+00:00", "Z")],
+        _axpm_command(
+            "registry", "assemble", "--from", tmp_path / "packed-output",
+            "--output", registry, "--public-key", public_key_path,
+            "--index-signing-key", index_signing_key, "--index-sequence", "1",
+            "--index-expires", (datetime.now(timezone.utc) + timedelta(days=7))
+            .isoformat().replace("+00:00", "Z"),
+        ),
         cwd=repo, capture_output=True, text=True,
     )
     assert registry_build.returncode == 0, registry_build.stdout + registry_build.stderr
@@ -538,10 +545,12 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
 
     second_registry = tmp_path / "second-registry"
     second_build = subprocess.run(
-        [str(AXPM_BIN), "registry", "assemble", "--from", str(tmp_path / "packed-output"),
-         "--output", str(second_registry), "--public-key", str(public_key_path),
-         "--index-signing-key", str(index_signing_key), "--index-sequence", "1",
-         "--index-expires", assembled_index["expires"]],
+        _axpm_command(
+            "registry", "assemble", "--from", tmp_path / "packed-output",
+            "--output", second_registry, "--public-key", public_key_path,
+            "--index-signing-key", index_signing_key, "--index-sequence", "1",
+            "--index-expires", assembled_index["expires"],
+        ),
         cwd=repo, capture_output=True, text=True,
     )
     assert second_build.returncode == 0, second_build.stdout + second_build.stderr
@@ -550,7 +559,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
 
     app = tmp_path / "clean-consumer"
     init = subprocess.run(
-        [str(AXPM_BIN), "init", str(app)], cwd=AXPM_BIN.parent.parent,
+        _axpm_command("init", app), cwd=AXPM_BIN.parent.parent,
         capture_output=True, text=True,
     )
     assert init.returncode == 0, init.stdout + init.stderr
@@ -570,7 +579,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     env["AXIOM_CACHE_DIR"] = str(tmp_path / "consumer-cache")
 
     install = subprocess.run(
-        [str(AXPM_BIN), "install"], cwd=app, env=env,
+        _axpm_command("install"), cwd=app, env=env,
         capture_output=True, text=True,
     )
     assert install.returncode == 0, install.stdout + install.stderr
@@ -582,7 +591,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
     assert 'version = "0.1.0"' in lock
 
     installed_tests = subprocess.run(
-        [str(AXPM_BIN), "test"], cwd=installed, env=env,
+        _axpm_command("test"), cwd=installed, env=env,
         capture_output=True, text=True,
     )
     assert installed_tests.returncode == 0, installed_tests.stdout + installed_tests.stderr
@@ -597,7 +606,7 @@ def test_sample_scan_report_signed_registry_release_preflight(tmp_path):
         encoding="utf-8",
     )
     package_tests = subprocess.run(
-        [str(AXPM_BIN), "test"], cwd=app, env=env,
+        _axpm_command("test"), cwd=app, env=env,
         capture_output=True, text=True,
     )
     assert package_tests.returncode == 0, package_tests.stdout + package_tests.stderr
