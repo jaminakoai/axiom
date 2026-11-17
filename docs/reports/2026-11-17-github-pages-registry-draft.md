@@ -31,6 +31,13 @@ yayımlanmamıştır.
   — **13 passed**.
 - `python -m pytest -q -rs` — **1610 passed, 0 failed, 0 skipped** in 1396.94 s
   (bu raporun oluşturulduğu yerel çalışma ağacı).
+- Commit `8d633b5` GitHub CI run
+  [44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602)
+  **7/7 başarılı**: Python 3.10–3.13'ün her birinde 1583 geçti/27 ortam skip'i,
+  55 doküman testi; ayrıca ASan/UBSan ve LLVM işleri geçti.
+- Aynı commit'in native smoke run
+  [44008473611](https://github.com/jaminakoai/axiom/actions/runs/44008473611)
+  Linux, Windows ve macOS'ta **3/3 başarılı**.
 - `git diff --check` — başarılı.
 
 Regresyon testleri geçerli v1/v2 paket üretimini, başarısız paket ve index

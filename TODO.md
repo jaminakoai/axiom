@@ -12,15 +12,14 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `4d81ffe`: Python 3.10–3.13'te her biri 1573 geçti / 27 skip, doküman blokları 55 geçti; [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
-| Son CI denemesi | `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
-| Son başarılı tam CI | `4d81ffe` [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
-| Son platform smoke | `4d81ffe`, native classic PCAP testleri ve build/run Linux/Windows/macOS run 43998977308 **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `8d633b5`: Python 3.10–3.13'te her biri 1583 geçti / 27 skip, doküman blokları 55 geçti; [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
+| Son CI denemesi | `8d633b5` [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
+| Son başarılı tam CI | `8d633b5` [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
+| Son platform smoke | `8d633b5`, native build/registry/PCAP Linux/Windows/macOS run [44008473611](https://github.com/jaminakoai/axiom/actions/runs/44008473611), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `4d81ffe` — [run 43998977282](https://github.com/jaminakoai/axiom/actions/runs/43998977282), **7/7 başarılı** |
-| Son tam yerel test paketi | `23a0aca`: **1565 geçti, 0 başarısız** (1331,91 sn); aynı commit için GitHub CI **7/7 başarılı** |
-| Güncel çalışma ağacı tam test paketi | Pages taslağı ve testleri dâhil: **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn); henüz commit edilmedi |
+| Son kaydedilmiş başarılı CI | `8d633b5` — [run 44008473602](https://github.com/jaminakoai/axiom/actions/runs/44008473602), **7/7 başarılı** |
+| Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
 
 ---
 
