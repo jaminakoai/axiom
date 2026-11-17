@@ -19,7 +19,7 @@
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `2b73fea` — [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
-| Son tam yerel test paketi | `0b53c17` içeriği: **1616 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1341 sn) |
+| Son tam yerel test paketi | Registry key-overlap değişiklikleri: **1623 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1342 sn) |
 
 ---
 
@@ -46,12 +46,14 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   Canlı default URL'den imzalı schema 2 index doğrulandı ve temiz tüketici
   ayarsız install/test yaptı. Private key'ler repo dışındadır. Age ile SSH
   Ed25519 alıcısına şifreli recovery arşivi oluşturulup geri açılarak doğrulandı;
-  ciphertext'in harici/off-device kopyası ve rotasyon overlap desteği açıktır.
+  maintainer yerel şifreli dosyanın yeterli olduğunu onayladı; ciphertext ve
+  SSH identity aynı cihazda olduğundan cihaz kaybı riski ayrıca not edilmelidir.
 - Registry istemci incelemesinde imzalı tarball'ın `axiom.toml` kimliğinin
   imzasız index metadata'sına bağlanmadığı bulundu. İstemci doğrulaması ve
   regresyon kanıtı eklendi. Ayrı anahtarlı imzalı schema 2 index ve gözlemlenmiş
   sequence rollback kontrolü de eklendi; ilk kullanım/yerel state silinmesi
-  sınırı ile tekil trust anchor nedeniyle aşamalı rotasyon sınırı sürmektedir:
+  sınırı sürer. Eski/yeni key overlap desteği kaynak koda eklendi; canlı anahtar
+  rotasyonundan önce istemci dağıtımının da iki anchor'ı taşıması gerekir:
   [G4 metadata binding raporu](docs/reports/2026-11-16-registry-index-metadata-binding.md).
 - Son dört YARA commit'i sabit jump, bounded jump, sınırlı alternation ve bir
   negated byte ekledi. Bunlar belgelenmiş bir alt kümedir; tam YARA uyumluluğu
@@ -277,7 +279,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   deneyebilir; rehber ve issue formu bunu destekler. Bu geri bildirim G3 teknik
   kapısını yeniden açmaz; ürün kullanılabilirliği/gerçek kullanım kanıtıdır.
 
-#### G4 — Alfa dağıtımını sağlamlaştır `[~]`
+#### G4 — Alfa dağıtımını sağlamlaştır `[x]` — 17 Kasım 2026 yayımlandı
 
 - [x] Yerel derleme hazırlığında POSIX'e özgü `which` ve `/dev/null`
   varsayımlarını taşınabilir Python karşılıklarına taşı; native Windows/macOS
@@ -345,8 +347,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] `axiom-scan-report` 0.1.0 için Ed25519 imzalı schema 2 snapshot oluştur;
   Pages validator geçsin ve ayrı temiz tüketici local `file://` registry'den
   paketi indirip doğrulasın/kurup test etsin. `axpm test` 2/2 geçti. Tam test
-  paketi `python -m pytest -q --tb=short`: **1616 geçti, 0 hata, 0 skip**
-  (1341 sn; snapshot commit'inden hemen önceki aynı içerik). Canlı default URL
+  paketi `python -m pytest -q --tb=short`: **1623 geçti, 0 hata, 0 skip**
+  (1342 sn; registry key-overlap değişikliği dâhil). Canlı default URL
   üzerinden imzalı schema 2 index doğrulandı; temiz tüketici explicit URL/key
   olmadan 0.1.0 kurdu ve `axpm test` 2/2 geçti.
 - [x] GitHub Pages'i workflow kaynağıyla etkinleştir; `github-pages` environment'i
@@ -354,12 +356,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   Workflow `44053918679` build/deploy **2/2 başarılı**. Pages API HTTPS enforcement
   açık.
 - [x] İki signing key için age şifreli recovery arşivi oluşturup eşleşen SSH
-  Ed25519 identity ile geri açarak doğrula. Yerel ciphertext:
+  Ed25519 identity ile geri açarak doğrula. Maintainer yerel şifreli dosyayı
+  yeterli kabul etti. Yerel ciphertext:
   `~/.config/axiom/registry-key-backups/registry-signing-keys-2026-11-17.tar.age`.
-- [ ] Arşivi ayrı fiziksel/off-device saklama alanına kopyala ve yedek SSH
-  identity'sinin kurtarılabilirliğini doğrula. İstemci şu an tek public anchor
-  taşıdığından, kesintisiz anahtar rotasyonu öncesi eski/yeni anchor overlap'ini
-  uygula ve test et. Runbook: `docs/REGISTRY_OPERATIONS.md`.
+- [x] İstemci yapılandırmasına paket ve index rolü başına en fazla 8 trust anchor
+  desteği ve birden fazla concatenated PEM anchor ayrıştırması ekle. Paket ve
+  schema 2 index imzası yeni anahtarla yalnızca ikinci anchor üzerinden test
+  edildi; resmi live trust anchors değiştirilmedi. Gerçek rotasyon gerekmiyor;
+  mevcut source istemcisi rotasyonlu geçiş için hazır, runbook:
+  `docs/REGISTRY_OPERATIONS.md`.
 - [x] GitHub Pages için manuel, master dalı ve açık `publish` seçimi isteyen
   statik registry taslağı eklendi. Build öncesi kaynak ağacı, Ed25519 paket ve
   v2 index imzaları, SHA-256, manifest/bağımlılık eşleşmesi, arşiv ve artifact

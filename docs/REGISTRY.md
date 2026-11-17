@@ -32,6 +32,8 @@ Registry v1 bunları çözer: **içerik-adresli depo + ed25519 imza + semver + t
 [registry]
 url = "https://jaminakoai.github.io/axiom/registry"
 # Resmî adres için public_key ve index_public_key varsayılan olarak gelir.
+# Rotasyon geçişinde aynı role ait eski ve yeni anahtarlar listelenebilir:
+# public_keys = ["""-----BEGIN PUBLIC KEY----- ...""", """-----BEGIN PUBLIC KEY----- ..."""]
 # İsteğe bağlı, paket imza anahtarından ayrı Registry v2 index anahtarı:
 # index_public_key = """
 # -----BEGIN PUBLIC KEY-----
@@ -167,8 +169,11 @@ axpm registry assemble --from /tmp/packed --output /tmp/registry-v2 \
 
 Bu mod `schema: 2`, monoton artan `sequence`, en fazla 90 gün geçerli `expires`
 ve `index.json.sig` sidecar'ı üretir. Tüketici `[registry].index_public_key`
-veya `AXIOM_REGISTRY_INDEX_KEY` ile ayrı güven anahtarını yapılandırmalıdır;
-bu anahtar ayarlıysa v1 unsigned index reddedilir. İstemci imzayı doğrular,
+veya `AXIOM_REGISTRY_INDEX_KEY` ile ayrı güven anahtarını yapılandırmalıdır.
+Rotasyon sırasında `[registry].index_public_keys` eski/yeni anahtar dizisini
+kabul eder (paket anahtarları için `public_keys`); her listede en fazla 8
+anahtar olabilir. Tekil env değişkeni ayarlanırsa listeyi ezer. Güven anahtarı
+ayarlıysa v1 unsigned index reddedilir. İstemci imzayı doğrular,
 süresi dolmuş veya 90 günden fazla ileri tarihli index'i reddeder ve kabul
 ettiği en yüksek sequence/hash değerini registry URL'i başına cache'e yazar.
 Gözlemlenmiş sequence geriye alınamaz; aynı sequence altında farklı index

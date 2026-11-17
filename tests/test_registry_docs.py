@@ -69,13 +69,14 @@ def test_registry_guide_documents_offline_pages_snapshot_preparation():
 
 
 def test_registry_key_operations_document_backup_and_rotation_limitations():
-    text = REGISTRY_OPERATIONS.read_text(encoding="utf-8")
+    text = " ".join(REGISTRY_OPERATIONS.read_text(encoding="utf-8").split())
 
     for required in (
         "registry-key-backups/registry-signing-keys-2026-11-17.tar.age",
         "same machine as the source keys",
-        "overlapping old/new trust anchors",
+        "staged client release that overlaps old and new anchors",
+        "up to eight package and index trust anchors",
         "do not rotate as a cleanup step",
-        "The signed\nindex sequence detects rollback",
+        "The signed index sequence detects rollback",
     ):
         assert required in text, f"docs/REGISTRY_OPERATIONS.md eksik: {required}"

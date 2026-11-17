@@ -498,10 +498,18 @@ class RegistryConfig:
     def __init__(self, url: str, public_key: Optional[str] = None,
                  allow_unsigned: bool = False, timeout: int = 30,
                  cache_dir: Optional[Path] = None,
-                 index_public_key: Optional[str] = None):
+                 index_public_key: Optional[str] = None,
+                 public_keys: Optional[List[str]] = None,
+                 index_public_keys: Optional[List[str]] = None):
         self.url = url.rstrip("/")
-        self.public_key = public_key
-        self.index_public_key = index_public_key
+        self.public_keys = _dedupe_public_keys(([public_key] if public_key else [])
+                                               + (public_keys or []))
+        self.index_public_keys = _dedupe_public_keys(
+            ([index_public_key] if index_public_key else []) + (index_public_keys or [])
+        )
+        self.public_key = self.public_keys[0] if self.public_keys else None
+        self.index_public_key = (self.index_public_keys[0]
+                                 if self.index_public_keys else None)
         self.allow_unsigned = allow_unsigned
         self.timeout = timeout
         env_cache = os.environ.get("AXIOM_CACHE_DIR")
@@ -516,22 +524,78 @@ class RegistryConfig:
     def from_manifest(cls, raw_data: Dict[str, Any]) -> "RegistryConfig":
         reg = raw_data.get("registry") or {}
         url = os.environ.get("AXIOM_REGISTRY") or reg.get("url") or DEFAULT_REGISTRY
-        key = os.environ.get("AXIOM_REGISTRY_KEY") or reg.get("public_key")
-        index_key = (os.environ.get("AXIOM_REGISTRY_INDEX_KEY")
-                     or reg.get("index_public_key"))
+        package_keys = _manifest_public_keys(reg, "public_key", "public_keys")
+        index_keys = _manifest_public_keys(reg, "index_public_key", "index_public_keys")
+        env_package_key = os.environ.get("AXIOM_REGISTRY_KEY")
+        env_index_key = os.environ.get("AXIOM_REGISTRY_INDEX_KEY")
+        if env_package_key:
+            package_keys = [env_package_key]
+        if env_index_key:
+            index_keys = [env_index_key]
         # Ship trust anchors for the official endpoint so a clean consumer can
         # verify packages and the signed schema-2 index without per-project PEMs.
         if url.rstrip("/") == DEFAULT_REGISTRY:
-            key = key or Path(__file__).with_name("registry-package-public.pem").read_text(
-                encoding="ascii"
-            )
-            index_key = index_key or Path(__file__).with_name(
-                "registry-index-public.pem"
-            ).read_text(encoding="ascii")
+            if not package_keys:
+                package_keys = _split_public_key_bundle(
+                    Path(__file__).with_name("registry-package-public.pem").read_text(
+                        encoding="ascii"
+                    )
+                )
+            if not index_keys:
+                index_keys = _split_public_key_bundle(
+                    Path(__file__).with_name("registry-index-public.pem").read_text(
+                        encoding="ascii"
+                    )
+                )
         allow = (os.environ.get("AXIOM_ALLOW_UNSIGNED") == "1"
                  or bool(reg.get("allow_unsigned", False)))
-        return cls(url=url, public_key=key, index_public_key=index_key,
+        return cls(url=url, public_keys=package_keys, index_public_keys=index_keys,
                    allow_unsigned=allow)
+
+
+def _split_public_key_bundle(value: str) -> List[str]:
+    """Split one or more concatenated PEM public keys; preserve malformed input for fail-closed verification."""
+    matches = list(re.finditer(
+        r"-----BEGIN PUBLIC KEY-----.*?-----END PUBLIC KEY-----",
+        value,
+        flags=re.DOTALL,
+    ))
+    if not matches:
+        return [value] if value else []
+    previous_end = 0
+    keys = []
+    for match in matches:
+        if value[previous_end:match.start()].strip():
+            return [value]
+        keys.append(match.group(0) + "\n")
+        previous_end = match.end()
+    if value[previous_end:].strip():
+        return [value]
+    return keys
+
+
+def _dedupe_public_keys(keys: List[str]) -> List[str]:
+    deduped = []
+    for key in keys:
+        for pem in _split_public_key_bundle(key):
+            if pem and pem not in deduped:
+                deduped.append(pem)
+    if len(deduped) > 8:
+        raise ValueError("registry başına en fazla 8 güvenilen açık anahtar tanımlanabilir")
+    return deduped
+
+
+def _manifest_public_keys(registry: Dict[str, Any], single_name: str,
+                          plural_name: str) -> List[str]:
+    single = registry.get(single_name)
+    plural = registry.get(plural_name)
+    if single is not None and not isinstance(single, str):
+        raise ValueError(f"registry.{single_name} metin olmalı")
+    if plural is not None and (
+        not isinstance(plural, list) or any(not isinstance(key, str) for key in plural)
+    ):
+        raise ValueError(f"registry.{plural_name} metin dizisi olmalı")
+    return _dedupe_public_keys(([single] if single else []) + (plural or []))
 
 
 # ---------------------------------------------------------------------------
@@ -785,6 +849,18 @@ def verify_signature(data: bytes, signature_b64: str, public_key: Optional[str])
     return (True, "") if ok else (False, "imza geçersiz")
 
 
+def verify_signature_any(data: bytes, signature_b64: str,
+                        public_keys: List[str]) -> Tuple[bool, str]:
+    """Accept a signature from any configured, bounded trust anchor set."""
+    if not public_keys:
+        return verify_signature(data, signature_b64, None)
+    for public_key in public_keys:
+        ok, _ = verify_signature(data, signature_b64, public_key)
+        if ok:
+            return True, ""
+    return False, "imza geçersiz; hiçbir yapılandırılmış güven anahtarıyla doğrulanamadı"
+
+
 def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: str,
                            sig_b64: str, config: RegistryConfig) -> None:
     """Her kullanımdan önce tarball bütünlüğünü ve güncel güven politikasını doğrula."""
@@ -794,7 +870,7 @@ def _verify_package_tarball(raw: bytes, name: str, version: str, expected_sha: s
             f"  beklenen: {expected_sha}\n  gerçek  : {sha256_bytes(raw)}"
         )
     if sig_b64:
-        ok, why = verify_signature(raw, sig_b64, config.public_key)
+        ok, why = verify_signature_any(raw, sig_b64, config.public_keys)
         if not ok:
             raise RuntimeError(f"'{name}@{version}' imza doğrulanamadı: {why}")
     elif not config.allow_unsigned:
@@ -887,7 +963,7 @@ def fetch_index(config: RegistryConfig) -> RegistryIndex:
     except ValueError as e:
         raise RuntimeError(f"registry URL geçersiz ({url}): {e}") from e
     signature_b64 = ""
-    if config.index_public_key:
+    if config.index_public_keys:
         try:
             signature_raw = _fetch(f"{url}.sig", config.timeout,
                                    _MAX_REGISTRY_INDEX_SIGNATURE_BYTES)
@@ -897,7 +973,7 @@ def fetch_index(config: RegistryConfig) -> RegistryIndex:
             signature_b64 = signature_raw.decode("ascii").strip()
         except UnicodeDecodeError as exc:
             raise RuntimeError("registry index imzası ASCII base64 olmalı") from exc
-        ok, why = verify_signature(raw, signature_b64, config.index_public_key)
+        ok, why = verify_signature_any(raw, signature_b64, config.index_public_keys)
         if not ok:
             raise RuntimeError(f"registry index imzası doğrulanamadı: {why}")
     try:
@@ -905,10 +981,10 @@ def fetch_index(config: RegistryConfig) -> RegistryIndex:
     except (UnicodeDecodeError, json.JSONDecodeError) as e:
         raise RuntimeError(f"index.json geçersiz JSON: {e}")
     index = RegistryIndex.from_json(data, config.url)
-    if config.index_public_key and index.schema != 2:
+    if config.index_public_keys and index.schema != 2:
         raise RuntimeError("imza anahtarı yapılandırıldığında registry index schema 2 olmalı")
     if index.schema == 2:
-        if not config.index_public_key:
+        if not config.index_public_keys:
             raise RuntimeError("schema 2 registry index için AXIOM_REGISTRY_INDEX_KEY gerekli")
         _validate_signed_index_freshness(index, raw, config)
     return RegistryIndex(index.packages, index.base_url, schema=index.schema,

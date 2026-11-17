@@ -75,6 +75,7 @@ def test_semver_ranges(version, constraint, expected):
 def test_registry_config_keeps_existing_positional_arguments_compatible(tmp_path):
     config = RegistryConfig("file:///registry", "package-key", True, 12, tmp_path)
     assert config.public_key == "package-key"
+    assert config.public_keys == ["package-key"]
     assert config.allow_unsigned is True
     assert config.timeout == 12
     assert config.cache_dir == tmp_path
@@ -100,6 +101,36 @@ def test_custom_registry_does_not_inherit_official_trust_anchors(monkeypatch):
 
     assert config.public_key is None
     assert config.index_public_key is None
+
+
+def test_registry_manifest_accepts_bounded_old_and_new_trust_anchors(monkeypatch):
+    monkeypatch.delenv("AXIOM_REGISTRY", raising=False)
+    monkeypatch.delenv("AXIOM_REGISTRY_KEY", raising=False)
+    monkeypatch.delenv("AXIOM_REGISTRY_INDEX_KEY", raising=False)
+    config = RegistryConfig.from_manifest({"registry": {
+        "url": "https://mirror.example",
+        "public_key": "package-old",
+        "public_keys": ["package-new"],
+        "index_public_key": "index-old",
+        "index_public_keys": ["index-new"],
+    }})
+
+    assert config.public_keys == ["package-old", "package-new"]
+    assert config.index_public_keys == ["index-old", "index-new"]
+    assert config.public_key == "package-old"
+    assert config.index_public_key == "index-old"
+
+
+def test_registry_manifest_rejects_malformed_trust_anchor_lists():
+    with pytest.raises(ValueError, match="public_keys metin dizisi"):
+        RegistryConfig.from_manifest({"registry": {
+            "url": "https://mirror.example", "public_keys": "not-a-list",
+        }})
+
+
+def test_registry_rejects_more_than_eight_trust_anchors():
+    with pytest.raises(ValueError, match="en fazla 8"):
+        RegistryConfig(url="https://mirror.example", public_keys=[f"key-{n}" for n in range(9)])
 
 
 # ---------------------------------------------------------------------------
@@ -353,6 +384,20 @@ def _signed_index(sequence, packages=None, expires=None):
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_public_key_bundle_splits_multiple_pem_anchors(tmp_path):
+    old_dir = tmp_path / "old"
+    new_dir = tmp_path / "new"
+    old_dir.mkdir()
+    new_dir.mkdir()
+    _, old_public = _new_index_keypair(old_dir)
+    _, new_public = _new_index_keypair(new_dir)
+
+    keys = registry_module._split_public_key_bundle(old_public + new_public)
+
+    assert keys == [old_public, new_public]
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
 def test_signed_index_verifies_and_persists_accepted_sequence(tmp_path):
     registry = tmp_path / "signed-registry"
     registry.mkdir()
@@ -367,6 +412,27 @@ def test_signed_index_verifies_and_persists_accepted_sequence(tmp_path):
     state_files = list((config.cache_dir / "index-state").glob("*.json"))
     assert len(state_files) == 1
     assert json.loads(state_files[0].read_text(encoding="utf-8"))["sequence"] == 1
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_signed_index_rotation_accepts_new_anchor_during_overlap(tmp_path):
+    registry = tmp_path / "signed-registry"
+    registry.mkdir()
+    old_dir = tmp_path / "old"
+    new_dir = tmp_path / "new"
+    old_dir.mkdir()
+    new_dir.mkdir()
+    _, old_public = _new_index_keypair(old_dir)
+    new_private, new_public = _new_index_keypair(new_dir)
+    _write_signed_index(registry, _signed_index(1), new_private)
+    config = RegistryConfig(
+        url=registry.as_uri(), index_public_keys=[old_public, new_public],
+        cache_dir=tmp_path / "cache",
+    )
+
+    result = registry_module.fetch_index(config)
+
+    assert result.schema == 2 and result.sequence == 1
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
@@ -477,6 +543,26 @@ def test_download_verifies_and_caches(tmp_path):
 
     d2, hit2 = client.download("lib-a", "1.0.0", entry["sha256"], entry["sig"])
     assert hit2 is True and d2 == d1
+
+
+@pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")
+def test_download_accepts_package_signed_by_second_rotation_anchor(tmp_path):
+    reg, public_key = _make_registry(
+        tmp_path / "reg", {"lib-a": [{"version": "1.0.0"}]}
+    )
+    config = RegistryConfig(
+        url=f"file://{reg}", public_keys=["untrusted old key", public_key],
+        cache_dir=tmp_path / "cache",
+    )
+    client = RegistryClient(config)
+    entry = client.index.versions("lib-a")[0]
+
+    package, cache_hit = client.download(
+        "lib-a", "1.0.0", entry["sha256"], entry["sig"]
+    )
+
+    assert package.is_dir()
+    assert cache_hit is False
 
 
 @pytest.mark.skipif(not _have_openssl(), reason="openssl gerekli")

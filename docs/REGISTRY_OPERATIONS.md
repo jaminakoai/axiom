@@ -47,23 +47,25 @@ The restored private files must not be committed or placed in `registry-site/`.
 After recovery, verify permissions and test a signature against a disposable
 payload before using a key for publication.
 
-## Rotation policy and current limitation
+## Rotation policy and rollout constraint
 
-The client currently bundles one package public key and one index public key
-for the official URL. It does not support overlapping old/new trust anchors.
-Changing an anchor and immediately changing the corresponding registry
-signature would make existing client installations reject the registry.
-Therefore routine rotation must wait for client support for an overlapping
-trust set and a staged rollout. Until then, keep the current keys and back them
-up; do not rotate as a cleanup step.
+The current Axiom source accepts up to eight package and index trust anchors
+through `[registry].public_keys` and `[registry].index_public_keys`; official
+trust-anchor PEM files can contain multiple concatenated PEM keys. The bundled
+official files and the current live index still use one key per role. Existing
+client distributions must be updated with both old and replacement anchors
+before the registry changes its signer. Therefore routine rotation needs a
+staged client release that overlaps old and new anchors. Keep the current keys
+and their backup until that rollout has been completed; do not rotate as a
+cleanup step.
 
-When overlapping trust is implemented, use this sequence:
+For a planned key rotation, use this sequence:
 
 1. Generate two new, separate Ed25519 signing keys in protected staging; never
    reuse the package key as the index key.
-2. Publish a client release that trusts both current and replacement public
-   keys for each role. Verify that this release accepts the current live index
-   and package before proceeding.
+2. Put both current and replacement public keys in each role's trusted set and
+   publish a client release. Verify that it accepts the current live index and
+   package before proceeding.
 3. Back up and round-trip verify the new private keys; update the committed
    package trust anchors and the public PEMs in `registry-site/`.
 4. Re-sign published package artifacts and the schema 2 index with the new

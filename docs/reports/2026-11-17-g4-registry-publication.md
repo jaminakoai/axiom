@@ -22,9 +22,10 @@ review and permits deployments from `master` only.
 - A clean consumer with no registry URL or key environment overrides installed
   `axiom-scan-report` 0.1.0 from the live endpoint and passed `axpm test` (2/2).
 - A local signed-file-registry consumer test also passed (2/2).
-- Full local repository test suite: **1616 passed, 0 failed, 0 skipped** in
-  1341 seconds. Registry, docs, Pages, and release preflight subset: **117
-  passed** before snapshot creation; final Pages/docs checks: **15 passed**.
+- Full local repository test suite after trust-anchor overlap changes: **1623
+  passed, 0 failed, 0 skipped** in 1342 seconds. Registry, docs, Pages, and
+  release preflight subset before snapshot creation: **117 passed**; subsequent
+  registry/key-overlap/docs/Pages subset: **124 passed**.
 
 ## Commits
 
@@ -36,13 +37,15 @@ review and permits deployments from `master` only.
 An age-encrypted backup was created at
 `~/.config/axiom/registry-key-backups/registry-signing-keys-2026-11-17.tar.age`
 and decrypted to a temporary directory to verify both private keys against the
-archive. It is still on the same machine; copy it to removable/off-device
-storage before treating it as disaster recovery. The matching SSH identity
-must also remain recoverable. Rotation is documented in
+archive. The maintainer accepted this local encrypted copy as sufficient for
+now. The ciphertext and matching SSH identity are on the same machine, so loss
+of that device also loses this recovery path. Rotation is documented in
 [`REGISTRY_OPERATIONS.md`](../REGISTRY_OPERATIONS.md); the client currently has
-single-key trust and needs overlapping-key support before a seamless planned
-rotation. Schema 2 sequence rollback protection cannot detect a stale signed
-index on first use or after local rollback state is deleted.
+source support for up to eight overlapping anchors, but current official trust
+files and live signatures still use one key per role. Existing client
+distributions must deliver overlap before planned rotation. Schema 2 sequence rollback
+protection cannot detect a stale signed index on first use or after local
+rollback state is deleted.
 
 GitHub Actions emitted Node.js 20 deprecation warnings for pinned Pages
 deployment actions (currently executed under Node.js 24) and an upcoming
