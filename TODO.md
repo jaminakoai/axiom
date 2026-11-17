@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-17 |
 | Aşama | **Alfa sağlamlaştırma — kullanıcı doğrulaması ve YARA alt kümesi doğruluğu** |
-| Son tamamlanmış tam test paketi | GitHub Actions `3da8291`: Python 3.10–3.13'te her biri 1586 geçti / 27 skip, doküman blokları 55 geçti; [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
-| Son CI denemesi | `3da8291` [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
-| Son başarılı tam CI | `3da8291` [run 44017836432](https://github.com/jaminakoai/axiom/actions/runs/44017836432), **7/7 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `09c4206`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, doküman blokları 55 geçti; [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
+| Son CI denemesi | `09c4206` [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
+| Son başarılı tam CI | `09c4206` [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
 | Son platform smoke | `09c4206`, native build/registry/PCAP/axiom-scan onboarding Linux/Windows/macOS run [44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `586de93` — [run 44011843295](https://github.com/jaminakoai/axiom/actions/runs/44011843295), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `09c4206` — [run 44020276090](https://github.com/jaminakoai/axiom/actions/runs/44020276090), **7/7 başarılı** |
 | Son tam yerel test paketi | `8d633b5` içeriği: Pages taslağı dâhil **1610 geçti, 0 başarısız, 0 skip** (`python -m pytest -q -rs`, 1396,94 sn) |
 
 ---
@@ -67,9 +67,10 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   sıraya alacak şekilde düzeltildi, port tespitlerinin içeriği karşılaştırmada
   kalıyor. Güncel self-hosted derleyiciyle parity dosyası 28 geçti; etkilenen
   gerçek parity testi beş tekrarda 5/5 geçti. `3da8291` run `44017836432` ile
-  düzeltme doğrulandı: Python 3.10–3.13'te her biri 1586 geçti/27 skip;
-  tam CI 7/7 başarılı. Native platform smoke `44017836492` Linux, Windows ve
-  macOS'ta 3/3 başarılı.
+  düzeltme doğrulandı; `09c4206` run `44020276090` Python 3.10–3.13'te her biri
+  1587 geçti/27 skip, doküman blokları 55 geçti ve tam CI 7/7 başarılı oldu.
+  Aynı commit'in native platform smoke'u `44020276057` Linux, Windows ve
+  macOS'ta, sentinel onboarding testi dâhil 3/3 geçti.
 
 ### İş sırası ve kabul kapıları
 
