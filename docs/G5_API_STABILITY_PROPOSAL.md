@@ -43,9 +43,17 @@ promise. Resolve the generic `Result<T, E>` specification versus concrete
 `ResultInt`/`ResultStr` implementation and define how stdlib symbols are
 publicly exposed; do not promise all 53 files as a single stable surface.
 
-This is a surface-level inventory. Before `v1.0`, each stable candidate needs a
-concrete list of symbols, grammar forms, fields, flags, exit codes or schemas,
-plus tests that enforce the promise.
+This source-linked map is a concrete first inventory, but it does not yet list
+every function signature, grammar form, CLI flag, exit code or schema field.
+The 53 `std/**/*.ax` files have no `pub`/`export` declarations and symbols share
+a global namespace. The specification describes generic `Result<T, E>`, while
+`std/core/result.ax` implements `ResultInt`/`ResultStr`; `Option` also uses
+concrete types. Resolve these visibility and type-contract gaps before declaring
+the whole standard library stable.
+
+Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
+and schema field, and tie each promise to tests that enforce it. Do not treat
+this initial inventory as a completed stability manifest.
 
 ## G5 uyumluluk politikası / G5 Compatibility Policy
 

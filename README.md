@@ -577,7 +577,7 @@ compiler/           # Axiom ile yazılmış Self-Hosted Derleyici (λx)
 ├── parser.ax       # Sözdizim ayrıştırıcı
 ├── codegen.ax      # Bağımsız C99 kod üreticisi
 └── main.ax         # 'bin/axiomc' CLI ikili yürütücüsü (Python gerektirmez!)
-std/                # 52 Standart Kütüphane Modülü / 385 fonksiyon
+std/                # 53 stdlib kaynak dosyası / 446 fonksiyon bildirimi
 ├── ai/             # tensor, linalg, autograd, nn, inference
 ├── web/            # router, app, template
 ├── target/         # wasm
@@ -645,16 +645,15 @@ kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundad
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
 **1484 geçti, 0 hata/skip** (1344,44 sn). Güncel YARA/scanner/differential/stress/
-backend parity paketi **490 geçti** (223,89 sn). Son tamamlanan GitHub Actions
-`058484e` için **7/7 iş başarılı**; Python 3.10–3.13 matrix’inde her işte 1457 test
-geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti. Bu turdaki runtime
-sınır regresyonu henüz bu CI koşusuna dahil değil; push sonrası doğrulanacak.
+backend parity paketi **490 geçti** (223,89 sn). `058484e` CI sayıları tarihsel
+kaldı. En son `55217e8` commit'i GitHub Actions CI'da **7/7**, platform smoke'ta
+Linux/Windows/macOS **3/3** geçti; yerel son hedefli test paketi **188/188** geçti.
 YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`058484e` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`55217e8` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -663,9 +662,9 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan koşu: `43742268638` (`master`, SHA `058484e`); Python 3.10–3.13
-matrisindeki her iş 1457 test geçti, 27 genel ortam testi atlandı ve 55 doküman testi geçti.
-Bu koşu bu turdaki `INT64_MIN` sınır testinden önce tamamlandı.
+Son doğrulanan CI: [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587)
+(`master`, SHA `55217e8`). Native platform smoke [run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888)
+ile Linux, Windows ve macOS'ta 3/3 başarılıdır.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -680,9 +679,8 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
-çıkmasını sağladı. 1034 testli koşu o tarihte CI ile aynıydı; son tam yerel koşu
-G1 occurrence ve bounded-range performans değişiklikleri dahil 1361 testtir.
-En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarılıdır.
+çıkmasını sağladı. 1034 ve 1361 testli koşular tarihsel kayıttır; güncel tam CI
+ve platform smoke kanıtları yukarıdaki `55217e8` bağlantılarındadır.
 
 ---
 
@@ -700,7 +698,7 @@ En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarıl�
 - `Result<T,E>` + `?` hata modeli; `main` için `int` veya `Result<int,str>`.
 - 21 örnek program: C **21/21**, LLVM **21/21**, self-hosted `bin/axiomc` **21/21**,
   Windows hedefi wine altında **21/21**.
-- 52 stdlib modülü / 385 fonksiyon; güvenlik, ağ, kodlama, dosya, zaman, regex.
+- 53 stdlib kaynak dosyası / 446 fonksiyon bildirimi; güvenlik, ağ, kodlama, dosya, zaman, regex.
 - `axiom-scan` v0.2: şema sürümlü JSON, `target_sha256`, `--fail-on-match`.
 - DFIR triyaj aracı (`examples/22_dfir_triage.ax`): süreç/port/bütünlük/Sigma → tek JSON.
 - HTTP istemcisi, gerçek JSON parser, YARA/Sigma motorları, PCAP okuyucu.
@@ -710,11 +708,11 @@ En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarıl�
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **CI:** yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
+- **CI:** `55217e8` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
 - **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
-  duman testi geçti ([CI run 43853446338](https://github.com/jaminakoai/axiom/actions/runs/43853446338));
+  duman testi geçti ([platform smoke run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888));
   tam test paketi ve `axiom-scan` doğrulanmadı.
 - **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
   `axiom-scan` doğrulanmadı.

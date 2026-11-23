@@ -579,7 +579,7 @@ compiler/           # Self-Hosted Compiler written in Axiom (λx)
 ├── parser.ax       # Syntax parser
 ├── codegen.ax      # Standalone C99 code generator
 └── main.ax         # 'bin/axiomc' CLI binary (does not require Python!)
-std/                # 52 Standard Library Modules / 385 functions
+std/                # 53 standard-library source files / 446 function declarations
 ├── ai/             # tensor, linalg, autograd, nn, inference
 ├── web/            # router, app, template
 ├── target/         # wasm
@@ -649,16 +649,16 @@ for binary scanner integration is in
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
 **1484 passed, 0 failed/skipped** (1344.44 s). The current YARA/scanner/differential/stress/backend-parity
-suite passed **490 tests** (223.89 s). The latest completed GitHub Actions run for
-`058484e` passed **7/7 jobs**; each Python 3.10–3.13 job passed 1457 tests, skipped 27
-general environment tests, and passed 55 documentation tests. This round’s runtime-boundary
-regression is not part of that run and needs CI verification after commit/push.
+suite passed **490 tests** (223.89 s). The `058484e` CI counts are historical.
+The latest commit `55217e8` passed **7/7** GitHub Actions CI jobs and **3/3**
+Linux/Windows/macOS platform smoke jobs; the latest focused local suite passed
+**188/188**.
 The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `058484e`:
+All 7 jobs passed in the latest completed run for commit `55217e8`:
 
 | Job | Status |
 |---|---|
@@ -667,9 +667,9 @@ All 7 jobs passed in the latest completed run for commit `058484e`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Last verified run: `43742268638` (`master`, SHA `058484e`); each Python 3.10–3.13
-job passed 1457 tests, skipped 27 general environment tests, and passed 55 documentation tests.
-That run completed before this round’s `INT64_MIN` boundary check was added.
+Latest verified CI: [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587)
+(`master`, SHA `55217e8`). Native platform smoke [run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888)
+passed 3/3 on Linux, Windows, and macOS.
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -684,9 +684,8 @@ Six root causes fixed on the way here (details: report §9–§12):
 
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
-The cited 1034-test run matched CI at that time. The latest full local run is
-1361 tests with the G1 occurrence and bounded-range performance changes. The
-latest completed CI for baseline `fbae263` passed all 7 jobs.
+The cited 1034- and 1361-test runs are historical. Current full CI and platform
+smoke evidence is linked above for `55217e8`.
 
 ---
 
@@ -705,7 +704,7 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
 - `Result<T,E>` + `?` error model; `main` as `int` or `Result<int,str>`.
 - 21 example programs: C **21/21**, LLVM **21/21**, self-hosted `bin/axiomc`
   **21/21**, Windows target **21/21** under wine.
-- 52 stdlib modules / 385 functions: security, networking, encoding, file, time, regex.
+- 53 standard-library source files / 446 function declarations: security, networking, encoding, file, time, regex.
 - `axiom-scan` v0.2: schema-versioned JSON, `target_sha256`, `--fail-on-match`.
 - DFIR triage tool (`examples/22_dfir_triage.ax`): processes/ports/integrity/Sigma → one JSON.
 - HTTP client, real JSON parser, YARA/Sigma engines, PCAP reader.
@@ -715,11 +714,11 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
 
 ### 🟡 In progress / partial
 
-- **CI:** green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `55217e8` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([CI run 43857903071](https://github.com/jaminakoai/axiom/actions/runs/43857903071));
+  on a real Windows runner ([platform smoke run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.
