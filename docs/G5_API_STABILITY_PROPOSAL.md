@@ -1,19 +1,24 @@
 # G5.1 — Public API kararlılığı ve uyumluluk politikası / Public API Stability and Compatibility Policy
 
-**Durum / Status:** G5 çalışma politikası olarak benimsendi; `v1.0` öncesinde
-somut API envanteri ve CI/release kontrolleri tamamlanmalı. Bu karar `v1.0`
-yayımlamaz. / Adopted as the G5 working policy; concrete API inventory and
-CI/release checks remain before `v1.0`. This does not release `v1.0`.
+**Durum / Status:** Scanner-first `v1.0` için somut API envanteri, allowlist,
+rapor şeması, test kanıtı ve CI/release kapısı tamamlandı. `v1.0` henüz
+yayımlanmadı; kararlılık sözü yayınla başlar. Temsilî kullanıcı iş yüküyle
+değerlendirme isteğe bağlı ürün kanıtıdır, teknik yayın kapısı değildir.
+/ The concrete API inventory, allowlist, report schema, enforcing tests, and
+CI/release gate for scanner-first `v1.0` are complete. `v1.0` has not been
+released; its stability promise starts with publication. Evaluation on a
+representative user workload is optional product evidence, not a technical
+release gate.
 **Sürüm / Version:** `0.5.0-alpha`.
 
 Bu, ilk G5 işidir: dili genişletmeden veya `v1.0` sözü vermeden önce Axiom
-kullanıcılarının hangi yüzeylere güvenebileceğini tanımlamak. Mevcut `v1.0`
-kapıları açıkken G5 hazırlığı sürebilir; bu belge kapıları kapatmaz.
+kullanıcılarının hangi yüzeylere güvenebileceğini tanımlamak. Seçilmiş scanner
+yüzeyi için teknik hazırlık tamamlandı; bu belge tek başına `v1.0` yayımlamaz.
 
 This is the first G5 work item: define what Axiom users can depend on before
-expanding the language or making a `v1.0` commitment. G5 can proceed while the
-existing `v1.0` release gates are unresolved. This document does not itself
-close those gates.
+expanding the language or making a `v1.0` commitment. Technical preparation for
+the selected scanner surface is complete; this document does not itself publish
+`v1.0`.
 
 ## İlk public API envanteri / Initial Public-Surface Inventory
 

@@ -183,7 +183,7 @@ bölümündedir:
   doğrulanmamıştır.**
 * **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile native örnek
   derleme/çalıştırma ve belgelenen zararsız `axiom-scan` sentinel smoke testi
-  CI'da geçti ([run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261)).
+  CI'da geçti ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)).
   Tam test paketi, gerçek dosya/PCAP iş akışı ve elle kurulum adımları henüz
   doğrulanmadı.
 * **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı native
@@ -684,7 +684,7 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 
 Son doğrulanan CI: [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)
 (`master`, SHA `8a3220d`; Python 3.10–3.13'ün her birinde 1665 geçti/27 ortam skip'i).
-Native platform smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261)
+Native platform smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)
 ile Linux, Windows ve macOS'ta 3/3 başarılıdır.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
@@ -739,7 +739,7 @@ ve platform smoke kanıtları yukarıdaki `8a3220d` bağlantılarındadır.
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
 - **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
-  duman testi geçti ([platform smoke run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261));
+  duman testi geçti ([platform smoke run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154));
   tam test paketi ve `axiom-scan` doğrulanmadı.
 - **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
   `axiom-scan` doğrulanmadı.

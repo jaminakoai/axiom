@@ -7,11 +7,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ### Değiştirilen
 - G5'te kararlı API sınırı, SemVer, iki sonraki minor sürümlük kaldırma penceresi
-  ve eski minor fixture CI politikası belirlendi. `v1.0` öncesi kullanıcı
-  doğrulaması zorunlu kapı değil; dış deneme isteğe bağlı ürün geri bildirimidir.
-  Henüz 1.x minor release yok: fixture harness'i v1.0 öncesinde hazırlanacak,
-  iki-minor uyumluluk kontrolü v1.0/v1.1 fixture'ları oluşunca v1.2 hazırlığında
-  başlayacak. Somut API envanteri hâlâ açık.
+  ve eski minor fixture CI politikası belirlendi. Scanner-first v1.0 için somut
+  API envanteri, allowlist, rapor şeması, test kanıtı, fixture harness'i ve
+  release CI kapısı tamamlandı. v1.0 henüz yayımlanmadı; bağımsız kullanıcı
+  denemesi teknik yayın kapısı değil, isteğe bağlı ürün geri bildirimidir.
+  Henüz 1.x minor release yok; v1.0/v1.1 fixture'ları yayımlandıktan sonra
+  iki-minor uyumluluk kontrolü v1.2 hazırlığında başlayacak.
 
 ### Eklendi
 - PCAP okuyucu klasik PCAP'in iki byte order ve mikro/nanosaniye biçimlerini
@@ -37,7 +38,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
   üretim anahtarı yönetimi ve hosting kapsam dışıdır. Gzip açılımı, PAX/GNU
   uzantı başlıkları ve arşiv girdileri boyutlandırılmıştır.
 - `packages/axiom-scan-report` küçük örnek kütüphanesi ve gerçek yerel bağımlılık
-  tüketici testi eklendi; paket henüz registry'de yayımlanmadı.
+  tüketici testi eklendi; imzalı `0.1.0` sürümü public registry'de yayımlandı
+  ve temiz tüketici akışı G4 yayın kanıtında doğrulandı.
 
 ### Düzeltilen
 - Windows runtime artık statik string literal'larını platformun bellek bölgesi

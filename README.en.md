@@ -184,7 +184,7 @@ design*; measurements and caveats are in "Claims and evidence" below:
   unverified.**
 * **Windows:** Native example build/run and the documented harmless
   `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
-  and MSVC/Windows SDK ([run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261)).
+  and MSVC/Windows SDK ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)).
   The full suite, real file/PCAP workflow, and manual installation are not yet
   verified.
 * **macOS:** The same native build/run and sentinel smoke tests pass in CI with
@@ -687,7 +687,7 @@ All 7 jobs passed in the latest completed run for commit `8a3220d`:
 
 Latest verified CI: [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)
 (`master`, SHA `8a3220d`; 1665 passed/27 environment skips on Python 3.10–3.13).
-Native platform smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261)
+Native platform smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)
 passed 3/3 on Linux, Windows, and macOS.
 
 Six root causes fixed on the way here (details: report §9–§12):
@@ -742,7 +742,7 @@ smoke evidence is linked above for `8a3220d`.
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261));
+  on a real Windows runner ([platform smoke run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.

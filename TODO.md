@@ -11,14 +11,14 @@
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
-| Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
+| Aşama | **G5 — Scanner-first v1.0 teknik hazırlığı tamam; yayın kararı ve isteğe bağlı saha kanıtı açık** |
 | Son tamamlanmış tam test paketi | GitHub Actions `8a3220d`: Python 3.10–3.13'in her birinde **1665 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
 | Son CI denemesi | `8a3220d` [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
 | Son başarılı tam CI | `8a3220d` [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
-| Son platform smoke | `8a3220d`, Linux/Windows/macOS native smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261), **3/3 başarılı** |
+| Son platform smoke | `6186327`, Linux/Windows/macOS native smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `8a3220d` — [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı**; her Python sürümünde 1665 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261) **3/3 başarılı** |
+| Son kaydedilmiş başarılı CI | `8a3220d` — [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı**; her Python sürümünde 1665 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154) **3/3 başarılı** |
 | Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
 | Son hedefli test paketi | Scanner/YARA, C/LLVM, differential, allowlist, G5 versioning ve API docs/spec paketi birlikte **234 geçti**; out-of-range classic-PCAP timestamp fraction davranışı dört kombinasyonda (micro/nano × little/big endian), iki backend'de doğrulandı. |
 
@@ -71,10 +71,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
 - İlk güvenilir public release hedefine göre yaklaşık **%90** ilerleme tahmini
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
   isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
-  doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı. G5 başladı; ilk iş
-  olan ilk public API yüzey envanteri ve 1.0 uyumluluk politikası
-  [`G5 API stability policy`](docs/G5_API_STABILITY_PROPOSAL.md) içinde.
-  Yüzde kaba milestone tahminidir, kullanıcı benimsemesini ölçmez.
+  doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı. G5 scanner-first
+  v1.0 teknik hazırlığı (API envanteri, allowlist, sözleşme testleri ve CI/release
+  kapısı) tamamlandı; `v1.0` yayımlanmadı. Temsilî saha iş yükü isteğe bağlı ürün
+  kanıtıdır, teknik yayın kapısı değildir. Yüzde kaba milestone tahminidir,
+  kullanıcı benimsemesini ölçmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
   `test_selfhosted_matches_python_driver[08_multithreaded_scanner.ax]`
@@ -513,12 +514,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 ### Aktif kapı ve paralel hazırlık
 
-**G3 iç teknik denetimi kapandı**; bağımsız kullanıcı geri bildirimi artık
-isteğe bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir.
-G4 imzalı örnek paket yayını tamamlandı. G5 API kararlılık politikası, kaynak
-envanteri ve gelecekteki fixture'lar için CI harness'i hazır. Kararlı API
-allowlist davranış/ownership/backend sözleşmeleri için saha ve CI doğrulaması
-gerektiriyor. Gerçek v1.x fixture arşivi henüz yok; iki-minor CI kapısı v1.2'de
+**G3 iç teknik denetimi kapandı**; bağımsız kullanıcı geri bildirimi isteğe
+bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir. G4 imzalı
+örnek paket yayını tamamlandı. G5 scanner-first v1.0 teknik hazırlığı tamam:
+API kararlılık politikası, kaynak envanteri, allowlist, enforcement testleri,
+rapor şeması ve release CI kapısı hazır. Temsilî gerçek kullanıcı iş yüküyle
+değerlendirme ürün kanıtı olarak açık kalıyor; mevcut politikada yayın kapısı
+değildir. Gerçek v1.x fixture arşivi henüz yok; iki-minor CI kapısı v1.2'de
 aktifleşecek. DFIR kapsamı ürün odağı kararıdır; bağımsız kullanıcı/market-fit
 kanıtı olduğu iddia edilmemelidir. G1 ve G2 kapandı.
 G1: NUL
@@ -1407,17 +1409,17 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `2b73fea`: Python 3.10–13'te her biri 1587 geçti/27 skip; doküman 55, YARA differential 29, sanitizer ve LLVM başarılı; 7/7 | Run 44026041380 | 2000 |
-| Son native platform smoke | `2b73fea`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı | Run 44026041510 | — |
+| Son tam CI | `8a3220d`: Python 3.10–13'te her biri 1665 geçti/27 skip; doküman 55, YARA differential 29, sanitizer, LLVM/DWARF ve biçimlendirme başarılı; 7/7 ([run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)) | Run 45223491343 | 2000 |
+| Son native platform smoke | `6186327`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)) | Run 45227497154 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
-| Stdlib fonksiyon | 385 | 450 | 900 |
+| Stdlib fonksiyon | 446 (v0.5.0-alpha kaynak envanteri) | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
-| Yayımlanmış registry paketi | 0; 1 kaynak örneği paketlenebilir, yayınlanmadı | 10 | 250 |
+| Yayımlanmış registry paketi | 1 (`axiom-scan-report@0.1.0`) | 10 | 250 |
 | Dış katkı/ay | 0 | 2 | 10 |
 | Üretim kullanıcısı | 0 | 1 | 3 |
 | Self-hosted örnek | **21/21** ✅ | 8/21 | 21/21 |
 | C'ye hız oranı (aritmetik) | 1,5–2,2× | ≤2× | ≤1,5× |
-| Platform | Linux tam CI; Windows/macOS native scan sentinel smoke 3/3; tam pytest ve gerçek kullanıcı girdili scan doğrulaması henüz yok | 2 işletim sistemi runner'ı | 2+ gerçek runner |
+| Platform | Linux x86_64 tam CI ve scanner file/PCAP iş akışı; Windows/macOS native örnek + cache/file URL + PCAP/sentinel smoke 3/3, tam pytest ve gerçek dosya/PCAP akışı doğrulanmadı | 2 işletim sistemi runner'ı | 2+ gerçek runner |
 
 ---
 
@@ -1449,10 +1451,11 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    girdisi gereksinimi ayrı G5 maddesidir.
 2. **G4:** tamamlandı. `axiom-scan-report` 0.1.0 signed registry'de yayında;
    [yayın kanıtı](docs/reports/2026-11-17-g4-registry-publication.md).
-3. **G5 (aktif):** ilk uyumluluk politikası belirlendi; somut API envanteri,
-   stdlib görünürlüğü ve v1.0/v1.1 fixture harness'i açık. Gerçek iki-minor CI
-   kontrolü, gerekli 1.x release fixture'ları oluşunca v1.2 hazırlığında başlar.
-   Sonra gerçek kullanım akışındaki doğrulanmış engele göre geliştirme seç.
+3. **G5 (aktif):** scanner-first v1.0 teknik hazırlığı tamamlandı; `v1.0`
+   henüz yayımlanmadı. Gerçek iş yüküyle saha değerlendirmesi isteğe bağlı ürün
+   kanıtı olarak açık. Gerçek iki-minor CI kontrolü, v1.0/v1.1 release
+   fixture'ları oluşunca v1.2 hazırlığında başlar. Sonra gerçek kullanım
+   akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
 da tamamlandı; son kaydedilmiş tam CI `8a3220d` 7/7 başarılı, son doküman
