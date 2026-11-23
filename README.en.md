@@ -81,9 +81,11 @@ in their own language.
   `filesize` comparisons (decimal constants with `KB` = 1024 and `MB` = 1024²), `true`/`false`, parentheses, and `not`/`and`/`or`
   (`not` > `and` > `or` precedence). Offset bounds are decimal or `0x` hex
   integer literals.
-  Text patterns support `nocase`, `ascii`, and `fullword` (`ascii` is the
-  default). `wide` is explicitly rejected because the current text-reading
-  path cannot represent target bytes containing NUL. Unknown conditions,
+  Text patterns support `nocase`, `ascii`, `wide`, and `fullword` (`ascii` is
+  the default). `wide` searches the ASCII pattern interleaved with NUL bytes
+  (YARA's wide representation); use `ascii wide` to search both encodings.
+  Reported lengths are byte lengths, and arbitrary Unicode UTF-16 characters
+  are not supported. Unknown conditions,
   other unsupported modifiers and unbounded/out-of-subset hex jumps are
   rejected with a parse error. Hex patterns support nibble
   wildcards, fixed `[N]` jumps (N=1..64), and one bounded `[N-M]` jump per
@@ -745,9 +747,13 @@ smoke evidence is linked above for `5eddc9d`.
 
 ### ⬜ Planned
 
-- Concrete API inventory and fixture/release harness before `v1.0`; checks for
-  the previous two minor releases become enforceable while preparing `v1.2`,
-  after `v1.0` and `v1.1` fixtures exist ([G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)).
+- The first stable product profile is offline DFIR triage; the v1.0 allowlist
+  covers only the `axiom-scan` contract. The general language, compiler CLI,
+  axpm, manifest and lock files are not stable in this profile
+  ([allowlist](docs/api/v1.0-stable-allowlist.json),
+  [G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)). The compatibility promise
+  begins with v1.0.0; two-minor fixture checks become enforceable while
+  preparing v1.2.
 - Full test-suite and DFIR/`axiom-scan` workflows on Windows/macOS; end-to-end WASI tests with a sysroot.
 - Static (musl) binary production.
 - Published package ecosystem (target: 200+ packages) and a first enterprise user.

@@ -248,11 +248,10 @@ fn yara_nth_hex_pattern_length_buf(buf_handle: int, pattern: str, occurrence: in
     return rt_yara_nth_hex_pattern_length_buf_handle(buf_handle, pattern, occurrence);
 }
 
-// The text runtime supports nocase (1), ascii (2), and fullword (8).
-// Reject unknown flag bits, including wide, instead of silently using ASCII.
+// Text runtime flags: nocase (1), ascii (2), wide (4), fullword (8).
+// Reject unknown bits instead of silently changing pattern semantics.
 fn _yara_text_flags_supported(flags: int) -> bool {
-    return flags == 0 or flags == 1 or flags == 2 or flags == 3
-        or flags == 8 or flags == 9 or flags == 10 or flags == 11
+    return flags >= 0 and flags <= 15
 }
 
 fn _yara_text_flags_parse(raw: str) -> int {
@@ -260,10 +259,18 @@ fn _yara_text_flags_parse(raw: str) -> int {
     if raw == "1" { return 1 }
     if raw == "2" { return 2 }
     if raw == "3" { return 3 }
+    if raw == "4" { return 4 }
+    if raw == "5" { return 5 }
+    if raw == "6" { return 6 }
+    if raw == "7" { return 7 }
     if raw == "8" { return 8 }
     if raw == "9" { return 9 }
     if raw == "10" { return 10 }
     if raw == "11" { return 11 }
+    if raw == "12" { return 12 }
+    if raw == "13" { return 13 }
+    if raw == "14" { return 14 }
+    if raw == "15" { return 15 }
     return -1
 }
 
@@ -370,6 +377,9 @@ fn _yara_scan_single_pattern(target: str, buffer_handle: int, pattern_id: str, p
         if nocase { flags = 1 }
         if buffer_handle > 0 {
             idx = rt_yara_find_text_buf_handle(buffer_handle, p, flags, min_offset, max_offset)
+            if idx >= 0 {
+                match_len = rt_yara_text_length_at_buf_handle(buffer_handle, p, flags, idx)
+            }
         } else {
             idx = rt_yara_find_text(target, p, flags, min_offset, max_offset)
         }

@@ -12121,6 +12121,18 @@
       "name_family": "rt_prefixed"
     },
     {
+      "name": "rt_yara_text_length_at_buf_handle",
+      "parameters": [
+        "int",
+        "str",
+        "int",
+        "int"
+      ],
+      "returns": "int",
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
+    },
+    {
       "name": "rt_zlib_compress_str",
       "parameters": [
         "str"

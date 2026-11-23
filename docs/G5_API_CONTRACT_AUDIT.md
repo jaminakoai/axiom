@@ -12,26 +12,26 @@ kullanıcı sözleşmesini kanıtlamaz.
 
 The policy is allowlist-based: an entry not explicitly selected for the
 `v1.0` stable allowlist is not stable and carries no compatibility promise.
-The 845-entry source inventory therefore does not need an artificial
-stable/experimental/unsupported label on every entry. Only proposed stable
-entries require full contract review; explicitly unsupported features should
+The 846-entry source inventory therefore does not need an artificial
+stable/experimental/unsupported label on every entry. Only entries selected
+into the published stable allowlist require full contract review; explicitly unsupported features should
 be called out where users could reasonably expect them.
 
 Politika allowlist temellidir: `v1.0` kararlı allowlist'ine açıkça alınmayan
-girdi kararlı değildir ve uyumluluk sözü taşımaz. Bu nedenle 845 girdili kaynak
+girdi kararlı değildir ve uyumluluk sözü taşımaz. Bu nedenle 846 girdili kaynak
 envanterinin her elemanına yapay bir stable/experimental/unsupported etiketi
 vermek gerekmez. Tam sözleşme incelemesi yalnız kararlı olması önerilen
 girdilerde yapılır; kullanıcıların makul biçimde bekleyebileceği desteklenmeyen
 özellikler ayrıca belirtilir.
 
-The generated [source API inventory](api/v0.5.0-alpha.json) contains 845
-entries: 446 stdlib functions, 37 structs, 359 checker builtins and 3 special
+The generated [source API inventory](api/v0.5.0-alpha.json) contains 846
+entries: 446 stdlib functions, 37 structs, 360 checker builtins and 3 special
 builtin forms. They are all unclassified. The generator's drift check confirms
 that the snapshot matches source; it does not audit semantics, ownership,
 errors, backend behavior or user value.
 
-Üretilen [kaynak API envanteri](api/v0.5.0-alpha.json) 845 girdi içerir:
-446 stdlib fonksiyonu, 37 struct, checker içindeki 359 builtin ve 3 özel
+Üretilen [kaynak API envanteri](api/v0.5.0-alpha.json) 846 girdi içerir:
+446 stdlib fonksiyonu, 37 struct, checker içindeki 360 builtin ve 3 özel
 builtin biçimi. Bunların tamamı sınıflandırılmamıştır. Envanter drift testi
 yalnız snapshot'ın kaynakla aynı olduğunu doğrular; anlamı, sahipliği, hata
 davranışını, backend davranışını veya kullanıcı değerini denetlemez.
@@ -49,34 +49,37 @@ davranışını, backend davranışını veya kullanıcı değerini denetlemez.
 | Language semantics and ownership | Sampled syntax, type/error behavior, `verify`, selected string lifetime paths | [`tests/test_specification.py`](../tests/test_specification.py), [`tests/test_codegen_e2e.py`](../tests/test_codegen_e2e.py), [`tests/test_llvm_control_flow.py`](../tests/test_llvm_control_flow.py), [`tests/test_llvm_string_ownership.py`](../tests/test_llvm_string_ownership.py), [`tests/test_runtime_ownership_audit.py`](../tests/test_runtime_ownership_audit.py) | Grammar is not fully mechanically checked against the parser; all callable builtins and comprehensive C/LLVM ownership/error parity remain unclassified |
 | CLI command inventory | Installed help commands and flags | [`tests/test_g5_versioning_consistency.py`](../tests/test_g5_versioning_consistency.py): `test_documented_cli_commands_and_flags_cover_installed_help` | Help presence is not an exit-code, stdout/stderr, option interaction or compatibility contract |
 
-## Recommended scanner-first v1.0 candidate / Scanner-first v1.0 adayı
+## Accepted scanner-first v1.0 allowlist / Kabul edilen scanner-first v1.0 allowlist'i
 
-This is a scope proposal, not a stability promise. If the product centers on
-offline DFIR triage, the user-facing contract to consider for the v1.0
-allowlist is the `axiom-scan` executable: its `rules`/`scan`/`pcap` commands,
-exit codes, report schema v1, exact documented YARA subset, whole-buffer hash
-and byte-count semantics, and classic-PCAP per-packet behavior. It does not
-automatically stabilize every compiler or stdlib function used internally to
-build the example. The machine-readable, evidence-linked draft is
-[`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json);
-its references are checked by `tests/test_api_stability_candidate.py`.
+The maintainer has accepted offline DFIR triage as the first stable product
+profile. The `axiom-scan` executable contract is the only selected v1.0
+surface: its `rules`/`scan`/`pcap` commands, exit codes, report schema v1,
+documented YARA subset, whole-buffer hash and byte-count semantics, and
+classic-PCAP per-record behavior. This acceptance chooses the v1.0 scope; the
+compatibility promise begins only when v1.0.0 is released. It does not
+automatically stabilize compiler or stdlib functions used internally to build
+the executable. The machine-readable, evidence-linked allowlist is
+[`docs/api/v1.0-stable-allowlist.json`](api/v1.0-stable-allowlist.json);
+its references and scope invariants are checked by
+`tests/test_api_stable_allowlist.py`.
 
-Bu kapsam önerisidir, kararlılık sözü değildir. Ürün çevrimdışı DFIR triyajına
-odaklanacaksa v1.0 allowlist'i için incelenecek kullanıcı sözleşmesi
-`axiom-scan` ikilisidir: `rules`/`scan`/`pcap` komutları, çıkış kodları, rapor
-şeması v1, belgelenmiş YARA alt kümesinin kesin sınırları, tam buffer hash/byte
-uzunluğu semantiği ve klasik PCAP kayıtlarının opak yakalanmış baytlarının
-kayıt başına taranması. Bu karar, örneği derlemek için içeride kullanılan her
-compiler veya stdlib fonksiyonunu otomatik olarak kararlı yapmaz.
-Makinece okunabilir, kaynak ve test kanıtlarına bağlı taslak
-[`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json)
-dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğrular.
+Bakımcı ilk kararlı ürün profili olarak çevrimdışı DFIR triyajını kabul etti.
+v1.0 için seçilen tek yüzey `axiom-scan` ikilisinin kullanıcı sözleşmesidir:
+`rules`/`scan`/`pcap` komutları, çıkış kodları, rapor şeması v1, belgelenmiş
+YARA alt kümesi, tam buffer hash/byte uzunluğu semantiği ve klasik PCAP
+kayıtlarının opak baytlarının kayıt başına taranması. Bu kabul v1.0 kapsamını
+seçer; uyumluluk sözü yalnız v1.0.0 yayımlandığında başlar. İkiliyi derlemek
+için kullanılan compiler veya stdlib fonksiyonlarını otomatik olarak kararlı
+yapmaz. Makinece okunabilir, kaynak ve test kanıtlarına bağlı allowlist
+[`docs/api/v1.0-stable-allowlist.json`](api/v1.0-stable-allowlist.json)
+dosyasındadır; referans ve kapsam değişmezlerini
+`tests/test_api_stable_allowlist.py` doğrular.
 
-| Candidate behavior | Evidence to bind into the release allowlist |
+| Accepted behavior | Evidence bound to the release allowlist |
 |---|---|
 | YARA rule structure, comments, typed metadata, integer bounds, tags and string escapes | [`tests/test_yara_parser_structure_differential.py`](../tests/test_yara_parser_structure_differential.py), [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_rule_meta_and_tags_are_returned_as_typed_json`, `test_metadata_x_escape_is_rejected`, `test_metadata_integer_digit_limits_and_signed_values`, `test_metadata_integer_values_over_digit_limits_fail_closed`, `test_comment_markers_inside_yara_text_are_preserved` |
 | Boolean conditions, pattern groups, count/offset/length selectors, filesize and range conditions | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_boolean_conditions_match_in_c_and_llvm`, `test_pattern_group_range_matches_in_c_and_llvm`, `test_positional_condition_reports_selected_occurrence_in_c_and_llvm`, `test_filesize_comparisons`, `test_pattern_occurrence_count_conditions`, `test_pattern_offset_conditions`; differential coverage in [`tests/test_yara_condition_differential.py`](../tests/test_yara_condition_differential.py), [`tests/test_yara_selector_differential.py`](../tests/test_yara_selector_differential.py) |
-| Text modifiers, escape decoding and unsupported modifier rejection | [`tests/test_yara_modifiers.py`](../tests/test_yara_modifiers.py), [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py) |
+| Text modifiers (including wide), escape decoding and unsupported modifier rejection | [`tests/test_yara_modifiers.py`](../tests/test_yara_modifiers.py): `test_supported_modifiers_match_yara_reference`, `test_wide_modifier_matches_yara_reference_on_both_backends`, `test_wide_occurrence_selectors_match_yara_overlapping_instances`, `test_wide_offset_condition_reports_selected_occurrence`, `test_ascii_wide_same_offset_is_one_ascii_instance`; [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py) |
 | Hex wildcards, fixed/bounded jumps, alternation, negated bytes and occurrence selection | [`tests/test_yara_fixed_jumps.py`](../tests/test_yara_fixed_jumps.py), [`tests/test_yara_hex_ranges.py`](../tests/test_yara_hex_ranges.py), [`tests/test_yara_hex_range_differential.py`](../tests/test_yara_hex_range_differential.py), [`tests/test_yara_hex_typed_differential.py`](../tests/test_yara_hex_typed_differential.py), [`tests/test_yara_hex_alternation.py`](../tests/test_yara_hex_alternation.py), [`tests/test_yara_hex_negation.py`](../tests/test_yara_hex_negation.py) |
 | Regex input safety, NUL-containing targets, and truthful byte-span witnesses | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control`, `test_regex_witness_reports_actual_byte_span_on_both_backends` |
 | Whole-file byte scanning, hash/byte-count correctness, report fields, CLI usage/help/version, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_cli_usage_errors_are_structured_and_match_c_llvm`, `test_help_and_version_are_plain_text_for_c_and_llvm`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_error_path_is_structured_json`. Full file/PCAP workflow is validated on Linux x86_64; scans load the full target into memory and have no configured file-size cap. |
@@ -85,29 +88,27 @@ dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğru
 The [fixed external YARA corpus](../tests/test_yara_corpus_compat.py) adds
 reference-engine evidence for selected supported and explicitly rejected
 features. It is intentionally a small sample, not proof of full YARA
-compatibility. The entire table remains proposed until the product scope and
-the exact supported grammar boundary are accepted for the stable release.
+compatibility. The accepted allowlist promises only the exact documented
+grammar boundary; it does not promise full YARA compatibility.
 
-## Unclassified work / Sınıflandırılmamış işler
+## Explicitly out of scope / Açıkça kapsam dışı
 
-- No generated or manual artifact currently declares the final `v1.0` stable
-  symbol allowlist. The inventory snapshot remains explicitly unclassified.
-- All 359 checker builtins need contract review for return/error/sentinel
-  behavior, ownership/lifetime, C/LLVM support, and applicable platform or
-  thread-safety limits. Do not infer these properties from the signature.
-- The 446 stdlib functions and 37 structs need individual stable/experimental/
-  unsupported decisions or a carefully bounded module-level decision.
-- CLI command exit codes and stdout/stderr behavior and complete manifest/lock
-  schemas need explicit contracts and tests if they are included in the stable
-  surface. The scanner report schema is published; representative production
-  and rejection cases are tested, with full branch coverage still open.
-- Language grammar, ownership/error behavior, and backend parity need review
-  against the specification; sampled passing tests do not establish complete
-  parity.
+- The selected stable surface does not include the general Axiom language,
+  compiler CLI, `axpm`, manifests, lockfiles, registry, LSP, all 360 checker
+  builtins, all 446 stdlib functions, or all 37 structs. These remain outside
+  the compatibility promise; no per-entry classification is required for
+  this scanner release profile.
+- Platform support beyond Linux x86_64 full-file/PCAP scan, arbitrary Unicode
+  UTF-16, YARA modules, unsupported YARA grammar, and streaming/constant-memory
+  scanning are not promised. The full-buffer memory model and lack of a file
+  size cap are limitations of the selected scanner contract.
+- The scanner report schema is strict and published; representative production
+  and rejection paths are tested, but this does not claim exhaustive path
+  coverage or full YARA compatibility.
 - No real `v1.0` or `v1.1` history fixture exists yet. The new fixture harness
   prepares future compatibility checks but is not historical evidence.
-- A concrete user workflow still needs to guide any new language or stdlib
-  feature. Existing test coverage does not establish product demand.
+- New language and stdlib features still require a concrete workflow need;
+  offline DFIR scanner scope does not imply a general language feature roadmap.
 
 ## Recommended allowlist record / Allowlist kaydı önerisi
 

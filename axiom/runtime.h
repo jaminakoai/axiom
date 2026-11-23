@@ -1559,7 +1559,7 @@ static inline int axiom_yara_is_alnum_ascii(unsigned char c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 }
 
-/* Flags: 1=nocase, 2=ascii, 8=fullword. */
+/* Flags: 1=nocase, 2=ascii, 4=wide, 8=fullword; no encoding bit defaults to ASCII. */
 AXIOM_RUNTIME_FN int axiom_yara_text_match_at(const unsigned char* hay, size_t hay_len,
                                                const unsigned char* pat, size_t pat_len,
                                                size_t offset, int nocase, int fullword) {
@@ -1580,16 +1580,82 @@ AXIOM_RUNTIME_FN int axiom_yara_text_match_at(const unsigned char* hay, size_t h
     return 1;
 }
 
+AXIOM_RUNTIME_FN int axiom_yara_text_wide_match_at(const unsigned char* hay, size_t hay_len,
+                                                    const unsigned char* pat, size_t pat_len,
+                                                    size_t offset, int nocase, int fullword) {
+    if (!hay || !pat || pat_len == 0 || pat_len > SIZE_MAX / 2) return 0;
+    size_t wide_len = pat_len * 2;
+    if (offset > hay_len || wide_len > hay_len - offset) return 0;
+    for (size_t j = 0; j < pat_len; j++) {
+        unsigned char actual = hay[offset + j * 2];
+        unsigned char expected = pat[j];
+        if (nocase) {
+            actual = axiom_yara_fold_ascii(actual);
+            expected = axiom_yara_fold_ascii(expected);
+        }
+        if (actual != expected || hay[offset + j * 2 + 1] != 0) return 0;
+    }
+    // YARA wide strings interleave ASCII bytes with NUL. fullword checks the
+    // adjacent wide code unit, not the zero byte next to the match.
+    if (fullword) {
+        if (offset >= 2 && hay[offset - 1] == 0 &&
+            axiom_yara_is_alnum_ascii(hay[offset - 2])) return 0;
+        size_t end = offset + wide_len;
+        if (end < hay_len && hay_len - end >= 2 && hay[end + 1] == 0 &&
+            axiom_yara_is_alnum_ascii(hay[end])) return 0;
+    }
+    return 1;
+}
+
+static inline int axiom_yara_text_match_at_flags(const unsigned char* hay, size_t hay_len,
+                                                  const unsigned char* pat, size_t pat_len,
+                                                  size_t offset, int flags) {
+    int encodings = flags & 6;
+    int ascii = encodings == 0 || (encodings & 2) != 0;
+    int wide = (encodings & 4) != 0;
+    int nocase = (flags & 1) != 0;
+    int fullword = (flags & 8) != 0;
+    if (ascii && axiom_yara_text_match_at(hay, hay_len, pat, pat_len,
+                                          offset, nocase, fullword)) return 1;
+    return wide && axiom_yara_text_wide_match_at(hay, hay_len, pat, pat_len,
+                                                  offset, nocase, fullword);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_text_length_at_raw(const unsigned char* hay, size_t hay_len,
+                                                       const char* needle, ax_int flags,
+                                                       ax_int offset) {
+    if (!hay || !needle || flags < 0 || flags > 15 || offset < 0 ||
+        (uint64_t)offset > (uint64_t)SIZE_MAX) return -1;
+    size_t pat_len = strlen(needle);
+    if (pat_len == 0 || pat_len > (size_t)INT64_MAX) return -1;
+    size_t at = (size_t)offset;
+    int encodings = (int)flags & 6;
+    int ascii = encodings == 0 || (encodings & 2) != 0;
+    int wide = (encodings & 4) != 0;
+    int nocase = ((int)flags & 1) != 0;
+    int fullword = ((int)flags & 8) != 0;
+    const unsigned char* pat = (const unsigned char*)needle;
+    if (ascii && axiom_yara_text_match_at(hay, hay_len, pat, pat_len,
+                                          at, nocase, fullword)) return (ax_int)pat_len;
+    if (wide && pat_len <= (size_t)INT64_MAX / 2 &&
+        axiom_yara_text_wide_match_at(hay, hay_len, pat, pat_len,
+                                      at, nocase, fullword)) return (ax_int)(pat_len * 2);
+    return -1;
+}
+
 AXIOM_RUNTIME_FN ax_int axiom_yara_find_text_raw(const unsigned char* hay, size_t hay_len,
                                                    const char* needle, ax_int flags,
                                                    ax_int min_offset, ax_int max_offset) {
-    if (!hay || !needle || hay_len > (size_t)INT64_MAX) return -1;
+    if (!hay || !needle || hay_len > (size_t)INT64_MAX || flags < 0 || flags > 15) return -1;
     const unsigned char* pat = (const unsigned char*)needle;
     size_t pat_len = strlen(needle);
-    if (pat_len == 0 || pat_len > hay_len) return -1;
-    int nocase = (flags & 1) != 0;
-    int fullword = (flags & 8) != 0;
-    size_t last = hay_len - pat_len;
+    int encodings = (int)flags & 6;
+    int ascii = encodings == 0 || (encodings & 2) != 0;
+    int wide = (encodings & 4) != 0;
+    if (pat_len == 0 || (wide && pat_len > SIZE_MAX / 2)) return -1;
+    size_t min_width = wide && !ascii ? pat_len * 2 : pat_len;
+    if (min_width > hay_len) return -1;
+    size_t last = hay_len - min_width;
     if (max_offset >= 0 && (uint64_t)max_offset < (uint64_t)last) last = (size_t)max_offset;
     size_t first = 0;
     if (min_offset > 0) {
@@ -1597,23 +1663,26 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_text_raw(const unsigned char* hay, size_
         first = (size_t)min_offset;
     }
     for (size_t i = first; i <= last; i++) {
-        if (axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) return (ax_int)i;
+        if (axiom_yara_text_match_at_flags(hay, hay_len, pat, pat_len, i, (int)flags)) return (ax_int)i;
     }
     return -1;
 }
 
 AXIOM_RUNTIME_FN ax_int axiom_yara_count_text_raw(const unsigned char* hay, size_t hay_len,
                                                    const char* needle, ax_int flags) {
-    if (!hay || !needle || hay_len > (size_t)INT64_MAX) return -1;
+    if (!hay || !needle || hay_len > (size_t)INT64_MAX || flags < 0 || flags > 15) return -1;
     const unsigned char* pat = (const unsigned char*)needle;
     size_t pat_len = strlen(needle);
-    if (pat_len == 0 || pat_len > hay_len) return 0;
-    int nocase = (flags & 1) != 0;
-    int fullword = (flags & 8) != 0;
+    int encodings = (int)flags & 6;
+    int ascii = encodings == 0 || (encodings & 2) != 0;
+    int wide = (encodings & 4) != 0;
+    if (pat_len == 0 || (wide && pat_len > SIZE_MAX / 2)) return 0;
+    size_t min_width = wide && !ascii ? pat_len * 2 : pat_len;
+    if (min_width > hay_len) return 0;
     ax_int count = 0;
-    size_t last = hay_len - pat_len;
+    size_t last = hay_len - min_width;
     for (size_t i = 0; i <= last; i++) {
-        if (axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) count++;
+        if (axiom_yara_text_match_at_flags(hay, hay_len, pat, pat_len, i, (int)flags)) count++;
     }
     return count;
 }
@@ -1621,16 +1690,19 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_count_text_raw(const unsigned char* hay, size
 AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_offset_raw(const unsigned char* hay, size_t hay_len,
                                                         const char* needle, ax_int flags,
                                                         ax_int occurrence) {
-    if (!hay || !needle || occurrence <= 0 || hay_len > (size_t)INT64_MAX) return -1;
+    if (!hay || !needle || occurrence <= 0 || hay_len > (size_t)INT64_MAX || flags < 0 || flags > 15) return -1;
     const unsigned char* pat = (const unsigned char*)needle;
     size_t pat_len = strlen(needle);
-    if (pat_len == 0 || pat_len > hay_len) return -1;
-    int nocase = (flags & 1) != 0;
-    int fullword = (flags & 8) != 0;
+    int encodings = (int)flags & 6;
+    int ascii = encodings == 0 || (encodings & 2) != 0;
+    int wide = (encodings & 4) != 0;
+    if (pat_len == 0 || (wide && pat_len > SIZE_MAX / 2)) return -1;
+    size_t min_width = wide && !ascii ? pat_len * 2 : pat_len;
+    if (min_width > hay_len) return -1;
     ax_int seen = 0;
-    size_t last = hay_len - pat_len;
+    size_t last = hay_len - min_width;
     for (size_t i = 0; i <= last; i++) {
-        if (!axiom_yara_text_match_at(hay, hay_len, pat, pat_len, i, nocase, fullword)) continue;
+        if (!axiom_yara_text_match_at_flags(hay, hay_len, pat, pat_len, i, (int)flags)) continue;
         seen++;
         if (seen == occurrence) return (ax_int)i;
     }
@@ -1646,7 +1718,7 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_find_text(const char* s, const char* needle,
 }
 
 /* Count text hits in one pass; overlapping occurrences are included.
- * Flags: 1=nocase, 8=fullword. */
+ * Flags: 1=nocase, 2=ascii, 4=wide, 8=fullword. */
 AXIOM_RUNTIME_FN ax_int axiom_yara_count_text(const char* s, const char* needle, ax_int flags) {
     if (!s || !needle) return 0;
     return axiom_yara_count_text_raw((const unsigned char*)s, strlen(s), needle, flags);
@@ -5078,8 +5150,15 @@ AXIOM_RUNTIME_FN ax_int axiom_yara_nth_text_length_buf_handle(ax_int handle, con
     ax_int offset = axiom_yara_nth_text_offset_raw(buffer->data, buffer->len, needle,
                                                     flags, occurrence);
     if (offset < 0) return -1;
-    size_t length = strlen(needle);
-    return length > (size_t)INT64_MAX ? -1 : (ax_int)length;
+    return axiom_yara_text_length_at_raw(buffer->data, buffer->len, needle, flags, offset);
+}
+
+AXIOM_RUNTIME_FN ax_int axiom_yara_text_length_at_buf_handle(ax_int handle, const char* needle,
+                                                               ax_int flags, ax_int offset) {
+    if (handle <= 0 || !needle) return -1;
+    AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+    if (!axiom_buf_is_valid(buffer) || !buffer->data) return -1;
+    return axiom_yara_text_length_at_raw(buffer->data, buffer->len, needle, flags, offset);
 }
 
 /* -------------------------------------------------------------------------

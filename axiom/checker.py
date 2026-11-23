@@ -440,6 +440,7 @@ BUILTIN_FUNCTIONS = {
     'rt_yara_count_text_buf_handle': (['int', 'str', 'int'], 'int'),
     'rt_yara_nth_text_offset_buf_handle': (['int', 'str', 'int', 'int'], 'int'),
     'rt_yara_nth_text_length_buf_handle': (['int', 'str', 'int', 'int'], 'int'),
+    'rt_yara_text_length_at_buf_handle': (['int', 'str', 'int', 'int'], 'int'),
     'rt_yara_nth_hex_wildcard': (['str', 'str', 'int'], 'int'),
     'rt_yara_count_hex_wildcard': (['str', 'str'], 'int'),
     'rt_yara_find_hex_wildcard': (['str', 'str', 'int', 'int'], 'int'),

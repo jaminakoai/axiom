@@ -893,7 +893,6 @@ def test_unrepresentable_or_invalid_yara_escapes_are_rejected(scanner, tmp_path,
 
 
 @pytest.mark.parametrize("pattern", [
-    '"needle" wide',
     '/[/',
 ])
 def test_unsupported_or_invalid_patterns_are_rejected(scanner, tmp_path, pattern):

@@ -5,30 +5,42 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CANDIDATE_PATH = ROOT / "docs" / "api" / "v1.0-stability-candidate.json"
+CANDIDATE_PATH = ROOT / "docs" / "api" / "v1.0-stable-allowlist.json"
 
 
 def _candidate():
     return json.loads(CANDIDATE_PATH.read_text(encoding="utf-8"))
 
 
-def test_v1_candidate_remains_a_proposal_until_scope_is_accepted():
+def test_v1_scanner_scope_is_accepted_but_stability_starts_at_release():
     candidate = _candidate()
 
-    assert candidate["status"] == "proposal_pending_product_scope"
+    assert candidate["status"] == "accepted_scope_pending_v1_release"
     assert candidate["target_release"] == "1.0.0"
-    assert candidate["decision_rule"].endswith("not a compatibility promise.")
-    assert candidate["candidate_surfaces"]
+    assert "only when v1.0.0 is released" in candidate["decision_rule"]
+    assert candidate["profile"] == "offline-dfir-triage"
+    assert candidate["stable_surfaces"]
     assert all(
-        surface["decision"] == "proposed-stable"
-        for surface in candidate["candidate_surfaces"]
+        surface["decision"] == "accepted-for-v1.0-stable-allowlist"
+        for surface in candidate["stable_surfaces"]
     )
+
+
+def test_v1_scanner_allowlist_excludes_unreviewed_general_surfaces():
+    candidate = _candidate()
+    limits = candidate["stable_surfaces"][0]["limitations"]
+
+    assert any("compiler CLI" in item and "package manager" in item for item in limits)
+    contract = candidate["stable_surfaces"][0]["implementation_contract"]
+    assert contract["backend_parity"]
+    assert contract["ownership_and_lifetime"]
+    assert contract["concurrency"]
 
 
 def test_v1_candidate_evidence_paths_and_test_nodes_exist():
     candidate = _candidate()
 
-    for surface in candidate["candidate_surfaces"]:
+    for surface in candidate["stable_surfaces"]:
         evidence = surface["evidence"]
         for source in evidence["sources"]:
             assert (ROOT / source).is_file(), source
@@ -48,7 +60,7 @@ def test_v1_candidate_evidence_paths_and_test_nodes_exist():
 
 
 def test_scanner_candidate_records_documented_rule_and_pcap_limits():
-    surface = _candidate()["candidate_surfaces"][0]
+    surface = _candidate()["stable_surfaces"][0]
     yara = surface["yara_subset"]
     hex_patterns = yara["hex_patterns"]
 
@@ -95,6 +107,9 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
         "hex_max_digits": 15,
     }
     assert surface["yara_subset"]["metadata"]["string_hex_byte_escape"] == "\\xNN is rejected"
+    assert "wide" in surface["yara_subset"]["text_patterns"]["modifiers"]
+    assert "Not arbitrary Unicode UTF-16" in surface["yara_subset"]["text_patterns"]["wide_semantics"]
+    assert "wide modifier" not in surface["yara_subset"]["unsupported_examples"]
     assert (
         "tests/test_axiom_scan.py::test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm"
         in surface["evidence"]["tests"]

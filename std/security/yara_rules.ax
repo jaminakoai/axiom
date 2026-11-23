@@ -15,9 +15,9 @@
 //
 // Kosullar: desen basvurulari/gruplari, `at`/`in`, `#`/`@`/`!`, filesize,
 // boolean operatorleri ve parantezler. meta ve rule tag'leri de ayrisip
-// rapora tasinir. Metin desenlerinde nocase/ascii/fullword desteklenir.
+// rapora tasinir. Metin desenlerinde nocase/ascii/wide/fullword desteklenir.
 //
-// Desteklenmeyen YARA ozellikleri (wide, xor/base64 ve gelismis hex yapilari
+// Desteklenmeyen YARA ozellikleri (xor/base64 ve gelismis hex yapilari
 // gibi) sessizce atlanmaz; ayrisim hatasi olarak reddedilir.
 
 import "std/core/error"
@@ -164,6 +164,7 @@ fn _parse_text_modifier_flags(tail: str) -> int {
     let mut token = ""
     let mut seen_nocase = false
     let mut seen_ascii = false
+    let mut seen_wide = false
     let mut seen_fullword = false
     let mut i = 0
     while i <= len(tail) {
@@ -177,9 +178,9 @@ fn _parse_text_modifier_flags(tail: str) -> int {
                 } else if token == "ascii" and not seen_ascii {
                     flags = flags + 2
                     seen_ascii = true
-                } else if token == "wide" {
-                    // Hedef metin C/NUL-sonlandirmali; UTF-16LE veri taranamaz.
-                    return -1
+                } else if token == "wide" and not seen_wide {
+                    flags = flags + 4
+                    seen_wide = true
                 } else if token == "fullword" and not seen_fullword {
                     flags = flags + 8
                     seen_fullword = true

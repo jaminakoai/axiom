@@ -400,6 +400,7 @@ BUILTIN_MAP = {
     'rt_yara_count_text_buf_handle': 'axiom_yara_count_text_buf_handle',
     'rt_yara_nth_text_offset_buf_handle': 'axiom_yara_nth_text_offset_buf_handle',
     'rt_yara_nth_text_length_buf_handle': 'axiom_yara_nth_text_length_buf_handle',
+    'rt_yara_text_length_at_buf_handle': 'axiom_yara_text_length_at_buf_handle',
     'rt_yara_nth_hex_wildcard': 'axiom_yara_nth_hex_wildcard',
     'rt_yara_count_hex_wildcard': 'axiom_yara_count_hex_wildcard',
     'rt_yara_find_hex_wildcard': 'axiom_yara_find_hex_wildcard',

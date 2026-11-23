@@ -51,10 +51,13 @@ def test_readmes_describe_remaining_v1_inventory_and_fixture_work():
     readme_tr = _normalized("README.md")
     readme_en = _normalized("README.en.md")
 
-    assert "somut API envanteri" in readme_tr
-    assert "uyumluluk" in readme_tr
-    assert "Concrete API inventory" in readme_en
-    assert "previous two minor releases" in readme_en
+    assert "çevrimdışı DFIR" in readme_tr
+    assert "v1.0 allowlist'i" in readme_tr
+    assert "offline DFIR triage" in readme_en
+    assert "v1.0 allowlist" in readme_en
+    assert "two-minor fixture checks" in readme_en
+    assert "v1.0-stable-allowlist.json" in readme_tr
+    assert "v1.0-stable-allowlist.json" in readme_en
     assert "G5_API_STABILITY_PROPOSAL.md" in readme_tr
     assert "G5_API_STABILITY_PROPOSAL.md" in readme_en
 
@@ -81,18 +84,18 @@ def test_spec_builtin_raw_counts_match_checker_without_claiming_stability():
     )
     non_runtime = sum(not name.startswith("rt_") for name in builtin_map)
     runtime_aliases = len(builtin_map) - non_runtime
-    assert (len(builtin_map), non_runtime, runtime_aliases) == (359, 111, 248)
+    assert (len(builtin_map), non_runtime, runtime_aliases) == (360, 111, 249)
 
     for relative in ("SPECIFICATION.md", "docs/en/SPECIFICATION.md"):
         spec = _normalized(relative)
         assert "111" in spec
-        assert "248" in spec
+        assert "249" in spec
         if relative == "SPECIFICATION.md":
             assert "tamamlanmış bir" in spec
         else:
             assert "not a complete user-facing API catalog" in spec
     proposal = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
-    assert "248'i `rt_*` önekli" in proposal
+    assert "249'u `rt_*` önekli" in proposal
     assert "`rt_*` burada gizli API anlamına gelmiyor" in proposal
 
 

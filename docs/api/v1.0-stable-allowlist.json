@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "status": "proposal_pending_product_scope",
+  "status": "accepted_scope_pending_v1_release",
   "source_version": "0.5.0-alpha",
   "target_release": "1.0.0",
-  "recommended_profile": "offline-dfir-triage",
-  "decision_rule": "Only entries accepted into the final v1.0 allowlist become stable. This proposal is not a compatibility promise.",
-  "candidate_surfaces": [
+  "profile": "offline-dfir-triage",
+  "decision_rule": "The maintainer accepted the offline-dfir-triage scope for v1.0. The listed axiom-scan contract becomes stable only when v1.0.0 is released; it is not a stability promise before that release.",
+  "stable_surfaces": [
     {
       "id": "axiom-scan.cli-and-reports.v1",
-      "decision": "proposed-stable",
+      "decision": "accepted-for-v1.0-stable-allowlist",
       "kind": "executable-interface",
       "commands": {
         "rules": "Validate and count a positional rule file; success report has rules_count and rules.",
@@ -67,15 +67,21 @@
           "stream_reassembly": false
         }
       },
+      "implementation_contract": {
+        "ownership_and_lifetime": "The executable owns rule and target buffers for one invocation. JSON output contains copied scalar/string data and does not expose borrowed pointers. All resources are released when the process exits.",
+        "backend_parity": "The C and LLVM builds must produce equivalent JSON values and exit codes for the same supported input, except for explicitly documented platform availability limits.",
+        "concurrency": "One scan command processes its target sequentially; no thread-safety or concurrent mutation guarantee is made for files changed while they are being read.",
+        "supported_runtime_platform": "Full file and classic-PCAP scanning is supported and validated on Linux x86_64. Other platforms are outside this stable surface until equivalent scanner workflow CI exists."
+      },
       "yara_subset": {
         "rule_structure": ["rule", "strings", "condition", "meta", "tags", "single-line and trailing // comments"],
         "comments": "# is not a comment marker; it is used by the #a occurrence-count operator.",
         "text_patterns": {
           "escapes": ["\\\\", "\\\"", "\\n", "\\r", "\\t", "\\xNN"],
           "rejected": ["\\x00"],
-          "modifiers": ["ascii (default)", "nocase", "fullword"],
-          "fullword_boundary": "A match is rejected when adjacent to ASCII alphanumeric bytes.",
-          "unsupported_modifier": "wide"
+          "modifiers": ["ascii (default)", "nocase", "wide", "fullword"],
+          "fullword_boundary": "ASCII matches reject adjacent ASCII alphanumeric bytes; wide matches reject adjacent ASCII alphanumeric two-byte code units. Neither treats underscore as alphanumeric.",
+          "wide_semantics": "For text strings, interleaves ASCII pattern bytes with NUL bytes; wide alone searches only that form, while ascii wide searches both forms. Not arbitrary Unicode UTF-16. Reported offsets and lengths are byte-based."
         },
         "metadata": {
           "json_types": ["string", "boolean", "integer"],
@@ -128,7 +134,7 @@
           },
           "occurrence_semantics": "At a shared start offset, a bounded jump chooses the shortest valid match; same-offset alternation branches count as one occurrence."
         },
-        "regex": "POSIX ERE subject to documented validation and safety checks. Successful regex witnesses report the byte offset and length of the first regex match. Regex occurrence count/offset/index operators are rejected; regex on a NUL-containing target is rejected.",
+        "regex": "POSIX ERE subject to documented validation and safety checks; YARA string modifiers are not accepted on regex patterns. Successful regex witnesses report the byte offset and length of the first regex match. Regex occurrence count/offset/index operators are rejected; regex on a NUL-containing target is rejected.",
         "conditions": {
           "boolean": ["true", "false", "not", "and", "or", "parentheses"],
           "precedence": "not > and > or",
@@ -149,7 +155,7 @@
             "decimal_MB_bytes": 1048576
           }
         },
-        "unsupported_examples": ["YARA modules/imports", "uint16()/entrypoint conditions", "wide modifier", "unsupported or unbounded hex constructs", "regex occurrence selectors"]
+        "unsupported_examples": ["YARA modules/imports", "uint16()/entrypoint conditions", "unsupported or unbounded hex constructs", "regex string modifiers", "regex occurrence selectors"]
       },
       "evidence": {
         "sources": [
@@ -174,6 +180,10 @@
           "tests/test_axiom_scan.py::test_filesize_and_scanned_bytes_use_full_file_length_with_nul",
           "tests/test_axiom_scan.py::test_scan_pcap_counts_empty_packet_and_continues",
           "tests/test_axiom_scan.py::test_regex_witness_reports_actual_byte_span_on_both_backends",
+          "tests/test_yara_modifiers.py::test_wide_modifier_matches_yara_reference_on_both_backends",
+          "tests/test_yara_modifiers.py::test_wide_occurrence_selectors_match_yara_overlapping_instances",
+          "tests/test_yara_modifiers.py::test_wide_offset_condition_reports_selected_occurrence",
+          "tests/test_yara_modifiers.py::test_ascii_wide_same_offset_is_one_ascii_instance",
           "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records",
           "tests/test_axiom_scan.py::test_scan_pcap_empty_capture_reports_zero_packets",
           "tests/test_axiom_scan.py::test_scan_pcap_malformed_or_truncated_records_fail_closed",
@@ -193,7 +203,7 @@
       "limitations": [
         "This does not stabilize the general Axiom language grammar or every compiler/stdlib symbol used internally by the example.",
         "External YARA differential coverage is a pinned sample, not proof of complete YARA compatibility.",
-        "The offline DFIR product focus and this candidate require maintainer confirmation before becoming the final stable allowlist."
+        "The accepted v1.0 profile stabilizes only the axiom-scan executable contract. The Axiom language, compiler CLI, package manager, manifests, lockfiles, registry, LSP, general standard library, and generated C/LLVM output are not part of this allowlist and carry no compatibility promise."
       ]
     }
   ]

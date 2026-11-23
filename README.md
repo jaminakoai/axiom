@@ -80,9 +80,11 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   `!a[i]` eşleşme uzunluğu, `#a` desen sayımı,
   `filesize` karşılaştırmaları (onluk sabitlerde `KB` = 1024 ve `MB` = 1024²), `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
   (`at/in` sınırları onluk veya `0x` hex sayısal sabitlerdir).
-  (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii` ve `fullword` desteklenir
-  (`ascii` varsayılandır). `wide`, NUL içeren hedef baytlarını mevcut metin
-  okuma yolu temsil edemediği için açıkça reddedilir. Bilinmeyen koşullar,
+  (`not` > `and` > `or` önceliği). Metin kalıplarında `nocase`, `ascii`,
+  `wide` ve `fullword` desteklenir (`ascii` varsayılandır). `wide`, ASCII
+  kalıbını UTF-16LE benzeri karakter başına NUL biçiminde arar; ASCII ve wide
+  biçimlerini birlikte aramak için ikisi beraber yazılır. Rapor uzunluğu eşleşen
+  baytları sayar; keyfî Unicode UTF-16 karakterleri kapsanmaz. Bilinmeyen koşullar,
   diğer desteklenmeyen modifier'lar, sınırsız ve destek dışı hex jump'ları
   ayrıştırma hatasıyla reddedilir. Hex kalıpları
   nibble jokerlerini, sabit `[N]` atlamalarını (N=1..64) ve her desende tek
@@ -739,9 +741,11 @@ ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
 
 ### ⬜ Planlanan
 
-- `v1.0` öncesi somut API envanteri ve fixture/release harness'i; iki-minor
-  uyumluluk kontrolleri `v1.0` ve `v1.1` fixture'ları oluşunca `v1.2` hazırlığında başlar
-  ([G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)).
+- İlk kararlı ürün profili çevrimdışı DFIR triyajıdır; v1.0 allowlist'i yalnızca
+  `axiom-scan` sözleşmesini kapsar. Genel dil, compiler CLI, axpm, manifest ve
+  lock dosyaları bu kapsamda kararlı değildir ([allowlist](docs/api/v1.0-stable-allowlist.json),
+  [G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)). Uyumluluk sözü v1.0.0
+  yayımlandığında başlar; iki-minor fixture denetimi v1.2 hazırlığında etkinleşir.
 - Windows/macOS'ta tam test paketi ve DFIR/`axiom-scan` iş akışları; WASI sysroot ile uçtan uca test.
 - Statik (musl) ikili üretimi.
 - Yayınlanmış paket ekosistemi (hedef: 200+ paket) ve ilk kurumsal kullanıcı.

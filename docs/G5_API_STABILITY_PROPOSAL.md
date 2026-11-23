@@ -19,13 +19,13 @@ close those gates.
 
 | Yüzey / Surface | Kaynak / Source | İlk değerlendirme / Initial treatment |
 |---|---|---|
-| Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md) §§3–12, 18–19; C/LLVM parity tests | v1.0 adayı: anahtar sözcük/tip kataloğu, operatör önceliği, türler, kapsam, fonksiyon/sözleşmeler, hata ve sahiplik semantiği; kapsam dışı yapılar açık kalır / Candidate: keyword/type catalog, precedence, types, scope, functions/contracts, errors and ownership; unsupported forms stay explicit |
-| Yerleşikler ve standart kütüphane / Built-ins and standard library | [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json), `axiom/checker.py`, `std/**/*.ax` | Checker: kaynak koddan çağrılabilir 111 `rt_*` dışı + 248 `rt_*` önekli imza, kararlılıkları sınıflandırılmadı; stdlib: 446 fonksiyon, 37 struct / Checker: 111 callable non-`rt_*` + 248 `rt_*`-prefixed signatures, stability unclassified; stdlib: 446 functions, 37 structs. 53 dosyada `pub`/`export` yok; davranış ve kararlı allowlist hâlâ sınıflandırılmalı / No `pub`/`export`; behavior and stable allowlist still need classification |
+| Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md) §§3–12, 18–19; C/LLVM parity tests | İlk v1.0 DFIR profilinde kapsam dışı; kararlı değil / Excluded from the first v1.0 DFIR profile; not stable |
+| Yerleşikler ve standart kütüphane / Built-ins and standard library | [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json), `axiom/checker.py`, `std/**/*.ax` | 111 `rt_*` dışı + 249 `rt_*` önekli checker imzası; 446 stdlib fonksiyonu ve 37 struct envanterde var ancak ilk v1.0 DFIR profilinde kapsam dışı / 111 non-`rt_*` + 249 `rt_*`-prefixed checker signatures; 446 stdlib functions and 37 structs are inventoried but excluded from the first v1.0 DFIR profile |
 | Compiler CLI | `axiom/cli.py`, installed `--help` | v0.5 komut ve flag snapshot'ı her komutun help çıktısına karşı test ediliyor; exit code/pozisyonel argüman sözleşmeleri hâlâ açık / v0.5 command/flag snapshot is checked per command against installed help; exit-code and positional-argument contracts remain open |
-| Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | `init/add/install/verify/tree/remove/search/pack/registry assemble/update/build/run/test`; komut ve manifest flag/şema fixture'ları gerekli / Commands are implemented; command and manifest flag/schema fixtures are required |
-| Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest: `name/version/authors/edition/entry/description/license`, `[package]` veya `[project]`, `[dependencies]`; lock: `version` ve paket başına `name/version/source/checksum/sha256/dependencies`. Şema/migration fixture'ı gerekli / Exact fields need versioned migration fixtures |
+| Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | İlk v1.0 DFIR profilinde kapsam dışı; kararlı CLI sözleşmesi yok / Excluded from the first v1.0 DFIR profile; no stable CLI contract |
+| Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | İlk v1.0 DFIR profilinde kapsam dışı; kararlı şema yok / Excluded from the first v1.0 DFIR profile; no stable schema |
 | Registry | [`REGISTRY.md`](REGISTRY.md), `axiom/registry.py` | Schema 1 imzasız geriye dönük okuma; schema 2 index `sequence/expires/packages`, paket `version/sha256/sig/dependencies/yanked`. Protokol ve anahtar değişim sözleşmesi aday / Schema 1 legacy read; schema 2 field inventory; protocol/key-rotation contract is a candidate |
-| `axiom-scan` | `examples/21_axiom_scan.ax`, `tests/test_axiom_scan.py`, [JSON Schema](api/axiom-scan-report.schema.json) | `rules`, `scan`, `pcap`; exit `0/10/1`; schema-v1 success/error reports; exact documented YARA subset; whole-buffer hash/length and classic-PCAP per-frame semantics. Evidence-linked non-binding [v1.0 candidate](api/v1.0-stability-candidate.json) is pending product-scope confirmation / `rules`, `scan`, `pcap`; çıkış `0/10/1`; schema v1 başarı/hata raporları; belgeli YARA alt kümesi; tam buffer hash/uzunluk ve klasik PCAP paket davranışı. Kanıt bağlantılı [v1.0 adayı](api/v1.0-stability-candidate.json) bağlayıcı değildir ve ürün odağı kararını bekler. |
+| `axiom-scan` | `examples/21_axiom_scan.ax`, `tests/test_axiom_scan.py`, [JSON Schema](api/axiom-scan-report.schema.json) | `rules`, `scan`, `pcap`; exit `0/10/1`; schema-v1 success/error reports; exact documented YARA subset; whole-buffer hash/length and classic-PCAP per-frame semantics. The maintainer accepted this as the only v1.0 stable surface; the compatibility promise starts at v1.0.0 / `rules`, `scan`, `pcap`; çıkış `0/10/1`; schema v1 başarı/hata raporları; belgeli YARA alt kümesi; tam buffer hash/uzunluk ve klasik PCAP paket davranışı. Bakımcı bunu v1.0 için tek kararlı yüzey olarak kabul etti; uyumluluk sözü v1.0.0 ile başlar. |
 | LSP | `axiom/lsp.py`, `tests/test_lsp_full_features.py` | Yalnız initialize'da ilan edilen tam sync, completion, hover, definition, references, rename, quickfix, formatting, semantic tokens, signature help; tüm LSP vaat edilmez / Only advertised capabilities are candidates; no blanket LSP claim |
 | ABI ve üretilen çıktı / ABI and generated output | `SPECIFICATION.md` §15, C/LLVM backends | C ABI/FFI ancak hedef triple, çağrı kuralı, sahiplik ve bellek yerleşimi bütünüyle envanterlenirse kararlı olabilir; üretilen C/LLVM IR iç detaydır / ABI can stabilize only per fully specified target/calling convention/ownership/layout; emitted IR is internal |
 | Deneysel hedefler / Experimental targets | [`VERSIONING.md`](VERSIONING.md), README platform tablosu | Linux ARM64/AArch64/WASM deneysel etiketleriyle kararlılık sözünün dışında / Experimental targets remain outside the stability promise |
@@ -90,22 +90,22 @@ tarafından iki backend'de doğrulanır. Her tür kararlı API envanterinde ayr�
 listelenmelidir.
 
 Derleyici kaynak denetimi önemli bir envanter açığı buldu: `axiom/checker.py`
-`BUILTIN_FUNCTIONS` içinde 359 imza tutuyor; bunların 111'i `rt_*` dışı,
-248'i `rt_*` önekli. Checker bu isimlerin tümünü Axiom kaynak kodundan
+`BUILTIN_FUNCTIONS` içinde 360 imza tutuyor; bunların 111'i `rt_*` dışı,
+249'u `rt_*` önekli. Checker bu isimlerin tümünü Axiom kaynak kodundan
 çağrılabilir kılıyor; `rt_*` burada gizli API anlamına gelmiyor. `len`,
 `thread_create` ve `array_push` ayrıca özel durumlarla kabul ediliyor.
-Şartnamenin eski 86 sayısı yanlıştı ve düzeltildi. Bu 359 imzanın kararlılık,
-hata/sentinel, sahiplik ve C/LLVM davranışı tek tek sınıflandırılmalı.
-Özellikle hata/sentinel, sahiplik ve C/LLVM backend davranışları imza listesinden
-çıkarılamaz.
+Şartnamenin eski 86 sayısı yanlıştı ve düzeltildi. Bu 360 imza kabul edilen
+scanner-first v1.0 allowlist'inin dışındadır; kaynak envanterindeki imzalar
+kararlılık veya davranış garantisi oluşturmaz.
 
 The generated source snapshot [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json)
 lists every parsed stdlib function signature, struct field, module import, and
 compiler builtin signature. `tools/generate_api_inventory.py --check` verifies
 that snapshot against the current lexer/parser AST and checker source. It is a
 source inventory only: entries are explicitly unclassified and are not stable
-API promises. Behavior, error/ownership semantics, backend support, grammar,
-CLI exit codes and the eventual stable allowlist still need review. The 53
+API promises. Behavior, error/ownership semantics and backend support are not
+inferred from the snapshot. The accepted scanner-first allowlist is the only
+v1.0 stable surface; the 53
 `std/**/*.ax` files have no `pub`/`export` declarations, and symbols share a
 global namespace, so only individually inventoried symbols should be treated
 as stable.
@@ -124,17 +124,18 @@ behavior are verified on both backends by
 inventory.
 
 A compiler-source audit found an important inventory gap: `axiom/checker.py`
-contains 359 `BUILTIN_FUNCTIONS` signatures: 111 non-`rt_*` and 248 `rt_*`
+contains 360 `BUILTIN_FUNCTIONS` signatures: 111 non-`rt_*` and 249 `rt_*`
 prefixed names. The checker accepts all of them from Axiom source; the prefix
 does not make them private. `len`, `thread_create` and `array_push` are accepted
 through three special cases. The specification's former count of 86 was wrong
-and has been corrected. Classify all 359 by stability and document their
-error/sentinel, ownership and C/LLVM behavior before promising stability.
+and has been corrected. These 360 builtins are outside the accepted
+scanner-first v1.0 allowlist and carry no stability promise in that release
+profile.
 
-Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
-and schema field, tie each promise to enforcing tests, and define the stable
-boundary for each stdlib symbol. This initial inventory does not close those
-gates or promise all 53 stdlib files wholesale.
+Before `v1.0`, enumerate each selected scanner command, option, grammar form,
+exit code and report field, tie each promise to enforcing tests, and state the
+runtime/platform limits. The general Axiom grammar and stdlib remain outside
+this allowlist; this does not promise all 53 stdlib files wholesale.
 
 ## G5 uyumluluk politikası / G5 Compatibility Policy
 
@@ -242,24 +243,31 @@ mean supporting only two old versions of the stable `1.x` API.
 - [x] `axiom-scan` rules/scan/pcap/structured-error JSON Schema'sını yayımla ve
   rapor testlerini şemaya göre doğrula. / Publish the `axiom-scan` JSON Schema
   for rules/scan/pcap/structured-error reports and validate report tests against it.
-- [x] Scanner-first v1.0 kapsamı için kaynak/test kanıtlarına bağlı ama
-  bağlayıcı olmayan aday allowlist hazırla ve referanslarını CI'da doğrula. /
-  Prepare a non-binding, evidence-linked scanner-first v1.0 candidate allowlist
-  and validate its references in CI.
+- [x] Kaynak/test kanıtlarına bağlı scanner-first stable allowlist hazırla ve
+  referanslarını CI'da doğrula. /
+  Prepare an evidence-linked scanner-first stable allowlist and validate its
+  references in CI.
+- [x] Bakımcı kararıyla çevrimdışı DFIR triyajını ilk v1.0 ürün profili olarak
+  seç; yalnız `axiom-scan` kullanıcı sözleşmesini allowlist'e al. Genel dil,
+  compiler CLI, axpm, manifest/lock, registry, LSP ve genel stdlib/builtins
+  kapsam dışıdır. Uyumluluk sözü v1.0.0 yayımlandığında başlar.
+  / Accept offline DFIR triage as the first v1.0 profile and allowlist only the
+  `axiom-scan` user contract. The general language, compiler CLI, axpm,
+  manifest/lock, registry, LSP and general stdlib/builtins are excluded. The
+  compatibility promise starts with the v1.0.0 release.
 - [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
   semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
   constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
-  stable değildir; tüm 845 girdiye ayrı etiket vermek gerekmez. / For every
+  stable değildir; tüm 846 girdiye ayrı etiket vermek gerekmez. / For every
   symbol/syntax/command/schema field selected into the v1.0 stable allowlist,
   record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
   platform/thread constraints and enforcing tests. Entries outside the
-  allowlist are not stable; all 845 entries need not be separately labeled.
-- [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock şemalarını
-  yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan
-  sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. / Publish the
-  stable allowlist and CLI/manifest/lock/scanner schemas before v1.0. Real
-  v1.0/v1.1 fixtures do not exist yet; validate the previous-two-minor run
-  while preparing v1.2 once they are published.
-  / Publish the stable API allowlist and behavior/ownership/backend contracts
-  before v1.0. Real v1.0/v1.1 release fixtures do not exist yet; validate the
-  previous-two-minor run while preparing v1.2 after they are published.
+  allowlist are not stable; all 846 entries need not be separately labeled.
+- [ ] v1.0 öncesinde seçilmiş `axiom-scan` allowlist'ini ve rapor şemasını
+  yayımla. axiom CLI, axpm, manifest ve lock şemaları bu sürüm profilinde
+  kararlılık sözü dışında kalır; stable kapsama alınmadan önce ayrıca sürümlü
+  şema ve davranış testleri gerekir. Gerçek v1.0/v1.1 fixture'ları yayımlandıktan
+  sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
+- [ ] Seçilmiş scanner davranışları için semantics, hata/sentinel,
+  ownership/lifetime, C/LLVM, platform/thread kısıtları ve enforcement
+  testlerini allowlist ile tek tek eşle; gerçek v1.0/v1.1 fixture'ları henüz yok.
