@@ -41,6 +41,8 @@
           "timestamp_resolution": ["microsecond", "nanosecond"],
           "byte_order": ["little-endian", "big-endian"],
           "scan_unit": "Each captured raw frame independently, including protocol headers.",
+          "packet_count_includes_zero_length_records": true,
+          "malformed_or_truncated_records": "rejected with a structured error report",
           "pcapng": "rejected",
           "stream_reassembly": false
         }
@@ -134,6 +136,11 @@
           "tests/test_axiom_scan.py::test_fail_on_match_is_opt_in",
           "tests/test_axiom_scan.py::test_fail_on_match_llvm_parity",
           "tests/test_axiom_scan.py::test_llvm_scanner_matches_c",
+          "tests/test_axiom_scan.py::test_filesize_and_scanned_bytes_use_full_file_length_with_nul",
+          "tests/test_axiom_scan.py::test_scan_pcap_counts_empty_packet_and_continues",
+          "tests/test_axiom_scan.py::test_scan_pcap_empty_capture_reports_zero_packets",
+          "tests/test_axiom_scan.py::test_scan_pcap_malformed_or_truncated_records_fail_closed",
+          "tests/test_axiom_scan.py::test_scan_rejects_pcapng",
           "tests/test_yara_corpus_compat.py",
           "tests/test_yara_condition_differential.py",
           "tests/test_yara_hex_range_differential.py",

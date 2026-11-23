@@ -66,3 +66,5 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
     assert yara["conditions"]["filesize"]["decimal_KB_bytes"] == 1024
     assert surface["input_contract"]["pcap"]["timestamp_resolution"] == ["microsecond", "nanosecond"]
     assert surface["input_contract"]["pcap"]["stream_reassembly"] is False
+    assert surface["input_contract"]["pcap"]["packet_count_includes_zero_length_records"] is True
+    assert surface["input_contract"]["pcap"]["malformed_or_truncated_records"].startswith("rejected")
