@@ -38,6 +38,10 @@
         "regex_with_nul": "Reject explicitly because the current regex path cannot preserve byte spans across NUL.",
         "pcap": {
           "format": "classic-pcap",
+          "global_header": {
+            "accepted_version": "2.4 only",
+            "snaplen_minimum": 1
+          },
           "timestamp_resolution": ["microsecond", "nanosecond"],
           "byte_order": ["little-endian", "big-endian"],
           "scan_unit": "Each captured record byte sequence independently as opaque bytes; no link-layer or protocol parsing is performed.",
@@ -47,7 +51,7 @@
           "packet_count_includes_zero_length_records": true,
           "matched_packet_index_base": 0,
           "timestamp_handling": "Classic microsecond/nanosecond magic is accepted, but timestamp fractions are neither validated nor reported.",
-          "malformed_or_truncated_records": "rejected with a structured error report",
+          "malformed_or_truncated_records": "Invalid or truncated global/record headers and record payloads are rejected with a structured error report.",
           "pcapng": "rejected",
           "stream_reassembly": false
         }
@@ -161,6 +165,7 @@
           "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records",
           "tests/test_axiom_scan.py::test_scan_pcap_empty_capture_reports_zero_packets",
           "tests/test_axiom_scan.py::test_scan_pcap_malformed_or_truncated_records_fail_closed",
+          "tests/test_axiom_scan.py::test_scan_pcap_rejects_invalid_global_header",
           "tests/test_axiom_scan.py::test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen",
           "tests/test_axiom_scan.py::test_scan_pcap_ignores_linktype_and_scans_captured_bytes",
           "tests/test_axiom_scan.py::test_scan_rejects_pcapng",

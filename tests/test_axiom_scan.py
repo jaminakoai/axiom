@@ -1154,6 +1154,28 @@ def test_scan_pcap_malformed_or_truncated_records_fail_closed(scanner, tmp_path,
     assert error_report["error"]
 
 
+@pytest.mark.parametrize("header", [
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 3, 0, 0, 65535, 1),
+    struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 0, 1),
+    b"BAD!" + b"\x00" * 20,
+])
+def test_scan_pcap_rejects_invalid_global_header(scanner, tmp_path, header):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "invalid-global-header.pcap"
+    pcap.write_bytes(header)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
+
+
 def test_scan_pcap_rejects_record_over_custom_snaplen(scanner, tmp_path):
     rules = tmp_path / "rules.yar"
     rules.write_text(
