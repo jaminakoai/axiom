@@ -452,8 +452,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   CLI/manifest/lock şemaları ile davranış sözleşmelerini yayımla.
   v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan sonra
   v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
-- [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
-  ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
+- [ ] İlk stable iş akışı olarak çevrimdışı DFIR/scanner kapsamını doğrula veya
+  kullanıcının önceliğini uygula; [aday sözleşme ve test kanıtı](docs/G5_API_CONTRACT_AUDIT.md)
+  üzerinden eksik dil/stdlib engelini belirleyip yalnız o ihtiyaca dikey
+  geliştirme seç. Ürün odağı yanıtı henüz alınmadı.
 
 - [ ] Gerçek kullanıcı ve bakım kapasitesi oluştukça paket/yazar hedefleri koy;
   hedef sayısını kullanıcı ihtiyacının yerine geçirme.

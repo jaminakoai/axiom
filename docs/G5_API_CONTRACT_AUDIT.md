@@ -49,6 +49,40 @@ davranışını, backend davranışını veya kullanıcı değerini denetlemez.
 | Language semantics and ownership | Sampled syntax, type/error behavior, `verify`, selected string lifetime paths | [`tests/test_specification.py`](../tests/test_specification.py), [`tests/test_codegen_e2e.py`](../tests/test_codegen_e2e.py), [`tests/test_llvm_control_flow.py`](../tests/test_llvm_control_flow.py), [`tests/test_llvm_string_ownership.py`](../tests/test_llvm_string_ownership.py), [`tests/test_runtime_ownership_audit.py`](../tests/test_runtime_ownership_audit.py) | Grammar is not fully mechanically checked against the parser; all callable builtins and comprehensive C/LLVM ownership/error parity remain unclassified |
 | CLI command inventory | Installed help commands and flags | [`tests/test_g5_versioning_consistency.py`](../tests/test_g5_versioning_consistency.py): `test_documented_cli_commands_and_flags_cover_installed_help` | Help presence is not an exit-code, stdout/stderr, option interaction or compatibility contract |
 
+## Recommended scanner-first v1.0 candidate / Scanner-first v1.0 adayı
+
+This is a scope proposal, not a stability promise. If the product centers on
+offline DFIR triage, the user-facing contract to consider for the v1.0
+allowlist is the `axiom-scan` executable: its `rules`/`scan`/`pcap` commands,
+exit codes, report schema v1, exact documented YARA subset, whole-buffer hash
+and byte-count semantics, and classic-PCAP per-packet behavior. It does not
+automatically stabilize every compiler or stdlib function used internally to
+build the example.
+
+Bu kapsam önerisidir, kararlılık sözü değildir. Ürün çevrimdışı DFIR triyajına
+odaklanacaksa v1.0 allowlist'i için incelenecek kullanıcı sözleşmesi
+`axiom-scan` ikilisidir: `rules`/`scan`/`pcap` komutları, çıkış kodları, rapor
+şeması v1, belgelenmiş YARA alt kümesinin kesin sınırları, tam buffer hash/byte
+uzunluğu semantiği ve klasik PCAP'in paket başına taranması. Bu karar, örneği
+derlemek için içeride kullanılan her compiler veya stdlib fonksiyonunu otomatik
+olarak kararlı yapmaz.
+
+| Candidate behavior | Evidence to bind into the release allowlist |
+|---|---|
+| YARA rule structure, comments, metadata, tags and string escapes | [`tests/test_yara_parser_structure_differential.py`](../tests/test_yara_parser_structure_differential.py), [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_rule_meta_and_tags_are_returned_as_typed_json`, `test_comment_markers_inside_yara_text_are_preserved` |
+| Boolean conditions, pattern groups, count/offset/length selectors, filesize and range conditions | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_boolean_conditions_match_in_c_and_llvm`, `test_pattern_group_range_matches_in_c_and_llvm`, `test_positional_condition_reports_selected_occurrence_in_c_and_llvm`, `test_filesize_comparisons`, `test_pattern_occurrence_count_conditions`, `test_pattern_offset_conditions`; differential coverage in [`tests/test_yara_condition_differential.py`](../tests/test_yara_condition_differential.py), [`tests/test_yara_selector_differential.py`](../tests/test_yara_selector_differential.py) |
+| Text modifiers, escape decoding and unsupported modifier rejection | [`tests/test_yara_modifiers.py`](../tests/test_yara_modifiers.py), [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py) |
+| Hex wildcards, fixed/bounded jumps, alternation, negated bytes and occurrence selection | [`tests/test_yara_fixed_jumps.py`](../tests/test_yara_fixed_jumps.py), [`tests/test_yara_hex_ranges.py`](../tests/test_yara_hex_ranges.py), [`tests/test_yara_hex_range_differential.py`](../tests/test_yara_hex_range_differential.py), [`tests/test_yara_hex_typed_differential.py`](../tests/test_yara_hex_typed_differential.py), [`tests/test_yara_hex_alternation.py`](../tests/test_yara_hex_alternation.py), [`tests/test_yara_hex_negation.py`](../tests/test_yara_hex_negation.py) |
+| Regex input safety and NUL-containing target behavior | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control` |
+| Whole-file byte scanning, hash/byte-count correctness, report fields, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_fail_on_match_is_opt_in`, `test_error_path_is_structured_json` |
+| Classic PCAP endian/timestamp variants, malformed records, raw frame scanning and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_llvm_scanner_matches_c` |
+
+The [fixed external YARA corpus](../tests/test_yara_corpus_compat.py) adds
+reference-engine evidence for selected supported and explicitly rejected
+features. It is intentionally a small sample, not proof of full YARA
+compatibility. The entire table remains proposed until the product scope and
+the exact supported grammar boundary are accepted for the stable release.
+
 ## Unclassified work / Sınıflandırılmamış işler
 
 - No generated or manual artifact currently declares the final `v1.0` stable
