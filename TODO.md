@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `4d1963b`: Python 3.10–3.13'in her birinde **1665 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45214367304](https://github.com/jaminakoai/axiom/actions/runs/45214367304), **7/7 başarılı** |
-| Son CI denemesi | `4d1963b` [run 45214367304](https://github.com/jaminakoai/axiom/actions/runs/45214367304), **7/7 başarılı** |
-| Son başarılı tam CI | `4d1963b` [run 45214367304](https://github.com/jaminakoai/axiom/actions/runs/45214367304), **7/7 başarılı** |
-| Son platform smoke | `4d1963b`, Linux/Windows/macOS native smoke [run 45214367823](https://github.com/jaminakoai/axiom/actions/runs/45214367823), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `8a3220d`: Python 3.10–3.13'in her birinde **1665 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
+| Son CI denemesi | `8a3220d` [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
+| Son başarılı tam CI | `8a3220d` [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı** |
+| Son platform smoke | `8a3220d`, Linux/Windows/macOS native smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `4d1963b` — [run 45214367304](https://github.com/jaminakoai/axiom/actions/runs/45214367304), **7/7 başarılı**; her Python sürümünde 1665 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45214367823](https://github.com/jaminakoai/axiom/actions/runs/45214367823) **3/3 başarılı** |
+| Son kaydedilmiş başarılı CI | `8a3220d` — [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343), **7/7 başarılı**; her Python sürümünde 1665 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45223491261](https://github.com/jaminakoai/axiom/actions/runs/45223491261) **3/3 başarılı** |
 | Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
 | Son hedefli test paketi | Scanner/YARA, C/LLVM, differential, allowlist, G5 versioning ve API docs/spec paketi birlikte **234 geçti**; out-of-range classic-PCAP timestamp fraction davranışı dört kombinasyonda (micro/nano × little/big endian), iki backend'de doğrulandı. |
 
