@@ -13,8 +13,11 @@ The manifest supports:
   directory tree is SHA-256 pinned and built with current tools;
 - scanner rules, target bytes and expected JSON reports, each SHA-256 pinned.
 
-All fixture paths are relative to their release directory; the validator rejects
-path traversal, and package trees may not contain symlinks. Builds run in
+The JSON Schema captures the portable manifest shape; the Python validator also
+enforces semantic constraints such as globally unique case IDs, matching
+release-directory names, and content hashes. All fixture paths are relative to
+their release directory; the validator rejects path traversal and release
+directory symlinks, and package trees may not contain symlinks. Builds run in
 temporary directories. The scanner's reported target is normalized to its
 basename, and `tool_version` must remain a string but may advance, so checkout
 paths and new scanner releases do not invalidate the historical report contract.
