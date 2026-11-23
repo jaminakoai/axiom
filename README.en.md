@@ -121,6 +121,10 @@ in their own language.
   and unmatched ones, while `match_count` counts matching rule-record pairs.
   File scanning loads the entire target into memory; there is no configured
   maximum file size, so very large inputs can exhaust available memory.
+  A synthetic sparse-file measurement on Linux x86_64 showed about
+  68.4/260.3/1028.4 MiB peak RSS for 64/256/1024 MiB inputs; this is not evidence
+  from real incident files or a production latency target
+  ([method and results](docs/G5_API_CONTRACT_AUDIT.md#local-scanner-memory-measurement-2026-11-23)).
 - The DFIR tool is Linux `/proc` based; no process/port collection on
   Windows/macOS. It is not a policy engine: it produces a risk score but does
   not change the exit code.
@@ -664,7 +668,7 @@ The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
 **1484 passed, 0 failed/skipped** (1344.44 s). A previous YARA/scanner/differential/
 stress/backend-parity suite passed **490 tests** (223.89 s); the latest focused
-scanner/YARA/regression suite passed **219 tests**. The `058484e` CI counts are historical.
+scanner/YARA/API-contract suite passed **234 tests**. The `058484e` CI counts are historical.
 The latest full CI evidence is listed in the CI status section below. The YARA
 parser expects multiline rule layout; valid one-line inline rules are currently
 rejected.

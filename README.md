@@ -121,6 +121,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   tüm kayıtları sayar, `match_count` ise eşleşen kural-kayıt çiftlerini sayar.
   Dosya taraması tüm hedefi belleğe alır; yapılandırılmış bir dosya boyutu üst
   sınırı yoktur ve çok büyük girdiler kullanılabilir belleği tüketebilir.
+  Sentetik sparse Linux x86_64 ölçümü 64/256/1024 MiB girdilerde yaklaşık
+  68.4/260.3/1028.4 MiB tepe RSS gösterdi; bu gerçek incident dosyası veya
+  üretim gecikmesi kanıtı değildir ([ölçüm ve yöntem](docs/G5_API_CONTRACT_AUDIT.md#local-scanner-memory-measurement-2026-11-23)).
 - DFIR aracı Linux `/proc` tabanlıdır; Windows/macOS'ta süreç ve port toplama
   yoktur. Bir tespit/politika motoru değildir: risk skoru üretir, exit kodunu
   değiştirmez.
@@ -659,11 +662,11 @@ kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundad
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
 **1484 geçti, 0 hata/skip** (1344,44 sn). Önceki YARA/scanner/differential/stress/
-backend parity paketi **490 geçti** (223,89 sn); bu turdaki scanner/YARA/regression
-paketi **219 geçti**. `058484e` CI sayıları tarihsel kaldı. En son `bfd0038` CI'si
+backend parity paketi **490 geçti** (223,89 sn); bu turdaki scanner/YARA/API sözleşme
+paketi **234 geçti**. `058484e` CI sayıları tarihsel kaldı. En son `bfd0038` CI'si
 **7/7**, platform smoke'ta
 Linux/Windows/macOS **3/3** geçti; güncel yerel scanner/YARA hedefli paketi
-**219/219** geçti.
+**234/234** geçti.
 Güncel tam CI kanıtı aşağıdaki CI bölümündedir. YARA parser’ı multiline kural
 düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
