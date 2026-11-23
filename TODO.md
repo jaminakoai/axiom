@@ -439,14 +439,15 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Mevcut test/source kanıtını yüzeylere göre ayır; kanıt kapsamı ile
   kararlılık kararını birbirine karıştırma:
   [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md).
-- [ ] 844 envanter girdisini (446 stdlib fonksiyonu, 37 struct, 358 checker
-  builtin, 3 özel builtin biçimi) kararlı/deneysel/desteklenmiyor diye tek tek
-  veya açık sınırlarla sınıflandır; davranış, hata/sentinel, sahiplik/lifetime,
-  C/LLVM ve ilgili platform/thread sözleşmesini enforcement testleriyle bağla.
-- [ ] v1.0 öncesinde kararlı API allowlist'ini, CLI/manifest/lock/scanner
-  şemalarını ve davranış sözleşmelerini yayımla. v1.0 ve v1.1 gerçek release
-  fixture'ları henüz yok; yayımlandıktan sonra v1.2 hazırlığında önceki
-  iki-minor koşumunu doğrula.
+- [ ] v1.0 kararlı allowlist'i için seçilen her sembol/gramer/komut/şema alanını
+  davranış, hata/sentinel, sahiplik/lifetime, C/LLVM ve ilgili platform/thread
+  sözleşmesiyle; enforcement testlerine bağlı şekilde incele. Allowlist dışında
+  kalan envanter girdileri kararlı API değildir; 844 girdinin her birine ayrıca
+  yapay bir stable/experimental/unsupported etiketi verme zorunluluğu yoktur.
+- [ ] v1.0 öncesinde kararlı API allowlist'ini ve seçilen yüzeylerin
+  CLI/manifest/lock/scanner şemaları ile davranış sözleşmelerini yayımla.
+  v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan sonra
+  v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
   ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 

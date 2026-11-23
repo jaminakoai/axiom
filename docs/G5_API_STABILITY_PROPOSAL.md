@@ -239,12 +239,14 @@ mean supporting only two old versions of the stable `1.x` API.
 - [x] Mevcut test/source kanıtını API yüzeylerine göre kaydet ve kanıtı
   kararlılık ilanından ayrı tut. / Record current test/source evidence by API
   surface and keep it separate from stability declarations.
-- [ ] 844 envanter girdisini açık kararlılık kararlarıyla sınıflandır; her
-  stable aday için semantics, errors/sentinels, ownership/lifetime, C/LLVM,
-  platform/thread constraints ve enforcement testlerini listele. / Classify all
-  844 inventory entries with explicit stability decisions; for each stable
-  candidate, record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
-  platform/thread constraints and enforcing tests.
+- [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
+  semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
+  constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
+  stable değildir; tüm 844 girdiye ayrı etiket vermek gerekmez. / For every
+  symbol/syntax/command/schema field selected into the v1.0 stable allowlist,
+  record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
+  platform/thread constraints and enforcing tests. Entries outside the
+  allowlist are not stable; all 844 entries need not be separately labeled.
 - [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock/scanner şemalarını
   yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan
   sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. / Publish the

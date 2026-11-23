@@ -10,6 +10,20 @@ does not prove a complete public contract.
 dönüştürmez. Bir test adında ya da envanterde yer almak tek başına tam bir
 kullanıcı sözleşmesini kanıtlamaz.
 
+The policy is allowlist-based: an entry not explicitly selected for the
+`v1.0` stable allowlist is not stable and carries no compatibility promise.
+The 844-entry source inventory therefore does not need an artificial
+stable/experimental/unsupported label on every entry. Only proposed stable
+entries require full contract review; explicitly unsupported features should
+be called out where users could reasonably expect them.
+
+Politika allowlist temellidir: `v1.0` kararlı allowlist'ine açıkça alınmayan
+girdi kararlı değildir ve uyumluluk sözü taşımaz. Bu nedenle 844 girdili kaynak
+envanterinin her elemanına yapay bir stable/experimental/unsupported etiketi
+vermek gerekmez. Tam sözleşme incelemesi yalnız kararlı olması önerilen
+girdilerde yapılır; kullanıcıların makul biçimde bekleyebileceği desteklenmeyen
+özellikler ayrıca belirtilir.
+
 The generated [source API inventory](api/v0.5.0-alpha.json) contains 844
 entries: 446 stdlib functions, 37 structs, 358 checker builtins and 3 special
 builtin forms. They are all unclassified. The generator's drift check confirms
