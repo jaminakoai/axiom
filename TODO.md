@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `bfd0038` — [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252), **7/7 başarılı**; her Python sürümünde 1661 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303) **3/3 başarılı** |
 | Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
-| Son hedefli test paketi | Scanner + YARA modifier/condition/C-LLVM/differential/regression paketi **219 geçti**; regular-file preallocation için 2 MiB + embedded-NUL içerik ve kapasite runtime testi dahil. G5 allowlist/versioning ve TR/EN docs/spec paketi **42 geçti**; önceki geniş scanner paketi **326 geçti**. |
+| Son hedefli test paketi | Scanner/YARA, C/LLVM, differential, allowlist, G5 versioning ve API docs/spec paketi birlikte **234 geçti**; out-of-range classic-PCAP timestamp fraction davranışı dört kombinasyonda (micro/nano × little/big endian), iki backend'de doğrulandı. |
 
 ---
 
@@ -441,9 +441,6 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   uyuşmazlığı fail-closed reddediliyor. Yayımlanan Draft 2020-12 JSON Schema'nın
   kendisi ve kaynak/paket/scanner manifest şekilleri testte doğrulanıyor; aynı
   tam örnek manifest hem JSON Schema hem gerçek yükleyici tarafından kabul ediliyor.
-- [ ] Gerçek `v1.0` ve `v1.1` fixture'ları henüz yok; yayımlandıklarında önceki
-  iki-minor CI kontrolünü v1.2 hazırlığında etkinleştir. `ResultInt/Str` + `?`
-  ve `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyonlarıyla doğrulandı.
 - [x] Mevcut test/source kanıtını yüzeylere göre ayır; kanıt kapsamı ile
   kararlılık kararını birbirine karıştırma:
   [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md).
@@ -478,8 +475,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   scanner ve YARA regresyonları C/LLVM'de geçti. Hedefin tamamı bellekte kalır.
 - [x] Seçilmiş scanner sembol/gramer/komut/şema alanlarını davranış,
   hata/sentinel, sahiplik/lifetime, C/LLVM ve platform/thread sözleşmesi ile
-  enforcement testlerine tek tek eşle. Envanterin geri kalanı bu kapsamın
-  dışında kararlı değildir; 846 girdiye ayrı etiket gerekmez.
+  enforcement testlerine tek tek eşle. PCAP zaman kesirlerinin aralık dışı
+  değerlerde yok sayılıp rapora yazılmadığı da micro/nanosecond ve iki byte
+  order için C/LLVM regresyonuyla doğrulandı. Kanıt matrisi
+  [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md) ve
+  [`docs/api/v1.0-stable-allowlist.json`](docs/api/v1.0-stable-allowlist.json)
+  içindedir. Envanterin geri kalanı bu kapsamın dışında kararlı değildir; 846
+  girdiye ayrı etiket gerekmez.
 - [x] `axiom-scan` rules/scan/pcap/structured-error report contract'ı için
   [JSON Schema](docs/api/axiom-scan-report.schema.json) yayımla ve gerçek
   C/LLVM report örneklerini JSON Schema validator ile test et; public
@@ -487,11 +489,18 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Makinece okunabilir kararlı API allowlist'ini ve scanner CLI/report
   sözleşmesini yayımla: [`docs/api/v1.0-stable-allowlist.json`](docs/api/v1.0-stable-allowlist.json).
   axpm, manifest ve lock şemaları bu profilde kararlılık sözü dışıdır.
-- [ ] Gerçek v1.0 ve v1.1 fixture'ları henüz yok; yayımlandıktan sonra
-  v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
-- [ ] Seçilmiş scanner davranışlarını sözleşme matrisi ve enforcement testleriyle
-  tek tek kapat; gerçek kullanımda bellek ölçeği ve platform desteği ihtiyacını
-  ölçmeden streaming veya genel dil özelliklerine geçme.
+- [ ] Gerçek `v1.0` ve `v1.1` fixture'ları yayımlandıktan sonra v1.2
+  hazırlığında önceki iki-minor koşumunu etkinleştirip doğrula.
+- [x] Linux x86_64 üzerinde tekrarlanabilir, sentetik no-match ölçümü ekle ve
+  çalıştır: 64/256/1024 MiB girdilerde yaklaşık 68.4/260.3/1028.4 MiB tepe RSS,
+  0.617/2.473/9.813 sn. Yöntem ve sınırlar:
+  [`G5 API audit`](docs/G5_API_CONTRACT_AUDIT.md#local-scanner-memory-measurement-2026-11-23),
+  [`benchmark script`](tools/benchmark_axiom_scan_memory.py).
+- [ ] Temsilî kullanıcı girdileri ve match-heavy kurallarda bellek/latency
+  ihtiyacını değerlendir; mevcut ölçüm sentetik sparse dosyalarla sınırlı.
+  Gerçek ihtiyaç kanıtı olmadan boyut sınırı, streaming veya daha geniş platform
+  desteği kararı verme. Somut workflow ihtiyacı göstermeden genel dil
+  özelliklerine yönelme.
 
 - [ ] Gerçek kullanıcı ve bakım kapasitesi oluştukça paket/yazar hedefleri koy;
   hedef sayısını kullanıcı ihtiyacının yerine geçirme.

@@ -1153,6 +1153,48 @@ def test_scan_pcap_nanosecond_timestamp_magic(scanner, tmp_path, byte_order, lab
     assert report["packets"][0]["rules"] == ["PacketNeedle"]
 
 
+@pytest.mark.parametrize(
+    "byte_order,label,magic,fraction",
+    [
+        ("<", "little-micro", 0xA1B2C3D4, 1_000_000),
+        (">", "big-micro", 0xA1B2C3D4, 1_000_000),
+        ("<", "little-nano", 0xA1B23C4D, 1_000_000_000),
+        (">", "big-nano", 0xA1B23C4D, 1_000_000_000),
+    ],
+)
+def test_scan_pcap_ignores_and_does_not_report_timestamp_fraction(
+    scanner, scanner_llvm, tmp_path, byte_order, label, magic, fraction
+):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / f"out-of-range-fraction-{label}.pcap"
+    global_header = struct.pack(
+        f"{byte_order}IHHIIII", magic, 2, 4, 0, 0, 65535, 1
+    )
+    payload = b"NEEDLE"
+    record = struct.pack(
+        f"{byte_order}IIII", 1700000000, fraction, len(payload), len(payload)
+    ) + payload
+    pcap.write_bytes(global_header + record)
+
+    reports = []
+    for executable in (scanner, scanner_llvm):
+        result = _run(executable, "pcap", str(pcap), "--rules", str(rules))
+        assert result.returncode == 0, result.stdout + result.stderr
+        report = json.loads(result.stdout)
+        _assert_report_matches_schema(report)
+        assert report["packet_count"] == 1
+        assert report["match_count"] == 1
+        assert report["packets"][0]["rules"] == ["PacketNeedle"]
+        assert "timestamp" not in report["packets"][0]
+        reports.append(report)
+
+    assert reports[0] == reports[1]
+
+
 @pytest.mark.parametrize("truncated", [
     b"\xd4\xc3\xb2\xa1\x02\x00\x04",  # truncated global header
     struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)

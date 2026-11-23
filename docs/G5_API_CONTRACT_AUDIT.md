@@ -83,13 +83,33 @@ dosyasındadır; referans ve kapsam değişmezlerini
 | Hex wildcards, fixed/bounded jumps, alternation, negated bytes and occurrence selection | [`tests/test_yara_fixed_jumps.py`](../tests/test_yara_fixed_jumps.py), [`tests/test_yara_hex_ranges.py`](../tests/test_yara_hex_ranges.py), [`tests/test_yara_hex_range_differential.py`](../tests/test_yara_hex_range_differential.py), [`tests/test_yara_hex_typed_differential.py`](../tests/test_yara_hex_typed_differential.py), [`tests/test_yara_hex_alternation.py`](../tests/test_yara_hex_alternation.py), [`tests/test_yara_hex_negation.py`](../tests/test_yara_hex_negation.py) |
 | Regex input safety, NUL-containing targets, and truthful byte-span witnesses | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control`, `test_regex_witness_reports_actual_byte_span_on_both_backends` |
 | Whole-file byte scanning, hash/byte-count correctness, report fields, CLI usage/help/version, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_cli_usage_errors_are_structured_and_match_c_llvm`, `test_help_and_version_are_plain_text_for_c_and_llvm`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_error_path_is_structured_json`. Full file/PCAP workflow is validated on Linux x86_64; scans load the full target into memory and have no configured file-size cap. |
-| Classic PCAP 2.4 global-header validation, byte order/timestamp magic, opaque record scanning, ignored linktype, 65,535-byte cap, zero-length records, sparse matched-record list, zero-based match indices, malformed-input errors, no cross-record matching and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_counts_empty_packet_and_continues`, `test_pcap_match_does_not_span_records`, `test_scan_pcap_ignores_linktype_and_scans_captured_bytes`, `test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen`, `test_scan_pcap_rejects_invalid_global_header`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_llvm_scanner_matches_c` |
+| Classic PCAP 2.4 global-header validation, byte order/timestamp magic, ignored timestamp fractions, opaque record scanning, ignored linktype, 65,535-byte cap, zero-length records, sparse matched-record list, zero-based match indices, malformed-input errors, no cross-record matching and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_ignores_and_does_not_report_timestamp_fraction`, `test_scan_pcap_counts_empty_packet_and_continues`, `test_pcap_match_does_not_span_records`, `test_scan_pcap_ignores_linktype_and_scans_captured_bytes`, `test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen`, `test_scan_pcap_rejects_invalid_global_header`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_llvm_scanner_matches_c` |
 
 The [fixed external YARA corpus](../tests/test_yara_corpus_compat.py) adds
 reference-engine evidence for selected supported and explicitly rejected
 features. It is intentionally a small sample, not proof of full YARA
 compatibility. The accepted allowlist promises only the exact documented
 grammar boundary; it does not promise full YARA compatibility.
+
+### Local scanner memory measurement (2026-11-23)
+
+The non-gating Linux benchmark [`tools/benchmark_axiom_scan_memory.py`](../tools/benchmark_axiom_scan_memory.py)
+builds the C scanner, scans sparse regular files with a no-match rule, and
+reports elapsed time and sampled child-process `VmHWM`. On this x86_64 machine:
+
+| Logical input | Scanned bytes | Elapsed | Sampled peak RSS |
+|---:|---:|---:|---:|
+| 64 MiB | 67,108,864 | 0.617 s | 68.4 MiB |
+| 256 MiB | 268,435,456 | 2.473 s | 260.3 MiB |
+| 1,024 MiB | 1,073,741,824 | 9.813 s | 1,028.4 MiB |
+
+The result is consistent with memory scaling approximately as the full target
+plus about 4 MiB process overhead, and scan time scaling approximately with
+input size for this no-match workload. Sparse inputs are fully scanned and
+hashed, but they do not represent real incident files or match-heavy rules.
+This measurement does not establish a safe maximum size, production latency
+target, or Windows/macOS behavior; gather representative workload evidence
+before changing the no-limit contract or redesigning for streaming/mmap.
 
 ## Explicitly out of scope / Açıkça kapsam dışı
 

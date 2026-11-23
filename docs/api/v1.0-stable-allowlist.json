@@ -179,6 +179,7 @@
           "tests/test_axiom_scan.py::test_llvm_scanner_matches_c",
           "tests/test_axiom_scan.py::test_filesize_and_scanned_bytes_use_full_file_length_with_nul",
           "tests/test_axiom_scan.py::test_scan_pcap_counts_empty_packet_and_continues",
+          "tests/test_axiom_scan.py::test_scan_pcap_ignores_and_does_not_report_timestamp_fraction",
           "tests/test_axiom_scan.py::test_regex_witness_reports_actual_byte_span_on_both_backends",
           "tests/test_yara_modifiers.py::test_wide_modifier_matches_yara_reference_on_both_backends",
           "tests/test_yara_modifiers.py::test_wide_occurrence_selectors_match_yara_overlapping_instances",
