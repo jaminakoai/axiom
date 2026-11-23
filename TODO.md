@@ -427,8 +427,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] AST tabanlı kaynak envanteri oluşturuldu: 446 stdlib fonksiyon imzası,
   37 struct, 358 builtin imzası; `tools/generate_api_inventory.py --check`
   güncelliğini doğrular. [API snapshot](docs/api/v0.5.0-alpha.json) davranış veya
-  kararlılık garantisi değildir. Davranış/ownership/backend sözleşmelerini,
-  kararlı allowlist'i ve stdlib görünürlüğünü v1.0 öncesi netleştir.
+  kararlılık garantisi değildir.
 - [x] Gelecekteki release fixture'ları için [manifest şeması](docs/api/compat-fixture-manifest.schema.json),
   [fixture yönergesi](tests/fixtures/api_compatibility/README.md), doğrulayıcı ve
   GitHub tag/CI kapısı hazırlandı; synthetic C/LLVM, paket ve scanner vakaları
@@ -437,6 +436,17 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [ ] Gerçek `v1.0` ve `v1.1` fixture'ları henüz yok; yayımlandıklarında önceki
   iki-minor CI kontrolünü v1.2 hazırlığında etkinleştir. `ResultInt/Str` + `?`
   ve `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyonlarıyla doğrulandı.
+- [x] Mevcut test/source kanıtını yüzeylere göre ayır; kanıt kapsamı ile
+  kararlılık kararını birbirine karıştırma:
+  [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md).
+- [ ] 844 envanter girdisini (446 stdlib fonksiyonu, 37 struct, 358 checker
+  builtin, 3 özel builtin biçimi) kararlı/deneysel/desteklenmiyor diye tek tek
+  veya açık sınırlarla sınıflandır; davranış, hata/sentinel, sahiplik/lifetime,
+  C/LLVM ve ilgili platform/thread sözleşmesini enforcement testleriyle bağla.
+- [ ] v1.0 öncesinde kararlı API allowlist'ini, CLI/manifest/lock/scanner
+  şemalarını ve davranış sözleşmelerini yayımla. v1.0 ve v1.1 gerçek release
+  fixture'ları henüz yok; yayımlandıktan sonra v1.2 hazırlığında önceki
+  iki-minor koşumunu doğrula.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
   ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 

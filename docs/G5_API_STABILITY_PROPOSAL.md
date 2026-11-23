@@ -236,9 +236,21 @@ mean supporting only two old versions of the stable `1.x` API.
   / Add the source-based API inventory generator and snapshot drift check;
   prepare the fixture manifest schema, guide, validator and stable-tag CI gate.
   These do not constitute historical behavior evidence.
-- [ ] v1.0 öncesinde kararlı API allowlist'ini ve davranış/ownership/backend
-  sözleşmelerini yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok;
-  yayımlandıktan sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
+- [x] Mevcut test/source kanıtını API yüzeylerine göre kaydet ve kanıtı
+  kararlılık ilanından ayrı tut. / Record current test/source evidence by API
+  surface and keep it separate from stability declarations.
+- [ ] 844 envanter girdisini açık kararlılık kararlarıyla sınıflandır; her
+  stable aday için semantics, errors/sentinels, ownership/lifetime, C/LLVM,
+  platform/thread constraints ve enforcement testlerini listele. / Classify all
+  844 inventory entries with explicit stability decisions; for each stable
+  candidate, record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
+  platform/thread constraints and enforcing tests.
+- [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock/scanner şemalarını
+  yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan
+  sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. / Publish the
+  stable allowlist and CLI/manifest/lock/scanner schemas before v1.0. Real
+  v1.0/v1.1 fixtures do not exist yet; validate the previous-two-minor run
+  while preparing v1.2 once they are published.
   / Publish the stable API allowlist and behavior/ownership/backend contracts
   before v1.0. Real v1.0/v1.1 release fixtures do not exist yet; validate the
   previous-two-minor run while preparing v1.2 after they are published.
