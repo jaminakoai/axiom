@@ -1176,14 +1176,22 @@ def test_llvm_scanner_matches_c(scanner, scanner_llvm, tmp_path):
     c_res = _run(scanner, "scan", str(target), "--rules", str(r))
     l_res = _run(scanner_llvm, "scan", str(target), "--rules", str(r))
     assert c_res.returncode == 0 and l_res.returncode == 0
-    assert json.loads(c_res.stdout) == json.loads(l_res.stdout)
+    c_report = json.loads(c_res.stdout)
+    llvm_report = json.loads(l_res.stdout)
+    _assert_report_matches_schema(c_report)
+    _assert_report_matches_schema(llvm_report)
+    assert c_report == llvm_report
 
     bin_target = tmp_path / "shell.bin"
     bin_target.write_bytes(b"AAAA\x48\x89\x01\x55BBBB")
     c_bin = _run(scanner, "scan", str(bin_target), "--rules", str(r))
     l_bin = _run(scanner_llvm, "scan", str(bin_target), "--rules", str(r))
-    assert json.loads(c_bin.stdout) == json.loads(l_bin.stdout)
-    assert json.loads(l_bin.stdout)["matches"][0]["rule"] == "Hex_Shellcode"
+    c_bin_report = json.loads(c_bin.stdout)
+    l_bin_report = json.loads(l_bin.stdout)
+    _assert_report_matches_schema(c_bin_report)
+    _assert_report_matches_schema(l_bin_report)
+    assert c_bin_report == l_bin_report
+    assert l_bin_report["matches"][0]["rule"] == "Hex_Shellcode"
 
     # Exercise the new reader-status builtin through both code generators.
     pcap = tmp_path / "empty_then_match_big_endian.pcap"
@@ -1199,6 +1207,8 @@ def test_llvm_scanner_matches_c(scanner, scanner_llvm, tmp_path):
     assert c_pcap.returncode == l_pcap.returncode == 0
     c_pcap_data = json.loads(c_pcap.stdout)
     l_pcap_data = json.loads(l_pcap.stdout)
+    _assert_report_matches_schema(c_pcap_data)
+    _assert_report_matches_schema(l_pcap_data)
     assert c_pcap_data == l_pcap_data
     assert c_pcap_data["packet_count"] == 2
     assert c_pcap_data["packets"][0]["index"] == 1
@@ -1301,7 +1311,9 @@ def test_llvm_scanner_rules_count(scanner_llvm, tmp_path):
     r.write_text(RULES, encoding="utf-8")
     res = _run(scanner_llvm, "rules", str(r))
     assert res.returncode == 0, res.stdout + res.stderr
-    assert json.loads(res.stdout)["rules"] == 3
+    report = json.loads(res.stdout)
+    _assert_report_matches_schema(report)
+    assert report["rules"] == 3
 
 
 # ---------------------------------------------------------------------------

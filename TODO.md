@@ -446,7 +446,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   yapay bir stable/experimental/unsupported etiketi verme zorunluluğu yoktur.
 - [x] `axiom-scan` rules/scan/pcap/structured-error report contract'ı için
   [JSON Schema](docs/api/axiom-scan-report.schema.json) yayımla ve gerçek
-  C-backend report örneklerini JSON Schema validator ile test et; public
+  C/LLVM report örneklerini JSON Schema validator ile test et; public
   dokümanlarda TR/EN schema bağlantısını ver.
 - [ ] v1.0 öncesinde kararlı API allowlist'ini ve seçilen yüzeylerin
   CLI/manifest/lock şemaları ile davranış sözleşmelerini yayımla.
