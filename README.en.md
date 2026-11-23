@@ -652,7 +652,7 @@ in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -
 suite passed **490 tests** (223.89 s). The `058484e` CI counts are historical.
 The latest successful CI for `5eddc9d` passed **7/7** GitHub Actions jobs and
 **3/3** Linux/Windows/macOS platform smoke jobs; the current focused local suite
-passed **198/198**.
+passed **200/200**.
 The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status

@@ -148,6 +148,55 @@ def test_stdlib_result_int_and_str_interoperate_with_question_mark(backend):
             os.remove(out)
 
 
+@pytest.mark.parametrize("backend", ["c", "llvm"])
+def test_stdlib_option_concrete_types_on_both_backends(backend):
+    """Concrete Option helpers keep their value/fallback contract across backends."""
+    src = """
+    import "std/core/option"
+
+    fn main() -> int {
+        let int_value = some_int(7)
+        let int_empty = none_int()
+        let str_value = some_str("axiom")
+        let str_empty = none_str()
+        let bool_value = some_bool(true)
+        let bool_empty = none_bool()
+        let int_overload = some(8)
+        let str_overload = some("overload")
+        let bool_overload = some(false)
+
+        verify is_some(int_value) and not is_none(int_value)
+        verify unwrap(int_value) == 7
+        verify is_none(int_empty) and unwrap_or(int_empty, 9) == 9
+        verify unwrap(str_value) == "axiom"
+        verify is_none(str_empty) and unwrap_or(str_empty, "fallback") == "fallback"
+        verify unwrap(bool_value)
+        verify is_none(bool_empty) and unwrap_or(bool_empty, false) == false
+        verify unwrap(int_overload) == 8
+        verify unwrap(str_overload) == "overload"
+        verify unwrap(bool_overload) == false
+        return 0
+    }
+    """
+    with tempfile.NamedTemporaryFile("w", suffix=".ax", delete=False, encoding="utf-8") as fh:
+        fh.write(src)
+        path = fh.name
+    out = path + ".bin"
+    try:
+        build = subprocess.run(
+            [str(AXIOM), "build", path, f"--backend={backend}", "-o", out],
+            capture_output=True, text=True, timeout=240,
+            env={**os.environ, "PYTHONPATH": str(ROOT)},
+        )
+        assert build.returncode == 0, build.stdout + build.stderr
+        run = subprocess.run([out], capture_output=True, text=True, timeout=60)
+        assert run.returncode == 0, run.stdout + run.stderr
+    finally:
+        os.remove(path)
+        if os.path.exists(out):
+            os.remove(out)
+
+
 def test_question_mark_requires_result_returning_function():
     src = """
     import "std/core/error"

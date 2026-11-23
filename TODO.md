@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 API, `Result` interoperability, TR/EN docs ve scanner: **198 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 37,01 sn) |
+| Son hedefli test paketi | G5 API, `Result`/`Option` iki-backend interoperability, TR/EN docs ve scanner: **200 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 41,63 sn) |
 
 ---
 
@@ -426,8 +426,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
 - [ ] Somut public API sembol/sözdizimi/şema envanterini çıkar ve önceki iki
   minor sürüm fixture kontrolünü v1.0 readiness CI/release sürecine bağla;
-  stdlib sembol görünürlüğünü ve somut `OptionInt/Str/Bool` sözleşmesini netleştir.
-  `ResultInt` yapısal `Result` + `?` uyumluluğu C/LLVM regresyon testiyle doğrulandı.
+  stdlib sembol görünürlüğünü netleştir. Somut `ResultInt/Str` + `?` ve
+  `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyon testleriyle doğrulandı.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
   ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 

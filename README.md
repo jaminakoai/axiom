@@ -647,7 +647,7 @@ Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q 
 **1484 geçti, 0 hata/skip** (1344,44 sn). Güncel YARA/scanner/differential/stress/
 backend parity paketi **490 geçti** (223,89 sn). `058484e` CI sayıları tarihsel
 kaldı. En son başarılı `5eddc9d` CI'si **7/7**, platform smoke'ta
-Linux/Windows/macOS **3/3** geçti; güncel yerel hedefli test paketi **198/198** geçti.
+Linux/Windows/macOS **3/3** geçti; güncel yerel hedefli test paketi **200/200** geçti.
 YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu

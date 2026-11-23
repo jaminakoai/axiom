@@ -40,8 +40,10 @@ Dil şartnamesindeki `Result<T, E>` yapısal sözleşmedir (`is_ok`, `value`,
 `ResultStr` kolaylık tipleri sağlar; bu tek başına çelişki değildir.
 [`test_stdlib_result_int_and_str_interoperate_with_question_mark`](../tests/test_error_model.py)
 regresyonu bunların `?` ile C/LLVM uyumluluğunu doğrular. `Option` şartnamede
-genel tip olarak tanımlı değildir; stdlib şu an `OptionInt`, `OptionStr` ve
-`OptionBool` somut tiplerini sunar ve her biri kararlı API envanterinde ayrı
+genel tip olarak tanımlı değildir; stdlib'in `OptionInt`, `OptionStr` ve
+`OptionBool` türleri, constructor/unwrap/fallback davranışıyla
+[`test_stdlib_option_concrete_types_on_both_backends`](../tests/test_error_model.py)
+tarafından iki backend'de doğrulanır. Her tür kararlı API envanterinde ayrı
 listelenmelidir.
 
 This source-linked map is concrete but does not yet list every function
@@ -56,15 +58,17 @@ The language specification defines `Result<T, E>` structurally (`is_ok`,
 contradiction. The regression
 `test_stdlib_result_int_and_str_interoperate_with_question_mark` in
 `tests/test_error_model.py` confirms their `?` interoperability on C and LLVM.
-The specification does not define a generic `Option`; stdlib helpers are
-concrete `OptionInt`, `OptionStr`, and `OptionBool` types that must be listed
-individually in the stable API inventory.
+The specification does not define a generic `Option`; the concrete stdlib
+`OptionInt`, `OptionStr`, and `OptionBool` constructors, unwrap and fallback
+behavior are verified on both backends by
+`test_stdlib_option_concrete_types_on_both_backends` in
+`tests/test_error_model.py`. List each type individually in the stable API
+inventory.
 
 Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
 and schema field, tie each promise to enforcing tests, and define the stable
-boundary for concrete `Option` helpers and stdlib symbols. Do not treat this
-initial inventory as a completed stability manifest or promise all 53 stdlib
-files wholesale.
+boundary for each stdlib symbol. This initial inventory does not close those
+gates or promise all 53 stdlib files wholesale.
 
 ## G5 uyumluluk politikası / G5 Compatibility Policy
 
