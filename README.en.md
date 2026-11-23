@@ -505,7 +505,8 @@ Exit codes: `0` report produced (no finding, or flag not given) · `10`
 `--fail-on-match` given and a finding exists · `1` error (file/rule/usage).
 The fields for `rules`, `scan`, `pcap`, and structured JSON error reports are
 defined by the [machine-readable JSON Schema](docs/api/axiom-scan-report.schema.json).
-`--help` and `--version` output plain text.
+New or changed fields require a schema-version increment. `--help` and
+`--version` output plain text.
 
 ### 14. Error Model: `Result<T, E>` and the `?` Operator
 

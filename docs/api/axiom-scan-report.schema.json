@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jaminakoai/axiom/blob/master/docs/api/axiom-scan-report.schema.json",
   "title": "axiom-scan JSON report schema v1",
-  "description": "Machine-readable contracts for axiom-scan rules, scan, pcap, and structured error reports. Help and version output are plain text.",
+  "description": "Machine-readable contracts for axiom-scan rules, scan, pcap, and structured error reports. Help and version output are plain text. Report objects reject unknown fields; any field-level contract change requires a schema_version increment.",
   "oneOf": [
     { "$ref": "#/$defs/rulesReport" },
     { "$ref": "#/$defs/scanReport" },

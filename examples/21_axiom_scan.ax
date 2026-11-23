@@ -300,8 +300,7 @@ fn cmd_pcap(rule_path: str, pcap_path: str) -> Result<int, str> {
 fn _dispatch() -> Result<int, str> {
     let argc = cli_args_count()
     if argc < 2 {
-        _usage()
-        return result_err_int("alt komut gerekli")
+        return result_err_int("alt komut gerekli; kullanim icin --help")
     }
 
     let cmd = cli_args_get(1)
@@ -346,8 +345,7 @@ fn _dispatch() -> Result<int, str> {
         return cmd_pcap(rules_path, target)
     }
 
-    _usage()
-    return result_err_int("bilinmeyen alt komut: " + cmd)
+    return result_err_int("bilinmeyen alt komut: " + cmd + "; kullanim icin --help")
 }
 
 // Cikis kodu sozlesmesi icin `int` main sart: Result<int,str> main'in ok

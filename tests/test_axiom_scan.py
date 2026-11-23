@@ -1119,6 +1119,9 @@ def test_error_paths(scanner, args, expect):
     res = _run(scanner, *args)
     assert res.returncode == 1, res.stdout + res.stderr
     assert expect in (res.stdout + res.stderr)
+    report = json.loads(res.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
 
 
 def test_invalid_rules_report_line(scanner, tmp_path):

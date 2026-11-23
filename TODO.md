@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 uyumluluk fixture harness'i, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **233 geçti, 0 başarısız** (`tests/test_compatibility_fixtures.py` dahil, 67,42 sn). |
+| Son hedefli test paketi | G5 uyumluluk fixture harness'i, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **233 geçti, 0 başarısız** (`tests/test_compatibility_fixtures.py` dahil, 67,45 sn). |
 
 ---
 
