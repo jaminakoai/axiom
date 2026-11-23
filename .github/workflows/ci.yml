@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: [main, master, develop]
+    tags: ["v*"]
   pull_request:
 
 concurrency:
@@ -96,6 +97,13 @@ jobs:
           python -m pip install -e ".[dev]"
       - name: LLVM testleri
         run: python -m pytest -q tests/test_llvm.py tests/test_llvm_dwarf.py
+      - name: Önceki minor release uyumluluk fixture'ları
+        run: |
+          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
+            python tools/check_compatibility_fixtures.py --require-current-release
+          else
+            python tools/check_compatibility_fixtures.py
+          fi
       - name: Tüm örnekler LLVM ile derlenmeli
         run: |
           set -e

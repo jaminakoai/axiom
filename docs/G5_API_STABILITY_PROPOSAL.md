@@ -230,9 +230,15 @@ mean supporting only two old versions of the stable `1.x` API.
 - [x] Bağımsız kullanıcı denemesinin v1.0 teknik kapısı olmadığı kararını
   VERSIONING ve doğrulama rehberiyle eşleştir. / Align VERSIONING and validation
   guidance with the decision that user trials are not a v1.0 technical gate.
-- [ ] Somut API envanterini, fixture formatını/doğrulayıcısını ve release
-  kapısını v1.0 readiness öncesi tamamla; v1.0 ve v1.1 fixture'ları
-  yayımlandığında önceki iki-minor kontrollerini v1.2 hazırlığında etkinleştir.
-  / Complete the concrete API inventory, fixture format/validator and release
-  gate before v1.0 readiness; activate previous-two-minor checks while
-  preparing v1.2, once v1.0 and v1.1 fixtures have been published.
+- [x] Kaynak tabanlı API inventory generator ve snapshot drift testi ekle;
+  fixture manifest şeması, yönergesi, doğrulayıcısı ve stable-tag CI kapısını
+  hazırla. Bunlar gerçek eski sürüm davranış kanıtı değildir.
+  / Add the source-based API inventory generator and snapshot drift check;
+  prepare the fixture manifest schema, guide, validator and stable-tag CI gate.
+  These do not constitute historical behavior evidence.
+- [ ] v1.0 öncesinde kararlı API allowlist'ini ve davranış/ownership/backend
+  sözleşmelerini yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok;
+  yayımlandıktan sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
+  / Publish the stable API allowlist and behavior/ownership/backend contracts
+  before v1.0. Real v1.0/v1.1 release fixtures do not exist yet; validate the
+  previous-two-minor run while preparing v1.2 after they are published.
