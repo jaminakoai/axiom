@@ -137,10 +137,10 @@ and has been corrected. These 360 builtins are outside the accepted
 scanner-first v1.0 allowlist and carry no stability promise in that release
 profile.
 
-Before `v1.0`, enumerate each selected scanner command, option, grammar form,
-exit code and report field, tie each promise to enforcing tests, and state the
-runtime/platform limits. The general Axiom grammar and stdlib remain outside
-this allowlist; this does not promise all 53 stdlib files wholesale.
+For the accepted scanner-first `v1.0` profile, each selected command, option,
+grammar form, exit code and report field is mapped to enforcing tests, including
+runtime and platform limits. The general Axiom grammar and stdlib remain outside
+this allowlist; it does not promise all 53 stdlib files wholesale.
 
 ## G5 uyumluluk politikası / G5 Compatibility Policy
 
@@ -212,16 +212,19 @@ mean supporting only two old versions of the stable `1.x` API.
   trials are optional product feedback, not a `v1.0` technical gate.
 - G4'ün ilk imzalı registry paketi yayımlandı ve kapandı. / G4's first signed
   registry package is published; the gate is complete.
-- `v1.0` öncesi her kararlı yüzeyin somut sembol/sözdizimi/şema envanteri,
-  fixture biçimi/doğrulayıcısı ve release kapısı hazırlanmalıdır. `v1.0` ve
-  `v1.1` fixture'ları yayımlandıktan sonra önceki iki minor sürüm kontrolü ilk
-  kez `v1.2` hazırlığında çalıştırılır. Bağımsız kullanıcı denemesi gönüllü ürün geri bildirimi olarak
-  kalır; kullanıcı kanıtı varmış gibi raporlanmamalıdır. / Before `v1.0`, list
-  concrete symbols, syntax and schemas for every stable surface and prepare the
-  fixture format, validator and release gate. Publish `v1.0` and `v1.1` fixtures;
-  first enforce previous-two-minor compatibility while preparing `v1.2`. External
-  trials remain optional feedback; do not claim user evidence that has not been
-  submitted.
+- `v1.0` öncesi teknik hazırlık tamamlandı: scanner-first kararlı yüzeyin
+  sembol/sözdizimi/şema envanteri, fixture biçimi/doğrulayıcısı ve release CI
+  kapısı hazır; G4 dağıtım kapısı da tamamlandı. `v1.0` henüz yayımlanmadı.
+  `v1.0` ve `v1.1` fixture'ları kendi release commit'lerine eklenecek; önceki iki
+  minor sürüm kontrolü ilk kez `v1.2` hazırlığında çalıştırılacak. Bağımsız
+  kullanıcı denemesi gönüllü ürün geri bildirimi olarak kalır; kullanıcı kanıtı
+  varmış gibi raporlanmamalıdır. / Technical preparation before `v1.0` is
+  complete: the scanner-first stable-surface inventory, fixture format/validator,
+  release CI gate, and G4 distribution gate are ready. `v1.0` has not been
+  released. `v1.0` and `v1.1` fixtures will be included in their respective
+  release commits; the previous-two-minor check first runs while preparing
+  `v1.2`. Independent user trials remain optional product feedback; do not claim
+  user evidence that has not been submitted.
 
 ## G5.1 kabul listesi / G5.1 Acceptance Checklist
 

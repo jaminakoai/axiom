@@ -18,8 +18,9 @@ Destek iddiaları doğrulanmış CI ve kullanıcı akışlarına dayanır.
 - `v1.0` yayımlanmış değildir. G3'ün iç teknik denetimi maintainer kararıyla
   kapatılmıştır; bu, bağımsız kullanıcı doğrulaması değildir. Bağımsız kullanıcı
   denemesi isteğe bağlı ürün geri bildirimi olarak kalır ve `v1.0` teknik kapısı
-  değildir. `v1.0` öncesi kamuya açık kararlı API envanteri, G4 dağıtım kapıları
-  ve aşağıdaki uyumluluk politikasının release kontrollerine bağlanması gerekir.
+  değildir. `v1.0` öncesi teknik koşullar tamamlandı: scanner-first kararlı API
+  envanteri ve release CI kapısı hazır, G4 dağıtım kapıları tamamlandı. Kararlılık
+  sözü `v1.0.0` yayımlandığında başlayacak.
 - `v1.0` sonrasında belgelenmiş kararlı yüzeyler SemVer'i izler. Kırıcı kararlı
   API değişikliği major sürüm, geriye uyumlu düzeltme patch sürümü, ekleme minor
   sürümü gerektirir. Kararlı API kaldırılmadan önce en az iki sonraki minor
@@ -59,8 +60,9 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
 - `v1.0` has not been released. The maintainer closed G3 with an internal
   technical audit; this is not independent user validation. An independent
   user trial remains optional product feedback, not a technical `v1.0` gate.
-  Before `v1.0`, publish the stable API inventory, satisfy G4 distribution
-  gates, and wire the compatibility policy below into release checks.
+  The pre-`v1.0` technical conditions are complete: the scanner-first stable API
+  inventory and release CI gate are ready, and G4 distribution gates are complete.
+  The stability promise begins when `v1.0.0` is published.
 - After `v1.0`, documented stable surfaces follow SemVer. Breaking stable API
   changes require a major release, backward-compatible fixes a patch release,
   and additions a minor release. Keep deprecated stable APIs for at least two
