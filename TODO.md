@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **236 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py` ve `tests/test_compatibility_fixtures.py` dahil, 67,59 sn; PCAP sıfır uzunluklu kayıt sayımı ve bozuk/kesik kayıtların fail-closed davranışı dahil). |
+| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **239 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 68,02 sn; PCAP boş kayıt, sıfır tabanlı indeks, linktype ve kayıt boyutu sınırı dahil). |
 
 ---
 
@@ -432,7 +432,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   [fixture yönergesi](tests/fixtures/api_compatibility/README.md), doğrulayıcı ve
   GitHub tag/CI kapısı hazırlandı; synthetic C/LLVM, paket ve scanner vakaları
   test ediliyor. Symlink/path traversal, hash uyuşmazlığı ve tag/package sürüm
-  uyuşmazlığı fail-closed reddediliyor.
+  uyuşmazlığı fail-closed reddediliyor. Yayımlanan Draft 2020-12 JSON Schema'nın
+  kendisi ve kaynak/paket/scanner manifest şekilleri artık testte doğrulanıyor.
 - [ ] Gerçek `v1.0` ve `v1.1` fixture'ları henüz yok; yayımlandıklarında önceki
   iki-minor CI kontrolünü v1.2 hazırlığında etkinleştir. `ResultInt/Str` + `?`
   ve `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyonlarıyla doğrulandı.
@@ -442,9 +443,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Scanner-first dikey dilim için source/test kanıtlarına bağlı, açıkça
   bağlayıcı olmayan [v1.0 candidate allowlist](docs/api/v1.0-stability-candidate.json)
   hazırla ve referanslarını CI testinde doğrula. Classic PCAP kapsamı endian,
-  zaman çözünürlüğü, sıfır uzunluklu kayıt sayımı, bozuk/kesik kayıt reddi,
-  PCAPNG reddi ve stream reassembly yapılmamasıyla açıkça sınırlandırıldı;
-  aday sözleşme referansları ve hedefli paket yerelde yeniden doğrulandı.
+  zaman magic'i (fraction doğrulanmaz/raporlanmaz), opak kayıt baytları/linktype'ın yok sayılması, 65.535 baytlık
+  kayıt sınırı, sıfır uzunluklu kayıt sayımı, sıfır tabanlı eşleşme indeksi,
+  bozuk/kesik kayıt reddi, PCAPNG reddi ve stream reassembly yapılmamasıyla
+  açıkça sınırlandırıldı. Aday sözleşme referansları ve test kanıtları hedefli
+  paketle yeniden doğrulanıyor.
 - [ ] v1.0 kararlı allowlist'i için seçilen her sembol/gramer/komut/şema alanını
   davranış, hata/sentinel, sahiplik/lifetime, C/LLVM ve ilgili platform/thread
   sözleşmesiyle; enforcement testlerine bağlı şekilde incele. Allowlist dışında

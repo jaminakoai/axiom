@@ -33,6 +33,65 @@ def _write_manifest(release: Path, version: str, **groups) -> dict:
     return manifest
 
 
+def test_fixture_manifest_schema_validates_current_manifest_shapes():
+    from jsonschema import Draft202012Validator
+
+    schema_path = (
+        Path(__file__).resolve().parent.parent
+        / "docs"
+        / "api"
+        / "compat-fixture-manifest.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    Draft202012Validator.check_schema(schema)
+    validator = Draft202012Validator(schema)
+    digest = "a" * 64
+    valid_manifest = {
+        "schema_version": 1,
+        "release": "1.0.0",
+        "source_examples": [{
+            "id": "hello",
+            "source": "sources/hello.ax",
+            "sha256": digest,
+            "backends": ["c", "llvm"],
+            "stdout": "hello\\n",
+            "exit_code": 0,
+        }],
+        "package_projects": [{
+            "id": "package",
+            "root": "packages/sample",
+            "tree_sha256": digest,
+            "entry": "src/main.ax",
+            "backends": ["c"],
+            "stdout": "",
+            "exit_code": 0,
+        }],
+        "scanner_cases": [{
+            "id": "scanner",
+            "rules": "scan/rules.yar",
+            "rules_sha256": digest,
+            "target": "scan/target.bin",
+            "target_sha256": digest,
+            "expected_json": "scan/expected.json",
+            "expected_json_sha256": digest,
+            "backends": ["llvm"],
+            "exit_code": 0,
+        }],
+    }
+    assert validator.is_valid(valid_manifest)
+    assert not validator.is_valid({**valid_manifest, "unexpected": True})
+    assert not validator.is_valid({
+        **valid_manifest,
+        "source_examples": [],
+        "package_projects": [],
+        "scanner_cases": [],
+    })
+    assert not validator.is_valid({
+        **valid_manifest,
+        "scanner_cases": [{**valid_manifest["scanner_cases"][0], "target_sha256": "bad"}],
+    })
+
+
 def test_previous_minor_gate_starts_only_after_two_stable_minor_releases():
     assert compatibility.canonical_version("0.5.0a0") == "0.5.0-alpha"
     assert compatibility.canonical_version("1.2.0rc1") == "1.2.0-rc.1"

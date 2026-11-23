@@ -68,3 +68,6 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
     assert surface["input_contract"]["pcap"]["stream_reassembly"] is False
     assert surface["input_contract"]["pcap"]["packet_count_includes_zero_length_records"] is True
     assert surface["input_contract"]["pcap"]["malformed_or_truncated_records"].startswith("rejected")
+    assert surface["input_contract"]["pcap"]["matched_packet_index_base"] == 0
+    assert surface["input_contract"]["pcap"]["maximum_captured_record_bytes"] == 65535
+    assert "neither validated nor reported" in surface["input_contract"]["pcap"]["timestamp_handling"]

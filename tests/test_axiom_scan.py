@@ -1072,6 +1072,46 @@ def test_scan_pcap_rejects_record_over_custom_snaplen(scanner, tmp_path):
     assert '"ok":true' not in result.stdout
 
 
+def test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "large-record.pcap"
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 131072, 999)
+    # The header promises a record over the implementation's fixed cap; the
+    # reader must reject it before trying to read or allocate the payload.
+    record_header = struct.pack("<IIII", 1700000000, 0, 65536, 65536)
+    pcap.write_bytes(header + record_header)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert '"ok":true' not in result.stdout
+
+
+def test_scan_pcap_ignores_linktype_and_scans_captured_bytes(scanner, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "unknown-linktype.pcap"
+    payload = b"NEEDLE"
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 999)
+    record = struct.pack("<IIII", 1700000000, 0, len(payload), len(payload)) + payload
+    pcap.write_bytes(header + record)
+
+    result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    assert report["packet_count"] == 1
+    assert report["match_count"] == 1
+    assert report["packets"][0]["index"] == 0
+
+
 def test_scan_rejects_pcapng(scanner, tmp_path):
     rules = tmp_path / "rules.yar"
     rules.write_text(
