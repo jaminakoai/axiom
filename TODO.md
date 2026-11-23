@@ -12,13 +12,15 @@
 | Sürüm | `v1.0.0-rc1` (aday; kararlı yayın yapılmadı) |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — Scanner-first v1.0 teknik hazırlığı tamam; RC doğrulanıyor, kararlı yayın kararı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `2d4d075`: Python 3.10–3.13'in her birinde **1669 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı** |
-| Son tam CI tabanı | `2d4d075` [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı**; RC adayının kendi CI'si henüz bekliyor |
-| Son başarılı tam CI | `2d4d075` [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı** |
-| Son platform smoke | `2d4d075`, Linux/Windows/macOS native smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `16cc2ac`: Python 3.10–3.13'in her birinde **1669 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı** |
+| Son tam CI tabanı | `16cc2ac` [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı**; RC adayının kendi CI'si henüz bekliyor |
+| Son başarılı tam CI | `16cc2ac` [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı** |
+| Son platform smoke | `16cc2ac`, Linux/Windows/macOS native smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759), **3/3 başarılı** |
+| RC tam yerel test | `release/v1.0.0-rc1`: **1696 geçti, 0 hata, 0 skip** (1373,68 sn); `make bootstrap` dahil |
+| v1.0.0 fixture ön kontrolü | `--current-version 1.0.0 --require-current-release`: kaynak, paket ve scanner/schema vakaları C/LLVM'de **3/3 geçti**; stable tag yayımlanmadı |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `2d4d075` — [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı**; her Python sürümünde 1669 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540) **3/3 başarılı** |
+| Son kaydedilmiş başarılı CI | `16cc2ac` — [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı**; her Python sürümünde 1669 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759) **3/3 başarılı** |
 | Son tam yerel test paketi | Önceki tam yerel koşu **1686 geçti, 1 başarısız**; README kapsamını değiştiren düzenlemeden kalan G5 belge beklentisi düzeltildi ve G5/docs/spec grubu **42 geçti**. En güncel kod commit'i tam GitHub CI matrisinde doğrulandı. |
 | Son hedefli test paketi | Tarihî scanner rapor şeması pinleme ve G5/docs/spec doğrulaması **57 geçti**; `make fmt-check` ve `git diff --check` temiz. |
 
@@ -1410,8 +1412,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI tabanı | `2d4d075`: Python 3.10–13'te her biri 1669 geçti/27 skip; doküman 55, YARA differential 29, sanitizer, LLVM/DWARF ve biçimlendirme başarılı; 7/7 ([run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054)) | Run 45237482054 | 2000 |
-| Son native platform smoke tabanı | `2d4d075`: scanner + PCAP + registry ve build/run Linux/Windows/macOS 3/3 başarılı ([run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)) | Run 45237481540 | — |
+| Son tamamlanmış master CI tabanı | `16cc2ac`: Python 3.10–13'te her biri 1669 geçti/27 skip; doküman 55, YARA differential 29, sanitizer, LLVM/DWARF ve biçimlendirme başarılı; 7/7 ([run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747)) | Run 45241520747 | 2000 |
+| Son native platform smoke tabanı | `16cc2ac`: scanner + PCAP + registry ve build/run Linux/Windows/macOS 3/3 başarılı ([run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759)) | Run 45241520759 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 446 (v0.5.0-alpha kaynak envanteri) | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1459,8 +1461,8 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
-da tamamlandı; son kaydedilmiş tam CI `2d4d075` 7/7 başarılı, son doküman
-commit'i `2d4d075` için platform smoke 3/3 başarılıdır. G5 teknik hazırlığı
+da tamamlandı; son kaydedilmiş tam CI `16cc2ac` 7/7 başarılı, son doküman
+commit'i `16cc2ac` için platform smoke 3/3 başarılıdır. G5 teknik hazırlığı
 tamamlandı; `1.0.0-rc1` adayı ayrı worktree'de fixture ve sürüm belgeleriyle
 hazırlanıyor. Kararlı yayın kararı maintainer'a aittir. Yeni YARA sözdizimi
 differential kanıt ve açık kapsam sınırlarıyla eklenir.

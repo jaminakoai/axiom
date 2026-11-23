@@ -184,7 +184,7 @@ design*; measurements and caveats are in "Claims and evidence" below:
   unverified.**
 * **Windows:** Native example build/run and the documented harmless
   `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
-  and MSVC/Windows SDK ([run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)).
+  and MSVC/Windows SDK ([run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759)).
   The full suite, real file/PCAP workflow, and manual installation are not yet
   verified.
 * **macOS:** The same native build/run and sentinel smoke tests pass in CI with
@@ -676,7 +676,7 @@ rejected.
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `2d4d075`:
+All 7 jobs passed in the latest completed run for commit `16cc2ac`:
 
 | Job | Status |
 |---|---|
@@ -685,9 +685,9 @@ All 7 jobs passed in the latest completed run for commit `2d4d075`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Latest verified CI: [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054)
-(`master`, SHA `2d4d075`; 1669 passed/27 environment skips on Python 3.10–3.13).
-Native platform smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)
+Latest verified CI: [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747)
+(`master`, SHA `16cc2ac`; 1669 passed/27 environment skips on Python 3.10–3.13).
+Native platform smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759)
 passed 3/3 on Linux, Windows, and macOS. The `1.0.0-rc1` candidate is prepared
 on top of this verified baseline; its own CI result will be checked separately.
 
@@ -739,11 +739,11 @@ full CI and platform smoke evidence is listed below.
 
 ### 🟡 In progress / partial
 
-- **CI:** `2d4d075` green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `16cc2ac` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540));
+  on a real Windows runner ([platform smoke run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.
