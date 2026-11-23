@@ -184,7 +184,7 @@ design*; measurements and caveats are in "Claims and evidence" below:
   unverified.**
 * **Windows:** Native example build/run and the documented harmless
   `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
-  and MSVC/Windows SDK ([run 45206853360](https://github.com/jaminakoai/axiom/actions/runs/45206853360)).
+  and MSVC/Windows SDK ([run 45214367823](https://github.com/jaminakoai/axiom/actions/runs/45214367823)).
   The full suite, real file/PCAP workflow, and manual installation are not yet
   verified.
 * **macOS:** The same native build/run and sentinel smoke tests pass in CI with
@@ -676,7 +676,7 @@ rejected.
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `127a505`:
+All 7 jobs passed in the latest completed run for commit `4d1963b`:
 
 | Job | Status |
 |---|---|
@@ -685,9 +685,9 @@ All 7 jobs passed in the latest completed run for commit `127a505`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Latest verified CI: [run 45206853586](https://github.com/jaminakoai/axiom/actions/runs/45206853586)
-(`master`, SHA `127a505`; 1665 passed/27 environment skips on Python 3.10–3.13).
-Native platform smoke [run 45206853360](https://github.com/jaminakoai/axiom/actions/runs/45206853360)
+Latest verified CI: [run 45214367304](https://github.com/jaminakoai/axiom/actions/runs/45214367304)
+(`master`, SHA `4d1963b`; 1665 passed/27 environment skips on Python 3.10–3.13).
+Native platform smoke [run 45214367823](https://github.com/jaminakoai/axiom/actions/runs/45214367823)
 passed 3/3 on Linux, Windows, and macOS.
 
 Six root causes fixed on the way here (details: report §9–§12):
@@ -704,7 +704,7 @@ Six root causes fixed on the way here (details: report §9–§12):
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
 The cited 1034- and 1361-test runs are historical. Current full CI and platform
-smoke evidence is linked above for `127a505`.
+smoke evidence is linked above for `4d1963b`.
 
 ---
 
@@ -738,11 +738,11 @@ smoke evidence is linked above for `127a505`.
 
 ### 🟡 In progress / partial
 
-- **CI:** `127a505` green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `4d1963b` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45206853360](https://github.com/jaminakoai/axiom/actions/runs/45206853360));
+  on a real Windows runner ([platform smoke run 45214367823](https://github.com/jaminakoai/axiom/actions/runs/45214367823));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.
