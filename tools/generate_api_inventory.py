@@ -83,6 +83,17 @@ def _builtin_inventory() -> tuple[list[dict[str, object]], list[dict[str, object
     if len(assignments) != 1:
         raise ValueError("expected one BUILTIN_FUNCTIONS source mapping")
     builtin_map = ast.literal_eval(assignments[0])
+    special_names = {
+        node.test.comparators[0].value
+        for node in ast.walk(checker)
+        if isinstance(node, ast.If)
+        and isinstance(node.test, ast.Compare)
+        and isinstance(node.test.left, ast.Attribute)
+        and node.test.left.attr == "callee"
+        and len(node.test.comparators) == 1
+        and isinstance(node.test.comparators[0], ast.Constant)
+        and isinstance(node.test.comparators[0].value, str)
+    }
     builtins = [
         {
             "name": name,
@@ -93,22 +104,32 @@ def _builtin_inventory() -> tuple[list[dict[str, object]], list[dict[str, object
         }
         for name, (parameter_types, return_type) in sorted(builtin_map.items())
     ]
-    special = [
-        {
-            "name": "len",
+    special_signatures = {
+        "len": {
             "signature": "(str | T[]) -> int",
             "constraint": "exactly one argument; T[] is any array type",
         },
-        {
-            "name": "array_push",
+        "array_push": {
             "signature": "(T[], T) -> T[]",
             "constraint": "exactly two arguments; element type must match array element type",
         },
-        {
-            "name": "thread_create",
+        "thread_create": {
             "signature": "(fn(int) -> void | int, int) -> int",
             "constraint": "first argument is a function identifier with one int parameter and void or int return",
         },
+    }
+    if special_names != set(special_signatures):
+        raise ValueError(
+            "special checker builtins changed; update their inventory and contract tests: "
+            f"found={sorted(special_names)} expected={sorted(special_signatures)}"
+        )
+    special = [
+        {
+            "name": name,
+            **signature,
+            "classification": "unclassified_checker_special_builtin",
+        }
+        for name, signature in sorted(special_signatures.items())
     ]
     return builtins, special
 

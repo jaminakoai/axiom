@@ -131,6 +131,40 @@ def test_rt_prefixed_checker_builtin_is_callable_from_axiom_source():
     assert result.returncode == 0, result.stderr
 
 
+def test_special_builtin_inventory_matches_checker_acceptance_rules():
+    source = """\
+fn worker(value: int) -> int { return value; }
+fn main() -> int {
+    let values: int[] = [];
+    let appended = array_push(values, 1);
+    let count = len(appended);
+    let worker_id = thread_create(worker, 0);
+    return count - 1;
+}
+"""
+    with tempfile.TemporaryDirectory() as directory:
+        valid = Path(directory) / "special_builtins.ax"
+        valid.write_text(source, encoding="utf-8")
+        accepted = subprocess.run(
+            ["bin/axiom", "check", str(valid)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        invalid = Path(directory) / "invalid_len.ax"
+        invalid.write_text("fn main() -> int { return len(4); }\n", encoding="utf-8")
+        rejected = subprocess.run(
+            ["bin/axiom", "check", str(invalid)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    assert accepted.returncode == 0, accepted.stderr
+    assert rejected.returncode != 0
+
+
 def test_readme_stdlib_counts_match_the_source_tree():
     source_files = list((ROOT / "std").rglob("*.ax"))
     function_declarations = sum(

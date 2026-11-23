@@ -12516,19 +12516,22 @@
   ],
   "compiler_special_builtins": [
     {
-      "name": "len",
-      "signature": "(str | T[]) -> int",
-      "constraint": "exactly one argument; T[] is any array type"
-    },
-    {
       "name": "array_push",
       "signature": "(T[], T) -> T[]",
-      "constraint": "exactly two arguments; element type must match array element type"
+      "constraint": "exactly two arguments; element type must match array element type",
+      "classification": "unclassified_checker_special_builtin"
+    },
+    {
+      "name": "len",
+      "signature": "(str | T[]) -> int",
+      "constraint": "exactly one argument; T[] is any array type",
+      "classification": "unclassified_checker_special_builtin"
     },
     {
       "name": "thread_create",
       "signature": "(fn(int) -> void | int, int) -> int",
-      "constraint": "first argument is a function identifier with one int parameter and void or int return"
+      "constraint": "first argument is a function identifier with one int parameter and void or int return",
+      "classification": "unclassified_checker_special_builtin"
     }
   ]
 }
