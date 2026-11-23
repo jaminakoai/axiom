@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `ce4f04e`: Python 3.10–3.13 matrisinde her sürüm **1628 geçti, 27 skip**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45166221945](https://github.com/jaminakoai/axiom/actions/runs/45166221945), **7/7 başarılı** |
-| Son CI denemesi | `ce4f04e` [run 45166221945](https://github.com/jaminakoai/axiom/actions/runs/45166221945), **7/7 başarılı** |
-| Son başarılı tam CI | `ce4f04e` [run 45166221945](https://github.com/jaminakoai/axiom/actions/runs/45166221945), **7/7 başarılı** |
-| Son platform smoke | `ce4f04e`, Linux/Windows/macOS native smoke [run 45166221871](https://github.com/jaminakoai/axiom/actions/runs/45166221871), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `d6150a6`: Python 3.10–3.13 matrisinde her sürüm **1649 geçti, 27 skip**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45173948460](https://github.com/jaminakoai/axiom/actions/runs/45173948460), **7/7 başarılı** |
+| Son CI denemesi | `d6150a6` [run 45173948460](https://github.com/jaminakoai/axiom/actions/runs/45173948460), **7/7 başarılı** |
+| Son başarılı tam CI | `d6150a6` [run 45173948460](https://github.com/jaminakoai/axiom/actions/runs/45173948460), **7/7 başarılı** |
+| Son platform smoke | `d6150a6`, Linux/Windows/macOS native smoke [run 45173948680](https://github.com/jaminakoai/axiom/actions/runs/45173948680), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `ce4f04e` — [run 45166221945](https://github.com/jaminakoai/axiom/actions/runs/45166221945), **7/7 başarılı**; Python 3.10–3.13'in her birinde 1628 geçti / 27 ortam skip'i |
+| Son kaydedilmiş başarılı CI | `d6150a6` — [run 45173948460](https://github.com/jaminakoai/axiom/actions/runs/45173948460), **7/7 başarılı**; Python 3.10–3.13'in her birinde 1649 geçti / 27 ortam skip'i |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
 | Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **260 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 68,13 sn; manifest schema/yükleyici paritesi, metadata sayı/kaçış sınırları, CLI hata/help alias kontrolleri C/LLVM’de, PCAP 2.4/snaplen sınırları, fail-on-match paritesi, kayıtlar arası eşleşmeme, boş kayıt, sıfır tabanlı indeks, linktype/kayıt boyutu ve şemalı hata raporları dahil). |
 
