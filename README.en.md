@@ -650,15 +650,15 @@ The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
 **1484 passed, 0 failed/skipped** (1344.44 s). The current YARA/scanner/differential/stress/backend-parity
 suite passed **490 tests** (223.89 s). The `058484e` CI counts are historical.
-The latest commit `55217e8` passed **7/7** GitHub Actions CI jobs and **3/3**
-Linux/Windows/macOS platform smoke jobs; the latest focused local suite passed
-**188/188**.
+The latest successful CI for `5eddc9d` passed **7/7** GitHub Actions jobs and
+**3/3** Linux/Windows/macOS platform smoke jobs; the current focused local suite
+passed **198/198**.
 The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `55217e8`:
+All 7 jobs passed in the latest completed run for commit `5eddc9d`:
 
 | Job | Status |
 |---|---|
@@ -667,8 +667,8 @@ All 7 jobs passed in the latest completed run for commit `55217e8`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Latest verified CI: [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587)
-(`master`, SHA `55217e8`). Native platform smoke [run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888)
+Latest verified CI: [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315)
+(`master`, SHA `5eddc9d`). Native platform smoke [run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097)
 passed 3/3 on Linux, Windows, and macOS.
 
 Six root causes fixed on the way here (details: report §9–§12):
@@ -685,7 +685,7 @@ Six root causes fixed on the way here (details: report §9–§12):
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
 The cited 1034- and 1361-test runs are historical. Current full CI and platform
-smoke evidence is linked above for `55217e8`.
+smoke evidence is linked above for `5eddc9d`.
 
 ---
 
@@ -714,11 +714,11 @@ smoke evidence is linked above for `55217e8`.
 
 ### 🟡 In progress / partial
 
-- **CI:** `55217e8` green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `5eddc9d` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888));
+  on a real Windows runner ([platform smoke run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.

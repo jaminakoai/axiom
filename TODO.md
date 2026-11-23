@@ -12,15 +12,15 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `55217e8`: Python 3.10–3.13 matrisi, ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587), **7/7 başarılı** |
-| Son CI denemesi | `55217e8` [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587), **7/7 başarılı** |
-| Son başarılı tam CI | `55217e8` [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587), **7/7 başarılı** |
-| Son platform smoke | `55217e8`, Linux/Windows/macOS native smoke [run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `5eddc9d`: Python 3.10–3.13 matrisi, ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
+| Son CI denemesi | `5eddc9d` [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
+| Son başarılı tam CI | `5eddc9d` [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
+| Son platform smoke | `5eddc9d`, Linux/Windows/macOS native smoke [run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `55217e8` — [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587), **7/7 başarılı** |
+| Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | Son doküman ve scanner açıklama değişiklikleri: **188 geçti, 0 başarısız** (`tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 22,51 sn) |
+| Son hedefli test paketi | G5 API, `Result` interoperability, TR/EN docs ve scanner: **198 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 37,01 sn) |
 
 ---
 
@@ -426,7 +426,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
 - [ ] Somut public API sembol/sözdizimi/şema envanterini çıkar ve önceki iki
   minor sürüm fixture kontrolünü v1.0 readiness CI/release sürecine bağla;
-  stdlib görünürlüğü ile `Result`/`Option` sözleşmelerini de netleştir.
+  stdlib sembol görünürlüğünü ve somut `OptionInt/Str/Bool` sözleşmesini netleştir.
+  `ResultInt` yapısal `Result` + `?` uyumluluğu C/LLVM regresyon testiyle doğrulandı.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
   ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 
@@ -441,8 +442,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 isteğe bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir.
 G4 imzalı örnek paket yayını tamamlandı. G5 API kararlılık politikası belirlendi;
 somut sembol envanteri, CI fixture uygulaması ve doğrulanmış gerçek workflow
-engeli açık. GitHub açık issue araması kullanıcı ihtiyacı kanıtı vermedi; dil/stdlib
-özelliği seçmeden önce somut workflow girdisi gerekir. G1 ve G2 kapandı.
+engeli açık. GitHub açık ve kapalı issue aramaları kullanıcı ihtiyacı kanıtı
+vermedi; dil/stdlib özelliği seçmeden önce somut workflow girdisi gerekir. G1 ve G2 kapandı.
 G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector

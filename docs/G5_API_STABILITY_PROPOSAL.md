@@ -31,29 +31,40 @@ close those gates.
 | Deneysel hedefler / Experimental targets | [`VERSIONING.md`](VERSIONING.md), README platform tablosu | Linux ARM64/AArch64/WASM deneysel etiketleriyle kararlılık sözünün dışında / Experimental targets remain outside the stability promise |
 
 Bu, kaynaklara bağlı ilk somut yüzey haritasıdır; henüz tüm fonksiyon imzaları,
-CLI bayrakları veya test eşlemesi değildir. Özellikle 53 `std/**/*.ax` dosyasında
-`pub`/`export` görünürlüğü yok ve dil global sembol alanı kullanıyor. Ayrıca
-şartname `Result<T, E>` anlatırken `std/core/result.ax` `ResultInt`/`ResultStr`
-kullanıyor; `Option` da somut tiplere dayanıyor. Bu fark ve sembol görünürlüğü
-1.0 öncesi çözümlenmeden stdlib'in tamamına kararlılık sözü verilmemeli.
+CLI bayrakları veya test eşlemesi değildir. 53 `std/**/*.ax` dosyasında
+`pub`/`export` bildirimi yok ve semboller global isim alanını kullanıyor; bu
+nedenle yalnız tek tek envanterlenen semboller kararlı API sayılmalı.
 
-Before `v1.0`, complete this map with every stable function signature, grammar
-form, CLI flag, exit code and schema field, each tied to tests that enforce the
-promise. Resolve the generic `Result<T, E>` specification versus concrete
-`ResultInt`/`ResultStr` implementation and define how stdlib symbols are
-publicly exposed; do not promise all 53 files as a single stable surface.
+Dil şartnamesindeki `Result<T, E>` yapısal sözleşmedir (`is_ok`, `value`,
+`error` alanları). `std/core/result.ax` aynı alanları sunan `ResultInt` ve
+`ResultStr` kolaylık tipleri sağlar; bu tek başına çelişki değildir.
+[`test_stdlib_result_int_and_str_interoperate_with_question_mark`](../tests/test_error_model.py)
+regresyonu bunların `?` ile C/LLVM uyumluluğunu doğrular. `Option` şartnamede
+genel tip olarak tanımlı değildir; stdlib şu an `OptionInt`, `OptionStr` ve
+`OptionBool` somut tiplerini sunar ve her biri kararlı API envanterinde ayrı
+listelenmelidir.
 
-This source-linked map is a concrete first inventory, but it does not yet list
-every function signature, grammar form, CLI flag, exit code or schema field.
-The 53 `std/**/*.ax` files have no `pub`/`export` declarations and symbols share
-a global namespace. The specification describes generic `Result<T, E>`, while
-`std/core/result.ax` implements `ResultInt`/`ResultStr`; `Option` also uses
-concrete types. Resolve these visibility and type-contract gaps before declaring
-the whole standard library stable.
+This source-linked map is concrete but does not yet list every function
+signature, grammar form, CLI flag, exit code, or test mapping. The 53
+`std/**/*.ax` files have no `pub`/`export` declarations, and symbols share a
+global namespace, so only individually inventoried symbols should be treated
+as stable.
+
+The language specification defines `Result<T, E>` structurally (`is_ok`,
+`value`, and `error` fields). `std/core/result.ax` provides convenience types
+`ResultInt` and `ResultStr` with those fields; this is not inherently a
+contradiction. The regression
+`test_stdlib_result_int_and_str_interoperate_with_question_mark` in
+`tests/test_error_model.py` confirms their `?` interoperability on C and LLVM.
+The specification does not define a generic `Option`; stdlib helpers are
+concrete `OptionInt`, `OptionStr`, and `OptionBool` types that must be listed
+individually in the stable API inventory.
 
 Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
-and schema field, and tie each promise to tests that enforce it. Do not treat
-this initial inventory as a completed stability manifest.
+and schema field, tie each promise to enforcing tests, and define the stable
+boundary for concrete `Option` helpers and stdlib symbols. Do not treat this
+initial inventory as a completed stability manifest or promise all 53 stdlib
+files wholesale.
 
 ## G5 uyumluluk politikası / G5 Compatibility Policy
 

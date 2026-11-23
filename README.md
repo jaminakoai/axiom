@@ -646,14 +646,14 @@ kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundad
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
 **1484 geçti, 0 hata/skip** (1344,44 sn). Güncel YARA/scanner/differential/stress/
 backend parity paketi **490 geçti** (223,89 sn). `058484e` CI sayıları tarihsel
-kaldı. En son `55217e8` commit'i GitHub Actions CI'da **7/7**, platform smoke'ta
-Linux/Windows/macOS **3/3** geçti; yerel son hedefli test paketi **188/188** geçti.
+kaldı. En son başarılı `5eddc9d` CI'si **7/7**, platform smoke'ta
+Linux/Windows/macOS **3/3** geçti; güncel yerel hedefli test paketi **198/198** geçti.
 YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`55217e8` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`5eddc9d` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -662,8 +662,8 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan CI: [run 45138307587](https://github.com/jaminakoai/axiom/actions/runs/45138307587)
-(`master`, SHA `55217e8`). Native platform smoke [run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888)
+Son doğrulanan CI: [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315)
+(`master`, SHA `5eddc9d`). Native platform smoke [run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097)
 ile Linux, Windows ve macOS'ta 3/3 başarılıdır.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
@@ -680,7 +680,7 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
 çıkmasını sağladı. 1034 ve 1361 testli koşular tarihsel kayıttır; güncel tam CI
-ve platform smoke kanıtları yukarıdaki `55217e8` bağlantılarındadır.
+ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
 
 ---
 
@@ -708,11 +708,11 @@ ve platform smoke kanıtları yukarıdaki `55217e8` bağlantılarındadır.
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **CI:** `55217e8` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
+- **CI:** `5eddc9d` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
 - **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
-  duman testi geçti ([platform smoke run 45138307888](https://github.com/jaminakoai/axiom/actions/runs/45138307888));
+  duman testi geçti ([platform smoke run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097));
   tam test paketi ve `axiom-scan` doğrulanmadı.
 - **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
   `axiom-scan` doğrulanmadı.

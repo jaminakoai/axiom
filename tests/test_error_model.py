@@ -77,6 +77,77 @@ def test_result_question_mark_basic_flow():
     assert "FALLBACK: -1" in res.stdout
 
 
+@pytest.mark.parametrize("backend", ["c", "llvm"])
+def test_stdlib_result_int_and_str_interoperate_with_question_mark(backend):
+    """Concrete stdlib Result types obey the structural contract on both backends."""
+    src = """
+    import "std/core/result"
+
+    fn fail_int() -> ResultInt { return err_int("bad") }
+    fn success_int() -> ResultInt { return ok_int(6) }
+
+    fn relay_int_error() -> ResultInt {
+        defer { print("DEFER_INT") }
+        let value = fail_int()?
+        return ok_int(value + 1)
+    }
+
+    fn relay_int_success() -> ResultInt {
+        let value = success_int()?
+        return ok_int(value + 1)
+    }
+
+    fn fail_str() -> ResultStr { return err_str("bad string") }
+    fn success_str() -> ResultStr { return ok_str("good") }
+
+    fn relay_str_error() -> ResultStr {
+        defer { print("DEFER_STR") }
+        let value = fail_str()?
+        return ok_str(value)
+    }
+
+    fn relay_str_success() -> ResultStr {
+        let value = success_str()?
+        return ok_str(value + "!")
+    }
+
+    fn main() -> int {
+        let int_ok = relay_int_success()
+        let int_err = relay_int_error()
+        let str_ok = relay_str_success()
+        let str_err = relay_str_error()
+        print("INT_VALUE:", int_ok.value)
+        print("INT_ERROR:", int_err.error)
+        print("STR_VALUE:", str_ok.value)
+        print("STR_ERROR:", str_err.error)
+        return 0
+    }
+    """
+    with tempfile.NamedTemporaryFile("w", suffix=".ax", delete=False, encoding="utf-8") as fh:
+        fh.write(src)
+        path = fh.name
+    out = path + ".bin"
+    try:
+        build = subprocess.run(
+            [str(AXIOM), "build", path, f"--backend={backend}", "-o", out],
+            capture_output=True, text=True, timeout=240,
+            env={**os.environ, "PYTHONPATH": str(ROOT)},
+        )
+        assert build.returncode == 0, build.stdout + build.stderr
+        run = subprocess.run([out], capture_output=True, text=True, timeout=60)
+        assert run.returncode == 0, run.stdout + run.stderr
+        assert "INT_VALUE: 7" in run.stdout
+        assert "INT_ERROR: bad" in run.stdout
+        assert "STR_VALUE: good!" in run.stdout
+        assert "STR_ERROR: bad string" in run.stdout
+        assert "DEFER_INT" in run.stdout
+        assert "DEFER_STR" in run.stdout
+    finally:
+        os.remove(path)
+        if os.path.exists(out):
+            os.remove(out)
+
+
 def test_question_mark_requires_result_returning_function():
     src = """
     import "std/core/error"

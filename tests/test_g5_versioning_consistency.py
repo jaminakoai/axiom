@@ -1,5 +1,6 @@
 """Keep active G5 versioning and user-validation claims aligned."""
 
+import re
 from pathlib import Path
 
 
@@ -57,9 +58,23 @@ def test_inventory_records_real_stdlib_and_abi_boundaries():
     assert "53 `std/**/*.ax`" in policy
     assert "`pub`/`export`" in policy
     assert "`Result<T, E>`" in policy
-    assert "`ResultInt`/`ResultStr`" in policy
+    assert "`ResultInt`" in policy
+    assert "`ResultStr`" in policy
     assert "A symbol's presence in `std/` alone does not promise stability" in policy
     assert "only per fully specified target" in policy
+
+
+def test_readme_stdlib_counts_match_the_source_tree():
+    source_files = list((ROOT / "std").rglob("*.ax"))
+    function_declarations = sum(
+        len(re.findall(r"^\s*fn\s+[A-Za-z_][A-Za-z0-9_]*", path.read_text(encoding="utf-8"), re.M))
+        for path in source_files
+    )
+    assert len(source_files) == 53
+    assert function_declarations == 446
+
+    assert "53 stdlib kaynak dosyası / 446 fonksiyon bildirimi" in _normalized("README.md")
+    assert "53 standard-library source files / 446 function declarations" in _normalized("README.en.md")
 
 
 def test_scan_docs_match_schema_and_byte_buffer_behavior():
