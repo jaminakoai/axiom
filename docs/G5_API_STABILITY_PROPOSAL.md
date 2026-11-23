@@ -239,6 +239,9 @@ mean supporting only two old versions of the stable `1.x` API.
 - [x] Mevcut test/source kanıtını API yüzeylerine göre kaydet ve kanıtı
   kararlılık ilanından ayrı tut. / Record current test/source evidence by API
   surface and keep it separate from stability declarations.
+- [x] `axiom-scan` rules/scan/pcap/structured-error JSON Schema'sını yayımla ve
+  rapor testlerini şemaya göre doğrula. / Publish the `axiom-scan` JSON Schema
+  for rules/scan/pcap/structured-error reports and validate report tests against it.
 - [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
   semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
   constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
@@ -247,7 +250,7 @@ mean supporting only two old versions of the stable `1.x` API.
   record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
   platform/thread constraints and enforcing tests. Entries outside the
   allowlist are not stable; all 844 entries need not be separately labeled.
-- [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock/scanner şemalarını
+- [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock şemalarını
   yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan
   sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. / Publish the
   stable allowlist and CLI/manifest/lock/scanner schemas before v1.0. Real

@@ -17,6 +17,7 @@
 //   1  = hata (dosya yok, kural bozuk, kullanim hatasi)
 //
 // RAPOR SOZLESMESI (schema_version = 1):
+//   JSON Schema: docs/api/axiom-scan-report.schema.json
 //   schema_version, tool, tool_version, rules_count  -> her komutta
 //   scan: target, target_sha256, scanned_bytes, match_count, matches[]
 //     each match also includes rule-level tags[] and typed meta{}

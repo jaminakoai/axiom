@@ -12,10 +12,27 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from jsonschema import Draft202012Validator, ValidationError
 
 ROOT = Path(__file__).resolve().parent.parent
 AXIOM = ROOT / "bin" / "axiom"
 EXAMPLE = ROOT / "examples" / "21_axiom_scan.ax"
+SCAN_REPORT_SCHEMA = json.loads(
+    (ROOT / "docs" / "api" / "axiom-scan-report.schema.json").read_text(encoding="utf-8")
+)
+Draft202012Validator.check_schema(SCAN_REPORT_SCHEMA)
+SCAN_REPORT_VALIDATOR = Draft202012Validator(SCAN_REPORT_SCHEMA)
+
+
+def _assert_report_matches_schema(report):
+    SCAN_REPORT_VALIDATOR.validate(report)
+    if "rules" in report:
+        assert report["rules"] == report["rules_count"]
+    if "matches" in report:
+        assert report["match_count"] == len(report["matches"])
+    if "packets" in report:
+        assert report["packet_count"] >= len(report["packets"])
+        assert report["match_count"] == sum(len(packet["rules"]) for packet in report["packets"])
 
 RULES = """
 // yorum satiri
@@ -72,6 +89,7 @@ def test_rules_command_counts(scanner, tmp_path):
     res = _run(scanner, "rules", str(r))
     assert res.returncode == 0, res.stdout + res.stderr
     data = json.loads(res.stdout)
+    _assert_report_matches_schema(data)
     assert data["ok"] is True
     assert data["rules"] == 3
 
@@ -831,6 +849,7 @@ def test_scan_text_pattern(scanner, tmp_path):
     res = _run(scanner, "scan", str(target), "--rules", str(r))
     assert res.returncode == 0, res.stdout + res.stderr
     data = json.loads(res.stdout)
+    _assert_report_matches_schema(data)
     assert data["target"] == str(target)
     assert data["scanned_bytes"] > 0
     names = [m["rule"] for m in data["matches"]]
@@ -1321,6 +1340,7 @@ def test_rules_and_pcap_reports_carry_schema(scanner, tmp_path):
     rr = _run(scanner, "rules", str(r))
     assert rr.returncode == 0, rr.stdout + rr.stderr
     rd = json.loads(rr.stdout)
+    _assert_report_matches_schema(rd)
     assert rd["schema_version"] == "1"
     assert rd["tool_version"] == "0.2.0"
 
@@ -1333,6 +1353,7 @@ def test_rules_and_pcap_reports_carry_schema(scanner, tmp_path):
     res = _run(scanner, "pcap", str(pcap), "--rules", str(r))
     assert res.returncode == 0, res.stdout + res.stderr
     data = json.loads(res.stdout)
+    _assert_report_matches_schema(data)
     assert data["schema_version"] == "1"
     assert data["pcap_sha256"] == hashlib.sha256(pcap.read_bytes()).hexdigest()
 
@@ -1366,9 +1387,31 @@ def test_error_path_is_structured_json(scanner, tmp_path):
     res = _run(scanner, "scan", str(tmp_path / "yok.bin"), "--rules", "r.yar")
     assert res.returncode == 1
     data = json.loads(res.stdout)
+    _assert_report_matches_schema(data)
     assert data["ok"] is False
     assert data["schema_version"] == "1"
     assert "bulunamadi" in data["error"]
+
+
+def test_report_schema_rejects_invalid_digest_and_unpublished_field():
+    invalid_digest = {
+        "schema_version": "1",
+        "tool": "axiom-scan",
+        "tool_version": "0.2.0",
+        "rules_count": 0,
+        "ok": True,
+        "target": "sample.bin",
+        "target_sha256": "not-a-sha256",
+        "scanned_bytes": 0,
+        "match_count": 0,
+        "matches": [],
+    }
+    with pytest.raises(ValidationError):
+        SCAN_REPORT_VALIDATOR.validate(invalid_digest)
+
+    unpublished_field = dict(invalid_digest, target_sha256="0" * 64, debug="internal")
+    with pytest.raises(ValidationError):
+        SCAN_REPORT_VALIDATOR.validate(unpublished_field)
 
 
 def test_fail_on_match_llvm_parity(scanner, scanner_llvm, tmp_path):

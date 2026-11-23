@@ -42,7 +42,7 @@ davranışını, backend davranışını veya kullanıcı değerini denetlemez.
 |---|---|---|---|
 | `ResultInt`, `ResultStr`, `?` | Concrete result fields and early-return propagation | [`tests/test_error_model.py`](../tests/test_error_model.py): `test_stdlib_result_int_and_str_interoperate_with_question_mark`, `test_question_mark_runs_defer_on_early_return`; C/LLVM parametrization | Does not classify all `Result`-related builtins or promise generic `Result<T,E>` helper APIs |
 | `OptionInt`, `OptionStr`, `OptionBool` | Constructors, unwrap/fallback and concrete option values | [`tests/test_error_model.py`](../tests/test_error_model.py): `test_stdlib_option_concrete_types_on_both_backends` | Does not establish a generic `Option<T>` API or classify all stdlib entries |
-| `axiom-scan` report and exit behavior | Schema version 1; JSON stdout; exit 0/1/10 behavior; documented YARA subset | [`examples/21_axiom_scan.ax`](../examples/21_axiom_scan.ax), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_error_path_is_structured_json`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`; parser/condition cases and backend parity are also covered | Report contract is asserted in tests and source comments, not yet published as an independently consumable JSON Schema |
+| `axiom-scan` report and exit behavior | Schema version 1; JSON stdout; exit 0/1/10 behavior; documented YARA subset | [`examples/21_axiom_scan.ax`](../examples/21_axiom_scan.ax), [`axiom-scan JSON Schema`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_error_path_is_structured_json`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`, and schema validation tests; parser/condition cases and backend parity are also covered | Schema is enforced against representative rules/scan/pcap/error reports; it does not by itself certify every report-producing branch or the full YARA language |
 | Manifest and lock | Manifest round trip; lock generation and tamper detection | [`tests/test_package_manager.py`](../tests/test_package_manager.py): `test_manifest_roundtrip`, `test_lockfile_generation_and_tamper_detection`; registry and package end-to-end tests | No complete versioned manifest/lock schema or exhaustive field migration contract |
 | Registry trust and package resolution | SemVer selection, signatures, tamper/rollback, cache/archive restrictions | [`tests/test_registry.py`](../tests/test_registry.py), registry assembly cases in [`tests/test_package_manager.py`](../tests/test_package_manager.py) | Broad security evidence is not a complete user-visible CLI stdout/stderr/exit contract |
 | LSP | Selected protocol methods and advertised capabilities | [`tests/test_lsp_full_features.py`](../tests/test_lsp_full_features.py), [`tests/test_lsp_server.py`](../tests/test_lsp_server.py) | Promise only capabilities directly asserted and documented; no blanket protocol conformance claim |
@@ -58,9 +58,10 @@ davranışını, backend davranışını veya kullanıcı değerini denetlemez.
   thread-safety limits. Do not infer these properties from the signature.
 - The 446 stdlib functions and 37 structs need individual stable/experimental/
   unsupported decisions or a carefully bounded module-level decision.
-- CLI command exit codes and stdout/stderr behavior, complete manifest/lock
-  schemas, and the scanner report schema need explicit contracts and tests if
-  they are included in the stable surface.
+- CLI command exit codes and stdout/stderr behavior and complete manifest/lock
+  schemas need explicit contracts and tests if they are included in the stable
+  surface. The scanner report schema is published; representative production
+  and rejection cases are tested, with full branch coverage still open.
 - Language grammar, ownership/error behavior, and backend parity need review
   against the specification; sampled passing tests do not establish complete
   parity.

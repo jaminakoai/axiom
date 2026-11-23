@@ -502,6 +502,9 @@ Gerçek çıktı (bulgu var, `--fail-on-match` yok → `exit 0`):
 
 Çıkış kodları: `0` rapor üretildi (bulgu yok veya bayrak verilmedi) · `10`
 `--fail-on-match` verildi ve bulgu var · `1` hata (dosya/kural/kullanım).
+`rules`, `scan`, `pcap` ve JSON hata raporlarının alanları için
+[makinece doğrulanabilir JSON Schema](docs/api/axiom-scan-report.schema.json)
+kullanılabilir. `--help` ve `--version` çıktıları düz metindir.
 
 ### 14. Hata Modeli: `Result<T, E>` ve `?` Operatörü
 

@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 uyumluluk fixture harness'i, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname ve scanner: **232 geçti, 0 başarısız** (`tests/test_compatibility_fixtures.py` dahil, 67,42 sn). |
+| Son hedefli test paketi | G5 uyumluluk fixture harness'i, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **233 geçti, 0 başarısız** (`tests/test_compatibility_fixtures.py` dahil, 67,42 sn). |
 
 ---
 
@@ -444,8 +444,12 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sözleşmesiyle; enforcement testlerine bağlı şekilde incele. Allowlist dışında
   kalan envanter girdileri kararlı API değildir; 844 girdinin her birine ayrıca
   yapay bir stable/experimental/unsupported etiketi verme zorunluluğu yoktur.
+- [x] `axiom-scan` rules/scan/pcap/structured-error report contract'ı için
+  [JSON Schema](docs/api/axiom-scan-report.schema.json) yayımla ve gerçek
+  C-backend report örneklerini JSON Schema validator ile test et; public
+  dokümanlarda TR/EN schema bağlantısını ver.
 - [ ] v1.0 öncesinde kararlı API allowlist'ini ve seçilen yüzeylerin
-  CLI/manifest/lock/scanner şemaları ile davranış sözleşmelerini yayımla.
+  CLI/manifest/lock şemaları ile davranış sözleşmelerini yayımla.
   v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan sonra
   v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
