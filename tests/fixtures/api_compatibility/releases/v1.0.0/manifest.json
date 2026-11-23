@@ -1,0 +1,55 @@
+{
+  "schema_version": 2,
+  "release": "1.0.0",
+  "source_examples": [
+    {
+      "id": "source-smoke",
+      "source": "source/compat.ax",
+      "sha256": "9130465fa73757120f2a0ae420fa69ed396883276ad4531b022b399c448ac023",
+      "backends": [
+        "c",
+        "llvm"
+      ],
+      "stdout": "Axiom v1 source fixture\n",
+      "exit_code": 0
+    }
+  ],
+  "package_projects": [
+    {
+      "id": "package-smoke",
+      "root": "package",
+      "tree_sha256": "1f351ab34856fdaa856228e4b4db526ecfc3c27e212ba2daa0688203a8439cc1",
+      "entry": "src/main.ax",
+      "backends": [
+        "c",
+        "llvm"
+      ],
+      "stdout": "Axiom v1 package fixture\n",
+      "exit_code": 0
+    }
+  ],
+  "scanner_schemas": [
+    {
+      "id": "scanner-report-v1",
+      "path": "scanner/axiom-scan-report.schema.json",
+      "sha256": "e351a3a9777901491db34f38fdbe6ac9a81f58410fa74cb6b55f9bc531c87369"
+    }
+  ],
+  "scanner_cases": [
+    {
+      "id": "scanner-marker",
+      "rules": "scanner/rules.yar",
+      "rules_sha256": "02cc5134c62683e5fa49d442580ef3644d191cb2330edb7c4b3303b32742ee71",
+      "target": "scanner/target.bin",
+      "target_sha256": "07fe6df5eed107567dfb7a9af76ebfa200cd251ee252224e30a41d5d92df350c",
+      "expected_json": "scanner/expected.json",
+      "expected_json_sha256": "e33ca5218c32563c56b8b182fde8c425a0104b3d7861a6683b386c253dce4b48",
+      "schema_id": "scanner-report-v1",
+      "backends": [
+        "c",
+        "llvm"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

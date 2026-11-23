@@ -27,7 +27,8 @@ scanner's reported target is normalized to its basename, and `tool_version` must
 remain a string but may advance, so checkout paths and new scanner releases do
 not invalidate the historical report contract.
 
-The current project is still `0.5.0-alpha`; it has no published `1.x` release
-fixtures. CI validates any snapshots that exist, but the two-previous-minor gate
-first becomes eligible while preparing `v1.2`, after `v1.0` and `v1.1` fixtures
-have been committed.
+This branch prepares the `v1.0.0` release fixture. The compatibility promise
+begins only when the version is tagged and published; until then this fixture is
+release-candidate evidence, not evidence from a published release. The
+two-previous-minor gate first becomes eligible while preparing `v1.2`, after
+published `v1.0` and `v1.1` fixtures exist.

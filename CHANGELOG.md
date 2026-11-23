@@ -5,6 +5,8 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-23
+
 ### Değiştirilen
 - G5'te kararlı API sınırı, SemVer, iki sonraki minor sürümlük kaldırma penceresi
   ve eski minor fixture CI politikası belirlendi. Scanner-first v1.0 için somut

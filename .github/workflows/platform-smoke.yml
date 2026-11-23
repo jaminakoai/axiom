@@ -2,7 +2,7 @@ name: Native platform smoke
 
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, master, develop, 'release/**']
   pull_request:
 
 permissions:

@@ -1,0 +1,4 @@
+fn main() -> int {
+    print("Axiom v1 package fixture");
+    return 0;
+}

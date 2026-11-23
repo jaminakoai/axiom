@@ -1,0 +1,10 @@
+[package]
+name = "axiom-v1-compat-fixture"
+version = "1.0.0"
+authors = ["Axiom Contributors"]
+edition = "2026"
+entry = "src/main.ax"
+description = "Axiom v1.0 API compatibility fixture"
+license = "MIT"
+
+[dependencies]

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jaminakoai/axiom/blob/master/docs/api/axiom-scan-report.schema.json",
+  "title": "axiom-scan JSON report schema v1",
+  "description": "Machine-readable contracts for axiom-scan rules, scan, pcap, and structured error reports. Help and version output are plain text. Report objects reject unknown fields; any field-level contract change requires a schema_version increment.",
+  "oneOf": [
+    { "$ref": "#/$defs/rulesReport" },
+    { "$ref": "#/$defs/scanReport" },
+    { "$ref": "#/$defs/pcapReport" },
+    { "$ref": "#/$defs/errorReport" }
+  ],
+  "$defs": {
+    "common": {
+      "type": "object",
+      "properties": {
+        "schema_version": { "const": "1" },
+        "tool": { "const": "axiom-scan" },
+        "tool_version": { "type": "string", "minLength": 1 }
+      },
+      "required": ["schema_version", "tool", "tool_version"]
+    },
+    "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "meta": {
+      "type": "object",
+      "additionalProperties": {
+        "type": ["string", "integer", "boolean"]
+      }
+    },
+    "rulesReport": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": { "const": "1" },
+            "tool": { "const": "axiom-scan" },
+            "tool_version": { "type": "string", "minLength": 1 },
+            "rules_count": { "type": "integer", "minimum": 0 },
+            "ok": { "const": true },
+            "rules": { "type": "integer", "minimum": 0 }
+          },
+          "required": ["schema_version", "tool", "tool_version", "rules_count", "ok", "rules"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "scanMatch": {
+      "type": "object",
+      "properties": {
+        "rule": { "type": "string", "minLength": 1 },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "meta": { "$ref": "#/$defs/meta" },
+        "pattern": { "type": "string", "minLength": 1 },
+        "offset": { "type": "integer", "minimum": 0, "description": "Zero-based byte offset of the reported pattern witness, including regex matches." },
+        "length": { "type": "integer", "minimum": 0, "description": "Byte length of the reported pattern witness, including regex matches." }
+      },
+      "required": ["rule", "tags", "meta", "pattern", "offset", "length"],
+      "additionalProperties": false
+    },
+    "scanReport": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": { "const": "1" },
+            "tool": { "const": "axiom-scan" },
+            "tool_version": { "type": "string", "minLength": 1 },
+            "rules_count": { "type": "integer", "minimum": 0 },
+            "ok": { "const": true },
+            "target": { "type": "string", "minLength": 1 },
+            "target_sha256": { "$ref": "#/$defs/sha256" },
+            "scanned_bytes": { "type": "integer", "minimum": 0 },
+            "match_count": { "type": "integer", "minimum": 0 },
+            "matches": { "type": "array", "items": { "$ref": "#/$defs/scanMatch" } }
+          },
+          "required": ["schema_version", "tool", "tool_version", "rules_count", "ok", "target", "target_sha256", "scanned_bytes", "match_count", "matches"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "pcapPacket": {
+      "type": "object",
+      "properties": {
+        "index": { "type": "integer", "minimum": 0 },
+        "rules": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+      },
+      "required": ["index", "rules"],
+      "additionalProperties": false
+    },
+    "pcapReport": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": { "const": "1" },
+            "tool": { "const": "axiom-scan" },
+            "tool_version": { "type": "string", "minLength": 1 },
+            "rules_count": { "type": "integer", "minimum": 0 },
+            "ok": { "const": true },
+            "pcap": { "type": "string", "minLength": 1 },
+            "pcap_sha256": { "$ref": "#/$defs/sha256" },
+            "packets": { "type": "array", "items": { "$ref": "#/$defs/pcapPacket" }, "description": "Sparse list containing only records with at least one matching rule; each index refers to the zero-based original record index." },
+            "packet_count": { "type": "integer", "minimum": 0, "description": "Total records in the capture, including records with zero captured bytes and records omitted from packets because they have no findings." },
+            "match_count": { "type": "integer", "minimum": 0, "description": "Total matching rule-record pairs, equal to the sum of the emitted packets' rules array lengths; not pattern occurrence count." }
+          },
+          "required": ["schema_version", "tool", "tool_version", "rules_count", "ok", "pcap", "pcap_sha256", "packets", "packet_count", "match_count"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "errorReport": {
+      "allOf": [
+        { "$ref": "#/$defs/common" },
+        {
+          "type": "object",
+          "properties": {
+            "schema_version": { "const": "1" },
+            "tool": { "const": "axiom-scan" },
+            "tool_version": { "type": "string", "minLength": 1 },
+            "ok": { "const": false },
+            "error": { "type": "string", "minLength": 1 }
+          },
+          "required": ["schema_version", "tool", "tool_version", "ok", "error"],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}

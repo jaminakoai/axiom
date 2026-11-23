@@ -37,7 +37,7 @@ axiom --version
 Örnek çıktı:
 
 ```text
-Axiom (λx) v0.5.0-alpha
+Axiom (λx) v1.0.0
 ```
 
 `axpm` paket yöneticisi ve `axiom-lsp` dil sunucusu da aynı `bin/` dizininde bulunur.
@@ -769,7 +769,7 @@ axiom repl
 Örnek oturum:
 
 ```text
-Axiom (λx) v0.5.0-alpha - İnteraktif REPL
+Axiom (λx) v1.0.0 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -935,13 +935,13 @@ Aşağıdaki mesajlar sürüme göre küçük farklılıklar gösterebilir; anah
 
 ## 14. Bilinen sınırlamalar
 
-Axiom `v0.5.0-alpha` araştırma/prototip aşamasındadır. Üretim kritik projelerde aşağıdaki sınırlamaları göz önünde bulundurun.
+Bu rehber v0.5 dil profilini yayımlanmamış `v1.0.0` release candidate içinde gösterir. Yalnızca çevrimdışı DFIR triyajı için `axiom-scan` kararlı allowlist adayıdır; dil, compiler CLI, `axpm`, manifest/lock ve stdlib için kararlılık sözü yoktur.
 
 ### Bellek ve string yaşam döngüsü
 
 String'ler refcount tabanlı bir sahiplik tablosuyla izlenir. Atama, `return`, `file_read`, `str_split`, `str_replace`, `str_sub`, `str_trim`, base64/hex/hash üreticileri ve `array_push` sonuçları kapsam çıkışında temizlenir.
 
-Bilinen sınır: `print(f(x))` gibi **atama yapılmayan** bazı ifadelerde üretilen geçici string'ler ifade sonunda hemen bırakılmayabilir. Intrusive-header ve `String`/`str` tip ayrımı ile bu alanın iyileştirilmesi planlanmaktadır.
+Geçici string’ler `print(f(x))` ve sonucu atılan ifade deyimleri dahil, ifade sonunda temizlenir. C ve LLVM arka uçları için bu davranış regresyon testleriyle doğrulanır.
 
 ### Paket registry'si
 
@@ -951,9 +951,9 @@ Bilinen sınır: `print(f(x))` gibi **atama yapılmayan** bazı ifadelerde üret
 
 `--target wasm32-wasi` deneyseldir ve harici WASI SDK/sysroot gerektirir. Sysroot yoksa derleme yönlendirici bir hatayla durur.
 
-### LLVM arka ucunda string temizliği
+### LLVM arka ucu
 
-LLVM arka ucu `defer`, `?` ve DWARF üretimini destekler. String kapsamı ve temizliği tarafında iyileştirmeler sürüyor olabilir; bu alan hızla değişebilir. Bu konuda referans davranış için varsayılan C arka ucunu esas alın.
+LLVM arka ucu `defer`, `?`, string kapsam temizliği ve `-g` ile DWARF üretimini destekler. Belgelenmiş örneklerde C/LLVM paritesi test edilir; genel dil davranışları kararlı API sözü kapsamında değildir.
 
 ### ARM64 / çapraz derleme
 
@@ -981,17 +981,10 @@ LLVM arka ucu `defer`, `?` ve DWARF üretimini destekler. String kapsamı ve tem
 
 ## 15. Sırada ne var?
 
-Axiom'un yol haritasındaki başlıca başlıklar:
-
-- String sahipliği ve kapsam temizliğinin tamamlanması (intrusive header, `String`/`str` ayrımı).
-- Merkezi paket registry'si ve daha olgun bağımlılık çözümlemesi.
-- WASM ve ARM64 hedeflerinin deneysel statüden çıkarılması.
-- LLVM arka ucunda string temizliği ve genel arka uç eşliğinin güçlendirilmesi.
-- Self-hosted derleyicinin (`axiomc`) özellik eşliğinin artırılması.
-- Daha geniş standart kütüphane ve örnek koleksiyonu.
+Açık geliştirme maddelerinin güncel ve test kanıtlı listesi için tek doğruluk kaynağı olan [TODO.md](../TODO.md)'ye bakın. v1.0 kararlı profili yalnız `axiom-scan`'i kapsar; genel dil ve diğer araçlar bu garantinin dışında kalır.
 
 Dili keşfetmenin en hızlı yolu `examples/` dizinindeki programları çalıştırmak ve `axiom check` / `axiom prove` ile sözleşmeleri denemektir.
 
 ---
 
-> **Not:** Bu rehber v0.5.0-alpha içindir. Dil ve araçlar hızla geliştiği için davranışlar, hata mesajları ve bayraklar sürümler arasında değişebilir. Güncel bilgi için depodaki `README.md`, `SPECIFICATION.md` ve `examples/` dizinini esas alın.
+> **Not:** Bu rehber v0.5 dil profilini yayımlanmamış `v1.0.0` release candidate ile birlikte sunar. Dil sözdizimi ve compiler araçları kararlı API değildir. Güncel ürün sınırları için `README.md`, dil davranışı için `SPECIFICATION.md`, açık işler için `TODO.md` ve çalışan örnekler için `examples/` dizinini kullanın.
