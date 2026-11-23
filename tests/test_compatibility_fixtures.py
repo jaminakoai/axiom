@@ -33,7 +33,7 @@ def _write_manifest(release: Path, version: str, **groups) -> dict:
     return manifest
 
 
-def test_fixture_manifest_schema_validates_current_manifest_shapes():
+def test_fixture_manifest_schema_validates_current_manifest_shapes(tmp_path):
     from jsonschema import Draft202012Validator
 
     schema_path = (
@@ -45,40 +45,62 @@ def test_fixture_manifest_schema_validates_current_manifest_shapes():
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
     validator = Draft202012Validator(schema)
-    digest = "a" * 64
-    valid_manifest = {
-        "schema_version": 1,
-        "release": "1.0.0",
-        "source_examples": [{
+    release = _release_dir(tmp_path, "1.0.0")
+    source = release / "sources" / "hello.ax"
+    source.parent.mkdir()
+    source.write_text("fn main() -> int { return 0; }\n", encoding="utf-8")
+
+    package = release / "packages" / "sample"
+    (package / "src").mkdir(parents=True)
+    (package / "src" / "main.ax").write_text(
+        "fn main() -> int { return 0; }\n", encoding="utf-8"
+    )
+    (package / "axiom.toml").write_text("[package]\nname = 'sample'\n", encoding="utf-8")
+    (package / "axiom.lock").write_text("# fixture lock\n", encoding="utf-8")
+
+    scanner = release / "scan"
+    scanner.mkdir()
+    rules = scanner / "rules.yar"
+    rules.write_text('rule R { strings: $a = "x" condition: $a }\n', encoding="utf-8")
+    target = scanner / "target.bin"
+    target.write_bytes(b"x")
+    expected_json = scanner / "expected.json"
+    expected_json.write_text("{}\n", encoding="utf-8")
+
+    valid_manifest = _write_manifest(
+        release,
+        "1.0.0",
+        source_examples=[{
             "id": "hello",
             "source": "sources/hello.ax",
-            "sha256": digest,
+            "sha256": _hash(source),
             "backends": ["c", "llvm"],
-            "stdout": "hello\\n",
+            "stdout": "",
             "exit_code": 0,
         }],
-        "package_projects": [{
+        package_projects=[{
             "id": "package",
             "root": "packages/sample",
-            "tree_sha256": digest,
+            "tree_sha256": compatibility.sha256_tree(package),
             "entry": "src/main.ax",
             "backends": ["c"],
             "stdout": "",
             "exit_code": 0,
         }],
-        "scanner_cases": [{
+        scanner_cases=[{
             "id": "scanner",
             "rules": "scan/rules.yar",
-            "rules_sha256": digest,
+            "rules_sha256": _hash(rules),
             "target": "scan/target.bin",
-            "target_sha256": digest,
+            "target_sha256": _hash(target),
             "expected_json": "scan/expected.json",
-            "expected_json_sha256": digest,
+            "expected_json_sha256": _hash(expected_json),
             "backends": ["llvm"],
             "exit_code": 0,
         }],
-    }
+    )
     assert validator.is_valid(valid_manifest)
+    assert compatibility.load_manifest(release) == valid_manifest
     assert not validator.is_valid({**valid_manifest, "unexpected": True})
     assert not validator.is_valid({
         **valid_manifest,

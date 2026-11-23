@@ -1051,7 +1051,10 @@ def test_scan_pcap_malformed_or_truncated_records_fail_closed(scanner, tmp_path,
     result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
 
     assert result.returncode != 0, result.stdout + result.stderr
-    assert '"ok":true' not in result.stdout
+    error_report = json.loads(result.stdout)
+    _assert_report_matches_schema(error_report)
+    assert error_report["ok"] is False
+    assert error_report["error"]
 
 
 def test_scan_pcap_rejects_record_over_custom_snaplen(scanner, tmp_path):
