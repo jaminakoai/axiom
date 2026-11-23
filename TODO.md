@@ -9,11 +9,11 @@
 | Alan | Değer |
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
-| Sürüm | `v0.5.0-alpha` |
+| Sürüm | `v1.0.0-rc1` (aday; kararlı yayın yapılmadı) |
 | Son güncelleme | 2026-11-23 |
-| Aşama | **G5 — Scanner-first v1.0 teknik hazırlığı tamam; yayın kararı ve isteğe bağlı saha kanıtı açık** |
+| Aşama | **G5 — Scanner-first v1.0 teknik hazırlığı tamam; RC doğrulanıyor, kararlı yayın kararı açık** |
 | Son tamamlanmış tam test paketi | GitHub Actions `2d4d075`: Python 3.10–3.13'in her birinde **1669 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı** |
-| Son CI denemesi | `2d4d075` [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı** |
+| Son tam CI tabanı | `2d4d075` [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı**; RC adayının kendi CI'si henüz bekliyor |
 | Son başarılı tam CI | `2d4d075` [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054), **7/7 başarılı** |
 | Son platform smoke | `2d4d075`, Linux/Windows/macOS native smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
@@ -433,8 +433,8 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
 - [x] AST tabanlı kaynak envanteri oluşturuldu: 446 stdlib fonksiyon imzası,
   37 struct, 360 builtin imzası; `tools/generate_api_inventory.py --check`
-  güncelliğini doğrular. [API snapshot](docs/api/v0.5.0-alpha.json) davranış veya
-  kararlılık garantisi değildir.
+  güncelliğini doğrular. [RC API snapshot](docs/api/v1.0.0-rc.1.json) davranış
+  veya kararlılık garantisi değildir; ilk envanter [0.5.0-alpha snapshot](docs/api/v0.5.0-alpha.json) içinde saklıdır.
 - [x] Gelecekteki release fixture'ları için [manifest şeması](docs/api/compat-fixture-manifest.schema.json),
   [fixture yönergesi](tests/fixtures/api_compatibility/README.md), doğrulayıcı ve
   GitHub tag/CI kapısı hazırlandı; synthetic C/LLVM, paket ve scanner vakaları
@@ -1410,8 +1410,8 @@ Yalnızca Faz 3 metrikleri sağlanırsa:
 
 | Metrik | Bugün | Faz 1 hedefi | Faz 3 hedefi |
 |---|---:|---:|---:|
-| Son tam CI | `8a3220d`: Python 3.10–13'te her biri 1665 geçti/27 skip; doküman 55, YARA differential 29, sanitizer, LLVM/DWARF ve biçimlendirme başarılı; 7/7 ([run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)) | Run 45223491343 | 2000 |
-| Son native platform smoke | `6186327`: PCAP + cache/file URL + signed index + sentinel `axiom-scan` + build/run Linux/Windows/macOS 3/3 başarılı ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)) | Run 45227497154 | — |
+| Son tam CI tabanı | `2d4d075`: Python 3.10–13'te her biri 1669 geçti/27 skip; doküman 55, YARA differential 29, sanitizer, LLVM/DWARF ve biçimlendirme başarılı; 7/7 ([run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054)) | Run 45237482054 | 2000 |
+| Son native platform smoke tabanı | `2d4d075`: scanner + PCAP + registry ve build/run Linux/Windows/macOS 3/3 başarılı ([run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)) | Run 45237481540 | — |
 | Güncel G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/backend parity 490 geçti, 0 skip (224,36 sn) | — | — |
 | Stdlib fonksiyon | 446 (v0.5.0-alpha kaynak envanteri) | 450 | 900 |
 | Örnek program | 21 | 25 | 60 |
@@ -1459,8 +1459,8 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
-da tamamlandı; son kaydedilmiş tam CI `8a3220d` 7/7 başarılı, son doküman
-commit'i `6186327` için platform smoke 3/3 başarılıdır. G5 başladı; yeni
-dil kapsamı, API/uyumluluk politikası ve kanıtlanmış kullanıcı ihtiyacına göre
-seçilecek. Yeni YARA sözdizimi differential kanıt ve açık kapsam sınırlarıyla
-eklenir.
+da tamamlandı; son kaydedilmiş tam CI `2d4d075` 7/7 başarılı, son doküman
+commit'i `2d4d075` için platform smoke 3/3 başarılıdır. G5 teknik hazırlığı
+tamamlandı; `1.0.0-rc1` adayı ayrı worktree'de fixture ve sürüm belgeleriyle
+hazırlanıyor. Kararlı yayın kararı maintainer'a aittir. Yeni YARA sözdizimi
+differential kanıt ve açık kapsam sınırlarıyla eklenir.

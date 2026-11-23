@@ -1,9 +1,9 @@
 # Axiom Programming Language (λx)
 
-[![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
+[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0--rc1-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1361-blue.svg)](#last-full-verified-run)
+[![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1669%20passed%2C%2027%20skipped-blue.svg)](#last-full-verified-run)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-results-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-experimental-orange.svg)](#)
 
@@ -184,7 +184,7 @@ design*; measurements and caveats are in "Claims and evidence" below:
   unverified.**
 * **Windows:** Native example build/run and the documented harmless
   `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
-  and MSVC/Windows SDK ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)).
+  and MSVC/Windows SDK ([run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)).
   The full suite, real file/PCAP workflow, and manual installation are not yet
   verified.
 * **macOS:** The same native build/run and sentinel smoke tests pass in CI with
@@ -213,7 +213,7 @@ For an independent tester: reproducible Linux setup, a five-minute
 axiom repl
 ```
 ```
-Axiom (λx) v0.5.0-alpha - Interactive REPL
+Axiom (λx) v1.0.0-rc1 - Interactive REPL
 Type 'help' for help, 'exit' or 'quit' to quit.
 
 axiom> let x = 40
@@ -340,7 +340,7 @@ import "utils.ax"
 
 fn main() -> int {
     let report = create_report("System Configuration", 3)
-    let ok = file_write("/tmp/log.txt", "Axiom v0.5.0-alpha I/O")
+    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0-rc1 I/O")
     if ok and file_exists("/tmp/log.txt") {
         let content = file_read("/tmp/log.txt")
         print("Read:", content)
@@ -676,7 +676,7 @@ rejected.
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `8a3220d`:
+All 7 jobs passed in the latest completed run for commit `2d4d075`:
 
 | Job | Status |
 |---|---|
@@ -685,10 +685,11 @@ All 7 jobs passed in the latest completed run for commit `8a3220d`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Latest verified CI: [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)
-(`master`, SHA `8a3220d`; 1665 passed/27 environment skips on Python 3.10–3.13).
-Native platform smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)
-passed 3/3 on Linux, Windows, and macOS.
+Latest verified CI: [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054)
+(`master`, SHA `2d4d075`; 1669 passed/27 environment skips on Python 3.10–3.13).
+Native platform smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)
+passed 3/3 on Linux, Windows, and macOS. The `1.0.0-rc1` candidate is prepared
+on top of this verified baseline; its own CI result will be checked separately.
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -703,8 +704,8 @@ Six root causes fixed on the way here (details: report §9–§12):
 
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
-The cited 1034- and 1361-test runs are historical. Current full CI and platform
-smoke evidence is linked above for `8a3220d`.
+The cited 1034-, 1361-, and 1665-test runs are historical. The latest completed
+full CI and platform smoke evidence is listed below.
 
 ---
 
@@ -738,11 +739,11 @@ smoke evidence is linked above for `8a3220d`.
 
 ### 🟡 In progress / partial
 
-- **CI:** `8a3220d` green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `2d4d075` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154));
+  on a real Windows runner ([platform smoke run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.
@@ -781,8 +782,8 @@ backends. For security reports see [SECURITY.md](SECURITY.md).
 
 ## 📌 Project Status and Known Limitations
 
-> **Current Version:** `v0.5.0-alpha` (Development / Research Prototype)
-> Axiom is an experimental systems programming language under active development and research.
+> **Release candidate:** `v1.0.0-rc1` (pre-release; the stability promise has not started)
+> The first stable product profile is `axiom-scan` for offline DFIR triage. Stability and compatibility promises begin only when `v1.0.0` is published; the general language, compiler CLI, `axpm`, manifest/lock, and standard library are outside this profile. See the [versioning policy](docs/VERSIONING.md).
 
 ### Known Limitations and Technical Scope:
 1. **Cross-Compilation and WASM Targets:** Targets such as `--target wasm32-wasi` and `--target aarch64-linux-gnu` require an external sysroot and cross-compilation toolchain (e.g. WASI SDK, gcc-aarch64). When no sysroot is installed on the system, the compiler halts safely with a clear and actionable error message; these targets are experimental.

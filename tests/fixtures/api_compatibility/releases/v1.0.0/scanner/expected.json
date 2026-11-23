@@ -1,0 +1,21 @@
+{
+  "schema_version": "1",
+  "tool": "axiom-scan",
+  "tool_version": "0.2.0",
+  "rules_count": 1,
+  "ok": true,
+  "target": "target.bin",
+  "target_sha256": "07fe6df5eed107567dfb7a9af76ebfa200cd251ee252224e30a41d5d92df350c",
+  "scanned_bytes": 34,
+  "match_count": 1,
+  "matches": [
+    {
+      "rule": "AxiomCompatMarker",
+      "tags": [],
+      "meta": {},
+      "pattern": "$marker",
+      "offset": 7,
+      "length": 19
+    }
+  ]
+}

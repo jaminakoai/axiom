@@ -1,9 +1,9 @@
 # Axiom Programming Language (λx)
 
-[![Axiom Version](https://img.shields.io/badge/Axiom-v0.5.0--alpha-blue.svg)](#)
+[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0--rc1-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
-[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1361-blue.svg)](#son-tam-doğrulanmış-koşu)
+[![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1669%20passed%2C%2027%20skipped-blue.svg)](#son-tam-doğrulanmış-koşu)
 [![Benchmarks](https://img.shields.io/badge/Benchmarks-sonuçlar-blue.svg)](benchmarks/RESULTS.md)
 [![Target](https://img.shields.io/badge/Target-Native%20x86__64%20%7C%20ARM64-deneysel-orange.svg)](#)
 
@@ -183,7 +183,7 @@ bölümündedir:
   doğrulanmamıştır.**
 * **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile native örnek
   derleme/çalıştırma ve belgelenen zararsız `axiom-scan` sentinel smoke testi
-  CI'da geçti ([run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)).
+  CI'da geçti ([run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)).
   Tam test paketi, gerçek dosya/PCAP iş akışı ve elle kurulum adımları henüz
   doğrulanmadı.
 * **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı native
@@ -211,7 +211,7 @@ Bağımsız kullanıcı için tekrar üretilebilir Linux kurulumu, 5 dakikalık
 axiom repl
 ```
 ```
-Axiom (λx) v0.5.0-alpha - İnteraktif REPL
+Axiom (λx) v1.0.0-rc1 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -338,7 +338,7 @@ import "utils.ax"
 
 fn main() -> int {
     let report = create_report("Sistem Yapılandırması", 3)
-    let ok = file_write("/tmp/log.txt", "Axiom v0.5.0-alpha I/O")
+    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0-rc1 I/O")
     if ok and file_exists("/tmp/log.txt") {
         let content = file_read("/tmp/log.txt")
         print("Okunan:", content)
@@ -663,7 +663,7 @@ kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundad
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
 **1484 geçti, 0 hata/skip** (1344,44 sn). Önceki YARA/scanner/differential/stress/
 backend parity paketi **490 geçti** (223,89 sn); bu turdaki scanner/YARA/API sözleşme
-paketi **234 geçti**. `058484e` CI sayıları tarihsel kaldı. En son `8a3220d` CI'si
+paketi **234 geçti**. `058484e` CI sayıları tarihsel kaldı. En son `2d4d075` CI'si
 **7/7**, platform smoke'ta
 Linux/Windows/macOS **3/3** geçti; güncel yerel scanner/YARA hedefli paketi
 **234/234** geçti.
@@ -673,7 +673,7 @@ düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`8a3220d` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`2d4d075` commit’indeki en son tamamlanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -682,10 +682,11 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan CI: [run 45223491343](https://github.com/jaminakoai/axiom/actions/runs/45223491343)
-(`master`, SHA `8a3220d`; Python 3.10–3.13'ün her birinde 1665 geçti/27 ortam skip'i).
-Native platform smoke [run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154)
-ile Linux, Windows ve macOS'ta 3/3 başarılıdır.
+Son doğrulanan CI: [run 45237482054](https://github.com/jaminakoai/axiom/actions/runs/45237482054)
+(`master`, SHA `2d4d075`; Python 3.10–3.13'ün her birinde 1669 geçti/27 ortam skip'i).
+Native platform smoke [run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540)
+ile Linux, Windows ve macOS'ta 3/3 başarılıdır. `1.0.0-rc1` adayı bu doğrulanmış
+tabanın üzerine hazırlanıyor; adayın kendi CI sonucu ayrıca izlenecek.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -700,8 +701,8 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
-çıkmasını sağladı. 1034 ve 1361 testli koşular tarihsel kayıttır; güncel tam CI
-ve platform smoke kanıtları yukarıdaki `8a3220d` bağlantılarındadır.
+çıkmasını sağladı. 1034, 1361 ve 1665 testli koşular tarihsel kayıttır; son
+tamamlanmış tam CI ve platform smoke kanıtları yukarıdaki tabloda yer alır.
 
 ---
 
@@ -735,11 +736,11 @@ ve platform smoke kanıtları yukarıdaki `8a3220d` bağlantılarındadır.
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **CI:** `8a3220d` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
+- **CI:** `2d4d075` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
 - **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
-  duman testi geçti ([platform smoke run 45227497154](https://github.com/jaminakoai/axiom/actions/runs/45227497154));
+  duman testi geçti ([platform smoke run 45237481540](https://github.com/jaminakoai/axiom/actions/runs/45237481540));
   tam test paketi ve `axiom-scan` doğrulanmadı.
 - **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
   `axiom-scan` doğrulanmadı.
@@ -777,8 +778,8 @@ parite testi. Güvenlik bildirimi için [SECURITY.md](SECURITY.md).
 
 ## 📌 Proje Statüsü ve Bilinen Sınırlamalar
 
-> **Mevcut Sürüm:** `v0.5.0-alpha` (Geliştirme / Araştırma Prototipi)  
-> Axiom, aktif geliştirme ve araştırma aşamasında olan deneysel bir sistem programlama dilidir.
+> **Sürüm adayı:** `v1.0.0-rc1` (ön sürüm; kararlılık sözü henüz başlamadı)
+> İlk kararlı ürün profili çevrimdışı DFIR triyajı için `axiom-scan`'dir. Kararlılık ve uyumluluk sözü yalnız `v1.0.0` yayımlandığında başlayacak; genel dil, compiler CLI, `axpm`, manifest/lock ve stdlib bu profile dahil değildir. Ayrıntı: [sürümleme politikası](docs/VERSIONING.md).
 
 ### Bilinen Sınırlamalar ve Teknik Kapsam:
 1. **Çapraz Derleme ve WASM Hedefleri:** `--target wasm32-wasi` ve `--target aarch64-linux-gnu` gibi hedefler harici sysroot ve çapraz derleme toolchain'i (örn. WASI SDK, gcc-aarch64) gerektirir. Sistemde kurulu sysroot bulunmadığında derleyici açık ve yönlendirici bir hata mesajı ile güvenli şekilde durur; bu hedefler deneysel statüdedir.

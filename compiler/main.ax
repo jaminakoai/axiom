@@ -98,7 +98,7 @@ fn resolve_file(path: str, visited: str) -> ResolvedUnit {
 }
 
 fn print_usage() -> void {
-    print("Axiom Self-Hosted Compiler (λx) v0.5.0-alpha")
+    print("Axiom Self-Hosted Compiler (λx) v1.0.0-rc1")
     print("Kullanim:")
     print("  axiomc build <kaynak.ax> [-o <cikti_binary>]")
     print("  axiomc run <kaynak.ax>")
@@ -137,7 +137,7 @@ fn main() -> int {
     }
 
     if subcmd == "--version" or subcmd == "-v" {
-        print("Axiom (λx) Self-Hosted Compiler v0.5.0-alpha (x86_64 Linux Native ELF)")
+        print("Axiom (λx) Self-Hosted Compiler v1.0.0-rc1 (x86_64 Linux Native ELF)")
         return 0
     }
 

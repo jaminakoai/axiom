@@ -37,7 +37,7 @@ axiom --version
 Example output:
 
 ```text
-Axiom (λx) v0.5.0-alpha
+Axiom (λx) v1.0.0-rc1
 ```
 
 The `axpm` package manager and the `axiom-lsp` language server are also located in the same `bin/` directory.
@@ -769,7 +769,7 @@ axiom repl
 Example session:
 
 ```text
-Axiom (λx) v0.5.0-alpha - İnteraktif REPL
+Axiom (λx) v1.0.0-rc1 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -935,13 +935,13 @@ The following messages may show minor differences depending on the version; the 
 
 ## 14. Known limitations
 
-Axiom `v0.5.0-alpha` is at the research/prototype stage. Consider the following limitations in production-critical projects.
+This guide covers the v0.5 language profile as shipped in the `v1.0.0-rc1` candidate. Only `axiom-scan` for offline DFIR triage is proposed for the stable allowlist; the language, compiler CLI, `axpm`, manifest/lock, and standard library carry no stability promise. An RC is not a stable release.
 
 ### Memory and string lifetime
 
 Strings are tracked with a refcount-based ownership table. The results of assignment, `return`, `file_read`, `str_split`, `str_replace`, `str_sub`, `str_trim`, the base64/hex/hash producers and `array_push` are cleaned up on scope exit.
 
-Known limitation: in some expressions that **do not assign**, such as `print(f(x))`, the temporary strings produced may not be released immediately at the end of the expression. Intrusive headers and a `String`/`str` type distinction are planned to improve this area.
+Temporary strings are cleaned up at the end of expressions, including `print(f(x))` and discarded expression statements. Regression tests cover this behavior on both C and LLVM backends.
 
 ### Package registry
 
@@ -951,9 +951,9 @@ Known limitation: in some expressions that **do not assign**, such as `print(f(x
 
 `--target wasm32-wasi` is experimental and requires an external WASI SDK/sysroot. If the sysroot is missing, compilation stops with a guiding error.
 
-### String cleanup in the LLVM backend
+### LLVM backend
 
-The LLVM backend supports `defer`, `?` and DWARF generation. Improvements on the string scope and cleanup side may still be ongoing; this area can change rapidly. For reference behavior on this subject, take the default C backend as the basis.
+The LLVM backend supports `defer`, `?`, string scope cleanup, and DWARF generation with `-g`. C/LLVM parity is tested for documented examples; general language behavior is outside the stable API promise.
 
 ### ARM64 / cross-compilation
 
@@ -981,17 +981,10 @@ The `shellcode`, `c2`, `evasion`, `memdump` and `packet_crafter` modules are rej
 
 ## 15. What's next?
 
-The main items on Axiom's roadmap:
-
-- Completing string ownership and scope cleanup (intrusive header, `String`/`str` distinction).
-- A central package registry and more mature dependency resolution.
-- Moving the WASM and ARM64 targets out of experimental status.
-- String cleanup in the LLVM backend and strengthening overall backend parity.
-- Increasing the feature parity of the self-hosted compiler (`axiomc`).
-- A broader standard library and example collection.
+For the current, test-backed list of open work, see the single source of truth in [TODO.md](../../TODO.md). The v1.0 stable profile covers only `axiom-scan`; the general language and other tools remain outside that guarantee.
 
 The fastest way to explore the language is to run the programs in the `examples/` directory and try the contracts with `axiom check` / `axiom prove`.
 
 ---
 
-> **Note:** This guide is for v0.5.0-alpha. Because the language and tools evolve rapidly, behaviors, error messages and flags may change between versions. For up-to-date information, refer to `README.md`, `SPECIFICATION.md` and the `examples/` directory in the repository.
+> **Note:** This guide covers the v0.5 language profile distributed with the `v1.0.0-rc1` candidate. Language syntax and compiler tools are not stable APIs. Use `README.md` for current product scope, `SPECIFICATION.md` for language behavior, `TODO.md` for open work, and `examples/` for runnable programs.

@@ -823,7 +823,7 @@ def cmd_repl(args):
         pass
 
     session = REPLSession()
-    print(f"{CLR_BOLD}Axiom (λx) v0.5.0-alpha - İnteraktif REPL{CLR_RESET}")
+    print(f"{CLR_BOLD}Axiom (λx) v1.0.0-rc1 - İnteraktif REPL{CLR_RESET}")
     print("Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.\n")
 
     buffer: List[str] = []
@@ -890,7 +890,7 @@ def main():
         prog="axiom",
         description=f"{CLR_BOLD}Axiom (λx){CLR_RESET} - Python Ergonomisi, C Hızı ve Rust Doğrulanabilirliği Sunan Sistem Dili"
     )
-    parser.add_argument("-v", "--version", action="version", version="Axiom (λx) v0.5.0-alpha")
+    parser.add_argument("-v", "--version", action="version", version="Axiom (λx) v1.0.0-rc1")
     subparsers = parser.add_subparsers(dest="subcommand", required=True)
 
     # run

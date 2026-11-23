@@ -1,13 +1,14 @@
 # Sürümleme ve Platform Desteği / Versioning and Platform Support
 
-Bu belge Axiom `v0.x` dönemi için geçerli sürüm ve platform beyanını tanımlar.
+Bu belge Axiom `v1.0.0-rc1` sürüm adayı için geçerli sürüm ve platform beyanını tanımlar.
 Destek iddiaları doğrulanmış CI ve kullanıcı akışlarına dayanır.
 
 ## Türkçe
 
-### Sürümleme (`v1.0` öncesi)
+### Sürümleme (`v1.0.0` yayımlanmadan önce)
 
-- Proje şu anda `0.5.0-alpha` aşamasındadır. `v1.0` öncesinde dil sözdizimi,
+- Proje şu anda `1.0.0-rc1` sürüm adayıdır; RC kararlı yayın değildir. `v1.0.0`
+  yayımlanmadan önce dil sözdizimi,
   standart kütüphane, CLI, paket manifesti/kilit biçimi ve rapor şeması kararlı
   API olarak taahhüt edilmez.
 - `0.Y.Z` içinde `Y`, özellik veya uyumsuz değişiklik içeren sürümlerde artırılır;
@@ -47,9 +48,10 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
 
 ## English
 
-### Versioning before `v1.0`
+### Versioning before publishing `v1.0.0`
 
-- Axiom is currently at `0.5.0-alpha`. Before `v1.0`, the language syntax,
+- Axiom is currently preparing `1.0.0-rc1`; an RC is not a stable release.
+  Before `v1.0.0` is published, the language syntax,
   standard library, CLI, package manifest/lock format, and report schema are not
   promised as stable APIs.
 - In `0.Y.Z`, increment `Y` for feature releases or releases with breaking
