@@ -47,19 +47,19 @@ def test_two_minor_compatibility_policy_is_explicit_and_bilingual():
     assert "while preparing `v1.2`" in versioning.lower()
 
 
-def test_readmes_describe_remaining_v1_inventory_and_fixture_work():
+def test_readmes_describe_accepted_v1_profile_and_allowlist():
     readme_tr = _normalized("README.md")
     readme_en = _normalized("README.en.md")
 
     assert "çevrimdışı DFIR" in readme_tr
-    assert "v1.0 allowlist'i" in readme_tr
+    assert "v1.0 ürün profili" in readme_tr
+    assert "axiom-scan" in readme_tr
+    assert "v1.0.0 yayımlandığında" in readme_tr
     assert "offline DFIR triage" in readme_en
-    assert "v1.0 allowlist" in readme_en
-    assert "two-minor fixture checks" in readme_en
+    assert "stable allowlist" in readme_en
+    assert "v1.0.0" in readme_en
     assert "v1.0-stable-allowlist.json" in readme_tr
     assert "v1.0-stable-allowlist.json" in readme_en
-    assert "G5_API_STABILITY_PROPOSAL.md" in readme_tr
-    assert "G5_API_STABILITY_PROPOSAL.md" in readme_en
 
 
 def test_inventory_records_real_stdlib_and_abi_boundaries():

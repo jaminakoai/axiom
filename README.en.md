@@ -180,7 +180,7 @@ design*; measurements and caveats are in "Claims and evidence" below:
   unverified.**
 * **Windows:** Native example build/run and the documented harmless
   `axiom-scan` sentinel smoke test pass in CI with Python 3.12, LLVM `clang`,
-  and MSVC/Windows SDK ([run 44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057)).
+  and MSVC/Windows SDK ([run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303)).
   The full suite, real file/PCAP workflow, and manual installation are not yet
   verified.
 * **macOS:** The same native build/run and sentinel smoke tests pass in CI with
@@ -645,7 +645,7 @@ Test-infrastructure notes:
   tests are skipped for environment reasons. Wine prefixes are removed at the
   end of the session.
 
-### Last full verified run
+### Historical local full run (13 November 2026)
 
 | Field | Value |
 |---|---|
@@ -662,17 +662,17 @@ for binary scanner integration is in
 [`docs/reports/2026-11-14-yara-binary-scanner-integration.md`](docs/reports/2026-11-14-yara-binary-scanner-integration.md).
 The self-hosted compiler issue in the initial binary-scanner commit was fixed
 in `8fe6315`. On the corrected tree plus selector/AST tests, `python -m pytest -q -rs`:
-**1484 passed, 0 failed/skipped** (1344.44 s). The current YARA/scanner/differential/stress/backend-parity
-suite passed **490 tests** (223.89 s). The `058484e` CI counts are historical.
-The latest successful CI for `5eddc9d` passed **7/7** GitHub Actions jobs and
-**3/3** Linux/Windows/macOS platform smoke jobs; the current focused local suite
-passed **200/200**.
-The YARA parser expects multiline rule layout; valid one-line inline rules are currently rejected.
+**1484 passed, 0 failed/skipped** (1344.44 s). A previous YARA/scanner/differential/
+stress/backend-parity suite passed **490 tests** (223.89 s); the latest focused
+scanner/YARA/regression suite passed **219 tests**. The `058484e` CI counts are historical.
+The latest full CI evidence is listed in the CI status section below. The YARA
+parser expects multiline rule layout; valid one-line inline rules are currently
+rejected.
 
 ### CI status
 
 The badge is wired to the real workflow (`.github/workflows/ci.yml`, `master`).
-All 7 jobs passed in the latest completed run for commit `5eddc9d`:
+All 7 jobs passed in the latest completed run for commit `bfd0038`:
 
 | Job | Status |
 |---|---|
@@ -681,8 +681,9 @@ All 7 jobs passed in the latest completed run for commit `5eddc9d`:
 | LLVM backend + DWARF | ✅ |
 | Formatting (`make fmt-check`) | ✅ |
 
-Latest verified CI: [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315)
-(`master`, SHA `5eddc9d`). Native platform smoke [run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097)
+Latest verified CI: [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252)
+(`master`, SHA `bfd0038`; 1661 passed/27 environment skips on Python 3.10–3.13).
+Native platform smoke [run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303)
 passed 3/3 on Linux, Windows, and macOS.
 
 Six root causes fixed on the way here (details: report §9–§12):
@@ -699,7 +700,7 @@ Six root causes fixed on the way here (details: report §9–§12):
 **Note:** items 2, 5 and 6 were **product bugs**, not test issues. Wiring the
 badge to the real workflow instead of a fake "success" is what surfaced them.
 The cited 1034- and 1361-test runs are historical. Current full CI and platform
-smoke evidence is linked above for `5eddc9d`.
+smoke evidence is linked above for `bfd0038`.
 
 ---
 
@@ -720,6 +721,11 @@ smoke evidence is linked above for `5eddc9d`.
   **21/21**, Windows target **21/21** under wine.
 - 53 standard-library source files / 446 function declarations: security, networking, encoding, file, time, regex.
 - `axiom-scan` v0.2: schema-versioned JSON, `target_sha256`, `--fail-on-match`.
+- YARA text subset supports `wide`/`ascii wide`; regular-file buffer sizing
+  avoids realloc peak memory while the complete target remains in memory.
+- The first v1.0 product profile is offline DFIR triage; the stable allowlist
+  covers only the `axiom-scan` contract, with its compatibility promise starting
+  at v1.0.0 ([allowlist](docs/api/v1.0-stable-allowlist.json)).
 - DFIR triage tool (`examples/22_dfir_triage.ax`): processes/ports/integrity/Sigma → one JSON.
 - HTTP client, real JSON parser, YARA/Sigma engines, PCAP reader.
 - Package manager + registry v1 (ed25519 signatures, semver, transitive, yanked).
@@ -728,11 +734,11 @@ smoke evidence is linked above for `5eddc9d`.
 
 ### 🟡 In progress / partial
 
-- **CI:** `5eddc9d` green (7/7 jobs); six root causes fixed, three of them real product
+- **CI:** `bfd0038` green (7/7 jobs); six root causes fixed, three of them real product
   bugs (LLVM `main()` bridge, Python 3.10 TOML resolution, `gethostbyname`
   race). Details in "CI status" above.
 - **Windows:** clean installation and a native example build/run smoke test pass
-  on a real Windows runner ([platform smoke run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097));
+  on a real Windows runner ([platform smoke run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303));
   the full suite and `axiom-scan` remain unverified.
 - **macOS:** the same smoke test passes on a real macOS runner; the full suite
   and `axiom-scan` remain unverified.
@@ -747,13 +753,6 @@ smoke evidence is linked above for `5eddc9d`.
 
 ### ⬜ Planned
 
-- The first stable product profile is offline DFIR triage; the v1.0 allowlist
-  covers only the `axiom-scan` contract. The general language, compiler CLI,
-  axpm, manifest and lock files are not stable in this profile
-  ([allowlist](docs/api/v1.0-stable-allowlist.json),
-  [G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)). The compatibility promise
-  begins with v1.0.0; two-minor fixture checks become enforceable while
-  preparing v1.2.
 - Full test-suite and DFIR/`axiom-scan` workflows on Windows/macOS; end-to-end WASI tests with a sysroot.
 - Static (musl) binary production.
 - Published package ecosystem (target: 200+ packages) and a first enterprise user.

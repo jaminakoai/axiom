@@ -12,13 +12,13 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `f927410`: Python 3.10–3.13'in her birinde **1660 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
-| Son CI denemesi | `f927410` [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
-| Son başarılı tam CI | `f927410` [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
-| Son platform smoke | `f927410`, Linux/Windows/macOS native smoke [run 45195035974](https://github.com/jaminakoai/axiom/actions/runs/45195035974), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `bfd0038`: Python 3.10–3.13'in her birinde **1661 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252), **7/7 başarılı** |
+| Son CI denemesi | `bfd0038` [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252), **7/7 başarılı** |
+| Son başarılı tam CI | `bfd0038` [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252), **7/7 başarılı** |
+| Son platform smoke | `bfd0038`, Linux/Windows/macOS native smoke [run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `f927410` — [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı**; her Python sürümünde 1660 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45195035974](https://github.com/jaminakoai/axiom/actions/runs/45195035974) **3/3 başarılı** |
+| Son kaydedilmiş başarılı CI | `bfd0038` — [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252), **7/7 başarılı**; her Python sürümünde 1661 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303) **3/3 başarılı** |
 | Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
 | Son hedefli test paketi | Scanner + YARA modifier/condition/C-LLVM/differential/regression paketi **219 geçti**; regular-file preallocation için 2 MiB + embedded-NUL içerik ve kapasite runtime testi dahil. G5 allowlist/versioning ve TR/EN docs/spec paketi **42 geçti**; önceki geniş scanner paketi **326 geçti**. |
 

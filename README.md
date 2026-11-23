@@ -180,7 +180,7 @@ bölümündedir:
   doğrulanmamıştır.**
 * **Windows:** Python 3.12, LLVM `clang` ve MSVC/Windows SDK ile native örnek
   derleme/çalıştırma ve belgelenen zararsız `axiom-scan` sentinel smoke testi
-  CI'da geçti ([run 44020276057](https://github.com/jaminakoai/axiom/actions/runs/44020276057)).
+  CI'da geçti ([run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303)).
   Tam test paketi, gerçek dosya/PCAP iş akışı ve elle kurulum adımları henüz
   doğrulanmadı.
 * **macOS:** Python 3.12 ve Xcode Command Line Tools `clang` ile aynı native
@@ -642,7 +642,7 @@ Test altyapısı notları:
 - Windows hedefi testleri `wine` üzerinde gerçek çalıştırma yapar; wine yoksa
   ilgili testler ortam nedeniyle atlanır. Oturum sonunda wine prefix'leri silinir.
 
-### Son tam doğrulanmış koşu
+### Tarihsel yerel tam koşu (13 Kasım 2026)
 
 | Alan | Değer |
 |---|---|
@@ -658,16 +658,19 @@ düzeltmesini içerir. Bu eski test özeti tarihsel kayıttır; güncel binary s
 kanıtı `docs/reports/2026-11-14-yara-binary-scanner-integration.md` raporundadır.
 İlk binary scanner commit’indeki self-hosted derleme hatası `8fe6315` ile düzeltildi.
 Düzeltilmiş ağaçta ve sonraki selector/AST testleriyle `python -m pytest -q -rs`:
-**1484 geçti, 0 hata/skip** (1344,44 sn). Güncel YARA/scanner/differential/stress/
-backend parity paketi **490 geçti** (223,89 sn). `058484e` CI sayıları tarihsel
-kaldı. En son başarılı `5eddc9d` CI'si **7/7**, platform smoke'ta
-Linux/Windows/macOS **3/3** geçti; güncel yerel hedefli test paketi **200/200** geçti.
-YARA parser’ı multiline kural düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
+**1484 geçti, 0 hata/skip** (1344,44 sn). Önceki YARA/scanner/differential/stress/
+backend parity paketi **490 geçti** (223,89 sn); bu turdaki scanner/YARA/regression
+paketi **219 geçti**. `058484e` CI sayıları tarihsel kaldı. En son `bfd0038` CI'si
+**7/7**, platform smoke'ta
+Linux/Windows/macOS **3/3** geçti; güncel yerel scanner/YARA hedefli paketi
+**219/219** geçti.
+Güncel tam CI kanıtı aşağıdaki CI bölümündedir. YARA parser’ı multiline kural
+düzeni bekler; geçerli tek satırlık inline kurallar şu an reddedilir.
 
 ### CI durumu
 
 Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
-`5eddc9d` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
+`bfd0038` commit’indeki en son doğrulanmış koşuda 7 işin tamamı geçti:
 
 | İş | Durum |
 |---|---|
@@ -676,8 +679,9 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 | LLVM arka ucu + DWARF | ✅ |
 | Biçimlendirme (`make fmt-check`) | ✅ |
 
-Son doğrulanan CI: [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315)
-(`master`, SHA `5eddc9d`). Native platform smoke [run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097)
+Son doğrulanan CI: [run 45199051252](https://github.com/jaminakoai/axiom/actions/runs/45199051252)
+(`master`, SHA `bfd0038`; Python 3.10–3.13'ün her birinde 1661 geçti/27 ortam skip'i).
+Native platform smoke [run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303)
 ile Linux, Windows ve macOS'ta 3/3 başarılıdır.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
@@ -694,7 +698,7 @@ Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 **Not:** 2, 5 ve 6 numaralı maddeler **ürün hatalarıydı**, test sorunu değil.
 Rozeti sahte "success" yerine gerçek workflow'a bağlamak bunların ortaya
 çıkmasını sağladı. 1034 ve 1361 testli koşular tarihsel kayıttır; güncel tam CI
-ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
+ve platform smoke kanıtları yukarıdaki `bfd0038` bağlantılarındadır.
 
 ---
 
@@ -714,6 +718,12 @@ ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
   Windows hedefi wine altında **21/21**.
 - 53 stdlib kaynak dosyası / 446 fonksiyon bildirimi; güvenlik, ağ, kodlama, dosya, zaman, regex.
 - `axiom-scan` v0.2: şema sürümlü JSON, `target_sha256`, `--fail-on-match`.
+- YARA metin alt kümesinde `wide`/`ascii wide` araması; regular dosyalar
+  baştan boyutlandırıldığı için realloc tepe belleği azaltıldı. Hedefin tamamı
+  hâlâ bellekte tutulur.
+- İlk v1.0 ürün profili çevrimdışı DFIR triyajı olarak kabul edildi; kararlı
+  allowlist yalnız `axiom-scan` kullanıcı sözleşmesini kapsar ve uyumluluk sözü
+  v1.0.0 yayımlandığında başlar ([allowlist](docs/api/v1.0-stable-allowlist.json)).
 - DFIR triyaj aracı (`examples/22_dfir_triage.ax`): süreç/port/bütünlük/Sigma → tek JSON.
 - HTTP istemcisi, gerçek JSON parser, YARA/Sigma motorları, PCAP okuyucu.
 - Paket yöneticisi + registry v1 (ed25519 imza, semver, transitive, yanked).
@@ -722,11 +732,11 @@ ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
 
 ### 🟡 Üzerinde çalışılan / kısmi
 
-- **CI:** `5eddc9d` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
+- **CI:** `bfd0038` için yeşil (7/7 iş); altı kök neden giderildi, üçü gerçek ürün hatasıydı
   (LLVM `main()` köprüsü, Python 3.10 TOML çözümleme, `gethostbyname` yarışı).
   Ayrıntı "CI durumu" bölümünde.
 - **Windows:** gerçek Windows runner'ında temiz kurulum ve yerel örnek derle/çalıştır
-  duman testi geçti ([platform smoke run 45141920097](https://github.com/jaminakoai/axiom/actions/runs/45141920097));
+  duman testi geçti ([platform smoke run 45199051303](https://github.com/jaminakoai/axiom/actions/runs/45199051303));
   tam test paketi ve `axiom-scan` doğrulanmadı.
 - **macOS:** gerçek macOS runner'ında aynı duman testi geçti; tam test paketi ve
   `axiom-scan` doğrulanmadı.
@@ -741,11 +751,6 @@ ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
 
 ### ⬜ Planlanan
 
-- İlk kararlı ürün profili çevrimdışı DFIR triyajıdır; v1.0 allowlist'i yalnızca
-  `axiom-scan` sözleşmesini kapsar. Genel dil, compiler CLI, axpm, manifest ve
-  lock dosyaları bu kapsamda kararlı değildir ([allowlist](docs/api/v1.0-stable-allowlist.json),
-  [G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)). Uyumluluk sözü v1.0.0
-  yayımlandığında başlar; iki-minor fixture denetimi v1.2 hazırlığında etkinleşir.
 - Windows/macOS'ta tam test paketi ve DFIR/`axiom-scan` iş akışları; WASI sysroot ile uçtan uca test.
 - Statik (musl) ikili üretimi.
 - Yayınlanmış paket ekosistemi (hedef: 200+ paket) ve ilk kurumsal kullanıcı.
