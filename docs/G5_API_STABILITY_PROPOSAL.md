@@ -240,11 +240,15 @@ mean supporting only two old versions of the stable `1.x` API.
   VERSIONING ve doğrulama rehberiyle eşleştir. / Align VERSIONING and validation
   guidance with the decision that user trials are not a v1.0 technical gate.
 - [x] Kaynak tabanlı API inventory generator ve snapshot drift testi ekle;
-  fixture manifest şeması, yönergesi, doğrulayıcısı ve stable-tag CI kapısını
-  hazırla. Bunlar gerçek eski sürüm davranış kanıtı değildir.
+  fixture manifest şeması v2, yönergesi, doğrulayıcısı ve stable-tag CI kapısını
+  hazırla. Scanner fixture'ları tarihsel JSON Schema'yı hash ile pinler ve hem
+  beklenen hem güncel raporları bu şemaya göre doğrular. Bunlar gerçek eski
+  sürüm davranış kanıtı değildir.
   / Add the source-based API inventory generator and snapshot drift check;
-  prepare the fixture manifest schema, guide, validator and stable-tag CI gate.
-  These do not constitute historical behavior evidence.
+  prepare manifest schema v2, guide, validator and stable-tag CI gate. Scanner
+  fixtures pin the historical JSON Schema by hash and validate both expected
+  and current reports against it. These do not constitute historical behavior
+  evidence.
 - [x] Mevcut test/source kanıtını API yüzeylerine göre kaydet ve kanıtı
   kararlılık ilanından ayrı tut. / Record current test/source evidence by API
   surface and keep it separate from stability declarations.

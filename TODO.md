@@ -438,10 +438,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Gelecekteki release fixture'ları için [manifest şeması](docs/api/compat-fixture-manifest.schema.json),
   [fixture yönergesi](tests/fixtures/api_compatibility/README.md), doğrulayıcı ve
   GitHub tag/CI kapısı hazırlandı; synthetic C/LLVM, paket ve scanner vakaları
-  test ediliyor. Symlink/path traversal, hash uyuşmazlığı ve tag/package sürüm
-  uyuşmazlığı fail-closed reddediliyor. Yayımlanan Draft 2020-12 JSON Schema'nın
-  kendisi ve kaynak/paket/scanner manifest şekilleri testte doğrulanıyor; aynı
-  tam örnek manifest hem JSON Schema hem gerçek yükleyici tarafından kabul ediliyor.
+  test ediliyor. Her release fixture scanner rapor şemasını SHA-256 ile sabitler;
+  beklenen ve güncel scanner raporları bu tarihsel Draft 2020-12 şemasına göre
+  doğrulanır. Symlink/path traversal, şema/hash uyuşmazlığı ve tag/package sürüm
+  uyuşmazlığı fail-closed reddediliyor. Manifest JSON Schema'sı, scanner schema
+  şekli ve kaynak/paket/scanner manifestleri testte doğrulanıyor.
 - [x] Mevcut test/source kanıtını yüzeylere göre ayır; kanıt kapsamı ile
   kararlılık kararını birbirine karıştırma:
   [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md).

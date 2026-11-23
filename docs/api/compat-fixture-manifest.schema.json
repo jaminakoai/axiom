@@ -9,10 +9,11 @@
     "release",
     "source_examples",
     "package_projects",
+    "scanner_schemas",
     "scanner_cases"
   ],
   "properties": {
-    "schema_version": { "const": 1 },
+    "schema_version": { "const": 2 },
     "release": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
     "source_examples": {
       "type": "array",
@@ -23,6 +24,11 @@
       "type": "array",
       "uniqueItems": true,
       "items": { "$ref": "#/$defs/packageProject" }
+    },
+    "scanner_schemas": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/scannerSchema" }
     },
     "scanner_cases": {
       "type": "array",
@@ -71,12 +77,22 @@
         "exit_code": { "type": "integer" }
       }
     },
+    "scannerSchema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "sha256"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
     "scannerCase": {
       "type": "object",
       "additionalProperties": false,
       "required": [
         "id", "rules", "rules_sha256", "target", "target_sha256",
-        "expected_json", "expected_json_sha256", "backends", "exit_code"
+        "expected_json", "expected_json_sha256", "schema_id", "backends", "exit_code"
       ],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
@@ -86,6 +102,7 @@
         "target_sha256": { "$ref": "#/$defs/sha256" },
         "expected_json": { "type": "string", "minLength": 1 },
         "expected_json_sha256": { "$ref": "#/$defs/sha256" },
+        "schema_id": { "$ref": "#/$defs/id" },
         "backends": { "$ref": "#/$defs/backends" },
         "exit_code": { "type": "integer" }
       }

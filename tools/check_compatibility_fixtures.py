@@ -132,6 +132,8 @@ def _validate_backends(value: Any, label: str) -> list[str]:
 
 
 def load_manifest(release_dir: Path) -> dict[str, Any]:
+    from jsonschema import ValidationError
+
     manifest_path = _safe_path(release_dir, "manifest.json")
     try:
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -139,7 +141,10 @@ def load_manifest(release_dir: Path) -> dict[str, Any]:
         raise FixtureError(f"cannot read {manifest_path}: {exc}") from exc
     if not isinstance(manifest, dict):
         raise FixtureError(f"{manifest_path} must contain a JSON object")
-    required = {"schema_version", "release", "source_examples", "package_projects", "scanner_cases"}
+    required = {
+        "schema_version", "release", "source_examples", "package_projects",
+        "scanner_schemas", "scanner_cases",
+    }
     if set(manifest) != required:
         raise FixtureError(
             f"{manifest_path} keys must be exactly {sorted(required)}; got {sorted(manifest)}"
@@ -147,7 +152,7 @@ def load_manifest(release_dir: Path) -> dict[str, Any]:
     if (
         not isinstance(manifest["schema_version"], int)
         or isinstance(manifest["schema_version"], bool)
-        or manifest["schema_version"] != 1
+        or manifest["schema_version"] != 2
     ):
         raise FixtureError(f"unsupported fixture manifest schema: {manifest['schema_version']!r}")
     release = manifest["release"]
@@ -159,13 +164,20 @@ def load_manifest(release_dir: Path) -> dict[str, Any]:
         raise FixtureError(
             f"release directory must be v{canonical_release}, got {release_dir.name!r}"
         )
-    for group in ("source_examples", "package_projects", "scanner_cases"):
+    for group in ("source_examples", "package_projects", "scanner_schemas", "scanner_cases"):
         if not isinstance(manifest[group], list):
             raise FixtureError(f"{group} must be a list")
     if not any(manifest[group] for group in ("source_examples", "package_projects", "scanner_cases")):
         raise FixtureError("a release fixture manifest must contain at least one case")
 
     case_ids: set[str] = set()
+    scanner_schemas: dict[str, Any] = {}
+    for item in manifest["scanner_schemas"]:
+        _validate_case_id(item, case_ids, "scanner_schemas")
+        if set(item) != {"id", "path", "sha256"}:
+            raise FixtureError(f"scanner schema {item['id']} has an invalid shape")
+        scanner_schemas[item["id"]] = _load_report_schema(release_dir, item)
+
     for item in manifest["source_examples"]:
         _validate_case_id(item, case_ids, "source_examples")
         if set(item) != {"id", "source", "sha256", "backends", "stdout", "exit_code"}:
@@ -195,10 +207,13 @@ def load_manifest(release_dir: Path) -> dict[str, Any]:
         _validate_case_id(item, case_ids, "scanner_cases")
         expected_keys = {
             "id", "rules", "rules_sha256", "target", "target_sha256",
-            "expected_json", "expected_json_sha256", "backends", "exit_code",
+            "expected_json", "expected_json_sha256", "schema_id", "backends", "exit_code",
         }
         if set(item) != expected_keys:
             raise FixtureError(f"scanner case {item['id']} has an invalid shape")
+        schema_id = item["schema_id"]
+        if not isinstance(schema_id, str) or not CASE_ID.fullmatch(schema_id):
+            raise FixtureError(f"scanner case {item['id']}.schema_id is invalid")
         for path_field, hash_field in (
             ("rules", "rules_sha256"),
             ("target", "target_sha256"),
@@ -214,11 +229,48 @@ def load_manifest(release_dir: Path) -> dict[str, Any]:
             raise FixtureError(f"scanner case {item['id']} expected_json is invalid JSON") from exc
         if not isinstance(expected, dict):
             raise FixtureError(f"scanner case {item['id']} expected_json must be an object")
+        schema_validator = scanner_schemas.get(schema_id)
+        if schema_validator is None:
+            raise FixtureError(
+                f"scanner case {item['id']} references an unknown scanner schema: "
+                f"{schema_id!r}"
+            )
+        try:
+            schema_validator.validate(expected)
+        except ValidationError as exc:
+            raise FixtureError(
+                f"scanner case {item['id']} expected_json does not validate against "
+                f"schema {schema_id}: {exc.message}"
+            ) from exc
         _validate_backends(item["backends"], f"scanner case {item['id']}")
         if not isinstance(item["exit_code"], int) or isinstance(item["exit_code"], bool):
             raise FixtureError(f"scanner case {item['id']}.exit_code must be an integer")
 
+    referenced_schemas = {item["schema_id"] for item in manifest["scanner_cases"]}
+    if set(scanner_schemas) != referenced_schemas:
+        raise FixtureError("scanner schema fixtures must be referenced by scanner cases")
+
     return manifest
+
+
+def _load_report_schema(release_dir: Path, item: dict[str, Any]) -> Any:
+    from jsonschema import Draft202012Validator, SchemaError
+
+    schema_path = _safe_path(release_dir, item["path"])
+    _require_hash(item["sha256"], f"scanner schema {item['id']}.sha256")
+    if sha256_file(schema_path) != item["sha256"]:
+        raise FixtureError(f"scanner schema hash mismatch: {item['id']}")
+    try:
+        schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise FixtureError(f"scanner schema {item['id']} is invalid JSON: {exc}") from exc
+    if not isinstance(schema, dict):
+        raise FixtureError(f"scanner schema {item['id']} must be a JSON object")
+    try:
+        Draft202012Validator.check_schema(schema)
+    except SchemaError as exc:
+        raise FixtureError(f"scanner schema {item['id']} is not valid Draft 2020-12: {exc.message}") from exc
+    return Draft202012Validator(schema)
 
 
 def _validate_case_id(item: Any, ids: set[str], group: str) -> None:
@@ -335,7 +387,11 @@ def _build_scanner(backend: str, temporary: Path) -> Path:
     return output
 
 
-def _run_scanner_case(release_dir: Path, item: dict[str, Any], scanner: Path) -> None:
+def _run_scanner_case(
+    release_dir: Path, item: dict[str, Any], scanner: Path, schema_validator: Any
+) -> None:
+    from jsonschema import ValidationError
+
     target = _safe_path(release_dir, item["target"])
     rules = _safe_path(release_dir, item["rules"])
     expected_path = _safe_path(release_dir, item["expected_json"])
@@ -354,6 +410,14 @@ def _run_scanner_case(release_dir: Path, item: dict[str, Any], scanner: Path) ->
         raise FixtureError(f"{release_dir.name}/{item['id']} scanner returned invalid JSON") from exc
     if not isinstance(actual, dict) or not isinstance(expected, dict):
         raise FixtureError(f"{release_dir.name}/{item['id']} scanner JSON must be objects")
+    for label, report in (("actual", actual), ("expected", expected)):
+        try:
+            schema_validator.validate(report)
+        except ValidationError as exc:
+            raise FixtureError(
+                f"{release_dir.name}/{item['id']} {label} report does not validate "
+                f"against schema {item['schema_id']}: {exc.message}"
+            ) from exc
     actual = dict(actual)
     expected = dict(expected)
     for report in (actual, expected):
@@ -442,6 +506,11 @@ def run_release(release_dir: Path, manifest: dict[str, Any]) -> int:
         _run_package_case(release_dir, item)
         case_count += 1
     if manifest["scanner_cases"]:
+        schema_items = {item["id"]: item for item in manifest["scanner_schemas"]}
+        schema_validators = {
+            schema_id: _load_report_schema(release_dir, schema_item)
+            for schema_id, schema_item in schema_items.items()
+        }
         with tempfile.TemporaryDirectory(prefix="axiom-compat-scanner-") as temporary_name:
             temporary = Path(temporary_name)
             scanners: dict[str, Path] = {}
@@ -451,7 +520,9 @@ def run_release(release_dir: Path, manifest: dict[str, Any]) -> int:
                     if scanner is None:
                         scanner = _build_scanner(backend, temporary)
                         scanners[backend] = scanner
-                    _run_scanner_case(release_dir, item, scanner)
+                    _run_scanner_case(
+                        release_dir, item, scanner, schema_validators[item["schema_id"]]
+                    )
                 case_count += 1
     return case_count
 
