@@ -1444,8 +1444,9 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 
 1. **G3:** maintainer isteğiyle iç teknik denetim kapandı;
    [258 test ve temiz-klon kanıtı](docs/reports/2026-11-17-g3-internal-audit.md).
-   Bağımsız kullanıcı doğrulaması yapılmadı; mevcut `v1.0` politikası bunu
-   kapı olarak tutuyor.
+   Bağımsız kullanıcı doğrulaması yapılmadı; bu `v1.0` teknik kapısı değildir,
+   isteğe bağlı ürün geri bildirimidir. Gerçek saha taraması için kullanıcı
+   girdisi gereksinimi ayrı G5 maddesidir.
 2. **G4:** tamamlandı. `axiom-scan-report` 0.1.0 signed registry'de yayında;
    [yayın kanıtı](docs/reports/2026-11-17-g4-registry-publication.md).
 3. **G5 (aktif):** ilk uyumluluk politikası belirlendi; somut API envanteri,
@@ -1454,7 +1455,8 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    Sonra gerçek kullanım akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
-da tamamlandı; son kaydedilmiş CI `2b73fea` 7/7 başarılıdır. G5 başladı; yeni
+da tamamlandı; son kaydedilmiş tam CI `8a3220d` 7/7 başarılı, son doküman
+commit'i `6186327` için platform smoke 3/3 başarılıdır. G5 başladı; yeni
 dil kapsamı, API/uyumluluk politikası ve kanıtlanmış kullanıcı ihtiyacına göre
 seçilecek. Yeni YARA sözdizimi differential kanıt ve açık kapsam sınırlarıyla
 eklenir.
