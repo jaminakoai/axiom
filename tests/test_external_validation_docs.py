@@ -41,6 +41,7 @@ def test_smoke_instructions_and_expected_result_are_documented_in_both_languages
 
 def test_pcap_guidance_documents_format_limits_and_fail_closed_behavior():
     guide = _read_guide()
+    normalized_guide = " ".join(guide.split())
     readmes = [
         (ROOT / "README.md").read_text(encoding="utf-8"),
         (ROOT / "README.en.md").read_text(encoding="utf-8"),
@@ -50,10 +51,12 @@ def test_pcap_guidance_documents_format_limits_and_fail_closed_behavior():
         assert "pcapng" in text
         assert "truncated" in text.lower() or "kesik" in text.lower()
         assert "TCP" in text
-    assert "Yakalanmış ham frame baytları" in guide
-    assert "Captured raw frame bytes" in guide
-    assert "protokol çözümleme" in guide
-    assert "protocol decoding" in guide
+    assert "Her kaydın yakalanmış baytları opak veri" in normalized_guide
+    assert "Each record's captured bytes are scanned" in normalized_guide
+    assert "linktype yok sayılır" in normalized_guide
+    assert "linktype is ignored" in normalized_guide
+    assert "Protokol çözümleme" in normalized_guide
+    assert "protocol decoding" in normalized_guide
 
 
 def test_feedback_routing_separates_public_usability_from_security_reports():

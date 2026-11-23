@@ -71,3 +71,11 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
     assert surface["input_contract"]["pcap"]["matched_packet_index_base"] == 0
     assert surface["input_contract"]["pcap"]["maximum_captured_record_bytes"] == 65535
     assert "neither validated nor reported" in surface["input_contract"]["pcap"]["timestamp_handling"]
+    assert "opaque bytes" in surface["input_contract"]["pcap"]["scan_unit"]
+    assert "ignored" in surface["input_contract"]["pcap"]["linktype"]
+    assert surface["input_contract"]["pcap"]["captured_record_length_must_not_exceed"] == [
+        "global_snaplen",
+        "original_record_length",
+        "maximum_captured_record_bytes",
+    ]
+    assert "as opaque bytes" in surface["commands"]["pcap"]

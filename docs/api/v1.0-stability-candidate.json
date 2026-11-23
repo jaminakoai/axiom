@@ -13,7 +13,7 @@
       "commands": {
         "rules": "Validate and count a positional rule file; success report has rules_count and rules.",
         "scan": "Scan the full target byte buffer; provide the rule file with --rules <path>.",
-        "pcap": "Scan each captured frame in classic PCAP separately; provide the rule file with --rules <path>; no stream reassembly."
+        "pcap": "Scan each classic PCAP record's captured bytes independently as opaque bytes; provide the rule file with --rules <path>; the linktype is ignored and no stream reassembly is performed."
       },
       "options": {
         "--rules <path>": "Required by scan and pcap; rules takes its rule file positionally.",

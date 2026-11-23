@@ -108,9 +108,10 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   tarayıcı yanlış sonuç vermek yerine açık hata döndürür; NUL içermeyen hedefte
   regex mevcut POSIX ERE yolunu kullanır.
 - Yalnız klasik PCAP dosyaları desteklenir (mikro/nanosaniye zaman damgası,
-  iki bayt sırası); pcapng açıkça reddedilir. Her kayıttaki yakalanmış ham frame
-  baytları, başlıklar dâhil, ayrı taranır; protokol çözümleme veya
-  **TCP akışı yeniden birleştirme yoktur**. Bozuk/kesik kayıt hata verir.
+  iki bayt sırası); pcapng açıkça reddedilir. Her kaydın yakalanmış baytları,
+  opak veri olarak ayrı taranır; global header'daki linktype yok sayılır.
+  Protokol çözümleme veya **TCP akışı yeniden birleştirme yoktur**.
+  Bozuk/kesik kayıt hata verir.
 - DFIR aracı Linux `/proc` tabanlıdır; Windows/macOS'ta süreç ve port toplama
   yoktur. Bir tespit/politika motoru değildir: risk skoru üretir, exit kodunu
   değiştirmez.

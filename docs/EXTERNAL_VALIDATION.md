@@ -106,16 +106,16 @@ before sharing a command.
 ```
 
 Yalnız klasik PCAP dosyaları desteklenir (mikro/nanosaniye zaman damgası, iki
-bayt sırası); pcapng desteklenmez. Yakalanmış ham frame baytları başlıklar dâhil
-aynen ve paket başına taranır; protokol çözümleme ve TCP akışı yeniden
-birleştirme yoktur. Boş paket geçerlidir; bozuk veya kesik kayıt tüm taramayı
-hata ile durdurur.
+bayt sırası); pcapng desteklenmez. Her kaydın yakalanmış baytları opak veri
+olarak, ayrı ayrı taranır; global header'daki linktype yok sayılır. Protokol
+çözümleme ve TCP akışı yeniden birleştirme yoktur. Boş kayıt geçerlidir; bozuk
+veya kesik kayıt tüm taramayı yapılandırılmış hata ile durdurur.
 
 Only classic PCAP files are supported (micro/nanosecond timestamps, either byte
-order); pcapng is unsupported. Captured raw frame bytes are scanned as-is,
-including headers, one packet at a time; there is no protocol decoding or TCP
-stream reassembly. Empty packets are valid; malformed or truncated records stop
-the scan with an error.
+order); pcapng is unsupported. Each record's captured bytes are scanned
+independently as opaque data; the global-header linktype is ignored. There is no
+protocol decoding or TCP stream reassembly. Empty records are valid; malformed
+or truncated records stop the scan with a structured error.
 
 ```bash
 /tmp/axiom-scan pcap /absolute/path/to/authorized-capture.pcap --rules /absolute/path/to/your-rules.yar

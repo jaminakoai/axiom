@@ -65,10 +65,11 @@ Bu kapsam önerisidir, kararlılık sözü değildir. Ürün çevrimdışı DFIR
 odaklanacaksa v1.0 allowlist'i için incelenecek kullanıcı sözleşmesi
 `axiom-scan` ikilisidir: `rules`/`scan`/`pcap` komutları, çıkış kodları, rapor
 şeması v1, belgelenmiş YARA alt kümesinin kesin sınırları, tam buffer hash/byte
-uzunluğu semantiği ve klasik PCAP'in paket başına taranması. Bu karar, örneği
-derlemek için içeride kullanılan her compiler veya stdlib fonksiyonunu otomatik
-olarak kararlı yapmaz. Makinece okunabilir, kaynak ve test kanıtlarına bağlı
-taslak [`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json)
+uzunluğu semantiği ve klasik PCAP kayıtlarının opak yakalanmış baytlarının
+kayıt başına taranması. Bu karar, örneği derlemek için içeride kullanılan her
+compiler veya stdlib fonksiyonunu otomatik olarak kararlı yapmaz.
+Makinece okunabilir, kaynak ve test kanıtlarına bağlı taslak
+[`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json)
 dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğrular.
 
 | Candidate behavior | Evidence to bind into the release allowlist |
@@ -79,7 +80,7 @@ dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğru
 | Hex wildcards, fixed/bounded jumps, alternation, negated bytes and occurrence selection | [`tests/test_yara_fixed_jumps.py`](../tests/test_yara_fixed_jumps.py), [`tests/test_yara_hex_ranges.py`](../tests/test_yara_hex_ranges.py), [`tests/test_yara_hex_range_differential.py`](../tests/test_yara_hex_range_differential.py), [`tests/test_yara_hex_typed_differential.py`](../tests/test_yara_hex_typed_differential.py), [`tests/test_yara_hex_alternation.py`](../tests/test_yara_hex_alternation.py), [`tests/test_yara_hex_negation.py`](../tests/test_yara_hex_negation.py) |
 | Regex input safety and NUL-containing target behavior | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control` |
 | Whole-file byte scanning, hash/byte-count correctness, report fields, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_fail_on_match_is_opt_in`, `test_error_path_is_structured_json` |
-| Classic PCAP endian/timestamp variants, malformed records, raw frame scanning and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_llvm_scanner_matches_c` |
+| Classic PCAP byte order/timestamp magic, opaque record scanning, ignored linktype, 65,535-byte cap, zero-length records, zero-based match indices, malformed-input errors and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_counts_empty_packet_and_continues`, `test_scan_pcap_ignores_linktype_and_scans_captured_bytes`, `test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_llvm_scanner_matches_c` |
 
 The [fixed external YARA corpus](../tests/test_yara_corpus_compat.py) adds
 reference-engine evidence for selected supported and explicitly rejected
