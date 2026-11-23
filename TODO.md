@@ -497,8 +497,11 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sürdü. Yöntem ve sınırlar:
   [`G5 API audit`](docs/G5_API_CONTRACT_AUDIT.md#local-scanner-memory-measurement-2026-11-23),
   [`benchmark script`](tools/benchmark_axiom_scan_memory.py).
-- [ ] Temsilî kullanıcı girdileri ve match-heavy kurallarda bellek/latency
-  ihtiyacını değerlendir; mevcut ölçüm sentetik sparse dosyalarla sınırlı.
+- [x] Ölçüm aracına dışarıdan verilen hedef dosya + YARA alt kümesi kural
+  dosyası modu ekle; örnek dosya/rule ile uçtan uca çalışmasını doğrula. Komut
+  ve çıktı alanları G5 denetim raporunda.
+- [ ] Temsilî ve yetkili kullanıcı girdileri ile gerçek/match-heavy kurallarda
+  bellek/latency ihtiyacını değerlendir; henüz böyle bir saha örneği yok.
   Gerçek ihtiyaç kanıtı olmadan boyut sınırı, streaming veya daha geniş platform
   desteği kararı verme. Somut workflow ihtiyacı göstermeden genel dil
   özelliklerine yönelme.

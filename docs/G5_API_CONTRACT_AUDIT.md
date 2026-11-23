@@ -116,6 +116,17 @@ measurement does not establish a safe maximum size, production latency target,
 or Windows/macOS behavior; gather representative workload evidence before
 changing the no-limit contract or redesigning for streaming/mmap.
 
+The same tool can measure a caller-provided target and YARA-subset rule file
+without printing either path or the target hash:
+
+```bash
+python tools/benchmark_axiom_scan_memory.py --target /path/to/authorized-sample.bin --rules /path/to/sample.yar
+```
+
+The result contains scanned bytes, per-rule `match_count`, elapsed time and
+sampled RSS. It runs a complete scanner build and target scan on Linux; use
+representative files only where their handling is authorized.
+
 ## Explicitly out of scope / Açıkça kapsam dışı
 
 - The selected stable surface does not include the general Axiom language,

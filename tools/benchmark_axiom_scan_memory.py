@@ -3,9 +3,10 @@
 
 This is a non-gating benchmark. It builds the scanner, creates sparse regular
 files of the requested sizes, scans them with no-match and match-heavy rules,
-and samples the child's Linux VmHWM. Sparse files make input generation fast;
-the scanner still reads and hashes every logical byte. Results are not a
-substitute for measuring representative user files or other platforms.
+and samples the child's Linux VmHWM. Use --target and --rules to measure an
+approved representative file with a caller-provided rule set. Sparse files
+make synthetic input generation fast; the scanner still reads and hashes every
+logical byte. Results are not a substitute for measuring other platforms.
 """
 
 from __future__ import annotations
@@ -50,12 +51,26 @@ def main() -> int:
         default=("no-match", "match-heavy"),
         help="scenarios to run (default: both)",
     )
+    parser.add_argument(
+        "--target",
+        type=pathlib.Path,
+        help="measure this existing target instead of generating sparse files",
+    )
+    parser.add_argument(
+        "--rules",
+        type=pathlib.Path,
+        help="YARA-subset rules for --target mode (required with --target)",
+    )
     args = parser.parse_args()
 
     if sys.platform != "linux" or not pathlib.Path("/proc/self/status").exists():
         parser.error("this benchmark requires Linux /proc process statistics")
     if not args.sizes_mib or any(size <= 0 for size in args.sizes_mib):
         parser.error("all --sizes-mib values must be positive")
+    if (args.target is None) != (args.rules is None):
+        parser.error("--target and --rules must be supplied together")
+    if args.target is not None and (not args.target.is_file() or not args.rules.is_file()):
+        parser.error("--target and --rules must refer to existing files")
 
     with tempfile.TemporaryDirectory(prefix="axiom-scan-memory-") as temp_dir:
         work = pathlib.Path(temp_dir)
@@ -77,6 +92,53 @@ def main() -> int:
         if build.returncode:
             sys.stderr.write(build.stdout + build.stderr)
             return build.returncode
+
+        if args.target is not None:
+            command = [
+                str(scanner),
+                "scan",
+                str(args.target.resolve()),
+                "--rules",
+                str(args.rules.resolve()),
+            ]
+            process = subprocess.Popen(
+                command,
+                cwd=ROOT,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            start = time.monotonic()
+            max_rss_kib = 0
+            while process.poll() is None:
+                try:
+                    max_rss_kib = max(max_rss_kib, peak_rss_kib(process.pid))
+                except FileNotFoundError:
+                    break
+                time.sleep(0.005)
+            stdout, stderr = process.communicate()
+            if process.returncode:
+                sys.stderr.write(stdout + stderr)
+                return process.returncode
+            report = json.loads(stdout)
+            scanned_bytes = report.get("scanned_bytes")
+            if scanned_bytes is None:
+                raise RuntimeError("scan report omitted scanned_bytes")
+            if max_rss_kib == 0:
+                raise RuntimeError("failed to sample child VmHWM")
+            print(
+                json.dumps(
+                    {
+                        "scenario": "custom-rules",
+                        "scanned_bytes": scanned_bytes,
+                        "match_count": report["match_count"],
+                        "elapsed_seconds": round(time.monotonic() - start, 3),
+                        "sampled_peak_rss_mib": round(max_rss_kib / 1024, 1),
+                    },
+                    sort_keys=True,
+                )
+            )
+            return 0
 
         rule_files = {}
         for scenario in args.scenarios:
