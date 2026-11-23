@@ -51,8 +51,8 @@
         "tags": { "type": "array", "items": { "type": "string" } },
         "meta": { "$ref": "#/$defs/meta" },
         "pattern": { "type": "string", "minLength": 1 },
-        "offset": { "type": "integer", "minimum": 0 },
-        "length": { "type": "integer", "minimum": 0 }
+        "offset": { "type": "integer", "minimum": 0, "description": "Zero-based byte offset of the reported pattern witness, including regex matches." },
+        "length": { "type": "integer", "minimum": 0, "description": "Byte length of the reported pattern witness, including regex matches." }
       },
       "required": ["rule", "tags", "meta", "pattern", "offset", "length"],
       "additionalProperties": false
@@ -101,9 +101,9 @@
             "ok": { "const": true },
             "pcap": { "type": "string", "minLength": 1 },
             "pcap_sha256": { "$ref": "#/$defs/sha256" },
-            "packets": { "type": "array", "items": { "$ref": "#/$defs/pcapPacket" } },
-            "packet_count": { "type": "integer", "minimum": 0 },
-            "match_count": { "type": "integer", "minimum": 0 }
+            "packets": { "type": "array", "items": { "$ref": "#/$defs/pcapPacket" }, "description": "Sparse list containing only records with at least one matching rule; each index refers to the zero-based original record index." },
+            "packet_count": { "type": "integer", "minimum": 0, "description": "Total records in the capture, including records with zero captured bytes and records omitted from packets because they have no findings." },
+            "match_count": { "type": "integer", "minimum": 0, "description": "Total matching rule-record pairs, equal to the sum of the emitted packets' rules array lengths; not pattern occurrence count." }
           },
           "required": ["schema_version", "tool", "tool_version", "rules_count", "ok", "pcap", "pcap_sha256", "packets", "packet_count", "match_count"],
           "additionalProperties": false

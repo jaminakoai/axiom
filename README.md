@@ -108,12 +108,17 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   NUL baytından önce, sonra ve bayt sınırını aşarak bulunabilir. `scanned_bytes`
   taranan tam bayt uzunluğunu gösterir. NUL içeren hedefte regex deseni varsa
   tarayıcı yanlış sonuç vermek yerine açık hata döndürür; NUL içermeyen hedefte
-  regex mevcut POSIX ERE yolunu kullanır.
+  regex mevcut POSIX ERE yolunu kullanır ve raporda ilk eşleşmenin gerçek bayt
+  ofseti ile uzunluğunu verir.
 - Yalnız klasik PCAP dosyaları desteklenir (mikro/nanosaniye zaman damgası,
   iki bayt sırası); pcapng açıkça reddedilir. Her kaydın yakalanmış baytları,
   opak veri olarak ayrı taranır; global header'daki linktype yok sayılır.
   Protokol çözümleme veya **TCP akışı yeniden birleştirme yoktur**.
-  Bozuk/kesik kayıt hata verir.
+  Bozuk/kesik kayıt hata verir. JSON `packets` dizisi yalnız bulgu bulunan
+  kayıtları içerir; `packet_count` bulgusuz ve sıfır uzunluklu kayıtlar dahil
+  tüm kayıtları sayar, `match_count` ise eşleşen kural-kayıt çiftlerini sayar.
+  Dosya taraması tüm hedefi belleğe alır; yapılandırılmış bir dosya boyutu üst
+  sınırı yoktur ve çok büyük girdiler kullanılabilir belleği tüketebilir.
 - DFIR aracı Linux `/proc` tabanlıdır; Windows/macOS'ta süreç ve port toplama
   yoktur. Bir tespit/politika motoru değildir: risk skoru üretir, exit kodunu
   değiştirmez.

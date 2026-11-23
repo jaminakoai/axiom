@@ -302,11 +302,13 @@ fn _yara_scan_single_pattern(target: str, buffer_handle: int, pattern_id: str, p
         let result = yara_scan_regex_result(regex_target, p);
         let ok = result.is_ok and result.value;
         if (ok) {
+            let match_offset = rt_regex_find_offset(p, regex_target)
+            let match_text = regex_find(p, regex_target)
             return YaraMatch {
                 rule_name: "",
                 pattern_id: pattern_id,
-                offset: 0,
-                matched_len: 0,
+                offset: match_offset,
+                matched_len: str_len(match_text),
                 matched: true
             };
         }

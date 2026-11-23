@@ -82,6 +82,11 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
         "original_record_length",
         "maximum_captured_record_bytes",
     ]
+    assert "only records with at least one matching rule" in surface["input_contract"]["pcap"]["packets_array"]
+    assert "rule-record pairs" in surface["input_contract"]["pcap"]["match_count"]
+    assert surface["input_contract"]["resource_limits"]["maximum_file_scan_bytes"] is None
+    assert surface["validated_platform_scope"]["full_file_and_pcap_scan"] == ["Linux x86_64"]
+    assert "byte offset and length" in surface["yara_subset"]["regex"]
     assert "as opaque bytes" in surface["commands"]["pcap"]
     assert surface["yara_subset"]["metadata"]["integer_literals"] == {
         "optional_sign": "leading -",
@@ -97,6 +102,12 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
     assert "tests/test_axiom_scan.py::test_cli_usage_errors_are_structured_and_match_c_llvm" in surface["evidence"]["tests"]
     assert "tests/test_axiom_scan.py::test_help_and_version_are_plain_text_for_c_and_llvm" in surface["evidence"]["tests"]
     assert "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records" in surface["evidence"]["tests"]
+    assert "tests/test_axiom_scan.py::test_regex_witness_reports_actual_byte_span_on_both_backends" in surface["evidence"]["tests"]
+
+    schema = json.loads((ROOT / "docs/api/axiom-scan-report.schema.json").read_text(encoding="utf-8"))
+    pcap_properties = schema["$defs"]["pcapReport"]["allOf"][1]["properties"]
+    assert "Sparse list" in pcap_properties["packets"]["description"]
+    assert "matching rule-record pairs" in pcap_properties["match_count"]["description"]
 
 
 def test_readmes_document_metadata_integer_limits_in_both_languages():

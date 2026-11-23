@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `d6150a6` — [run 45173948460](https://github.com/jaminakoai/axiom/actions/runs/45173948460), **7/7 başarılı**; Python 3.10–3.13'in her birinde 1649 geçti / 27 ortam skip'i |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **261 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 68,20 sn; manifest schema/yükleyici paritesi, metadata sayı/kaçış sınırları, CLI hata/help alias kontrolleri C/LLVM’de, PCAP 2.4/snaplen sınırları, fail-on-match paritesi, kayıtlar arası eşleşmeme, boş kayıt, sıfır tabanlı indeks, linktype/kayıt boyutu ve şemalı hata raporları dahil). README TR/EN metadata integer sınırları da test edilir. |
+| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **262 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 68,15 sn; manifest schema/yükleyici paritesi, metadata sayı/kaçış sınırları, CLI hata/help alias kontrolleri C/LLVM’de, PCAP 2.4/snaplen ve seyrek bulgu listesi sözleşmesi, fail-on-match paritesi, kayıtlar arası eşleşmeme, boş kayıt, sıfır tabanlı indeks, linktype/kayıt boyutu, regex gerçek offset/uzunluğu ve şemalı hata raporları dahil). README TR/EN metadata, regex tanığı, bellek ve platform sınırlarını açıklar. |
 
 ---
 
@@ -36,6 +36,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   `axiom-scan`/DFIR örnekleri mevcut. G0, G1, G2 ve classic PCAP için üç
   işletim sistemli smoke testi tamamlandı. Genel G4 platform smoke da daha önce
   Linux, Windows ve macOS'ta geçti.
+- Dil-gap incelemesi, mevcut syntax/std kütüphanesinin offline scanner dikey
+  dilimini kurmaya yeterli olduğunu buldu. Şimdilik genel amaçlı yeni syntax
+  açmak yerine kanıtlı scanner/runtime ihtiyaçlarına (ör. `wide` YARA ve büyük
+  dosya bellek ölçeği) göre sınırlı geliştirme önerilir; bunların v1.0 kapsamı
+  kararlı allowlist kararıyla birlikte seçilecek.
 - G3 teknik kabul kapısı maintainer'ın isteğiyle bağımsız kullanıcı denemesi
   yerine iç teknik denetimle kapatıldı. Denetim kapsamı ve kanıtı:
   [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
@@ -425,7 +430,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   isteğe bağlı ürün geri bildirimi, G3 iç denetimini teknik kanıt olarak kaydet;
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
 - [x] AST tabanlı kaynak envanteri oluşturuldu: 446 stdlib fonksiyon imzası,
-  37 struct, 358 builtin imzası; `tools/generate_api_inventory.py --check`
+  37 struct, 359 builtin imzası; `tools/generate_api_inventory.py --check`
   güncelliğini doğrular. [API snapshot](docs/api/v0.5.0-alpha.json) davranış veya
   kararlılık garantisi değildir.
 - [x] Gelecekteki release fixture'ları için [manifest şeması](docs/api/compat-fixture-manifest.schema.json),
@@ -453,10 +458,16 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   sınırlandırıldı. C/LLVM PCAP `--fail-on-match` ve CLI usage rapor paritesi;
   help/version düz metin davranışı test edildi. Snaplen ve 65.535 bayt sınırı
   hataları ile bozuk PCAP hataları JSON Schema'ya göre doğrulanıyor.
+- [x] Scanner kararlı adayının kanıt kalitesini denetle: regex eşleşmesinin
+  rapor witness'ı artık gerçek byte offset/length verir (C/LLVM regresyonu);
+  PCAP `packets` alanının yalnız bulgulu kayıtları listelediği, `packet_count`'ın
+  tüm kayıtları, `match_count`'ın kural-kayıt çiftlerini saydığı şema ve testle
+  açık. Platform doğrulama sınırı (tam file/PCAP yalnız Linux x86_64) ile tüm
+  dosyanın belleğe alınması ve boyut tavanı olmaması aday sözleşmeye eklendi.
 - [ ] v1.0 kararlı allowlist'i için seçilen her sembol/gramer/komut/şema alanını
   davranış, hata/sentinel, sahiplik/lifetime, C/LLVM ve ilgili platform/thread
   sözleşmesiyle; enforcement testlerine bağlı şekilde incele. Allowlist dışında
-  kalan envanter girdileri kararlı API değildir; 844 girdinin her birine ayrıca
+  kalan envanter girdileri kararlı API değildir; 845 girdinin her birine ayrıca
   yapay bir stable/experimental/unsupported etiketi verme zorunluluğu yoktur.
 - [x] `axiom-scan` rules/scan/pcap/structured-error report contract'ı için
   [JSON Schema](docs/api/axiom-scan-report.schema.json) yayımla ve gerçek
@@ -552,7 +563,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 - **İki arka uç eşit:** `defer`, `?`, string/dizi kapsam temizliği, DWARF — C ve LLVM'de aynı sonuç.
 - **Hata modeli modern:** `Result<T,E>` + `?`, `defer` ile uyumlu, zero-GC.
 - **Bellek güvenliği büyük ölçüde:** taşma/sıfıra bölme/dizi sınırı yakalanıyor; ASan temiz.
-- **API kaynağı:** 111 `rt_*` dışı + 247 `rt_*` önekli, kaynak koddan çağrılabilir checker builtin imzası ve 3 özel builtin biçimi; 53 stdlib dosyasında 446 fonksiyon/37 struct. Envanter davranış veya kararlılık sözü değildir; generated snapshot G5'tedir.
+- **API kaynağı:** 111 `rt_*` dışı + 248 `rt_*` önekli, kaynak koddan çağrılabilir checker builtin imzası ve 3 özel builtin biçimi; 53 stdlib dosyasında 446 fonksiyon/37 struct. Envanter davranış veya kararlılık sözü değildir; generated snapshot G5'tedir.
 - **Doküman iki dilde:** TR + EN rehber (996 satır) ve şartname (691 satır); dört belgenin kod blokları CI'da derlenerek doğrulanıyor.
 - **API dokümanı üretimi:** `axiom doc` — `///` yorumlarından HTML/JSON (std: 81 belgeli öğe).
 - **Benchmark var:** C'nin 1,5–2,2× yavaşı (aritmetik), Python'un 6–30× hızlısı.

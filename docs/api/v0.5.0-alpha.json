@@ -11217,6 +11217,16 @@
       "name_family": "rt_prefixed"
     },
     {
+      "name": "rt_regex_find_offset",
+      "parameters": [
+        "str",
+        "str"
+      ],
+      "returns": "int",
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
+    },
+    {
       "name": "rt_regex_is_match",
       "parameters": [
         "str",

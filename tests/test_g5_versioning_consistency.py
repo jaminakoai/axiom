@@ -81,18 +81,18 @@ def test_spec_builtin_raw_counts_match_checker_without_claiming_stability():
     )
     non_runtime = sum(not name.startswith("rt_") for name in builtin_map)
     runtime_aliases = len(builtin_map) - non_runtime
-    assert (len(builtin_map), non_runtime, runtime_aliases) == (358, 111, 247)
+    assert (len(builtin_map), non_runtime, runtime_aliases) == (359, 111, 248)
 
     for relative in ("SPECIFICATION.md", "docs/en/SPECIFICATION.md"):
         spec = _normalized(relative)
         assert "111" in spec
-        assert "247" in spec
+        assert "248" in spec
         if relative == "SPECIFICATION.md":
             assert "tamamlanmış bir" in spec
         else:
             assert "not a complete user-facing API catalog" in spec
     proposal = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
-    assert "247'si `rt_*` önekli" in proposal
+    assert "248'i `rt_*` önekli" in proposal
     assert "`rt_*` burada gizli API anlamına gelmiyor" in proposal
 
 

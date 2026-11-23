@@ -450,8 +450,8 @@ Only `int` can be passed to a thread; for complex data, use the global/handle ap
 
 ## 13. Built-in function catalog
 
-The compiler checker accepts 111 non-`rt_*` and 247 `rt_*`-prefixed signatures
-from Axiom source; none of these 358 names has a stability classification yet.
+The compiler checker accepts 111 non-`rt_*` and 248 `rt_*`-prefixed signatures
+from Axiom source; none of these 359 names has a stability classification yet.
 `len`, `thread_create` and `array_push` are handled as three special forms.
 These raw implementation counts are not a complete user-facing API catalog or a stability promise. The
 list in this section is incomplete; G5 still needs a complete symbol/signature/

@@ -1009,24 +1009,53 @@ def test_scan_pcap_counts_empty_packet_and_continues(scanner, tmp_path):
         'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
         encoding="utf-8",
     )
-    pcap = tmp_path / "empty-then-valid.pcap"
+    pcap = tmp_path / "empty-unmatched-then-valid.pcap"
     global_header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
     empty_record = struct.pack("<IIII", 1700000000, 0, 0, 0)
+    clean_payload = b"nothing here"
+    unmatched_record = struct.pack(
+        "<IIII", 1700000000, 0, len(clean_payload), len(clean_payload)
+    ) + clean_payload
     payload = b"NEEDLE"
     valid_record = struct.pack(
         "<IIII", 1700000001, 0, len(payload), len(payload)
     ) + payload
-    pcap.write_bytes(global_header + empty_record + valid_record)
+    pcap.write_bytes(global_header + empty_record + unmatched_record + valid_record)
 
     result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
 
     assert result.returncode == 0, result.stdout + result.stderr
     report = json.loads(result.stdout)
     assert report["ok"] is True
-    assert report["packet_count"] == 2
+    assert report["packet_count"] == 3
     assert report["match_count"] == 1
-    assert report["packets"][0]["index"] == 1
+    assert len(report["packets"]) == 1
+    assert report["packets"][0]["index"] == 2
     assert report["packets"][0]["rules"] == ["PacketNeedle"]
+
+
+def test_regex_witness_reports_actual_byte_span_on_both_backends(
+    scanner, scanner_llvm, tmp_path
+):
+    rules = tmp_path / "regex-witness.yar"
+    rules.write_text(
+        'rule RegexWitness {\n strings:\n  $a = /abc$/\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    target = tmp_path / "regex-target.bin"
+    target.write_bytes(b"abc prefix abc")
+
+    reports = []
+    for executable in (scanner, scanner_llvm):
+        result = _run(executable, "scan", str(target), "--rules", str(rules))
+        assert result.returncode == 0, result.stdout + result.stderr
+        report = json.loads(result.stdout)
+        _assert_report_matches_schema(report)
+        reports.append(report)
+
+    assert reports[0] == reports[1]
+    assert reports[0]["matches"][0]["offset"] == 11
+    assert reports[0]["matches"][0]["length"] == 3
 
 
 def test_pcap_match_does_not_span_records(scanner, scanner_llvm, tmp_path):

@@ -226,6 +226,7 @@ BUILTIN_MAP = {
     'rt_regex_risk_level': 'axiom_regex_risk_level',
     'rt_regex_is_match': 'axiom_regex_is_match',
     'rt_regex_find': 'axiom_regex_find',
+    'rt_regex_find_offset': 'axiom_regex_find_offset',
     'rt_regex_replace': 'axiom_regex_replace',
     'rt_map_create': 'axiom_map_create',
     'rt_map_set': 'axiom_map_set',

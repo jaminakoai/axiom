@@ -108,12 +108,17 @@ in their own language.
   found before, after, or across NUL bytes, and `scanned_bytes` reports the full
   scanned length. If a target containing NUL also uses a regex pattern, the
   scanner returns an explicit error instead of a potentially incorrect result.
-  Regex on targets without NUL continues to use the existing POSIX ERE path.
+  Regex on targets without NUL continues to use the existing POSIX ERE path and
+  reports the actual byte offset and length of the first match.
 - Only classic PCAP files are supported (micro/nanosecond timestamps, either
   byte order); pcapng is explicitly rejected. Each record's captured bytes are
   scanned independently as opaque data; the global-header linktype is ignored.
   There is no protocol decoding or **TCP stream reassembly**. Malformed or
-  truncated records return an error.
+  truncated records return an error. The JSON `packets` array contains only
+  records with findings; `packet_count` includes all records, including empty
+  and unmatched ones, while `match_count` counts matching rule-record pairs.
+  File scanning loads the entire target into memory; there is no configured
+  maximum file size, so very large inputs can exhaust available memory.
 - The DFIR tool is Linux `/proc` based; no process/port collection on
   Windows/macOS. It is not a policy engine: it produces a risk score but does
   not change the exit code.

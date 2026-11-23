@@ -20,7 +20,7 @@ close those gates.
 | Yüzey / Surface | Kaynak / Source | İlk değerlendirme / Initial treatment |
 |---|---|---|
 | Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md) §§3–12, 18–19; C/LLVM parity tests | v1.0 adayı: anahtar sözcük/tip kataloğu, operatör önceliği, türler, kapsam, fonksiyon/sözleşmeler, hata ve sahiplik semantiği; kapsam dışı yapılar açık kalır / Candidate: keyword/type catalog, precedence, types, scope, functions/contracts, errors and ownership; unsupported forms stay explicit |
-| Yerleşikler ve standart kütüphane / Built-ins and standard library | [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json), `axiom/checker.py`, `std/**/*.ax` | Checker: kaynak koddan çağrılabilir 111 `rt_*` dışı + 247 `rt_*` önekli imza, kararlılıkları sınıflandırılmadı; stdlib: 446 fonksiyon, 37 struct / Checker: 111 callable non-`rt_*` + 247 `rt_*`-prefixed signatures, stability unclassified; stdlib: 446 functions, 37 structs. 53 dosyada `pub`/`export` yok; davranış ve kararlı allowlist hâlâ sınıflandırılmalı / No `pub`/`export`; behavior and stable allowlist still need classification |
+| Yerleşikler ve standart kütüphane / Built-ins and standard library | [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json), `axiom/checker.py`, `std/**/*.ax` | Checker: kaynak koddan çağrılabilir 111 `rt_*` dışı + 248 `rt_*` önekli imza, kararlılıkları sınıflandırılmadı; stdlib: 446 fonksiyon, 37 struct / Checker: 111 callable non-`rt_*` + 248 `rt_*`-prefixed signatures, stability unclassified; stdlib: 446 functions, 37 structs. 53 dosyada `pub`/`export` yok; davranış ve kararlı allowlist hâlâ sınıflandırılmalı / No `pub`/`export`; behavior and stable allowlist still need classification |
 | Compiler CLI | `axiom/cli.py`, installed `--help` | v0.5 komut ve flag snapshot'ı her komutun help çıktısına karşı test ediliyor; exit code/pozisyonel argüman sözleşmeleri hâlâ açık / v0.5 command/flag snapshot is checked per command against installed help; exit-code and positional-argument contracts remain open |
 | Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | `init/add/install/verify/tree/remove/search/pack/registry assemble/update/build/run/test`; komut ve manifest flag/şema fixture'ları gerekli / Commands are implemented; command and manifest flag/schema fixtures are required |
 | Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest: `name/version/authors/edition/entry/description/license`, `[package]` veya `[project]`, `[dependencies]`; lock: `version` ve paket başına `name/version/source/checksum/sha256/dependencies`. Şema/migration fixture'ı gerekli / Exact fields need versioned migration fixtures |
@@ -90,11 +90,11 @@ tarafından iki backend'de doğrulanır. Her tür kararlı API envanterinde ayr�
 listelenmelidir.
 
 Derleyici kaynak denetimi önemli bir envanter açığı buldu: `axiom/checker.py`
-`BUILTIN_FUNCTIONS` içinde 358 imza tutuyor; bunların 111'i `rt_*` dışı,
-247'si `rt_*` önekli. Checker bu isimlerin tümünü Axiom kaynak kodundan
+`BUILTIN_FUNCTIONS` içinde 359 imza tutuyor; bunların 111'i `rt_*` dışı,
+248'i `rt_*` önekli. Checker bu isimlerin tümünü Axiom kaynak kodundan
 çağrılabilir kılıyor; `rt_*` burada gizli API anlamına gelmiyor. `len`,
 `thread_create` ve `array_push` ayrıca özel durumlarla kabul ediliyor.
-Şartnamenin eski 86 sayısı yanlıştı ve düzeltildi. Bu 358 imzanın kararlılık,
+Şartnamenin eski 86 sayısı yanlıştı ve düzeltildi. Bu 359 imzanın kararlılık,
 hata/sentinel, sahiplik ve C/LLVM davranışı tek tek sınıflandırılmalı.
 Özellikle hata/sentinel, sahiplik ve C/LLVM backend davranışları imza listesinden
 çıkarılamaz.
@@ -124,11 +124,11 @@ behavior are verified on both backends by
 inventory.
 
 A compiler-source audit found an important inventory gap: `axiom/checker.py`
-contains 358 `BUILTIN_FUNCTIONS` signatures: 111 non-`rt_*` and 247 `rt_*`
+contains 359 `BUILTIN_FUNCTIONS` signatures: 111 non-`rt_*` and 248 `rt_*`
 prefixed names. The checker accepts all of them from Axiom source; the prefix
 does not make them private. `len`, `thread_create` and `array_push` are accepted
 through three special cases. The specification's former count of 86 was wrong
-and has been corrected. Classify all 358 by stability and document their
+and has been corrected. Classify all 359 by stability and document their
 error/sentinel, ownership and C/LLVM behavior before promising stability.
 
 Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
@@ -249,11 +249,11 @@ mean supporting only two old versions of the stable `1.x` API.
 - [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
   semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
   constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
-  stable değildir; tüm 844 girdiye ayrı etiket vermek gerekmez. / For every
+  stable değildir; tüm 845 girdiye ayrı etiket vermek gerekmez. / For every
   symbol/syntax/command/schema field selected into the v1.0 stable allowlist,
   record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
   platform/thread constraints and enforcing tests. Entries outside the
-  allowlist are not stable; all 844 entries need not be separately labeled.
+  allowlist are not stable; all 845 entries need not be separately labeled.
 - [ ] v1.0 öncesinde stable allowlist ve CLI/manifest/lock şemalarını
   yayımla. v1.0 ve v1.1 gerçek release fixture'ları henüz yok; yayımlandıktan
   sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. / Publish the

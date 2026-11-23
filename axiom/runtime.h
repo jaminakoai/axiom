@@ -5526,6 +5526,25 @@ AXIOM_RUNTIME_FN ax_str axiom_regex_find(const char* pattern, const char* text) 
     return axiom_owned_str_wrap(res);
 }
 
+/* Returns the byte offset of the first POSIX regex match, or -1 when absent. */
+AXIOM_RUNTIME_FN ax_int axiom_regex_find_offset(const char* pattern, const char* text) {
+    if (!pattern || !text) return -1;
+    int cflags = REG_EXTENDED;
+    const char* p = pattern;
+    if (strncmp(p, "(?i)", 4) == 0) {
+        cflags |= REG_ICASE;
+        p += 4;
+    }
+    regex_t reg;
+    if (regcomp(&reg, p, cflags) != 0) return -1;
+    regmatch_t pmatch[1];
+    int status = regexec(&reg, text, 1, pmatch, 0);
+    regfree(&reg);
+    if (status != 0 || pmatch[0].rm_so < 0 ||
+        (uintmax_t)pmatch[0].rm_so > INT64_MAX) return -1;
+    return (ax_int)pmatch[0].rm_so;
+}
+
 AXIOM_RUNTIME_FN ax_str axiom_regex_replace(const char* pattern, const char* text, const char* repl) {
     if (!pattern || !text) return axiom_owned_str_wrap("");
     if (!repl) repl = "";
@@ -5619,6 +5638,19 @@ AXIOM_RUNTIME_FN ax_str axiom_regex_find(const char* pattern, const char* text) 
     memcpy(out, text + r, ml);
     out[ml] = '\0';
     return axiom_owned_str_wrap(out);
+}
+
+/* Returns the byte offset of the first portable regex match, or -1 if absent. */
+AXIOM_RUNTIME_FN ax_int axiom_regex_find_offset(const char* pattern, const char* text) {
+    if (!pattern || !text) return -1;
+    ax_re re;
+    ax_re_compile(&re, pattern);
+    if (!re.ok) { ax_re_free(re.root); return -1; }
+    size_t ml = 0; int ex = 0;
+    long r = ax_re_search(&re, text, &ml, &ex, 0);
+    ax_re_free(re.root);
+    if (r < 0 || (uintmax_t)r > INT64_MAX) return -1;
+    return (ax_int)r;
 }
 
 AXIOM_RUNTIME_FN ax_str axiom_regex_replace(const char* pattern, const char* text, const char* repl) {

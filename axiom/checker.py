@@ -266,6 +266,7 @@ BUILTIN_FUNCTIONS = {
     'rt_regex_risk_level': (['str'], 'int'),
     'rt_regex_is_match': (['str', 'str'], 'bool'),
     'rt_regex_find': (['str', 'str'], 'str'),
+    'rt_regex_find_offset': (['str', 'str'], 'int'),
     'rt_regex_replace': (['str', 'str', 'str'], 'str'),
     'rt_map_create': ([], 'int'),
     'rt_map_set': (['int', 'str', 'str'], 'void'),

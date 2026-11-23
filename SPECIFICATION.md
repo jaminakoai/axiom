@@ -450,8 +450,8 @@ Thread'e yalnızca `int` geçirilebilir; karmaşık veri için global/handle yö
 
 ## 13. Yerleşik fonksiyon kataloğu
 
-Derleyici checker'ı 111 `rt_*` dışı ve 247 `rt_*` önekli imzayı kaynak koddan
-çağrılabilir olarak kabul eder; bu 358 adın kararlılık sınıfı henüz
+Derleyici checker'ı 111 `rt_*` dışı ve 248 `rt_*` önekli imzayı kaynak koddan
+çağrılabilir olarak kabul eder; bu 359 adın kararlılık sınıfı henüz
 belirlenmemiştir. `len`, `thread_create` ve `array_push` üç özel biçim olarak
 ayrıca işlenir. Bu ham uygulama sayıları, tamamlanmış bir
 kullanıcı API kataloğu veya kararlılık taahhüdü değildir. Bu bölümün listesi

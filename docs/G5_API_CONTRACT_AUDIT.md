@@ -12,26 +12,26 @@ kullanıcı sözleşmesini kanıtlamaz.
 
 The policy is allowlist-based: an entry not explicitly selected for the
 `v1.0` stable allowlist is not stable and carries no compatibility promise.
-The 844-entry source inventory therefore does not need an artificial
+The 845-entry source inventory therefore does not need an artificial
 stable/experimental/unsupported label on every entry. Only proposed stable
 entries require full contract review; explicitly unsupported features should
 be called out where users could reasonably expect them.
 
 Politika allowlist temellidir: `v1.0` kararlı allowlist'ine açıkça alınmayan
-girdi kararlı değildir ve uyumluluk sözü taşımaz. Bu nedenle 844 girdili kaynak
+girdi kararlı değildir ve uyumluluk sözü taşımaz. Bu nedenle 845 girdili kaynak
 envanterinin her elemanına yapay bir stable/experimental/unsupported etiketi
 vermek gerekmez. Tam sözleşme incelemesi yalnız kararlı olması önerilen
 girdilerde yapılır; kullanıcıların makul biçimde bekleyebileceği desteklenmeyen
 özellikler ayrıca belirtilir.
 
-The generated [source API inventory](api/v0.5.0-alpha.json) contains 844
-entries: 446 stdlib functions, 37 structs, 358 checker builtins and 3 special
+The generated [source API inventory](api/v0.5.0-alpha.json) contains 845
+entries: 446 stdlib functions, 37 structs, 359 checker builtins and 3 special
 builtin forms. They are all unclassified. The generator's drift check confirms
 that the snapshot matches source; it does not audit semantics, ownership,
 errors, backend behavior or user value.
 
-Üretilen [kaynak API envanteri](api/v0.5.0-alpha.json) 844 girdi içerir:
-446 stdlib fonksiyonu, 37 struct, checker içindeki 358 builtin ve 3 özel
+Üretilen [kaynak API envanteri](api/v0.5.0-alpha.json) 845 girdi içerir:
+446 stdlib fonksiyonu, 37 struct, checker içindeki 359 builtin ve 3 özel
 builtin biçimi. Bunların tamamı sınıflandırılmamıştır. Envanter drift testi
 yalnız snapshot'ın kaynakla aynı olduğunu doğrular; anlamı, sahipliği, hata
 davranışını, backend davranışını veya kullanıcı değerini denetlemez.
@@ -78,9 +78,9 @@ dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğru
 | Boolean conditions, pattern groups, count/offset/length selectors, filesize and range conditions | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_boolean_conditions_match_in_c_and_llvm`, `test_pattern_group_range_matches_in_c_and_llvm`, `test_positional_condition_reports_selected_occurrence_in_c_and_llvm`, `test_filesize_comparisons`, `test_pattern_occurrence_count_conditions`, `test_pattern_offset_conditions`; differential coverage in [`tests/test_yara_condition_differential.py`](../tests/test_yara_condition_differential.py), [`tests/test_yara_selector_differential.py`](../tests/test_yara_selector_differential.py) |
 | Text modifiers, escape decoding and unsupported modifier rejection | [`tests/test_yara_modifiers.py`](../tests/test_yara_modifiers.py), [`tests/test_yara_parser_escapes.py`](../tests/test_yara_parser_escapes.py) |
 | Hex wildcards, fixed/bounded jumps, alternation, negated bytes and occurrence selection | [`tests/test_yara_fixed_jumps.py`](../tests/test_yara_fixed_jumps.py), [`tests/test_yara_hex_ranges.py`](../tests/test_yara_hex_ranges.py), [`tests/test_yara_hex_range_differential.py`](../tests/test_yara_hex_range_differential.py), [`tests/test_yara_hex_typed_differential.py`](../tests/test_yara_hex_typed_differential.py), [`tests/test_yara_hex_alternation.py`](../tests/test_yara_hex_alternation.py), [`tests/test_yara_hex_negation.py`](../tests/test_yara_hex_negation.py) |
-| Regex input safety and NUL-containing target behavior | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control` |
-| Whole-file byte scanning, hash/byte-count correctness, report fields, CLI usage/help/version, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_cli_usage_errors_are_structured_and_match_c_llvm`, `test_help_and_version_are_plain_text_for_c_and_llvm`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_error_path_is_structured_json` |
-| Classic PCAP 2.4 global-header validation, byte order/timestamp magic, opaque record scanning, ignored linktype, 65,535-byte cap, zero-length records, zero-based match indices, malformed-input errors, no cross-record matching and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_counts_empty_packet_and_continues`, `test_pcap_match_does_not_span_records`, `test_scan_pcap_ignores_linktype_and_scans_captured_bytes`, `test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen`, `test_scan_pcap_rejects_invalid_global_header`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_llvm_scanner_matches_c` |
+| Regex input safety, NUL-containing targets, and truthful byte-span witnesses | [`tests/test_yara_regex_safety.py`](../tests/test_yara_regex_safety.py), [`tests/test_yara_text_buffer_edges.py`](../tests/test_yara_text_buffer_edges.py), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_regex_scan_with_embedded_nul_is_structured_error_and_text_control`, `test_regex_witness_reports_actual_byte_span_on_both_backends` |
+| Whole-file byte scanning, hash/byte-count correctness, report fields, CLI usage/help/version, exit codes and C/LLVM report parity | [`docs/api/axiom-scan-report.schema.json`](api/axiom-scan-report.schema.json), [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_report_schema_and_target_hash`, `test_rules_and_pcap_reports_carry_schema`, `test_llvm_scanner_matches_c`, `test_cli_usage_errors_are_structured_and_match_c_llvm`, `test_help_and_version_are_plain_text_for_c_and_llvm`, `test_fail_on_match_is_opt_in`, `test_fail_on_match_llvm_parity`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_error_path_is_structured_json`. Full file/PCAP workflow is validated on Linux x86_64; scans load the full target into memory and have no configured file-size cap. |
+| Classic PCAP 2.4 global-header validation, byte order/timestamp magic, opaque record scanning, ignored linktype, 65,535-byte cap, zero-length records, sparse matched-record list, zero-based match indices, malformed-input errors, no cross-record matching and no stream reassembly | [`tests/test_axiom_scan.py`](../tests/test_axiom_scan.py): `test_scan_pcap_packet`, `test_scan_pcap_opposite_endian_classic_file`, `test_scan_pcap_nanosecond_timestamp_magic`, `test_scan_pcap_counts_empty_packet_and_continues`, `test_pcap_match_does_not_span_records`, `test_scan_pcap_ignores_linktype_and_scans_captured_bytes`, `test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen`, `test_scan_pcap_rejects_invalid_global_header`, `test_scan_pcap_malformed_or_truncated_records_fail_closed`, `test_scan_rejects_pcapng`, `test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm`, `test_llvm_scanner_matches_c` |
 
 The [fixed external YARA corpus](../tests/test_yara_corpus_compat.py) adds
 reference-engine evidence for selected supported and explicitly rejected
@@ -92,7 +92,7 @@ the exact supported grammar boundary are accepted for the stable release.
 
 - No generated or manual artifact currently declares the final `v1.0` stable
   symbol allowlist. The inventory snapshot remains explicitly unclassified.
-- All 358 checker builtins need contract review for return/error/sentinel
+- All 359 checker builtins need contract review for return/error/sentinel
   behavior, ownership/lifetime, C/LLVM support, and applicable platform or
   thread-safety limits. Do not infer these properties from the signature.
 - The 446 stdlib functions and 37 structs need individual stable/experimental/

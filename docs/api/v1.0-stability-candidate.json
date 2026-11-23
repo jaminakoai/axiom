@@ -15,6 +15,11 @@
         "scan": "Scan the full target byte buffer; provide the rule file with --rules <path>.",
         "pcap": "Scan each classic PCAP record's captured bytes independently as opaque bytes; provide the rule file with --rules <path>; the linktype is ignored and no stream reassembly is performed."
       },
+      "validated_platform_scope": {
+        "full_file_and_pcap_scan": ["Linux x86_64"],
+        "Windows": "Compiler/native smoke and harmless scanner onboarding sentinel only; full file and PCAP workflows are not validated.",
+        "macOS": "Compiler/native smoke and harmless scanner onboarding sentinel only; full file and PCAP workflows are not validated."
+      },
       "options": {
         "--rules <path>": "Required by scan and pcap; rules takes its rule file positionally.",
         "--fail-on-match": "Applies only to scan and pcap; returns 10 when those commands find at least one match."
@@ -34,7 +39,11 @@
         "unknown_fields": "Rejected; any report-field contract change requires incrementing schema_version."
       },
       "input_contract": {
-        "file_scan": "Scan all bytes, including bytes after NUL; scanned_bytes and target_sha256 cover the complete file.",
+        "file_scan": "Scan all bytes, including bytes after NUL; scanned_bytes and target_sha256 cover the complete file. The current implementation reads the full target into memory and has no configured maximum file size or memory guarantee.",
+        "resource_limits": {
+          "maximum_file_scan_bytes": null,
+          "file_scan_memory_model": "Whole-target in-memory buffer; memory use scales with input size and very large inputs may exhaust available memory."
+        },
         "regex_with_nul": "Reject explicitly because the current regex path cannot preserve byte spans across NUL.",
         "pcap": {
           "format": "classic-pcap",
@@ -50,6 +59,8 @@
           "captured_record_length_must_not_exceed": ["global_snaplen", "original_record_length", "maximum_captured_record_bytes"],
           "packet_count_includes_zero_length_records": true,
           "matched_packet_index_base": 0,
+          "packets_array": "Contains only records with at least one matching rule; each index is the zero-based original record index.",
+          "match_count": "Total matching rule-record pairs, equal to the sum of each emitted packet's rules array length; not pattern occurrence count.",
           "timestamp_handling": "Classic microsecond/nanosecond magic is accepted, but timestamp fractions are neither validated nor reported.",
           "malformed_or_truncated_records": "Invalid or truncated global/record headers and record payloads are rejected with a structured error report.",
           "pcapng": "rejected",
@@ -117,7 +128,7 @@
           },
           "occurrence_semantics": "At a shared start offset, a bounded jump chooses the shortest valid match; same-offset alternation branches count as one occurrence."
         },
-        "regex": "POSIX ERE subject to documented validation and safety checks. Regex occurrence count/offset/index operators are rejected; regex on a NUL-containing target is rejected.",
+        "regex": "POSIX ERE subject to documented validation and safety checks. Successful regex witnesses report the byte offset and length of the first regex match. Regex occurrence count/offset/index operators are rejected; regex on a NUL-containing target is rejected.",
         "conditions": {
           "boolean": ["true", "false", "not", "and", "or", "parentheses"],
           "precedence": "not > and > or",
@@ -162,6 +173,7 @@
           "tests/test_axiom_scan.py::test_llvm_scanner_matches_c",
           "tests/test_axiom_scan.py::test_filesize_and_scanned_bytes_use_full_file_length_with_nul",
           "tests/test_axiom_scan.py::test_scan_pcap_counts_empty_packet_and_continues",
+          "tests/test_axiom_scan.py::test_regex_witness_reports_actual_byte_span_on_both_backends",
           "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records",
           "tests/test_axiom_scan.py::test_scan_pcap_empty_capture_reports_zero_packets",
           "tests/test_axiom_scan.py::test_scan_pcap_malformed_or_truncated_records_fail_closed",
