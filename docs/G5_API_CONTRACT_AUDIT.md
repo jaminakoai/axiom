@@ -94,22 +94,27 @@ grammar boundary; it does not promise full YARA compatibility.
 ### Local scanner memory measurement (2026-11-23)
 
 The non-gating Linux benchmark [`tools/benchmark_axiom_scan_memory.py`](../tools/benchmark_axiom_scan_memory.py)
-builds the C scanner, scans sparse regular files with a no-match rule, and
-reports elapsed time and sampled child-process `VmHWM`. On this x86_64 machine:
+builds the C scanner, scans sparse regular files with a no-match rule and a
+match-heavy hex/count rule (`{ 00 }`, `#a > 0`), and reports elapsed time and
+sampled child-process `VmHWM`. On this x86_64 machine:
 
-| Logical input | Scanned bytes | Elapsed | Sampled peak RSS |
-|---:|---:|---:|---:|
-| 64 MiB | 67,108,864 | 0.617 s | 68.4 MiB |
-| 256 MiB | 268,435,456 | 2.473 s | 260.3 MiB |
-| 1,024 MiB | 1,073,741,824 | 9.813 s | 1,028.4 MiB |
+| Scenario | Logical input | Elapsed | Sampled peak RSS | Rule result |
+|---|---:|---:|---:|---|
+| No match | 64 MiB | 0.623 s | 68.6 MiB | 0 rules |
+| Match-heavy | 64 MiB | 1.103 s | 68.4 MiB | 1 rule |
+| No match | 256 MiB | 2.487 s | 260.4 MiB | 0 rules |
+| Match-heavy | 256 MiB | 4.389 s | 260.4 MiB | 1 rule |
+| No match | 1,024 MiB | 9.737 s | 1,028.4 MiB | 0 rules |
+| Match-heavy | 1,024 MiB | 17.646 s | 1,028.4 MiB | 1 rule |
 
-The result is consistent with memory scaling approximately as the full target
-plus about 4 MiB process overhead, and scan time scaling approximately with
-input size for this no-match workload. Sparse inputs are fully scanned and
-hashed, but they do not represent real incident files or match-heavy rules.
-This measurement does not establish a safe maximum size, production latency
-target, or Windows/macOS behavior; gather representative workload evidence
-before changing the no-limit contract or redesigning for streaming/mmap.
+Both scenarios scale memory approximately as the full target plus about 4 MiB
+process overhead. For this exact byte/count rule, match-heavy elapsed time is
+about 1.8x the no-match time at 1 GiB; `match_count` is per rule and does not
+expose the 1 GiB occurrence count. Sparse inputs are fully scanned and hashed,
+but they do not represent real incident files or diverse rule sets. This
+measurement does not establish a safe maximum size, production latency target,
+or Windows/macOS behavior; gather representative workload evidence before
+changing the no-limit contract or redesigning for streaming/mmap.
 
 ## Explicitly out of scope / Açıkça kapsam dışı
 

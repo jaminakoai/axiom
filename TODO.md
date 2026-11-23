@@ -491,9 +491,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   axpm, manifest ve lock şemaları bu profilde kararlılık sözü dışıdır.
 - [ ] Gerçek `v1.0` ve `v1.1` fixture'ları yayımlandıktan sonra v1.2
   hazırlığında önceki iki-minor koşumunu etkinleştirip doğrula.
-- [x] Linux x86_64 üzerinde tekrarlanabilir, sentetik no-match ölçümü ekle ve
-  çalıştır: 64/256/1024 MiB girdilerde yaklaşık 68.4/260.3/1028.4 MiB tepe RSS,
-  0.617/2.473/9.813 sn. Yöntem ve sınırlar:
+- [x] Linux x86_64 üzerinde tekrarlanabilir sentetik no-match ve match-heavy
+  (`#a > 0`) ölçümlerini ekle/çalıştır: iki senaryoda 64/256/1024 MiB girdiler
+  yaklaşık 68/260/1028 MiB RSS kullandı; 1 GiB’de sırasıyla 9.737/17.646 sn
+  sürdü. Yöntem ve sınırlar:
   [`G5 API audit`](docs/G5_API_CONTRACT_AUDIT.md#local-scanner-memory-measurement-2026-11-23),
   [`benchmark script`](tools/benchmark_axiom_scan_memory.py).
 - [ ] Temsilî kullanıcı girdileri ve match-heavy kurallarda bellek/latency
