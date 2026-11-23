@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "proposal_pending_product_scope",
+  "source_version": "0.5.0-alpha",
+  "target_release": "1.0.0",
+  "recommended_profile": "offline-dfir-triage",
+  "decision_rule": "Only entries accepted into the final v1.0 allowlist become stable. This proposal is not a compatibility promise.",
+  "candidate_surfaces": [
+    {
+      "id": "axiom-scan.cli-and-reports.v1",
+      "decision": "proposed-stable",
+      "kind": "executable-interface",
+      "commands": {
+        "rules": "Validate and count a rule file; success report has rules_count and rules.",
+        "scan": "Scan the full target byte buffer using --rules <path>.",
+        "pcap": "Scan each captured frame in classic PCAP separately using --rules <path>; no stream reassembly."
+      },
+      "options": ["--rules <path>", "--fail-on-match"],
+      "exit_codes": {
+        "0": "A report was produced and either there were no findings or --fail-on-match was not supplied.",
+        "1": "An error report was produced.",
+        "10": "--fail-on-match was supplied and at least one finding was produced."
+      },
+      "stdout": {
+        "machine_reports": "Exactly one JSON object for rules, scan, pcap, and structured errors.",
+        "help_and_version": "Plain text."
+      },
+      "report_schema": {
+        "version": "1",
+        "path": "docs/api/axiom-scan-report.schema.json",
+        "unknown_fields": "Rejected; any report-field contract change requires incrementing schema_version."
+      },
+      "input_contract": {
+        "file_scan": "Scan all bytes, including bytes after NUL; scanned_bytes and target_sha256 cover the complete file.",
+        "regex_with_nul": "Reject explicitly because the current regex path cannot preserve byte spans across NUL.",
+        "pcap": "Classic PCAP only, supported timestamp resolutions and byte orders; scan raw captured frame bytes independently. pcapng is rejected."
+      },
+      "yara_subset": {
+        "rule_structure": ["rule", "strings", "condition", "meta", "tags", "comments"],
+        "text_patterns": ["escaped text", "ascii (default)", "nocase", "fullword"],
+        "hex_patterns": ["byte and nibble wildcards", "fixed jump", "bounded jump", "one flat alternation", "one negated byte within documented combination limits"],
+        "regex": "POSIX ERE subject to documented safety checks.",
+        "conditions": ["true/false", "not/and/or and parentheses", "any/all/none/N of them", "pattern groups", "at/in offsets", "count/offset/length selectors", "filesize comparisons"],
+        "unsupported_examples": ["full YARA module/import support", "wide modifier", "unsupported or unbounded hex constructs", "regex occurrence selectors"]
+      },
+      "evidence": {
+        "sources": [
+          "examples/21_axiom_scan.ax",
+          "README.md",
+          "README.en.md",
+          "docs/api/axiom-scan-report.schema.json"
+        ],
+        "tests": [
+          "tests/test_axiom_scan.py::test_scan_report_schema_and_target_hash",
+          "tests/test_axiom_scan.py::test_rules_and_pcap_reports_carry_schema",
+          "tests/test_axiom_scan.py::test_error_paths",
+          "tests/test_axiom_scan.py::test_fail_on_match_is_opt_in",
+          "tests/test_axiom_scan.py::test_fail_on_match_llvm_parity",
+          "tests/test_axiom_scan.py::test_llvm_scanner_matches_c",
+          "tests/test_yara_corpus_compat.py",
+          "tests/test_yara_condition_differential.py",
+          "tests/test_yara_hex_range_differential.py",
+          "tests/test_yara_modifiers.py",
+          "tests/test_yara_parser_escapes.py",
+          "tests/test_yara_parser_structure_differential.py",
+          "tests/test_yara_regex_safety.py"
+        ]
+      },
+      "limitations": [
+        "This does not stabilize the general Axiom language grammar or every compiler/stdlib symbol used internally by the example.",
+        "External YARA differential coverage is a pinned sample, not proof of complete YARA compatibility.",
+        "The offline DFIR product focus and this candidate require maintainer confirmation before becoming the final stable allowlist."
+      ]
+    }
+  ]
+}

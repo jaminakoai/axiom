@@ -57,7 +57,9 @@ allowlist is the `axiom-scan` executable: its `rules`/`scan`/`pcap` commands,
 exit codes, report schema v1, exact documented YARA subset, whole-buffer hash
 and byte-count semantics, and classic-PCAP per-packet behavior. It does not
 automatically stabilize every compiler or stdlib function used internally to
-build the example.
+build the example. The machine-readable, evidence-linked draft is
+[`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json);
+its references are checked by `tests/test_api_stability_candidate.py`.
 
 Bu kapsam önerisidir, kararlılık sözü değildir. Ürün çevrimdışı DFIR triyajına
 odaklanacaksa v1.0 allowlist'i için incelenecek kullanıcı sözleşmesi
@@ -65,7 +67,9 @@ odaklanacaksa v1.0 allowlist'i için incelenecek kullanıcı sözleşmesi
 şeması v1, belgelenmiş YARA alt kümesinin kesin sınırları, tam buffer hash/byte
 uzunluğu semantiği ve klasik PCAP'in paket başına taranması. Bu karar, örneği
 derlemek için içeride kullanılan her compiler veya stdlib fonksiyonunu otomatik
-olarak kararlı yapmaz.
+olarak kararlı yapmaz. Makinece okunabilir, kaynak ve test kanıtlarına bağlı
+taslak [`docs/api/v1.0-stability-candidate.json`](api/v1.0-stability-candidate.json)
+dosyasındadır; referanslarını `tests/test_api_stability_candidate.py` doğrular.
 
 | Candidate behavior | Evidence to bind into the release allowlist |
 |---|---|

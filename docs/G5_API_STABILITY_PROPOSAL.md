@@ -25,7 +25,7 @@ close those gates.
 | Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | `init/add/install/verify/tree/remove/search/pack/registry assemble/update/build/run/test`; komut ve manifest flag/şema fixture'ları gerekli / Commands are implemented; command and manifest flag/schema fixtures are required |
 | Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest: `name/version/authors/edition/entry/description/license`, `[package]` veya `[project]`, `[dependencies]`; lock: `version` ve paket başına `name/version/source/checksum/sha256/dependencies`. Şema/migration fixture'ı gerekli / Exact fields need versioned migration fixtures |
 | Registry | [`REGISTRY.md`](REGISTRY.md), `axiom/registry.py` | Schema 1 imzasız geriye dönük okuma; schema 2 index `sequence/expires/packages`, paket `version/sha256/sig/dependencies/yanked`. Protokol ve anahtar değişim sözleşmesi aday / Schema 1 legacy read; schema 2 field inventory; protocol/key-rotation contract is a candidate |
-| `axiom-scan` | `examples/21_axiom_scan.ax`, `tests/test_axiom_scan.py` | `rules`, `scan`, `pcap`; çıkış `0/10/1`; schema v1 scan: `target/target_sha256/scanned_bytes/match_count/matches[]`, match: `rule/tags/meta/pattern/offset/length`; PCAP: `pcap/pcap_sha256/packet_count/match_count/packets[]`. Belgeli YARA alt kümesi, tam YARA değil / Exact fields; documented YARA subset only |
+| `axiom-scan` | `examples/21_axiom_scan.ax`, `tests/test_axiom_scan.py`, [JSON Schema](api/axiom-scan-report.schema.json) | `rules`, `scan`, `pcap`; exit `0/10/1`; schema-v1 success/error reports; exact documented YARA subset; whole-buffer hash/length and classic-PCAP per-frame semantics. Evidence-linked non-binding [v1.0 candidate](api/v1.0-stability-candidate.json) is pending product-scope confirmation / `rules`, `scan`, `pcap`; çıkış `0/10/1`; schema v1 başarı/hata raporları; belgeli YARA alt kümesi; tam buffer hash/uzunluk ve klasik PCAP paket davranışı. Kanıt bağlantılı [v1.0 adayı](api/v1.0-stability-candidate.json) bağlayıcı değildir ve ürün odağı kararını bekler. |
 | LSP | `axiom/lsp.py`, `tests/test_lsp_full_features.py` | Yalnız initialize'da ilan edilen tam sync, completion, hover, definition, references, rename, quickfix, formatting, semantic tokens, signature help; tüm LSP vaat edilmez / Only advertised capabilities are candidates; no blanket LSP claim |
 | ABI ve üretilen çıktı / ABI and generated output | `SPECIFICATION.md` §15, C/LLVM backends | C ABI/FFI ancak hedef triple, çağrı kuralı, sahiplik ve bellek yerleşimi bütünüyle envanterlenirse kararlı olabilir; üretilen C/LLVM IR iç detaydır / ABI can stabilize only per fully specified target/calling convention/ownership/layout; emitted IR is internal |
 | Deneysel hedefler / Experimental targets | [`VERSIONING.md`](VERSIONING.md), README platform tablosu | Linux ARM64/AArch64/WASM deneysel etiketleriyle kararlılık sözünün dışında / Experimental targets remain outside the stability promise |
@@ -242,6 +242,10 @@ mean supporting only two old versions of the stable `1.x` API.
 - [x] `axiom-scan` rules/scan/pcap/structured-error JSON Schema'sını yayımla ve
   rapor testlerini şemaya göre doğrula. / Publish the `axiom-scan` JSON Schema
   for rules/scan/pcap/structured-error reports and validate report tests against it.
+- [x] Scanner-first v1.0 kapsamı için kaynak/test kanıtlarına bağlı ama
+  bağlayıcı olmayan aday allowlist hazırla ve referanslarını CI'da doğrula. /
+  Prepare a non-binding, evidence-linked scanner-first v1.0 candidate allowlist
+  and validate its references in CI.
 - [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
   semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
   constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
