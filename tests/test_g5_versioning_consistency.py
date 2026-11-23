@@ -97,6 +97,8 @@ def test_spec_builtin_raw_counts_match_checker_without_claiming_stability():
 
 
 def test_generated_api_inventory_matches_current_source():
+    from tools.generate_api_inventory import output_path, source_version
+
     result = subprocess.run(
         ["python", "tools/generate_api_inventory.py", "--check"],
         cwd=ROOT,
@@ -105,7 +107,9 @@ def test_generated_api_inventory_matches_current_source():
         check=False,
     )
     assert result.returncode == 0, result.stderr
-    snapshot = json.loads(_read("docs/api/v0.5.0-alpha.json"))
+    version = source_version()
+    snapshot = json.loads(output_path(version).read_text(encoding="utf-8"))
+    assert snapshot["source_version"] == version
     rt_entry = next(
         entry for entry in snapshot["compiler_builtins"]
         if entry["name"] == "rt_str_len"

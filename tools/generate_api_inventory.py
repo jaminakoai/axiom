@@ -7,11 +7,30 @@ import argparse
 import ast
 import json
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "docs" / "api" / "v0.5.0-alpha.json"
 sys.path.insert(0, str(ROOT))
+
+
+def source_version() -> str:
+    project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    match = re.search(r'(?m)^version\s*=\s*"([^"\n]+)"', project)
+    if not match:
+        raise ValueError("pyproject.toml has no static project version")
+    raw = match.group(1)
+    prerelease = re.fullmatch(r"(\d+\.\d+\.\d+)(a|b|rc)(\d+)", raw)
+    if prerelease:
+        base, marker, number = prerelease.groups()
+        label = {"a": "alpha", "b": "beta", "rc": "rc"}[marker]
+        suffix = f".{number}" if number != "0" else ""
+        return f"{base}-{label}{suffix}"
+    return raw
+
+
+def output_path(version: str) -> Path:
+    return ROOT / "docs" / "api" / f"v{version}.json"
 
 
 def _function_signature(declaration) -> dict[str, object]:
@@ -134,11 +153,11 @@ def _builtin_inventory() -> tuple[list[dict[str, object]], list[dict[str, object
     return builtins, special
 
 
-def build_inventory() -> dict[str, object]:
+def build_inventory(version: str | None = None) -> dict[str, object]:
     builtins, special = _builtin_inventory()
     return {
         "schema_version": 1,
-        "source_version": "0.5.0-alpha",
+        "source_version": version or source_version(),
         "status": "source_snapshot_not_a_stability_promise",
         "visibility_policy": (
             "Axiom has no enforced pub/export declarations; entries remain "
@@ -156,12 +175,14 @@ def main() -> int:
     action.add_argument("--write", action="store_true", help="write the inventory snapshot")
     action.add_argument("--check", action="store_true", help="fail if the snapshot is stale")
     args = parser.parse_args()
-    expected = json.dumps(build_inventory(), ensure_ascii=False, indent=2) + "\n"
+    version = source_version()
+    output = output_path(version)
+    expected = json.dumps(build_inventory(version), ensure_ascii=False, indent=2) + "\n"
     if args.write:
-        OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-        OUTPUT.write_text(expected, encoding="utf-8")
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(expected, encoding="utf-8")
         return 0
-    if not OUTPUT.exists() or OUTPUT.read_text(encoding="utf-8") != expected:
+    if not output.exists() or output.read_text(encoding="utf-8") != expected:
         print(f"API inventory is stale; run {Path(__file__).relative_to(ROOT)} --write", file=sys.stderr)
         return 1
     return 0
