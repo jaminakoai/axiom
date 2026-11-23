@@ -727,8 +727,9 @@ ve platform smoke kanıtları yukarıdaki `5eddc9d` bağlantılarındadır.
 
 ### ⬜ Planlanan
 
-- `v1.0` öncesi somut API envanteri ve iki önceki minor sürüm için uyumluluk
-  fixture'larının CI/release kontrolüne bağlanması ([G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)).
+- `v1.0` öncesi somut API envanteri ve fixture/release harness'i; iki-minor
+  uyumluluk kontrolleri `v1.0` ve `v1.1` fixture'ları oluşunca `v1.2` hazırlığında başlar
+  ([G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)).
 - Windows/macOS'ta tam test paketi ve DFIR/`axiom-scan` iş akışları; WASI sysroot ile uçtan uca test.
 - Statik (musl) ikili üretimi.
 - Yayınlanmış paket ekosistemi (hedef: 200+ paket) ve ilk kurumsal kullanıcı.

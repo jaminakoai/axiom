@@ -25,10 +25,11 @@ Destek iddiaları doğrulanmış CI ve kullanıcı akışlarına dayanır.
   sürümü gerektirir. Kararlı API kaldırılmadan önce en az iki sonraki minor
   sürüm boyunca kullanımdan kaldırılmış halde tutulur; kaldırma major sürümde
   yapılır. Güvenlik düzeltmesi istisnası release notlarında gerekçelendirilir.
-- Önceki iki minor sürümden kaynak/paket ve veri şeması fixture'ları, bunlar
-  yayımlandıktan sonra güncel araçlarla desteklenen C ve LLVM hedeflerinde CI'da
+- v1.0 öncesinde fixture biçimi, doğrulayıcı ve release kapısı hazırlanır; v1.0
+  ile v1.1 kaynak/paket/şema fixture'ları yayımlanır. İki kararlı minor sürüm
+  mevcut olduğunda, önceki iki minor sürümün fixture'ları ilk kez v1.2
+  hazırlığında güncel araçlarla desteklenen C ve LLVM hedeflerinde CI'da
   derlenip çalıştırılır. Yalnız iki eski sürümün desteklenmesi anlamına gelmez.
-  Bu fixture kapısı v1.0 readiness kontrol listesinde yer alır.
 
 ### Doğrulanmış platform matrisi
 
@@ -65,10 +66,11 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
   and additions a minor release. Keep deprecated stable APIs for at least two
   later minor releases; remove them only in a major release. Explain any
   security-fix exception in the release notes.
-- Once available, source/package and data-schema fixtures from the previous two
-  minor releases must compile and run with current tools on supported C and LLVM
-  targets in CI. This is a compatibility corpus, not a promise to support only
-  two old releases. Add this fixture check to the `v1.0` readiness checklist.
+- Before `v1.0`, prepare the fixture format, validator and release gate, then
+  publish `v1.0` and `v1.1` source/package/schema fixtures. While preparing
+  `v1.2`, enforce fixtures from the previous two minor releases with current
+  tools on supported C and LLVM targets. This corpus starts only after those
+  releases exist; it is not a promise to support only two old releases.
 
 ### Verified platform matrix
 

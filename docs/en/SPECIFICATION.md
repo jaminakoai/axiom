@@ -450,7 +450,12 @@ Only `int` can be passed to a thread; for complex data, use the global/handle ap
 
 ## 13. Built-in function catalog
 
-A total of **86** user-facing built-ins (excluding internal `rt_*` aliases).
+The compiler's builtin catalog currently contains 111 named non-`rt_*`
+signatures and 247 internal `rt_*` runtime aliases; `len`, `thread_create`,
+and `array_push` are handled as three special forms. These raw implementation
+counts are not a complete user-facing API catalog or a stability promise. The
+list in this section is incomplete; G5 still needs a complete symbol/signature/
+behavior and backend-coverage inventory.
 
 ### 13.1 String
 

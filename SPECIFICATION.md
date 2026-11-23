@@ -450,7 +450,12 @@ Thread'e yalnızca `int` geçirilebilir; karmaşık veri için global/handle yö
 
 ## 13. Yerleşik fonksiyon kataloğu
 
-Toplam **86** kullanıcıya açık yerleşik (dahili `rt_*` takma adları hariç).
+Derleyicinin yerleşik kataloğunda 111 isimli `rt_*` dışı imza ve 247 dahili
+`rt_*` çalışma zamanı takma adı bulunur; `len`, `thread_create` ve `array_push`
+üç özel biçim olarak ayrıca işlenir. Bu ham uygulama sayıları, tamamlanmış bir
+kullanıcı API kataloğu veya kararlılık taahhüdü değildir. Bu bölümün listesi
+eksiktir; tam sembol/imza/davranış ve backend kapsamı G5 kapsamında hâlâ
+envanterlenmelidir.
 
 ### 13.1 Metin
 

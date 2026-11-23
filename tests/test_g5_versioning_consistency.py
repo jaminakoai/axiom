@@ -1,6 +1,7 @@
 """Keep active G5 versioning and user-validation claims aligned."""
 
 import re
+import ast
 import subprocess
 from pathlib import Path
 
@@ -39,6 +40,9 @@ def test_two_minor_compatibility_policy_is_explicit_and_bilingual():
     assert "previous two minor releases" in proposal
     assert "yalnız iki eski sürümünün desteklenmesi anlamına gelmez" in proposal
     assert "does not mean supporting only two old versions" in proposal
+    assert "while preparing `v1.2`" in proposal
+    assert "v1.0` and `v1.1` baselines" in proposal
+    assert "while preparing `v1.2`" in versioning.lower()
 
 
 def test_readmes_describe_remaining_v1_inventory_and_fixture_work():
@@ -63,6 +67,41 @@ def test_inventory_records_real_stdlib_and_abi_boundaries():
     assert "`ResultStr`" in policy
     assert "A symbol's presence in `std/` alone does not promise stability" in policy
     assert "only per fully specified target" in policy
+
+
+def test_spec_builtin_raw_counts_match_checker_without_claiming_stability():
+    checker = ast.parse(_read("axiom/checker.py"))
+    builtin_map = next(
+        ast.literal_eval(node.value)
+        for node in checker.body
+        if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "BUILTIN_FUNCTIONS" for target in node.targets)
+    )
+    non_runtime = sum(not name.startswith("rt_") for name in builtin_map)
+    runtime_aliases = len(builtin_map) - non_runtime
+    assert (len(builtin_map), non_runtime, runtime_aliases) == (358, 111, 247)
+
+    for relative in ("SPECIFICATION.md", "docs/en/SPECIFICATION.md"):
+        spec = _normalized(relative)
+        assert "111" in spec
+        assert "247" in spec
+        if relative == "SPECIFICATION.md":
+            assert "tamamlanmış bir" in spec
+        else:
+            assert "not a complete user-facing API catalog" in spec
+    proposal = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
+    assert "111 imzanın tamamı henüz kullanıcı sözleşmesi sayılmaz" in proposal
+
+
+def test_generated_api_inventory_matches_current_source():
+    result = subprocess.run(
+        ["python", "tools/generate_api_inventory.py", "--check"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
 
 
 def test_readme_stdlib_counts_match_the_source_tree():

@@ -66,8 +66,8 @@ before making a `v1.0` stability promise.
 | `axpm build` | `--release`, `-g/--debug`, `--target`, `--sysroot`, `-o/--output`, `--features` |
 | `axpm run`, `test` | optional extra args; `run` has `-g/--debug`, both accept `--features` |
 
-Bu, kaynaklara bağlı ilk somut yüzey haritasıdır; henüz tüm fonksiyon imzaları,
-CLI bayrakları veya test eşlemesi değildir. 53 `std/**/*.ax` dosyasında
+CLI tablosu komut/flag snapshot'ıdır; exit code'ları veya her seçenek için ayrı
+komut-sözleşme testlerini kapsamaz. 53 `std/**/*.ax` dosyasında
 `pub`/`export` bildirimi yok ve semboller global isim alanını kullanıyor; bu
 nedenle yalnız tek tek envanterlenen semboller kararlı API sayılmalı.
 
@@ -82,8 +82,22 @@ genel tip olarak tanımlı değildir; stdlib'in `OptionInt`, `OptionStr` ve
 tarafından iki backend'de doğrulanır. Her tür kararlı API envanterinde ayrı
 listelenmelidir.
 
-This source-linked map is concrete but does not yet list every function
-signature, grammar form, CLI flag, exit code, or test mapping. The 53
+Derleyici kaynak denetimi önemli bir envanter açığı buldu: `axiom/checker.py`
+`BUILTIN_FUNCTIONS` içinde 358 imza tutuyor; bunların 111'i `rt_*` dışı,
+247'si dahili runtime takma adı. `len`, `thread_create` ve `array_push` ayrıca
+özel durumlarla kabul ediliyor. Şartnamenin eski 86 sayısı yanlıştı ve
+düzeltildi. 111 imzanın tamamı henüz kullanıcı sözleşmesi sayılmaz; hangilerinin
+gerçek public API, deneysel veya taşınabilir olduğu tek tek sınıflandırılmalı.
+Özellikle hata/sentinel, sahiplik ve C/LLVM backend davranışları imza listesinden
+çıkarılamaz.
+
+The generated source snapshot [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json)
+lists every parsed stdlib function signature, struct field, module import, and
+compiler builtin signature. `tools/generate_api_inventory.py --check` verifies
+that snapshot against the current lexer/parser AST and checker source. It is a
+source inventory only: entries are explicitly unclassified and are not stable
+API promises. Behavior, error/ownership semantics, backend support, grammar,
+CLI exit codes and the eventual stable allowlist still need review. The 53
 `std/**/*.ax` files have no `pub`/`export` declarations, and symbols share a
 global namespace, so only individually inventoried symbols should be treated
 as stable.
@@ -101,6 +115,14 @@ behavior are verified on both backends by
 `tests/test_error_model.py`. List each type individually in the stable API
 inventory.
 
+A compiler-source audit found an important inventory gap: `axiom/checker.py`
+contains 358 `BUILTIN_FUNCTIONS` signatures, 111 non-`rt_*` names and 247
+internal runtime aliases. `len`, `thread_create` and `array_push` are accepted
+through three special cases. The specification's former count of 86 was wrong
+and has been corrected. These 111 entries are not automatically public
+contracts; classify each as public, experimental or non-portable, and document
+error/sentinel, ownership and C/LLVM behavior before promising stability.
+
 Before `v1.0`, enumerate each stable symbol, grammar form, CLI flag, exit code
 and schema field, tie each promise to enforcing tests, and define the stable
 boundary for each stdlib symbol. This initial inventory does not close those
@@ -116,10 +138,12 @@ gates or promise all 53 stdlib files wholesale.
 3. **Kullanımdan kaldırma:** kararlı API'yi release notlarında duyur ve en az
    sonraki iki minor sürüm boyunca tut; yalnız major sürümde kaldır. Güvenlik
    düzeltmeleri açık gerekçeyle istisna olabilir.
-4. **Uyumluluk kanıtı:** CI önceki iki minor sürümde yayımlanmış örnek ve paket
-   fixture'larını güncel compiler/package manager ile, desteklenen C ve LLVM
-   backend'lerinde derleyip çalıştırsın. `axiom.toml`, `axiom.lock` ve
-   `axiom-scan` JSON şeması için de fixture ekle.
+4. **Uyumluluk kanıtı:** `v1.0` öncesinde fixture biçimini, doğrulayıcıyı ve
+   release kapısını hazırla; `v1.0` kaynak/paket/şema fixture'larını yayımla.
+   İki kararlı minor yayımlandığında (ilk kez `v1.2` hazırlanırken) önceki iki
+   minor sürümün örnek/paket fixture'larını güncel compiler/package manager
+   ile desteklenen C ve LLVM backend'lerinde derleyip çalıştır. `axiom.toml`,
+   `axiom.lock` ve `axiom-scan` JSON şemaları için de fixture kullan.
 5. **Kararlı yüzey:** yalnız v1.0 public API envanterinde açıkça listelenen
    sözdizimi/anlam, tek tek stdlib sembolleri ve hata sözleşmeleri, CLI
    seçenekleri/çıkış kodları/yapılandırılmış çıktılar, manifest/lock şemaları,
@@ -138,10 +162,13 @@ gates or promise all 53 stdlib files wholesale.
 3. **Deprecation:** announce a stable API's deprecation in release notes and
    keep it through at least two later minor releases. Remove it only in a major
    release. Security fixes may need an exceptional removal with a clear notice.
-4. **Compatibility evidence:** CI should compile and run the public example and
-   package fixtures from the previous two minor releases against the current
-   compiler/package manager, on both C and LLVM backends where supported.
-   Add schema fixtures for `axiom.toml`, `axiom.lock` and `axiom-scan` JSON.
+4. **Compatibility evidence:** Before `v1.0`, prepare the fixture format,
+   validator and release gate, then publish the `v1.0` source/package/schema
+   fixtures. Once two stable minor releases exist (first while preparing
+   `v1.2`), CI should compile and run the previous two minor releases' public
+   examples and packages against the current compiler/package manager, on both
+   C and LLVM backends where supported. Include `axiom.toml`, `axiom.lock` and
+   `axiom-scan` JSON schema fixtures.
 5. **Stable surface:** only syntax/semantics, individual stdlib symbols and
    error contracts, CLI options/exit codes/structured output, manifest/lock
    schemas, registry protocol, and `axiom-scan`'s documented YARA subset/report
@@ -158,7 +185,9 @@ anlamına gelmez.
 
 The unit in “two-release backward compatibility” is **a two-later-minor
 deprecation window and a test corpus from the previous two minor releases**.
-This does not mean supporting only two old versions of the stable `1.x` API.
+The corpus starts when those `1.x` releases exist: establish the `v1.0` and
+`v1.1` baselines, then first enforce both while preparing `v1.2`. This does not
+mean supporting only two old versions of the stable `1.x` API.
 
 ## Açık sürüm kapıları / Current Release Gates
 
@@ -169,13 +198,16 @@ This does not mean supporting only two old versions of the stable `1.x` API.
   trials are optional product feedback, not a `v1.0` technical gate.
 - G4'ün ilk imzalı registry paketi yayımlandı ve kapandı. / G4's first signed
   registry package is published; the gate is complete.
-- `v1.0` öncesi her kararlı yüzeyin somut sembol/sözdizimi/şema envanteri
-  çıkarılmalı ve önceki iki minor sürüm fixture kontrolü CI/release sürecine
-  bağlanmalıdır. Bağımsız kullanıcı denemesi gönüllü ürün geri bildirimi olarak
+- `v1.0` öncesi her kararlı yüzeyin somut sembol/sözdizimi/şema envanteri,
+  fixture biçimi/doğrulayıcısı ve release kapısı hazırlanmalıdır. `v1.0` ve
+  `v1.1` fixture'ları yayımlandıktan sonra önceki iki minor sürüm kontrolü ilk
+  kez `v1.2` hazırlığında çalıştırılır. Bağımsız kullanıcı denemesi gönüllü ürün geri bildirimi olarak
   kalır; kullanıcı kanıtı varmış gibi raporlanmamalıdır. / Before `v1.0`, list
-  concrete symbols, syntax and schemas for every stable surface and wire the
-  previous-two-minor fixture check into CI/release. External trials remain
-  optional feedback; do not claim user evidence that has not been submitted.
+  concrete symbols, syntax and schemas for every stable surface and prepare the
+  fixture format, validator and release gate. Publish `v1.0` and `v1.1` fixtures;
+  first enforce previous-two-minor compatibility while preparing `v1.2`. External
+  trials remain optional feedback; do not claim user evidence that has not been
+  submitted.
 
 ## G5.1 kabul listesi / G5.1 Acceptance Checklist
 
@@ -190,6 +222,9 @@ This does not mean supporting only two old versions of the stable `1.x` API.
 - [x] Bağımsız kullanıcı denemesinin v1.0 teknik kapısı olmadığı kararını
   VERSIONING ve doğrulama rehberiyle eşleştir. / Align VERSIONING and validation
   guidance with the decision that user trials are not a v1.0 technical gate.
-- [ ] Somut API envanterini ve iki-minor fixture CI/release kapısını v1.0
-  readiness öncesi tamamla. / Complete the concrete API inventory and
-  two-minor fixture CI/release gate before claiming v1.0 readiness.
+- [ ] Somut API envanterini, fixture formatını/doğrulayıcısını ve release
+  kapısını v1.0 readiness öncesi tamamla; v1.0 ve v1.1 fixture'ları
+  yayımlandığında önceki iki-minor kontrollerini v1.2 hazırlığında etkinleştir.
+  / Complete the concrete API inventory, fixture format/validator and release
+  gate before v1.0 readiness; activate previous-two-minor checks while
+  preparing v1.2, once v1.0 and v1.1 fixtures have been published.

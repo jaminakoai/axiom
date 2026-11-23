@@ -733,8 +733,9 @@ smoke evidence is linked above for `5eddc9d`.
 
 ### ⬜ Planned
 
-- Concrete API inventory before `v1.0` and CI/release checks for fixtures from
-  the previous two minor releases ([G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)).
+- Concrete API inventory and fixture/release harness before `v1.0`; checks for
+  the previous two minor releases become enforceable while preparing `v1.2`,
+  after `v1.0` and `v1.1` fixtures exist ([G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)).
 - Full test-suite and DFIR/`axiom-scan` workflows on Windows/macOS; end-to-end WASI tests with a sysroot.
 - Static (musl) binary production.
 - Published package ecosystem (target: 200+ packages) and a first enterprise user.

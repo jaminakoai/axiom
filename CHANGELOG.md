@@ -9,7 +9,9 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 - G5'te kararlı API sınırı, SemVer, iki sonraki minor sürümlük kaldırma penceresi
   ve eski minor fixture CI politikası belirlendi. `v1.0` öncesi kullanıcı
   doğrulaması zorunlu kapı değil; dış deneme isteğe bağlı ürün geri bildirimidir.
-  Somut API envanteri ve fixture CI/release uygulaması hâlâ açık.
+  Henüz 1.x minor release yok: fixture harness'i v1.0 öncesinde hazırlanacak,
+  iki-minor uyumluluk kontrolü v1.0/v1.1 fixture'ları oluşunca v1.2 hazırlığında
+  başlayacak. Somut API envanteri hâlâ açık.
 
 ### Eklendi
 - PCAP okuyucu klasik PCAP'in iki byte order ve mikro/nanosaniye biçimlerini

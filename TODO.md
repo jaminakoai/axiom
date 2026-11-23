@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 API, `Result`/`Option` iki-backend interoperability, TR/EN docs ve scanner: **201 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 41,63 sn) |
+| Son hedefli test paketi | G5 envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname ve scanner: **220 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py tests/test_specification.py`, 50,22 sn) |
 
 ---
 
@@ -424,10 +424,13 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 - [x] Önceki maintainer kararıyla uyumlu olarak bağımsız kullanıcı denemesini
   isteğe bağlı ürün geri bildirimi, G3 iç denetimini teknik kanıt olarak kaydet;
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
-- [ ] Somut public API sembol/sözdizimi/şema envanterini çıkar ve önceki iki
-  minor sürüm fixture kontrolünü v1.0 readiness CI/release sürecine bağla;
-  stdlib sembol görünürlüğünü netleştir. Somut `ResultInt/Str` + `?` ve
-  `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyon testleriyle doğrulandı.
+- [ ] AST tabanlı kaynak envanteri oluşturuldu: 446 stdlib fonksiyon imzası,
+  37 struct, 358 builtin imzası; `tools/generate_api_inventory.py --check`
+  güncelliğini doğrular. Davranış/ownership/backend sözleşmelerini ve kararlı
+  allowlist'i çıkar; stdlib görünürlüğünü v1.0 öncesi netleştir. Fixture
+  biçimi/doğrulayıcısı/release harness'ini hazırla. v1.0 ve v1.1 fixture'ları yayımlandıktan sonra önceki
+  iki-minor CI kontrolünü v1.2 hazırlığında etkinleştir. `ResultInt/Str` + `?`
+  ve `OptionInt/Str/Bool` sözleşmeleri C/LLVM regresyonlarıyla doğrulandı.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
   ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 
@@ -1371,9 +1374,10 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    kapı olarak tutuyor.
 2. **G4:** tamamlandı. `axiom-scan-report` 0.1.0 signed registry'de yayında;
    [yayın kanıtı](docs/reports/2026-11-17-g4-registry-publication.md).
-3. **G5 (aktif):** ilk uyumluluk politikası belirlendi; somut API envanteri ve
-   önceki iki minor fixture CI/release kapısı açık. Sonra gerçek kullanım
-   akışındaki doğrulanmış engele göre geliştirme seç.
+3. **G5 (aktif):** ilk uyumluluk politikası belirlendi; somut API envanteri,
+   stdlib görünürlüğü ve v1.0/v1.1 fixture harness'i açık. Gerçek iki-minor CI
+   kontrolü, gerekli 1.x release fixture'ları oluşunca v1.2 hazırlığında başlar.
+   Sonra gerçek kullanım akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
 da tamamlandı; son kaydedilmiş CI `2b73fea` 7/7 başarılıdır. G5 başladı; yeni
