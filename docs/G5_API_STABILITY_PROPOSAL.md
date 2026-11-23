@@ -20,8 +20,8 @@ close those gates.
 | Yüzey / Surface | Kaynak / Source | İlk değerlendirme / Initial treatment |
 |---|---|---|
 | Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md) §§3–12, 18–19; C/LLVM parity tests | v1.0 adayı: anahtar sözcük/tip kataloğu, operatör önceliği, türler, kapsam, fonksiyon/sözleşmeler, hata ve sahiplik semantiği; kapsam dışı yapılar açık kalır / Candidate: keyword/type catalog, precedence, types, scope, functions/contracts, errors and ownership; unsupported forms stay explicit |
-| Yerleşikler ve standart kütüphane / Built-ins and standard library | `SPECIFICATION.md` §13; `std/**/*.ax` and module tests | Şartname 86 yerleşik sayıyor; 53 std dosyasında `pub`/`export` yok. Semboller tek namespace'te olduğundan tek tek envanterlenmeden tüm modüller kararlı sayılmaz / Spec lists 86 built-ins; 53 std files have no `pub`/`export`. With a global namespace, modules are not stable wholesale without symbol inventory |
-| Compiler CLI | `axiom/cli.py` | v0.5 alt komutları: `run`, `build`, `check`, `prove`, `emit-c`, `emit-smt`, `emit-llvm`, `repl`, `test`, `init`, `doc`, `fmt`, `pkg`, `lsp`. Belgeli seçenekler/çıkış kodları aday; tam seçenek envanteri `v1.0` öncesi çıkarılmalı / Listed commands; documented options/exit codes are candidates; enumerate all flags before `v1.0` |
+| Yerleşikler ve standart kütüphane / Built-ins and standard library | [`docs/api/v0.5.0-alpha.json`](api/v0.5.0-alpha.json), `axiom/checker.py`, `std/**/*.ax` | Checker: 111 `rt_*` dışı imza + 247 dahili alias + 3 özel biçim; stdlib: 446 fonksiyon, 37 struct / Checker: 111 non-`rt_*` signatures + 247 internal aliases + 3 special forms; stdlib: 446 functions, 37 structs. 53 dosyada `pub`/`export` yok; davranış ve kararlı allowlist hâlâ sınıflandırılmalı / No `pub`/`export`; behavior and stable allowlist still need classification |
+| Compiler CLI | `axiom/cli.py`, installed `--help` | v0.5 komut ve flag snapshot'ı her komutun help çıktısına karşı test ediliyor; exit code/pozisyonel argüman sözleşmeleri hâlâ açık / v0.5 command/flag snapshot is checked per command against installed help; exit-code and positional-argument contracts remain open |
 | Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | `init/add/install/verify/tree/remove/search/pack/registry assemble/update/build/run/test`; komut ve manifest flag/şema fixture'ları gerekli / Commands are implemented; command and manifest flag/schema fixtures are required |
 | Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest: `name/version/authors/edition/entry/description/license`, `[package]` veya `[project]`, `[dependencies]`; lock: `version` ve paket başına `name/version/source/checksum/sha256/dependencies`. Şema/migration fixture'ı gerekli / Exact fields need versioned migration fixtures |
 | Registry | [`REGISTRY.md`](REGISTRY.md), `axiom/registry.py` | Schema 1 imzasız geriye dönük okuma; schema 2 index `sequence/expires/packages`, paket `version/sha256/sig/dependencies/yanked`. Protokol ve anahtar değişim sözleşmesi aday / Schema 1 legacy read; schema 2 field inventory; protocol/key-rotation contract is a candidate |
@@ -43,28 +43,35 @@ before making a `v1.0` stability promise.
 | Komut / Command | v0.5 seçenekleri / Options |
 |---|---|
 | `axiom` | `-h/--help`, `-v/--version` |
-| `run` | `file`, `-g/--debug`, `--asan`, `--ubsan`, `--features`, `extra_args...` |
-| `build` | `file`, `-o/--output`, `-O/--opt`, `-g/--debug`, `--target`, `--sysroot`, `--backend {c,llvm}`, `--asan`, `--ubsan`, `--features` |
-| `check` | `file`, `--no-prove`, `--smt`, `--all`, `--features` |
-| `prove` | `file`, `--smt`, `--features` |
-| `emit-c`, `emit-smt` | `file`, `-o/--output`, `--features` |
-| `emit-llvm` | `file`, `-o/--output`, `-g/--debug`, `--features` |
-| `repl` | `--features` |
-| `test` | `--asan`, `pytest_args...` |
-| `init` | `project_name` |
-| `doc` | `paths...`, `-o/--output`, `--json`, `--title` |
-| `fmt` | `file`, `--check` |
-| `pkg` | `axpm` argument passthrough |
-| `lsp` | no command-specific options |
+| `axpm` | `-h/--help`, `-v/--version` |
+| `axiom run` | `file`, `-g/--debug`, `--asan`, `--ubsan`, `--features`, `extra_args...` |
+| `axiom build` | `file`, `-o/--output`, `-O/--opt`, `-g/--debug`, `--target`, `--sysroot`, `--backend {c,llvm}`, `--asan`, `--ubsan`, `--features` |
+| `axiom check` | `file`, `--no-prove`, `--smt`, `--all`, `--features` |
+| `axiom prove` | `file`, `--smt`, `--features` |
+| `axiom emit-c` | `file`, `-o/--output`, `--features` |
+| `axiom emit-smt` | `file`, `-o/--output`, `--features` |
+| `axiom emit-llvm` | `file`, `-o/--output`, `-g/--debug`, `--features` |
+| `axiom repl` | `--features` |
+| `axiom test` | `--asan`, `pytest_args...` |
+| `axiom init` | `project_name` |
+| `axiom doc` | `paths...`, `-o/--output`, `--json`, `--title` |
+| `axiom fmt` | `file`, `--check` |
+| `axiom pkg` | `axpm` argument passthrough |
+| `axiom lsp` | no command-specific options |
 | `axpm init` | `[path]`, `--name`, `--lib` |
 | `axpm add` | dependency, `--path`, `--git`, `--rev`, `--version` |
-| `axpm install`, `verify`, `tree` | no command-specific options |
+| `axpm install` | no command-specific options |
+| `axpm verify` | no command-specific options |
+| `axpm tree` | no command-specific options |
 | `axpm remove` | `dependency`, `--purge` |
-| `axpm search`, `update` | optional `query` / `dependency` |
+| `axpm search` | optional `query` |
+| `axpm update` | optional `dependency` |
 | `axpm pack` | required `--signing-key`, optional `--output` |
+| `axpm registry` | subcommand group; no command-specific options |
 | `axpm registry assemble` | required `--from`, `--output`, `--public-key`; optional `--index-signing-key`, `--index-sequence`, `--index-expires` |
 | `axpm build` | `--release`, `-g/--debug`, `--target`, `--sysroot`, `-o/--output`, `--features` |
-| `axpm run`, `test` | optional extra args; `run` has `-g/--debug`, both accept `--features` |
+| `axpm run` | optional extra args; `-g/--debug`, `--features` |
+| `axpm test` | optional extra args; `--features` |
 
 CLI tablosu komut/flag snapshot'ıdır; exit code'ları veya her seçenek için ayrı
 komut-sözleşme testlerini kapsamaz. 53 `std/**/*.ax` dosyasında

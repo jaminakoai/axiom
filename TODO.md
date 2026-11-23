@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `5eddc9d` — [run 45141920315](https://github.com/jaminakoai/axiom/actions/runs/45141920315), **7/7 başarılı** |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname ve scanner: **220 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py tests/test_specification.py`, 50,22 sn) |
+| Son hedefli test paketi | G5 envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname ve scanner: **220 geçti, 0 başarısız** (`tests/test_error_model.py tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py tests/test_specification.py`, 45,66 sn) |
 
 ---
 
@@ -514,7 +514,7 @@ Güncel dizin: [`docs/reports/README.md`](docs/reports/README.md)
 - **İki arka uç eşit:** `defer`, `?`, string/dizi kapsam temizliği, DWARF — C ve LLVM'de aynı sonuç.
 - **Hata modeli modern:** `Result<T,E>` + `?`, `defer` ile uyumlu, zero-GC.
 - **Bellek güvenliği büyük ölçüde:** taşma/sıfıra bölme/dizi sınırı yakalanıyor; ASan temiz.
-- **290 yerleşik (86'sı kullanıcıya açık) + 385 stdlib fonksiyonu**, 52 modül (19'u güvenlik/ağ).
+- **API kaynağı:** 111 isimli `rt_*` dışı checker builtin imzası + 247 dahili runtime aliası + 3 özel builtin biçimi; 53 stdlib dosyasında 446 fonksiyon/37 struct. Bu envanter davranış veya kararlılık sözü değildir; generated snapshot G5'tedir.
 - **Doküman iki dilde:** TR + EN rehber (996 satır) ve şartname (691 satır); dört belgenin kod blokları CI'da derlenerek doğrulanıyor.
 - **API dokümanı üretimi:** `axiom doc` — `///` yorumlarından HTML/JSON (std: 81 belgeli öğe).
 - **Benchmark var:** C'nin 1,5–2,2× yavaşı (aritmetik), Python'un 6–30× hızlısı.

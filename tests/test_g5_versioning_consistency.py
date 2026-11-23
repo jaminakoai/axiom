@@ -118,7 +118,19 @@ def test_readme_stdlib_counts_match_the_source_tree():
 
 
 def test_documented_cli_commands_and_flags_cover_installed_help():
-    policy = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
+    policy = _read("docs/G5_API_STABILITY_PROPOSAL.md")
+    cli_table = policy.split(
+        "### v0.5 CLI seçenekleri anlık envanteri", 1
+    )[1].split("CLI tablosu komut", 1)[0]
+    documented_rows = {}
+    for line in cli_table.splitlines():
+        if not line.startswith("| `"):
+            continue
+        cells = [cell.strip() for cell in line.strip("|").split("|")]
+        command = cells[0].strip("`")
+        documented_rows[command] = set(
+            re.findall(r"(?<!\w)--?[A-Za-z][A-Za-z0-9-]*", cells[1])
+        )
     commands = [
         ["bin/axiom", "--help"],
         *[["bin/axiom", command, "--help"] for command in (
@@ -131,8 +143,6 @@ def test_documented_cli_commands_and_flags_cover_installed_help():
         )],
         ["bin/axpm", "registry", "assemble", "--help"],
     ]
-    documented_options = set(re.findall(r"(?<!\w)--?[A-Za-z][A-Za-z0-9-]*", policy))
-
     for argv in commands:
         result = subprocess.run(argv, capture_output=True, text=True, cwd=ROOT, check=False)
         assert result.returncode == 0, f"help failed: {' '.join(argv)}\n{result.stderr}"
@@ -145,8 +155,19 @@ def test_documented_cli_commands_and_flags_cover_installed_help():
                 token = token.rstrip(",")
                 if token.startswith("-") and re.fullmatch(r"--?[A-Za-z][A-Za-z0-9-]*", token):
                     help_options.add(token)
-        for option in help_options:
-            assert option in documented_options, f"undocumented option {option}: {' '.join(argv)}"
+            if len(argv) > 2:
+                # argparse adds help to every subcommand even though the
+                # snapshot lists command-specific options separately.
+                help_options.difference_update({"-h", "--help"})
+        if argv[0] == "bin/axiom":
+            key = "axiom" if len(argv) == 2 else f"axiom {argv[1]}"
+        else:
+            key = "axpm" if len(argv) == 2 else f"axpm {' '.join(argv[1:-1])}"
+        assert key in documented_rows, f"missing CLI inventory row: {key}"
+        assert help_options == documented_rows[key], (
+            f"CLI option inventory differs for {key}: "
+            f"help={sorted(help_options)}, docs={sorted(documented_rows[key])}"
+        )
 
 
 def test_scan_docs_match_schema_and_byte_buffer_behavior():
