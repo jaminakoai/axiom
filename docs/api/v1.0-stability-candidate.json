@@ -11,13 +11,16 @@
       "decision": "proposed-stable",
       "kind": "executable-interface",
       "commands": {
-        "rules": "Validate and count a rule file; success report has rules_count and rules.",
-        "scan": "Scan the full target byte buffer using --rules <path>.",
-        "pcap": "Scan each captured frame in classic PCAP separately using --rules <path>; no stream reassembly."
+        "rules": "Validate and count a positional rule file; success report has rules_count and rules.",
+        "scan": "Scan the full target byte buffer; provide the rule file with --rules <path>.",
+        "pcap": "Scan each captured frame in classic PCAP separately; provide the rule file with --rules <path>; no stream reassembly."
       },
-      "options": ["--rules <path>", "--fail-on-match"],
+      "options": {
+        "--rules <path>": "Required by scan and pcap; rules takes its rule file positionally.",
+        "--fail-on-match": "Applies only to scan and pcap; returns 10 when those commands find at least one match."
+      },
       "exit_codes": {
-        "0": "A report was produced and either there were no findings or --fail-on-match was not supplied.",
+        "0": "A success report was produced. For scan and pcap, this means there were no findings or --fail-on-match was not supplied; rules succeeds with 0.",
         "1": "An error report was produced.",
         "10": "--fail-on-match was supplied and at least one finding was produced."
       },
@@ -33,15 +36,89 @@
       "input_contract": {
         "file_scan": "Scan all bytes, including bytes after NUL; scanned_bytes and target_sha256 cover the complete file.",
         "regex_with_nul": "Reject explicitly because the current regex path cannot preserve byte spans across NUL.",
-        "pcap": "Classic PCAP only, supported timestamp resolutions and byte orders; scan raw captured frame bytes independently. pcapng is rejected."
+        "pcap": {
+          "format": "classic-pcap",
+          "timestamp_resolution": ["microsecond", "nanosecond"],
+          "byte_order": ["little-endian", "big-endian"],
+          "scan_unit": "Each captured raw frame independently, including protocol headers.",
+          "pcapng": "rejected",
+          "stream_reassembly": false
+        }
       },
       "yara_subset": {
-        "rule_structure": ["rule", "strings", "condition", "meta", "tags", "comments"],
-        "text_patterns": ["escaped text", "ascii (default)", "nocase", "fullword"],
-        "hex_patterns": ["byte and nibble wildcards", "fixed jump", "bounded jump", "one flat alternation", "one negated byte within documented combination limits"],
-        "regex": "POSIX ERE subject to documented safety checks.",
-        "conditions": ["true/false", "not/and/or and parentheses", "any/all/none/N of them", "pattern groups", "at/in offsets", "count/offset/length selectors", "filesize comparisons"],
-        "unsupported_examples": ["full YARA module/import support", "wide modifier", "unsupported or unbounded hex constructs", "regex occurrence selectors"]
+        "rule_structure": ["rule", "strings", "condition", "meta", "tags", "single-line and trailing // comments"],
+        "comments": "# is not a comment marker; it is used by the #a occurrence-count operator.",
+        "text_patterns": {
+          "escapes": ["\\\\", "\\\"", "\\n", "\\r", "\\t", "\\xNN"],
+          "rejected": ["\\x00"],
+          "modifiers": ["ascii (default)", "nocase", "fullword"],
+          "fullword_boundary": "A match is rejected when adjacent to ASCII alphanumeric bytes.",
+          "unsupported_modifier": "wide"
+        },
+        "metadata": "String, boolean, and integer values are reported with their JSON types. A metadata string containing a \\xNN escape is rejected.",
+        "hex_patterns": {
+          "atoms": ["byte literals", "byte wildcard ??", "high- or low-nibble wildcards (A? or ?A)"],
+          "fixed_jump": {
+            "syntax": "[N]",
+            "minimum": 1,
+            "maximum": 64,
+            "alternation_position": "outside the alternation group"
+          },
+          "bounded_jump": {
+            "syntax": "[N-M]",
+            "maximum_per_pattern": 1,
+            "minimum_gap": 0,
+            "maximum_gap": 64,
+            "maximum_gap_width": 16,
+            "minimum_literal_bytes_each_side": 1,
+            "cannot_combine_with": ["alternation", "negated byte"]
+          },
+          "alternation": {
+            "maximum_groups_per_pattern": 1,
+            "nested": false,
+            "minimum_branches": 2,
+            "maximum_branches": 4,
+            "branches_equal_length": true,
+            "minimum_bytes_per_branch": 1,
+            "maximum_bytes_per_branch": 16,
+            "branch_atoms": ["byte literal", "nibble wildcard"],
+            "cannot_combine_with": ["bounded jump", "negated byte"],
+            "fixed_jumps_must_be_outside_group": true
+          },
+          "negation": {
+            "maximum_per_pattern": 1,
+            "forms": ["~HH", "~?H", "~H?"],
+            "cannot_combine_with": ["bounded jump", "alternation"],
+            "fixed_jumps_allowed": true
+          },
+          "limits": {
+            "reject_all_wildcard_patterns": true,
+            "maximum_encoded_pattern_bytes": 8192
+          },
+          "occurrence_semantics": "At a shared start offset, a bounded jump chooses the shortest valid match; same-offset alternation branches count as one occurrence."
+        },
+        "regex": "POSIX ERE subject to documented validation and safety checks. Regex occurrence count/offset/index operators are rejected; regex on a NUL-containing target is rejected.",
+        "conditions": {
+          "boolean": ["true", "false", "not", "and", "or", "parentheses"],
+          "precedence": "not > and > or",
+          "direct_pattern_reference": "$a",
+          "pattern_groups": ["any/all/none/N of them", "any/all/none/N of ($a*)", "any/all/none/N of ($a,$b)"],
+          "zero_of_them": "0 of them is true only when no pattern matches.",
+          "selector_accounting": "Each selected pattern contributes independently; a pattern selected both by a wildcard group and explicitly contributes twice.",
+          "offsets": {
+            "forms": ["$a at N", "$a in (N..M)", "pattern groups at N", "pattern groups in (N..M)"],
+            "literal_formats": ["decimal", "0x hexadecimal"],
+            "range_start_offset_inclusive": true
+          },
+          "occurrence_operators": ["#a count", "@a[i] zero-based byte offset", "!a[i] match length"],
+          "indexing": "Occurrence indices are 1-based; offsets are 0-based.",
+          "filesize": {
+            "comparison_conditions": true,
+            "decimal_KB_bytes": 1024,
+            "decimal_MB_bytes": 1048576
+          }
+        },
+        "unsupported_examples": ["YARA modules/imports", "uint16()/entrypoint conditions", "wide modifier", "unsupported or unbounded hex constructs", "regex occurrence selectors"]
       },
       "evidence": {
         "sources": [

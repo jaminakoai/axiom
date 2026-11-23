@@ -45,3 +45,24 @@ def test_v1_candidate_evidence_paths_and_test_nodes_exist():
                     if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
                 }
                 assert node_id in function_names, test_ref
+
+
+def test_scanner_candidate_records_documented_rule_and_pcap_limits():
+    surface = _candidate()["candidate_surfaces"][0]
+    yara = surface["yara_subset"]
+    hex_patterns = yara["hex_patterns"]
+
+    assert hex_patterns["fixed_jump"]["minimum"] == 1
+    assert hex_patterns["fixed_jump"]["maximum"] == 64
+    assert hex_patterns["bounded_jump"]["maximum_per_pattern"] == 1
+    assert hex_patterns["bounded_jump"]["maximum_gap_width"] == 16
+    assert hex_patterns["alternation"]["minimum_branches"] == 2
+    assert hex_patterns["alternation"]["maximum_branches"] == 4
+    assert hex_patterns["alternation"]["branches_equal_length"] is True
+    assert hex_patterns["negation"]["maximum_per_pattern"] == 1
+    assert hex_patterns["limits"]["maximum_encoded_pattern_bytes"] == 8192
+    assert yara["conditions"]["selector_accounting"].startswith("Each selected pattern")
+    assert yara["conditions"]["indexing"] == "Occurrence indices are 1-based; offsets are 0-based."
+    assert yara["conditions"]["filesize"]["decimal_KB_bytes"] == 1024
+    assert surface["input_contract"]["pcap"]["timestamp_resolution"] == ["microsecond", "nanosecond"]
+    assert surface["input_contract"]["pcap"]["stream_reassembly"] is False
