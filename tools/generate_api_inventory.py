@@ -88,10 +88,8 @@ def _builtin_inventory() -> tuple[list[dict[str, object]], list[dict[str, object
             "name": name,
             "parameters": list(parameter_types),
             "returns": return_type,
-            "classification": (
-                "internal_runtime_alias" if name.startswith("rt_")
-                else "unclassified_frontend_builtin"
-            ),
+            "classification": "unclassified_checker_builtin",
+            "name_family": "rt_prefixed" if name.startswith("rt_") else "unprefixed",
         }
         for name, (parameter_types, return_type) in sorted(builtin_map.items())
     ]

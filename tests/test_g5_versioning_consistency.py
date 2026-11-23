@@ -2,7 +2,9 @@
 
 import re
 import ast
+import json
 import subprocess
+import tempfile
 from pathlib import Path
 
 
@@ -90,7 +92,8 @@ def test_spec_builtin_raw_counts_match_checker_without_claiming_stability():
         else:
             assert "not a complete user-facing API catalog" in spec
     proposal = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
-    assert "111 imzanın tamamı henüz kullanıcı sözleşmesi sayılmaz" in proposal
+    assert "247'si `rt_*` önekli" in proposal
+    assert "`rt_*` burada gizli API anlamına gelmiyor" in proposal
 
 
 def test_generated_api_inventory_matches_current_source():
@@ -101,6 +104,30 @@ def test_generated_api_inventory_matches_current_source():
         text=True,
         check=False,
     )
+    assert result.returncode == 0, result.stderr
+    snapshot = json.loads(_read("docs/api/v0.5.0-alpha.json"))
+    rt_entry = next(
+        entry for entry in snapshot["compiler_builtins"]
+        if entry["name"] == "rt_str_len"
+    )
+    assert rt_entry["classification"] == "unclassified_checker_builtin"
+    assert rt_entry["name_family"] == "rt_prefixed"
+
+
+def test_rt_prefixed_checker_builtin_is_callable_from_axiom_source():
+    with tempfile.TemporaryDirectory() as directory:
+        source = Path(directory) / "rt_builtin.ax"
+        source.write_text(
+            'fn main() -> int { return rt_str_len("x") - 1; }\n',
+            encoding="utf-8",
+        )
+        result = subprocess.run(
+            ["bin/axiom", "check", str(source)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
     assert result.returncode == 0, result.stderr
 
 

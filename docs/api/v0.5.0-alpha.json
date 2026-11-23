@@ -9112,7 +9112,8 @@
         "int"
       ],
       "returns": "int[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "array_create_str",
@@ -9120,7 +9121,8 @@
         "int"
       ],
       "returns": "str[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "array_push_int",
@@ -9129,7 +9131,8 @@
         "int"
       ],
       "returns": "int[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "array_push_str",
@@ -9138,7 +9141,8 @@
         "str"
       ],
       "returns": "str[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "atomic_add",
@@ -9147,7 +9151,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "atomic_get",
@@ -9155,7 +9160,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "atomic_init",
@@ -9163,7 +9169,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "char_to_str",
@@ -9171,7 +9178,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "compile_c",
@@ -9180,7 +9188,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "create_dir",
@@ -9188,7 +9197,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "crypto_memcmp",
@@ -9197,19 +9207,22 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "diag_is_debugged",
       "parameters": [],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "diag_is_virtualized",
       "parameters": [],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "diag_set_dumpable",
@@ -9217,7 +9230,8 @@
         "bool"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "dot_product",
@@ -9226,7 +9240,8 @@
         "int"
       ],
       "returns": "float",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "exec_mem_alloc",
@@ -9234,7 +9249,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "exec_mem_protect",
@@ -9244,7 +9260,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "exec_mem_run",
@@ -9252,7 +9269,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "file_exists",
@@ -9260,7 +9278,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "file_read",
@@ -9268,7 +9287,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "file_size",
@@ -9276,7 +9296,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "file_write",
@@ -9285,7 +9306,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "fim_hash_file",
@@ -9293,25 +9315,29 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "forensics_get_modules",
       "parameters": [],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "forensics_get_ports",
       "parameters": [],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "forensics_get_processes",
       "parameters": [],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "http_chunked_decode",
@@ -9319,7 +9345,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "http_header_value",
@@ -9328,7 +9355,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "int_to_str",
@@ -9336,7 +9364,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "is_directory",
@@ -9344,7 +9373,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_at",
@@ -9353,7 +9383,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_free",
@@ -9361,7 +9392,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_get",
@@ -9370,7 +9402,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_key_at",
@@ -9379,13 +9412,15 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_last_error",
       "parameters": [],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_len",
@@ -9393,7 +9428,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_node_bool",
@@ -9401,7 +9437,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_node_float",
@@ -9409,7 +9446,8 @@
         "int"
       ],
       "returns": "float",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_node_int",
@@ -9417,7 +9455,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_node_is_null",
@@ -9425,7 +9464,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_node_str",
@@ -9433,7 +9473,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_parse",
@@ -9441,7 +9482,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_path",
@@ -9450,7 +9492,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "json_type_of",
@@ -9458,7 +9501,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "list_dir",
@@ -9466,7 +9510,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "math_abs",
@@ -9474,7 +9519,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "math_max",
@@ -9483,7 +9529,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "math_min",
@@ -9492,7 +9539,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "math_pow",
@@ -9501,13 +9549,15 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "mutex_init",
       "parameters": [],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "mutex_lock",
@@ -9515,7 +9565,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "mutex_unlock",
@@ -9523,7 +9574,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "nn_argmax",
@@ -9531,7 +9583,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "nn_relu",
@@ -9539,7 +9592,8 @@
         "float"
       ],
       "returns": "float",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "nn_sigmoid",
@@ -9547,7 +9601,8 @@
         "float"
       ],
       "returns": "float",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "os_exec",
@@ -9555,7 +9610,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "os_exec_argv",
@@ -9563,7 +9619,8 @@
         "str[]"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "os_getenv",
@@ -9571,7 +9628,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "packet_craft_ip",
@@ -9582,7 +9640,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "packet_craft_tcp",
@@ -9595,7 +9654,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "packet_craft_udp",
@@ -9605,7 +9665,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_close",
@@ -9613,7 +9674,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_create_writer",
@@ -9621,7 +9683,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_next_packet",
@@ -9629,7 +9692,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_open_file",
@@ -9637,7 +9701,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_packet_count",
@@ -9645,7 +9710,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "pcap_write_packet",
@@ -9654,7 +9720,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "proc_get_maps",
@@ -9662,7 +9729,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "proc_search_pattern",
@@ -9671,7 +9739,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "remove_file",
@@ -9679,7 +9748,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "rename_file",
@@ -9688,7 +9758,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "rt_aes128_cbc_decrypt",
@@ -9698,7 +9769,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_aes128_cbc_encrypt",
@@ -9708,7 +9780,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_aes256_cbc_decrypt",
@@ -9718,7 +9791,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_aes256_cbc_encrypt",
@@ -9728,7 +9802,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_ascii_case_find",
@@ -9737,7 +9812,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_base64_decode",
@@ -9745,7 +9821,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_base64_encode",
@@ -9753,7 +9830,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_create",
@@ -9761,7 +9839,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_find_byte",
@@ -9770,7 +9849,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_free",
@@ -9778,7 +9858,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_from_hex",
@@ -9786,7 +9867,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_is_valid_handle",
@@ -9794,7 +9876,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_len",
@@ -9802,7 +9885,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_file",
@@ -9810,7 +9894,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u16_be",
@@ -9819,7 +9904,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u16_le",
@@ -9828,7 +9914,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u32_be",
@@ -9837,7 +9924,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u32_le",
@@ -9846,7 +9934,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u64_be",
@@ -9855,7 +9944,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u64_le",
@@ -9864,7 +9954,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_read_u8",
@@ -9873,7 +9964,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_to_hex",
@@ -9881,7 +9973,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_to_str",
@@ -9889,7 +9982,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_str",
@@ -9898,7 +9992,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u16_be",
@@ -9907,7 +10002,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u16_le",
@@ -9916,7 +10012,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u32_be",
@@ -9925,7 +10022,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u32_le",
@@ -9934,7 +10032,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u64_be",
@@ -9943,7 +10042,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u64_le",
@@ -9952,7 +10052,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_buf_write_u8",
@@ -9961,13 +10062,15 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_args_count",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_args_get",
@@ -9975,7 +10078,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_get_int_option",
@@ -9984,7 +10088,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_get_option",
@@ -9993,7 +10098,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_has_flag",
@@ -10001,7 +10107,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_init_args",
@@ -10010,7 +10117,8 @@
         "str[]"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_cli_set_args",
@@ -10018,7 +10126,8 @@
         "str[]"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_crypto_memcmp",
@@ -10027,7 +10136,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_crypto_random_hex",
@@ -10035,7 +10145,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_csv_add_row",
@@ -10044,13 +10155,15 @@
         "str[]"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_csv_create",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_csv_free",
@@ -10058,7 +10171,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_csv_save_file",
@@ -10067,7 +10181,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_csv_to_str",
@@ -10075,7 +10190,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_diff_seconds",
@@ -10084,7 +10200,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_format_epoch",
@@ -10093,7 +10210,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_format_tz",
@@ -10103,7 +10221,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_iso_tz",
@@ -10112,25 +10231,29 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_local_offset_minutes",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_now_epoch",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_now_iso",
       "parameters": [],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_date_parse_iso",
@@ -10138,19 +10261,22 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_diag_is_debugged",
       "parameters": [],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_diag_is_virtualized",
       "parameters": [],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_diag_set_dumpable",
@@ -10158,7 +10284,8 @@
         "bool"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_dns_resolve_ipv4",
@@ -10166,7 +10293,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_dns_resolve_ipv6",
@@ -10174,7 +10302,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_dns_reverse_lookup",
@@ -10182,7 +10311,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_dot_product",
@@ -10191,7 +10321,8 @@
         "int"
       ],
       "returns": "float",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_add",
@@ -10201,7 +10332,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_close",
@@ -10209,7 +10341,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_create",
@@ -10217,7 +10350,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_del",
@@ -10226,7 +10360,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_event_events",
@@ -10235,7 +10370,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_event_fd",
@@ -10244,7 +10380,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_is_error",
@@ -10252,7 +10389,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_is_hangup",
@@ -10260,7 +10398,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_is_readable",
@@ -10268,7 +10407,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_is_writable",
@@ -10276,7 +10416,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_mod",
@@ -10286,7 +10427,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_epoll_wait",
@@ -10295,7 +10437,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_exec_mem_alloc",
@@ -10303,7 +10446,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_exec_mem_protect",
@@ -10313,7 +10457,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_exec_mem_run",
@@ -10321,7 +10466,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fd_read",
@@ -10330,7 +10476,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fd_write",
@@ -10339,7 +10486,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fim_hash_file",
@@ -10347,25 +10495,29 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_forensics_get_modules",
       "parameters": [],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_forensics_get_ports",
       "parameters": [],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_forensics_get_processes",
       "parameters": [],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fuzz_add_null_byte",
@@ -10373,7 +10525,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fuzz_double_encode",
@@ -10381,7 +10534,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fuzz_replace_marker",
@@ -10391,7 +10545,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_fuzz_url_encode",
@@ -10399,7 +10554,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_gzip_compress",
@@ -10407,7 +10563,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_gzip_decompress",
@@ -10415,7 +10572,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hash_md5",
@@ -10423,7 +10581,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hash_sha1",
@@ -10431,7 +10590,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hash_sha256",
@@ -10439,7 +10599,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hex_decode",
@@ -10447,7 +10608,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hex_encode",
@@ -10455,7 +10617,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_hmac_sha256",
@@ -10464,7 +10627,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_html_escape",
@@ -10472,7 +10636,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_html_strip_tags",
@@ -10480,7 +10645,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_html_unescape",
@@ -10488,7 +10654,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_http_server_accept",
@@ -10496,7 +10663,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_http_server_close",
@@ -10504,7 +10672,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_http_server_create",
@@ -10512,7 +10681,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_http_server_send_response",
@@ -10523,7 +10693,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_icmp_ping",
@@ -10532,7 +10703,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_json_build_object",
@@ -10541,7 +10713,8 @@
         "str[]"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_json_get_bool",
@@ -10550,7 +10723,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_json_get_int",
@@ -10559,7 +10733,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_json_get_str",
@@ -10568,7 +10743,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_json_has_key",
@@ -10577,7 +10753,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_jwt_create_hs256",
@@ -10586,7 +10763,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_jwt_get_claim",
@@ -10595,7 +10773,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_jwt_get_header",
@@ -10603,7 +10782,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_jwt_get_payload",
@@ -10611,7 +10791,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_jwt_verify_hs256",
@@ -10620,7 +10801,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_log_debug",
@@ -10629,7 +10811,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_log_error",
@@ -10638,7 +10821,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_log_info",
@@ -10647,7 +10831,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_log_set_level",
@@ -10655,7 +10840,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_log_warn",
@@ -10664,13 +10850,15 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_create",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_delete",
@@ -10679,7 +10867,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_free",
@@ -10687,7 +10876,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_get",
@@ -10696,7 +10886,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_has",
@@ -10705,7 +10896,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_len",
@@ -10713,7 +10905,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_map_set",
@@ -10723,7 +10916,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_net_set_nonblocking",
@@ -10731,7 +10925,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_nn_argmax",
@@ -10739,7 +10934,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_nn_relu",
@@ -10747,7 +10943,8 @@
         "float"
       ],
       "returns": "float",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_nn_sigmoid",
@@ -10755,7 +10952,8 @@
         "float"
       ],
       "returns": "float",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_packet_craft_ip",
@@ -10766,7 +10964,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_packet_craft_tcp",
@@ -10779,7 +10978,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_packet_craft_udp",
@@ -10789,7 +10989,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_close",
@@ -10797,7 +10998,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_create_writer",
@@ -10805,7 +11007,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_next_packet",
@@ -10813,7 +11016,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_open_file",
@@ -10821,7 +11025,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_packet_count",
@@ -10829,7 +11034,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_reader_status",
@@ -10837,7 +11043,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pcap_write_packet",
@@ -10846,7 +11053,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pipe_close",
@@ -10854,13 +11062,15 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pipe_create",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pipe_read_fd",
@@ -10868,7 +11078,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_pipe_write_fd",
@@ -10876,7 +11087,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_proc_get_maps",
@@ -10884,7 +11096,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_proc_search_pattern",
@@ -10893,7 +11106,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_process_exec_output",
@@ -10901,13 +11115,15 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_process_get_pid",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_process_kill",
@@ -10916,7 +11132,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_process_spawn_bg",
@@ -10924,13 +11141,15 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_create",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_free",
@@ -10938,7 +11157,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_is_empty",
@@ -10946,7 +11166,8 @@
         "int"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_len",
@@ -10954,7 +11175,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_pop",
@@ -10962,7 +11184,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_queue_push",
@@ -10971,7 +11194,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_raw_checksum",
@@ -10979,7 +11203,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_regex_find",
@@ -10988,7 +11213,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_regex_is_match",
@@ -10997,7 +11223,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_regex_replace",
@@ -11007,7 +11234,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_regex_risk_level",
@@ -11015,7 +11243,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_regex_validate",
@@ -11023,13 +11252,15 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_simd_avx2_supported",
       "parameters": [],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_socketpair_close",
@@ -11037,13 +11268,15 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_socketpair_create",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_socketpair_fd1",
@@ -11051,7 +11284,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_socketpair_fd2",
@@ -11059,7 +11293,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_byte_len",
@@ -11067,7 +11302,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_free",
@@ -11075,7 +11311,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_grapheme_at",
@@ -11084,7 +11321,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_grapheme_len",
@@ -11092,7 +11330,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_len",
@@ -11100,7 +11339,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_to_lower_tr",
@@ -11108,7 +11348,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_str_to_upper_tr",
@@ -11116,7 +11357,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tcp_accept_nonblocking",
@@ -11124,7 +11366,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tcp_ping",
@@ -11134,7 +11377,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tcp_server_nonblocking",
@@ -11142,7 +11386,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_add",
@@ -11151,7 +11396,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_cols",
@@ -11159,7 +11405,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_create_2d",
@@ -11168,7 +11415,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_free",
@@ -11176,7 +11424,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_get",
@@ -11186,7 +11435,8 @@
         "int"
       ],
       "returns": "float",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_matmul",
@@ -11195,7 +11445,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_rows",
@@ -11203,7 +11454,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_set",
@@ -11214,7 +11466,8 @@
         "float"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_to_str",
@@ -11222,7 +11475,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tensor_transpose",
@@ -11230,7 +11484,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tls_close",
@@ -11238,7 +11493,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tls_connect",
@@ -11247,7 +11503,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tls_recv",
@@ -11256,7 +11513,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_tls_send",
@@ -11265,7 +11523,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_udp_bind",
@@ -11273,7 +11532,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_udp_close",
@@ -11281,7 +11541,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_udp_recvfrom",
@@ -11290,7 +11551,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_udp_sendto",
@@ -11301,13 +11563,15 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_udp_socket",
       "parameters": [],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_is_nfc",
@@ -11315,7 +11579,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_is_nfd",
@@ -11323,7 +11588,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_nfc",
@@ -11331,7 +11597,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_nfd",
@@ -11339,7 +11606,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_normalize",
@@ -11348,13 +11616,15 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_unicode_ucd_version",
       "parameters": [],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_decode",
@@ -11362,7 +11632,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_encode",
@@ -11370,7 +11641,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_parse_host",
@@ -11378,7 +11650,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_parse_path",
@@ -11386,7 +11659,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_parse_port",
@@ -11394,7 +11668,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_parse_query",
@@ -11402,7 +11677,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_url_parse_scheme",
@@ -11410,7 +11686,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_utf8_codepoint_count",
@@ -11418,7 +11695,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_wordlist_count",
@@ -11426,7 +11704,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_wordlist_free",
@@ -11434,7 +11713,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_wordlist_get",
@@ -11443,7 +11723,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_wordlist_load",
@@ -11451,7 +11732,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_ws_close",
@@ -11459,7 +11741,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_ws_connect",
@@ -11469,7 +11752,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_ws_recv",
@@ -11477,7 +11761,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_ws_send",
@@ -11486,7 +11771,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_count_hex_pattern",
@@ -11495,7 +11781,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_count_hex_pattern_buf_handle",
@@ -11504,7 +11791,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_count_hex_wildcard",
@@ -11513,7 +11801,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_count_text",
@@ -11523,7 +11812,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_count_text_buf_handle",
@@ -11533,7 +11823,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_alternation",
@@ -11544,7 +11835,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_negation",
@@ -11555,7 +11847,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_pattern",
@@ -11566,7 +11859,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_pattern_buf_handle",
@@ -11577,7 +11871,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_range",
@@ -11588,7 +11883,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_range_length",
@@ -11598,7 +11894,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_stream",
@@ -11607,7 +11904,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_wildcard",
@@ -11618,7 +11916,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_hex_wildcard_raw",
@@ -11630,7 +11929,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_text",
@@ -11642,7 +11942,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_find_text_buf_handle",
@@ -11654,7 +11955,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_hex_alternation_len",
@@ -11662,7 +11964,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_hex_negation_len",
@@ -11670,7 +11973,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_hex_pattern_length_at",
@@ -11680,7 +11984,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_hex_pattern_length_at_buf_handle",
@@ -11690,7 +11995,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_hex_pattern_length",
@@ -11700,7 +12006,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_hex_pattern_length_buf_handle",
@@ -11710,7 +12017,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_hex_pattern_offset",
@@ -11720,7 +12028,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_hex_pattern_offset_buf_handle",
@@ -11730,7 +12039,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_hex_wildcard",
@@ -11740,7 +12050,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_text_length_buf_handle",
@@ -11751,7 +12062,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_text_offset",
@@ -11762,7 +12074,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_nth_text_offset_buf_handle",
@@ -11773,7 +12086,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_pattern_len",
@@ -11781,7 +12095,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_yara_scan_buf_handle",
@@ -11792,7 +12107,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_zlib_compress_str",
@@ -11800,7 +12116,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "rt_zlib_decompress_str",
@@ -11808,7 +12125,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "internal_runtime_alias"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "rt_prefixed"
     },
     {
       "name": "simd_add_i64",
@@ -11817,7 +12135,8 @@
         "int[]"
       ],
       "returns": "int[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "simd_mul_i64",
@@ -11826,7 +12145,8 @@
         "int[]"
       ],
       "returns": "int[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "simd_scan_match",
@@ -11835,7 +12155,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "simd_sub_i64",
@@ -11844,7 +12165,8 @@
         "int[]"
       ],
       "returns": "int[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "simd_sum_i64",
@@ -11852,7 +12174,8 @@
         "int[]"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "sleep_ms",
@@ -11860,7 +12183,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "socket_close",
@@ -11868,7 +12192,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_byte_len",
@@ -11876,7 +12201,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_char_at",
@@ -11885,7 +12211,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_char_code",
@@ -11894,7 +12221,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_contains",
@@ -11903,7 +12231,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_ends_with",
@@ -11912,7 +12241,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_free",
@@ -11920,7 +12250,8 @@
         "str"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_index_of",
@@ -11929,7 +12260,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_join",
@@ -11938,7 +12270,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_len",
@@ -11946,13 +12279,15 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_owned_count",
       "parameters": [],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_replace",
@@ -11962,7 +12297,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_split",
@@ -11971,7 +12307,8 @@
         "str"
       ],
       "returns": "str[]",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_starts_with",
@@ -11980,7 +12317,8 @@
         "str"
       ],
       "returns": "bool",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_sub",
@@ -11990,7 +12328,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_to_int",
@@ -11998,7 +12337,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "str_trim",
@@ -12006,7 +12346,8 @@
         "str"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tcp_connect",
@@ -12015,7 +12356,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tcp_recv",
@@ -12024,7 +12366,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tcp_recv_all",
@@ -12033,7 +12376,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tcp_send",
@@ -12042,7 +12386,8 @@
         "str"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tcp_set_timeout",
@@ -12051,7 +12396,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_add",
@@ -12060,7 +12406,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_cols",
@@ -12068,7 +12415,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_create_2d",
@@ -12077,7 +12425,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_free",
@@ -12085,7 +12434,8 @@
         "int"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_get",
@@ -12095,7 +12445,8 @@
         "int"
       ],
       "returns": "float",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_matmul",
@@ -12104,7 +12455,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_rows",
@@ -12112,7 +12464,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_set",
@@ -12123,7 +12476,8 @@
         "float"
       ],
       "returns": "void",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_to_str",
@@ -12131,7 +12485,8 @@
         "int"
       ],
       "returns": "str",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "tensor_transpose",
@@ -12139,7 +12494,8 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "thread_join",
@@ -12147,13 +12503,15 @@
         "int"
       ],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     },
     {
       "name": "time_now_ms",
       "parameters": [],
       "returns": "int",
-      "classification": "unclassified_frontend_builtin"
+      "classification": "unclassified_checker_builtin",
+      "name_family": "unprefixed"
     }
   ],
   "compiler_special_builtins": [
