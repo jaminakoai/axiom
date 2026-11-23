@@ -1322,10 +1322,13 @@ def test_error_paths(scanner, args, expect):
 
 
 @pytest.mark.parametrize("args", [
+    (),
     ("rules",),
     ("scan",),
+    ("scan", "somefile"),
     ("pcap",),
     ("pcap", "capture.pcap"),
+    ("bilinmeyen",),
 ])
 def test_cli_usage_errors_are_structured_and_match_c_llvm(scanner, scanner_llvm, args):
     reports = []
@@ -1341,7 +1344,7 @@ def test_cli_usage_errors_are_structured_and_match_c_llvm(scanner, scanner_llvm,
 
 def test_help_and_version_are_plain_text_for_c_and_llvm(scanner, scanner_llvm):
     for executable in (scanner, scanner_llvm):
-        for option in ("--help", "--version"):
+        for option in ("--help", "-h", "help", "--version", "-v"):
             result = _run(executable, option)
             assert result.returncode == 0, result.stdout + result.stderr
             assert result.stdout.strip()
