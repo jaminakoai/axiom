@@ -90,4 +90,6 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
         "tests/test_axiom_scan.py::test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm"
         in surface["evidence"]["tests"]
     )
+    assert "tests/test_axiom_scan.py::test_cli_usage_errors_are_structured_and_match_c_llvm" in surface["evidence"]["tests"]
+    assert "tests/test_axiom_scan.py::test_help_and_version_are_plain_text_for_c_and_llvm" in surface["evidence"]["tests"]
     assert "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records" in surface["evidence"]["tests"]

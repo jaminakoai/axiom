@@ -1168,8 +1168,10 @@ def test_scan_pcap_rejects_record_over_custom_snaplen(scanner, tmp_path):
 
     result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
 
-    assert result.returncode != 0, result.stdout + result.stderr
-    assert '"ok":true' not in result.stdout
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
 
 
 def test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen(scanner, tmp_path):
@@ -1187,8 +1189,10 @@ def test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen(scann
 
     result = _run(scanner, "pcap", str(pcap), "--rules", str(rules))
 
-    assert result.returncode != 0, result.stdout + result.stderr
-    assert '"ok":true' not in result.stdout
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
 
 
 def test_scan_pcap_ignores_linktype_and_scans_captured_bytes(scanner, tmp_path):
@@ -1315,6 +1319,34 @@ def test_error_paths(scanner, args, expect):
     report = json.loads(res.stdout)
     _assert_report_matches_schema(report)
     assert report["ok"] is False
+
+
+@pytest.mark.parametrize("args", [
+    ("rules",),
+    ("scan",),
+    ("pcap",),
+    ("pcap", "capture.pcap"),
+])
+def test_cli_usage_errors_are_structured_and_match_c_llvm(scanner, scanner_llvm, args):
+    reports = []
+    for executable in (scanner, scanner_llvm):
+        result = _run(executable, *args)
+        assert result.returncode == 1, result.stdout + result.stderr
+        report = json.loads(result.stdout)
+        _assert_report_matches_schema(report)
+        assert report["ok"] is False
+        reports.append(report)
+    assert reports[0] == reports[1]
+
+
+def test_help_and_version_are_plain_text_for_c_and_llvm(scanner, scanner_llvm):
+    for executable in (scanner, scanner_llvm):
+        for option in ("--help", "--version"):
+            result = _run(executable, option)
+            assert result.returncode == 0, result.stdout + result.stderr
+            assert result.stdout.strip()
+            with pytest.raises(json.JSONDecodeError):
+                json.loads(result.stdout)
 
 
 def test_invalid_rules_report_line(scanner, tmp_path):
