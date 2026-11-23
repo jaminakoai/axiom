@@ -74,7 +74,9 @@ Ayrıca güvenlik aracını kendi dilinde yazmak isteyen sistem programcısı.
   başvuruları, `$a at N` / `$a in (N..M)` ofset kontrolleri, `@a[i]` ofseti,
   desen grupları için `at N` / `in (N..M)` aralıkları, `meta:` string/bool/
   tamsayı değerleri ve kural etiketleri scan JSON raporunda sunulur;
-  meta stringlerde `\xNN` kaçışları açık hata verir;
+  meta tamsayıları en çok 18 onluk veya `0x`/`0X` ile 15 onaltılık basamak
+  kabul eder; baştaki `-` isteğe bağlıdır. Daha uzun değerler ayrıştırma
+  hatası verir. Meta stringlerde `\xNN` kaçışları açık hata verir;
   `!a[i]` eşleşme uzunluğu, `#a` desen sayımı,
   `filesize` karşılaştırmaları (onluk sabitlerde `KB` = 1024 ve `MB` = 1024²), `true`/`false`, parantezler ve `not`/`and`/`or` kabul edilir
   (`at/in` sınırları onluk veya `0x` hex sayısal sabitlerdir).

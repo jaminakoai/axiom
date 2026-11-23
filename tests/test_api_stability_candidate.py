@@ -97,3 +97,13 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
     assert "tests/test_axiom_scan.py::test_cli_usage_errors_are_structured_and_match_c_llvm" in surface["evidence"]["tests"]
     assert "tests/test_axiom_scan.py::test_help_and_version_are_plain_text_for_c_and_llvm" in surface["evidence"]["tests"]
     assert "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records" in surface["evidence"]["tests"]
+
+
+def test_readmes_document_metadata_integer_limits_in_both_languages():
+    turkish = (ROOT / "README.md").read_text(encoding="utf-8")
+    english = (ROOT / "README.en.md").read_text(encoding="utf-8")
+
+    assert "18 onluk veya `0x`/`0X` ile 15 onaltılık basamak" in turkish
+    assert "baştaki `-` isteğe bağlıdır" in turkish
+    assert "18 decimal digits or 15 hexadecimal digits" in english
+    assert "optional leading `-`" in english

@@ -75,7 +75,9 @@ in their own language.
   `$a at N` / `$a in (N..M)` offset checks, `@a[i]` offsets, `!a[i]` match
   lengths, pattern-group `at N` / `in (N..M)` ranges, `#a` occurrence counts,
   and rule `meta:` string, boolean, integer values and tags in scan JSON reports,
-  while `\xNN` escapes in metadata strings are explicitly rejected,
+  metadata integers allow up to 18 decimal digits or 15 hexadecimal digits
+  with `0x`/`0X`; an optional leading `-` is supported. Larger values fail
+  parsing. `\xNN` escapes in metadata strings are explicitly rejected,
   `filesize` comparisons (decimal constants with `KB` = 1024 and `MB` = 1024²), `true`/`false`, parentheses, and `not`/`and`/`or`
   (`not` > `and` > `or` precedence). Offset bounds are decimal or `0x` hex
   integer literals.
