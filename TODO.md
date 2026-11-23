@@ -10,8 +10,8 @@
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
 | Sürüm | `v0.5.0-alpha` |
-| Son güncelleme | 2026-11-18 |
-| Aşama | **G5 başlangıcı — 1.0 öncesi API kararlılığı ve gerçek kullanım kanıtı** |
+| Son güncelleme | 2026-11-23 |
+| Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
 | Son tamamlanmış tam test paketi | GitHub Actions `2b73fea`: Python 3.10–3.13'te her biri 1587 geçti / 27 skip, YARA differential 29 ve doküman blokları 55 geçti; [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
 | Son CI denemesi | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
 | Son başarılı tam CI | `2b73fea` [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
@@ -19,7 +19,8 @@
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `2b73fea` — [run 44026041380](https://github.com/jaminakoai/axiom/actions/runs/44026041380), **7/7 başarılı** |
-| Son tam yerel test paketi | Registry key-overlap değişiklikleri: **1623 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1342 sn) |
+| Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
+| Son hedefli test paketi | Son doküman ve scanner açıklama değişiklikleri: **188 geçti, 0 başarısız** (`tests/test_g5_versioning_consistency.py tests/test_external_validation_docs.py tests/test_docs_en.py tests/test_axiom_scan.py`, 22,51 sn) |
 
 ---
 
@@ -65,8 +66,8 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   kullanılıyor. Bu ölçülmüş KPI değildir. G2 gerçek kural corpus'u ve maintainer
   isteğiyle G3 iç teknik denetimi kapandı; bağımsız kullanıcı deneyimi
   doğrulanmış sayılmaz. G4 ilk imzalı paket yayını kapandı. G5 başladı; ilk iş
-  olan public API envanteri ve 1.0 uyumluluk taslağı
-  [`G5 API stability proposal`](docs/G5_API_STABILITY_PROPOSAL.md) içinde.
+  olan ilk public API yüzey envanteri ve 1.0 uyumluluk politikası
+  [`G5 API stability policy`](docs/G5_API_STABILITY_PROPOSAL.md) içinde.
   Yüzde kaba milestone tahminidir, kullanıcı benimsemesini ölçmez.
 - `18a364f` CI run `44014863054` Python 3.10/3.12/3.13'te 1584 geçti/27
   skip, Python 3.11'de 1583 geçti/27 skip ve tek
@@ -415,15 +416,19 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 #### G5 — Nişte büyüme ve 1.0 `[~]` — 18 Kasım 2026 başladı
 
 - [x] G5.1 ilk public API yüzey envanterini ve SemVer/iki-sürüm uyumluluk
-  önerisini hazırla. Taslak maintainer onayı değildir:
+  politikasını belirle:
   [`docs/G5_API_STABILITY_PROPOSAL.md`](docs/G5_API_STABILITY_PROPOSAL.md).
-- [ ] Dil sözdizimi veya stdlib genişletmeden önce stable/experimental API
-  sınırını ve “iki sürüm” taahhüdünün anlamını onayla.
-- [ ] `docs/VERSIONING.md` içindeki bağımsız kullanıcı doğrulaması → `v1.0`
-  kapısını koru veya değiştir; G3 iç teknik kabulünü kullanıcı kanıtı gibi
-  göstermeden kararı belgele.
+- [x] Kararlı/deneysel yüzey sınırını, SemVer politikasını ve “iki sürüm”ün
+  iki sonraki minor sürüm anlamını belirle; önceki iki minor fixture CI
+  yükümlülüğünü tanımla.
+- [x] Önceki maintainer kararıyla uyumlu olarak bağımsız kullanıcı denemesini
+  isteğe bağlı ürün geri bildirimi, G3 iç denetimini teknik kanıt olarak kaydet;
+  kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
+- [ ] Somut public API sembol/sözdizimi/şema envanterini çıkar ve önceki iki
+  minor sürüm fixture kontrolünü v1.0 readiness CI/release sürecine bağla;
+  stdlib görünürlüğü ile `Result`/`Option` sözleşmelerini de netleştir.
 - [ ] Bir gerçek kullanıcı iş akışındaki dil/stdlib engelini belirle; yalnız o
-  ihtiyacı çözen dikey dil geliştirmesini, iki backend regresyonlarıyla seç.
+  ihtiyacı çözen dikey geliştirmeyi, gerekirse iki backend regresyonlarıyla seç.
 
 - [ ] Gerçek kullanıcı ve bakım kapasitesi oluştukça paket/yazar hedefleri koy;
   hedef sayısını kullanıcı ihtiyacının yerine geçirme.
@@ -434,9 +439,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
 
 **G3 iç teknik denetimi kapandı**; bağımsız kullanıcı geri bildirimi artık
 isteğe bağlı ürün kullanılabilirliği kanıtıdır, teknik kabul şartı değildir.
-G4 imzalı örnek paket yayını tamamlandı. G5 başladı: ilk iş API/uyumluluk
-politikasını netleştirmek; kullanıcı kanıtı olmadan genel amaçlı özellik kapsamı
-büyütülmeyecek. G1 ve G2 kapandı.
+G4 imzalı örnek paket yayını tamamlandı. G5 API kararlılık politikası belirlendi;
+somut sembol envanteri, CI fixture uygulaması ve doğrulanmış gerçek workflow
+engeli açık. GitHub açık issue araması kullanıcı ihtiyacı kanıtı vermedi; dil/stdlib
+özelliği seçmeden önce somut workflow girdisi gerekir. G1 ve G2 kapandı.
 G1: NUL
 korumalı dosya/PCAP taraması, 64 MiB typed stress ölçümü, signed offset/length ret
 testleri ve yeni condition differential matrisinin ilk bölümü tamamlandı. Selector
@@ -1364,9 +1370,9 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
    kapı olarak tutuyor.
 2. **G4:** tamamlandı. `axiom-scan-report` 0.1.0 signed registry'de yayında;
    [yayın kanıtı](docs/reports/2026-11-17-g4-registry-publication.md).
-3. **G5 (aktif):** önce public API envanterini ve uyumluluk sözünü kararlaştır;
-   taslak [`G5_API_STABILITY_PROPOSAL.md`](docs/G5_API_STABILITY_PROPOSAL.md).
-   Ardından gerçek kullanım akışındaki dil/stdlib engeline göre geliştirme seç.
+3. **G5 (aktif):** ilk uyumluluk politikası belirlendi; somut API envanteri ve
+   önceki iki minor fixture CI/release kapısı açık. Sonra gerçek kullanım
+   akışındaki doğrulanmış engele göre geliştirme seç.
 
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
 da tamamlandı; son kaydedilmiş CI `2b73fea` 7/7 başarılıdır. G5 başladı; yeni

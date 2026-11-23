@@ -498,7 +498,7 @@ Real output (finding present, no `--fail-on-match` → `exit 0`):
  "ok":true,"target":"dirty.txt",
  "target_sha256":"21f10114c2932724770202eff83c9109322c2d605efd0e9e6c2a157dd0866551",
  "scanned_bytes":18,"match_count":1,
- "matches":[{"rule":"R1","pattern":"$a","offset":5,"length":7}]}
+ "matches":[{"rule":"R1","tags":[],"meta":{},"pattern":"$a","offset":5,"length":7}]}
 ```
 
 Exit codes: `0` report produced (no finding, or flag not given) · `10`
@@ -734,7 +734,8 @@ latest completed CI for baseline `fbae263` passed all 7 jobs.
 
 ### ⬜ Planned
 
-- `v1.0` API stability and a two-release backward-compatibility promise.
+- Concrete API inventory before `v1.0` and CI/release checks for fixtures from
+  the previous two minor releases ([G5 policy](docs/G5_API_STABILITY_PROPOSAL.md)).
 - Full test-suite and DFIR/`axiom-scan` workflows on Windows/macOS; end-to-end WASI tests with a sysroot.
 - Static (musl) binary production.
 - Published package ecosystem (target: 200+ packages) and a first enterprise user.

@@ -5,6 +5,12 @@ Biçim: [Keep a Changelog](https://keepachangelog.com/tr/1.1.0/) · Sürümleme:
 
 ## [Unreleased]
 
+### Değiştirilen
+- G5'te kararlı API sınırı, SemVer, iki sonraki minor sürümlük kaldırma penceresi
+  ve eski minor fixture CI politikası belirlendi. `v1.0` öncesi kullanıcı
+  doğrulaması zorunlu kapı değil; dış deneme isteğe bağlı ürün geri bildirimidir.
+  Somut API envanteri ve fixture CI/release uygulaması hâlâ açık.
+
 ### Eklendi
 - PCAP okuyucu klasik PCAP'in iki byte order ve mikro/nanosaniye biçimlerini
   destekliyor; pcap_read_status boş paket, temiz EOF ve okuma hatasını ayırıyor.

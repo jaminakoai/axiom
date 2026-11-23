@@ -497,7 +497,7 @@ Gerçek çıktı (bulgu var, `--fail-on-match` yok → `exit 0`):
  "ok":true,"target":"dirty.txt",
  "target_sha256":"21f10114c2932724770202eff83c9109322c2d605efd0e9e6c2a157dd0866551",
  "scanned_bytes":18,"match_count":1,
- "matches":[{"rule":"R1","pattern":"$a","offset":5,"length":7}]}
+ "matches":[{"rule":"R1","tags":[],"meta":{},"pattern":"$a","offset":5,"length":7}]}
 ```
 
 Çıkış kodları: `0` rapor üretildi (bulgu yok veya bayrak verilmedi) · `10`
@@ -729,7 +729,8 @@ En son tamamlanmış CI, önceki kod commit'i `fbae263` için 7/7 iş başarıl�
 
 ### ⬜ Planlanan
 
-- `v1.0` API kararlılığı ve 2 sürüm geriye uyum taahhüdü.
+- `v1.0` öncesi somut API envanteri ve iki önceki minor sürüm için uyumluluk
+  fixture'larının CI/release kontrolüne bağlanması ([G5 politikası](docs/G5_API_STABILITY_PROPOSAL.md)).
 - Windows/macOS'ta tam test paketi ve DFIR/`axiom-scan` iş akışları; WASI sysroot ile uçtan uca test.
 - Statik (musl) ikili üretimi.
 - Yayınlanmış paket ekosistemi (hedef: 200+ paket) ve ilk kurumsal kullanıcı.

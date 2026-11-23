@@ -22,11 +22,12 @@
 //     each match also includes rule-level tags[] and typed meta{}
 //   pcap: pcap, pcap_sha256, packet_count, match_count, packets[]
 //
-// v0.2 sinirlari (durust):
+// Guncel sinirlar (durust):
 //   - YARA alt kumesi (metin/hex-wildcard/regex desenleri, basit kosullar)
-//   - `scan` metin tabanlidir: NUL bayti iceren dosya ILK NUL'da kesilir.
-//     target_sha256 yine TUM dosyayi kapsar (kanit butunlugu bozulmaz),
-//     ancak `scanned_bytes` yalniz okunabilen oneki gosterir.
+//   - `scan` hedefi tam byte-buffer olarak okur; NUL sonrasindaki icerik de
+//     taranir ve `scanned_bytes` tam dosya uzunlugudur. NUL iceren hedefte
+//     regex, byte-span regex destegi olmadigindan acikca reddedilir.
+//     target_sha256 her durumda tam dosya baytlarini kapsar.
 //   - PCAP'te her paket ayri ayri taranir (akis yeniden birlestirme yok).
 
 import "std/core/error"

@@ -16,13 +16,19 @@ Destek iddiaları doğrulanmış CI ve kullanıcı akışlarına dayanır.
 - Kırıcı değişiklikler changelog'da açıkça işaretlenir; README ve sürüm notları
   etkilenen sözdizimini, API'yi veya veri biçimini belirtir.
 - `v1.0` yayımlanmış değildir. G3'ün iç teknik denetimi maintainer kararıyla
-  kapatılmıştır; bu, bağımsız kullanıcı doğrulaması değildir. Mevcut politika,
-  bağımsız kullanıcı doğrulamasını, G4 dağıtım kapılarını ve kamuya açık kararlı
-  API envanterini `v1.0` ön koşulu sayar. G4 tamamlandı; G5 API envanteri ve
-  uyumluluk politikası taslağı üzerinde çalışıyor. G5 hazırlıkları `v1.0`
-  kararını tek başına onaylamaz.
-- `v1.0` sonrasındaki iki sürüm geriye uyumluluk taahhüdü henüz verilmemiştir;
-  bu politika 1.0 kararı öncesinde ayrıca belirlenmelidir.
+  kapatılmıştır; bu, bağımsız kullanıcı doğrulaması değildir. Bağımsız kullanıcı
+  denemesi isteğe bağlı ürün geri bildirimi olarak kalır ve `v1.0` teknik kapısı
+  değildir. `v1.0` öncesi kamuya açık kararlı API envanteri, G4 dağıtım kapıları
+  ve aşağıdaki uyumluluk politikasının release kontrollerine bağlanması gerekir.
+- `v1.0` sonrasında belgelenmiş kararlı yüzeyler SemVer'i izler. Kırıcı kararlı
+  API değişikliği major sürüm, geriye uyumlu düzeltme patch sürümü, ekleme minor
+  sürümü gerektirir. Kararlı API kaldırılmadan önce en az iki sonraki minor
+  sürüm boyunca kullanımdan kaldırılmış halde tutulur; kaldırma major sürümde
+  yapılır. Güvenlik düzeltmesi istisnası release notlarında gerekçelendirilir.
+- Önceki iki minor sürümden kaynak/paket ve veri şeması fixture'ları, bunlar
+  yayımlandıktan sonra güncel araçlarla desteklenen C ve LLVM hedeflerinde CI'da
+  derlenip çalıştırılır. Yalnız iki eski sürümün desteklenmesi anlamına gelmez.
+  Bu fixture kapısı v1.0 readiness kontrol listesinde yer alır.
 
 ### Doğrulanmış platform matrisi
 
@@ -50,13 +56,19 @@ Smoke testi tam test paketi veya ürün iş akışı doğrulaması olarak sunulm
 - Mark breaking changes in the changelog and describe affected syntax, APIs, or
   data formats in the README and release notes.
 - `v1.0` has not been released. The maintainer closed G3 with an internal
-  technical audit; this is not independent user validation. The current policy
-  keeps independent user validation, G4 distribution gates, and a public
-  stable-API inventory as prerequisites for `v1.0`. G4 is complete; G5 is
-  drafting the API inventory and compatibility policy. G5 preparation alone
-  does not approve a `v1.0` decision.
-- No two-release backward-compatibility promise has been made for post-`v1.0`;
-  decide that policy separately before the 1.0 decision.
+  technical audit; this is not independent user validation. An independent
+  user trial remains optional product feedback, not a technical `v1.0` gate.
+  Before `v1.0`, publish the stable API inventory, satisfy G4 distribution
+  gates, and wire the compatibility policy below into release checks.
+- After `v1.0`, documented stable surfaces follow SemVer. Breaking stable API
+  changes require a major release, backward-compatible fixes a patch release,
+  and additions a minor release. Keep deprecated stable APIs for at least two
+  later minor releases; remove them only in a major release. Explain any
+  security-fix exception in the release notes.
+- Once available, source/package and data-schema fixtures from the previous two
+  minor releases must compile and run with current tools on supported C and LLVM
+  targets in CI. This is a compatibility corpus, not a promise to support only
+  two old releases. Add this fixture check to the `v1.0` readiness checklist.
 
 ### Verified platform matrix
 

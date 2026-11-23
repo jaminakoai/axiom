@@ -1,8 +1,9 @@
-# G5.1 — Public API kararlılığı önerisi / Public API Stability Proposal
+# G5.1 — Public API kararlılığı ve uyumluluk politikası / Public API Stability and Compatibility Policy
 
-**Durum / Status:** Sorumlu incelemesi için taslak; 1.0 uyumluluk taahhüdü
-onaylanmış değildir. / Maintainer review draft; no 1.0 compatibility promise
-is approved.
+**Durum / Status:** G5 çalışma politikası olarak benimsendi; `v1.0` öncesinde
+somut API envanteri ve CI/release kontrolleri tamamlanmalı. Bu karar `v1.0`
+yayımlamaz. / Adopted as the G5 working policy; concrete API inventory and
+CI/release checks remain before `v1.0`. This does not release `v1.0`.
 **Sürüm / Version:** `0.5.0-alpha`.
 
 Bu, ilk G5 işidir: dili genişletmeden veya `v1.0` sözü vermeden önce Axiom
@@ -18,24 +19,35 @@ close those gates.
 
 | Yüzey / Surface | Kaynak / Source | İlk değerlendirme / Initial treatment |
 |---|---|---|
-| Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md), örnekler ve compiler testleri / examples and compiler tests | 1.0 için aday; sözdizimi, tip kuralları, sahiplik, sözleşmeler ve hatalar envanterlenmeli / Candidate for 1.0; inventory syntax, types, ownership, contracts and errors |
-| Standart kütüphane / Standard library | `std/**/*.ax` ve modül testleri / module tests | 1.0 için aday; her modül sahiplik, hata ve platform sınırlarını belgelemeli / Candidate; document ownership, errors and platform limits |
-| Compiler CLI ve makine çıktısı / Compiler CLI and machine output | `axiom --help`, `axiom/cli.py` | Komutlar, belgeli bayraklar, exit kodları ve yapılandırılmış çıktı aday; hata metninin birebir yazımı değil / Commands, documented flags, exit codes and structured output are candidates; exact diagnostic wording is not |
-| Paket yöneticisi ve proje dosyaları / Package manager and project files | `axpm --help`, `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest/kilit şeması ve registry protokolü için sürümlü geçiş kuralları gerekli / Versioned migration rules required |
-| LSP | `axiom/lsp.py` ve editör davranışı / editor behavior | Protokol uyumu açık listelenmeli; Axiom'a özel yetenekler ayrıca sayılmalı / List protocol and Axiom-specific capabilities |
-| `axiom-scan` arayüzü / `axiom-scan` interface | `examples/21_axiom_scan.ax`, README özellik matrisi ve rapor şeması / README matrix and report schema | CLI, desteklenen YARA alt kümesi, exit kodu ve JSON şeması aday; tam YARA ima edilmez / Candidate; does not imply full YARA |
-| Native ABI ve üretilen çıktı / Native ABI and generated output | C/LLVM backend'leri ve runtime headers | Desteklenen FFI/ABI sözleşmesi olarak belgelenmedikçe iç ayrıntı / Internal unless explicitly promised |
-| Deneysel hedefler ve özellikler / Experimental targets and features | README platform matrisi ve özellik dokümanları / README matrix and feature docs | Kararlılık sözü yok; deneysel etiketi ve ayrı test gerekir / No stability promise; label and test separately |
+| Dil sözdizimi ve anlamı / Language syntax and semantics | [`SPECIFICATION.md`](../SPECIFICATION.md) §§3–12, 18–19; C/LLVM parity tests | v1.0 adayı: anahtar sözcük/tip kataloğu, operatör önceliği, türler, kapsam, fonksiyon/sözleşmeler, hata ve sahiplik semantiği; kapsam dışı yapılar açık kalır / Candidate: keyword/type catalog, precedence, types, scope, functions/contracts, errors and ownership; unsupported forms stay explicit |
+| Yerleşikler ve standart kütüphane / Built-ins and standard library | `SPECIFICATION.md` §13; `std/**/*.ax` and module tests | Şartname 86 yerleşik sayıyor; 53 std dosyasında `pub`/`export` yok. Semboller tek namespace'te olduğundan tek tek envanterlenmeden tüm modüller kararlı sayılmaz / Spec lists 86 built-ins; 53 std files have no `pub`/`export`. With a global namespace, modules are not stable wholesale without symbol inventory |
+| Compiler CLI | `axiom/cli.py` | v0.5 alt komutları: `run`, `build`, `check`, `prove`, `emit-c`, `emit-smt`, `emit-llvm`, `repl`, `test`, `init`, `doc`, `fmt`, `pkg`, `lsp`. Belgeli seçenekler/çıkış kodları aday; tam seçenek envanteri `v1.0` öncesi çıkarılmalı / Listed commands; documented options/exit codes are candidates; enumerate all flags before `v1.0` |
+| Paket yöneticisi / Package manager | `axiom/package_manager.py`, `axpm --help` | `init/add/install/verify/tree/remove/search/pack/registry assemble/update/build/run/test`; komut ve manifest flag/şema fixture'ları gerekli / Commands are implemented; command and manifest flag/schema fixtures are required |
+| Manifest ve lock / Manifest and lock | `axiom.toml`, `axiom.lock`, [`REGISTRY.md`](REGISTRY.md) | Manifest: `name/version/authors/edition/entry/description/license`, `[package]` veya `[project]`, `[dependencies]`; lock: `version` ve paket başına `name/version/source/checksum/sha256/dependencies`. Şema/migration fixture'ı gerekli / Exact fields need versioned migration fixtures |
+| Registry | [`REGISTRY.md`](REGISTRY.md), `axiom/registry.py` | Schema 1 imzasız geriye dönük okuma; schema 2 index `sequence/expires/packages`, paket `version/sha256/sig/dependencies/yanked`. Protokol ve anahtar değişim sözleşmesi aday / Schema 1 legacy read; schema 2 field inventory; protocol/key-rotation contract is a candidate |
+| `axiom-scan` | `examples/21_axiom_scan.ax`, `tests/test_axiom_scan.py` | `rules`, `scan`, `pcap`; çıkış `0/10/1`; schema v1 scan: `target/target_sha256/scanned_bytes/match_count/matches[]`, match: `rule/tags/meta/pattern/offset/length`; PCAP: `pcap/pcap_sha256/packet_count/match_count/packets[]`. Belgeli YARA alt kümesi, tam YARA değil / Exact fields; documented YARA subset only |
+| LSP | `axiom/lsp.py`, `tests/test_lsp_full_features.py` | Yalnız initialize'da ilan edilen tam sync, completion, hover, definition, references, rename, quickfix, formatting, semantic tokens, signature help; tüm LSP vaat edilmez / Only advertised capabilities are candidates; no blanket LSP claim |
+| ABI ve üretilen çıktı / ABI and generated output | `SPECIFICATION.md` §15, C/LLVM backends | C ABI/FFI ancak hedef triple, çağrı kuralı, sahiplik ve bellek yerleşimi bütünüyle envanterlenirse kararlı olabilir; üretilen C/LLVM IR iç detaydır / ABI can stabilize only per fully specified target/calling convention/ownership/layout; emitted IR is internal |
+| Deneysel hedefler / Experimental targets | [`VERSIONING.md`](VERSIONING.md), README platform tablosu | Linux ARM64/AArch64/WASM deneysel etiketleriyle kararlılık sözünün dışında / Experimental targets remain outside the stability promise |
 
-Bu ilk envanter yüzey seviyesindedir. `v1.0` öncesinde her kararlı aday için
-sembol, gramer biçimi, alan, bayrak, exit kodu veya şema listesi ve bu sözü
-zorlayan testler çıkarılmalı.
+Bu, kaynaklara bağlı ilk somut yüzey haritasıdır; henüz tüm fonksiyon imzaları,
+CLI bayrakları veya test eşlemesi değildir. Özellikle 53 `std/**/*.ax` dosyasında
+`pub`/`export` görünürlüğü yok ve dil global sembol alanı kullanıyor. Ayrıca
+şartname `Result<T, E>` anlatırken `std/core/result.ax` `ResultInt`/`ResultStr`
+kullanıyor; `Option` da somut tiplere dayanıyor. Bu fark ve sembol görünürlüğü
+1.0 öncesi çözümlenmeden stdlib'in tamamına kararlılık sözü verilmemeli.
+
+Before `v1.0`, complete this map with every stable function signature, grammar
+form, CLI flag, exit code and schema field, each tied to tests that enforce the
+promise. Resolve the generic `Result<T, E>` specification versus concrete
+`ResultInt`/`ResultStr` implementation and define how stdlib symbols are
+publicly exposed; do not promise all 53 files as a single stable surface.
 
 This is a surface-level inventory. Before `v1.0`, each stable candidate needs a
 concrete list of symbols, grammar forms, fields, flags, exit codes or schemas,
 plus tests that enforce the promise.
 
-## Sorumlu onayı için politika taslağı / Proposed Policy for Maintainer Approval
+## G5 uyumluluk politikası / G5 Compatibility Policy
 
 1. **`v1.0` öncesi:** mevcut alpha politikasını koru. Dil, stdlib, CLI, manifest,
    lockfile ve rapordaki kırıcı değişikliklere izin ver; `CHANGELOG.md` ve geçiş
@@ -49,9 +61,14 @@ plus tests that enforce the promise.
    fixture'larını güncel compiler/package manager ile, desteklenen C ve LLVM
    backend'lerinde derleyip çalıştırsın. `axiom.toml`, `axiom.lock` ve
    `axiom-scan` JSON şeması için de fixture ekle.
-5. **Ayrıca taahhüt edilmedikçe kapsam dışı:** compiler iç yapısı, üretilen C/LLVM
-   IR, hata metinlerinin birebir yazımı, deneysel özellik/hedefler ve belgelenmemiş
-   runtime header'ları.
+5. **Kararlı yüzey:** yalnız v1.0 public API envanterinde açıkça listelenen
+   sözdizimi/anlam, tek tek stdlib sembolleri ve hata sözleşmeleri, CLI
+   seçenekleri/çıkış kodları/yapılandırılmış çıktılar, manifest/lock şemaları,
+   registry protokolü, axiom-scan'ın belgelenmiş YARA alt kümesi ve rapor şeması.
+   LSP'de desteklenen protokol ve ilan edilen yetenekler listelenir. `std/`
+   modülünde bulunmak tek başına kararlılık sözü değildir.
+6. **Kapsam dışı:** compiler iç yapısı, üretilen C/LLVM IR, hata metinlerinin
+   birebir yazımı, deneysel özellik/hedefler ve belgelenmemiş runtime header'ları.
 
 1. **Before `v1.0`:** keep the current alpha policy. Breaking language, stdlib,
    CLI, manifest, lockfile and report changes are allowed, but must be called
@@ -66,43 +83,54 @@ plus tests that enforce the promise.
    package fixtures from the previous two minor releases against the current
    compiler/package manager, on both C and LLVM backends where supported.
    Add schema fixtures for `axiom.toml`, `axiom.lock` and `axiom-scan` JSON.
-5. **Not promised unless separately documented:** compiler internals, emitted C
-   and LLVM IR, exact diagnostic text, experimental features/targets, and
-   undocumented runtime headers.
+5. **Stable surface:** only syntax/semantics, individual stdlib symbols and
+   error contracts, CLI options/exit codes/structured output, manifest/lock
+   schemas, registry protocol, and `axiom-scan`'s documented YARA subset/report
+   schema explicitly listed in the `v1.0` public API inventory. List supported
+   LSP protocol behavior and advertised capabilities. A symbol's presence in
+   `std/` alone does not promise stability.
+6. **Out of scope:** compiler internals, emitted C/LLVM IR, exact diagnostic
+   wording, experimental features/targets, and undocumented runtime headers.
 
-“İki sürüm geriye uyumluluk” ifadesi, neyin iki sürüm saydığını belirtmiyor.
-Bu taslak bunu **iki minor sürümlük kaldırma penceresi ve test fixture'ı** olarak
-yorumlar; kararlı `1.x` API'sinin yalnız iki eski sürümünün desteklenmesi olarak
-yorumlamaz. Sorumlu bu yorumu onaylamalı veya değiştirmeli.
+“İki sürüm geriye uyumluluk” ifadesindeki sürüm birimi artık nettir: **iki
+sonraki minor sürümlük kaldırma penceresi ve önceki iki minor sürüm için test
+fixture'ı**. Bu, kararlı `1.x` API'sinin yalnız iki eski sürümünün desteklenmesi
+anlamına gelmez.
 
-“Two-release backward compatibility” is ambiguous unless it names the unit.
-This draft interprets it as a **two-minor-release deprecation window and
-compatibility test corpus**, not as support for only two old versions of the
-stable `1.x` API. The maintainer should confirm or replace that interpretation.
+The unit in “two-release backward compatibility” is **a two-later-minor
+deprecation window and a test corpus from the previous two minor releases**.
+This does not mean supporting only two old versions of the stable `1.x` API.
 
 ## Açık sürüm kapıları / Current Release Gates
 
-- G3 iç teknik denetimi bağımsız denetçi yerine kabul edildi; bağımsız kullanıcı
-  doğrulaması değildir. [`VERSIONING.md`](VERSIONING.md) bunu hâlâ `v1.0` kapısı
-  sayar; taslak bu şartı kaldırmaz. / G3's internal audit is not independent user
-  validation. The current `v1.0` gate remains; this draft does not remove it.
+- G3 iç teknik denetimi maintainer kararıyla kapatıldı; bağımsız kullanıcı
+  doğrulaması değildir. Dış kullanıcı denemesi isteğe bağlı ürün geri bildirimidir,
+  `v1.0` teknik kapısı değildir. / G3's internal audit was closed at the
+  maintainer's direction; it is not independent user validation. External user
+  trials are optional product feedback, not a `v1.0` technical gate.
 - G4'ün ilk imzalı registry paketi yayımlandı ve kapandı. / G4's first signed
   registry package is published; the gate is complete.
-- `v1.0` öncesi envanter gözden geçirilmeli, politika onaylanmalı ve kullanıcı
-  doğrulaması kapısı korunmalı veya sorumlu tarafından değiştirilmelidir. /
-  Review the inventory, approve the policy, and retain or explicitly change the
-  user-validation gate before `v1.0`.
+- `v1.0` öncesi her kararlı yüzeyin somut sembol/sözdizimi/şema envanteri
+  çıkarılmalı ve önceki iki minor sürüm fixture kontrolü CI/release sürecine
+  bağlanmalıdır. Bağımsız kullanıcı denemesi gönüllü ürün geri bildirimi olarak
+  kalır; kullanıcı kanıtı varmış gibi raporlanmamalıdır. / Before `v1.0`, list
+  concrete symbols, syntax and schemas for every stable surface and wire the
+  previous-two-minor fixture check into CI/release. External trials remain
+  optional feedback; do not claim user evidence that has not been submitted.
 
 ## G5.1 kabul listesi / G5.1 Acceptance Checklist
 
 - [x] İlk public API yüzeylerini ve kapı durumunu kaydet. / Record initial API
   surfaces and gate status.
-- [x] “İki sürüm” yorumu içeren politika taslağını hazırla. / Draft the policy
-  and define what “two releases” means.
-- [ ] Kararlı yüzey sınırını sorumlu onaylasın veya düzenlesin. / Maintainer
-  approves or edits the stable-surface boundary.
-- [ ] İki-sürüm politikasını ve CI yükümlülüğünü onayla. / Approve the promise
-  and its CI obligation.
-- [ ] `v1.0` hazırlığı iddia edilmeden önce kararı `VERSIONING.md`, iki README
-  ve release kontrolleriyle eşleştir. / Reconcile with version docs, both
-  READMEs and release checks before a `v1.0` readiness claim.
+- [x] Uyumluluk politikasını ve “iki sürüm” tanımını kaydet. / Record the
+  compatibility policy and define what “two releases” means.
+- [x] Kararlı yüzey sınırını ve SemVer/kaldırma penceresi politikasını belirle. /
+  Define the stable-surface boundary and SemVer/deprecation policy.
+- [x] “İki sürüm”ün iki sonraki minor sürüm olduğunu ve fixture CI yükümlülüğünü
+  belirt. / Define “two releases” as two later minor releases and specify CI fixtures.
+- [x] Bağımsız kullanıcı denemesinin v1.0 teknik kapısı olmadığı kararını
+  VERSIONING ve doğrulama rehberiyle eşleştir. / Align VERSIONING and validation
+  guidance with the decision that user trials are not a v1.0 technical gate.
+- [ ] Somut API envanterini ve iki-minor fixture CI/release kapısını v1.0
+  readiness öncesi tamamla. / Complete the concrete API inventory and
+  two-minor fixture CI/release gate before claiming v1.0 readiness.
