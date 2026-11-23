@@ -1,6 +1,6 @@
 # Axiom Programming Language (λx)
 
-[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0--rc1-blue.svg)](#)
+[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
 [![Tests (son tam koşu)](https://img.shields.io/badge/tests%20(son%20tam%20ko%C5%9Fu)-1669%20passed%2C%2027%20skipped-blue.svg)](#son-tam-doğrulanmış-koşu)
@@ -211,7 +211,7 @@ Bağımsız kullanıcı için tekrar üretilebilir Linux kurulumu, 5 dakikalık
 axiom repl
 ```
 ```
-Axiom (λx) v1.0.0-rc1 - İnteraktif REPL
+Axiom (λx) v1.0.0 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -338,7 +338,7 @@ import "utils.ax"
 
 fn main() -> int {
     let report = create_report("Sistem Yapılandırması", 3)
-    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0-rc1 I/O")
+    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0 I/O")
     if ok and file_exists("/tmp/log.txt") {
         let content = file_read("/tmp/log.txt")
         print("Okunan:", content)
@@ -685,8 +685,8 @@ Rozet gerçek workflow'a bağlıdır (`.github/workflows/ci.yml`, `master`).
 Son doğrulanan CI: [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747)
 (`master`, SHA `16cc2ac`; Python 3.10–3.13'ün her birinde 1669 geçti/27 ortam skip'i).
 Native platform smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759)
-ile Linux, Windows ve macOS'ta 3/3 başarılıdır. `1.0.0-rc1` adayı bu doğrulanmış
-tabanın üzerine hazırlanıyor; adayın kendi CI sonucu ayrıca izlenecek.
+ile Linux, Windows ve macOS'ta 3/3 başarılıdır. `v1.0.0` yayın adayı bu doğrulanmış
+tabanın üzerine hazırlandı; adayın tam CI sonucu ayrıca izleniyor.
 
 Buraya gelirken giderilen 6 kök neden (ayrıntı: rapor §9–§12):
 
@@ -778,8 +778,8 @@ parite testi. Güvenlik bildirimi için [SECURITY.md](SECURITY.md).
 
 ## 📌 Proje Statüsü ve Bilinen Sınırlamalar
 
-> **Sürüm adayı:** `v1.0.0-rc1` (ön sürüm; kararlılık sözü henüz başlamadı)
-> İlk kararlı ürün profili çevrimdışı DFIR triyajı için `axiom-scan`'dir. Kararlılık ve uyumluluk sözü yalnız `v1.0.0` yayımlandığında başlayacak; genel dil, compiler CLI, `axpm`, manifest/lock ve stdlib bu profile dahil değildir. Ayrıntı: [sürümleme politikası](docs/VERSIONING.md).
+> **Sürüm adayı:** `v1.0.0` (yayın etiketi ve yayınlama bekliyor)
+> İlk kararlı ürün profili çevrimdışı DFIR triyajı için `axiom-scan`'dir. Kararlılık ve uyumluluk sözü bu sürüm yayımlandığında başlayacak; genel dil, compiler CLI, `axpm`, manifest/lock ve stdlib bu profile dahil değildir. Ayrıntı: [sürümleme politikası](docs/VERSIONING.md).
 
 ### Bilinen Sınırlamalar ve Teknik Kapsam:
 1. **Çapraz Derleme ve WASM Hedefleri:** `--target wasm32-wasi` ve `--target aarch64-linux-gnu` gibi hedefler harici sysroot ve çapraz derleme toolchain'i (örn. WASI SDK, gcc-aarch64) gerektirir. Sistemde kurulu sysroot bulunmadığında derleyici açık ve yönlendirici bir hata mesajı ile güvenli şekilde durur; bu hedefler deneysel statüdedir.

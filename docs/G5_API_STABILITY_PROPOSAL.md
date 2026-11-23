@@ -1,16 +1,15 @@
 # G5.1 — Public API kararlılığı ve uyumluluk politikası / Public API Stability and Compatibility Policy
 
-**Durum / Status:** Scanner-first `v1.0.0-rc1` sürüm adayı hazırlanıyor. Somut API envanteri,
+**Durum / Status:** Scanner-first `v1.0.0` release candidate hazır. Somut API envanteri,
 allowlist, rapor şeması, test kanıtı ve CI/release kapısı tamamlandı. Kararlı `v1.0.0`
 yayımlanmadı; kararlılık sözü yayınla başlar. Temsilî kullanıcı iş yüküyle
 değerlendirme isteğe bağlı ürün kanıtıdır, teknik yayın kapısı değildir.
 / The concrete API inventory, allowlist, report schema, enforcing tests, and
-CI/release gate for scanner-first `v1.0` are complete. The `1.0.0-rc1` candidate
-is being prepared; stable `v1.0.0` has not been released and its stability promise
-starts with publication. Evaluation on a
-representative user workload is optional product evidence, not a technical
-release gate.
-**Sürüm / Version:** `1.0.0-rc1` candidate; stable `v1.0.0` is not published.
+CI/release gate for scanner-first `v1.0` are complete. The final `1.0.0` release
+candidate is prepared; `v1.0.0` has not been published and its stability promise
+starts with publication. Evaluation on a representative user workload is
+optional product evidence, not a technical release gate.
+**Sürüm / Version:** `1.0.0`; release candidate, publication pending.
 
 Bu, ilk G5 işidir: dili genişletmeden veya `v1.0` sözü vermeden önce Axiom
 kullanıcılarının hangi yüzeylere güvenebileceğini tanımlamak. Seçilmiş scanner

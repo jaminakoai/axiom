@@ -1,6 +1,6 @@
 # Axiom Programming Language (λx)
 
-[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0--rc1-blue.svg)](#)
+[![Axiom Version](https://img.shields.io/badge/Axiom-v1.0.0-blue.svg)](#)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![CI](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/jaminakoai/axiom/actions/workflows/ci.yml)
 [![Tests (last full run)](https://img.shields.io/badge/tests%20(last%20full%20run)-1669%20passed%2C%2027%20skipped-blue.svg)](#last-full-verified-run)
@@ -213,7 +213,7 @@ For an independent tester: reproducible Linux setup, a five-minute
 axiom repl
 ```
 ```
-Axiom (λx) v1.0.0-rc1 - Interactive REPL
+Axiom (λx) v1.0.0 - Interactive REPL
 Type 'help' for help, 'exit' or 'quit' to quit.
 
 axiom> let x = 40
@@ -340,7 +340,7 @@ import "utils.ax"
 
 fn main() -> int {
     let report = create_report("System Configuration", 3)
-    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0-rc1 I/O")
+    let ok = file_write("/tmp/log.txt", "Axiom v1.0.0 I/O")
     if ok and file_exists("/tmp/log.txt") {
         let content = file_read("/tmp/log.txt")
         print("Read:", content)
@@ -688,8 +688,8 @@ All 7 jobs passed in the latest completed run for commit `16cc2ac`:
 Latest verified CI: [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747)
 (`master`, SHA `16cc2ac`; 1669 passed/27 environment skips on Python 3.10–3.13).
 Native platform smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759)
-passed 3/3 on Linux, Windows, and macOS. The `1.0.0-rc1` candidate is prepared
-on top of this verified baseline; its own CI result will be checked separately.
+passed 3/3 on Linux, Windows, and macOS. The `v1.0.0` release candidate is prepared
+on top of this verified baseline; its full CI result is being checked.
 
 Six root causes fixed on the way here (details: report §9–§12):
 
@@ -782,7 +782,7 @@ backends. For security reports see [SECURITY.md](SECURITY.md).
 
 ## 📌 Project Status and Known Limitations
 
-> **Release candidate:** `v1.0.0-rc1` (pre-release; the stability promise has not started)
+> **Release candidate:** `v1.0.0` (publication and stable tag pending)
 > The first stable product profile is `axiom-scan` for offline DFIR triage. Stability and compatibility promises begin only when `v1.0.0` is published; the general language, compiler CLI, `axpm`, manifest/lock, and standard library are outside this profile. See the [versioning policy](docs/VERSIONING.md).
 
 ### Known Limitations and Technical Scope:

@@ -27,7 +27,7 @@ def test_self_hosted_cli_help_and_version():
 
     res_ver = subprocess.run([str(AXIOMC_BIN), "--version"], capture_output=True, text=True)
     assert res_ver.returncode == 0
-    assert "Self-Hosted Compiler v1.0.0-rc1" in res_ver.stdout
+    assert "Self-Hosted Compiler v1.0.0" in res_ver.stdout
 
 
 def test_self_hosted_emit_c():

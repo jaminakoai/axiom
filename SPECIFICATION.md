@@ -2,7 +2,7 @@
 
 > 🌍 **English:** [docs/en/SPECIFICATION.md](docs/en/SPECIFICATION.md)
 
-**Durum:** v0.5 dil profili; alpha ve v1.0 kararlı allowlist kapsamı dışında. Dağıtım sürümü `v1.0.0-rc1` adaydır.
+**Durum:** v0.5 dil profili; alpha ve v1.0 kararlı allowlist kapsamı dışında. Dağıtım sürümü yayımlanmamış `v1.0.0` release candidate'dir.
 **Bu belge:** Dilin gözlemlenebilir davranışını tanımlar. Uygulama bu şartnameye uymakla yükümlüdür; çelişki varsa **şartname değil, uygulama hatalıdır** — ya uygulama düzeltilir ya da bu belge gerekçesiyle güncellenir.
 
 > **Alfa uyarısı:** Geriye dönük uyumluluk **taahhüt edilmez**. Sözdizimi ve semantik değişebilir; değişiklikler `CHANGELOG.md`'ye yazılır.

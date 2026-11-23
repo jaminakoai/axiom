@@ -58,7 +58,7 @@ jobs:
         run: python -m pytest -q tests/test_tutorial_examples.py tests/test_specification.py tests/test_docs_en.py tests/test_docgen.py
 
       - name: v1.0 RC tarihî fixture kapısı
-        if: startsWith(github.ref, 'refs/heads/release/v1.0.0-rc') && matrix.python-version == '3.12'
+        if: startsWith(github.ref, 'refs/heads/release/v1.0.0') && matrix.python-version == '3.12'
         run: python tools/check_compatibility_fixtures.py --current-version 1.0.0 --require-current-release
 
   sanitizers:

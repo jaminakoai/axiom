@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "source_version": "1.0.0-rc.1",
+  "source_version": "1.0.0",
   "status": "source_snapshot_not_a_stability_promise",
   "visibility_policy": "Axiom has no enforced pub/export declarations; entries remain unclassified until explicitly designated stable in the G5 policy.",
   "stdlib": [

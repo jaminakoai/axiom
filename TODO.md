@@ -9,20 +9,20 @@
 | Alan | Değer |
 |---|---|
 | Proje | Axiom (λx) — contract-driven, native-compiled systems language |
-| Sürüm | `v1.0.0-rc1` (aday; kararlı yayın yapılmadı) |
+| Sürüm | `v1.0.0` (yayın adayı; kararlı yayın bekliyor) |
 | Son güncelleme | 2026-11-23 |
-| Aşama | **G5 — Scanner-first v1.0 teknik hazırlığı tamam; RC doğrulanıyor, kararlı yayın kararı açık** |
+| Aşama | **G5 — Scanner-first v1.0.0 release candidate doğrulanıyor; stable yayın bekliyor** |
 | Son tamamlanmış tam test paketi | GitHub Actions `16cc2ac`: Python 3.10–3.13'in her birinde **1669 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı** |
 | Son tam CI tabanı | `16cc2ac` [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı**; RC adayının kendi CI'si henüz bekliyor |
 | Son başarılı tam CI | `16cc2ac` [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı** |
 | Son platform smoke | `16cc2ac`, Linux/Windows/macOS native smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759), **3/3 başarılı** |
-| RC tam yerel test | `release/v1.0.0-rc1`: **1696 geçti, 0 hata, 0 skip** (1373,68 sn); `make bootstrap` dahil |
+| Ön sürüm öncül tam yerel test | Stable sürüm numarası eşitlenmeden önceki RC1 ağacında **1696 geçti, 0 hata, 0 skip** (1373,68 sn); final adayın testleri ayrıca koşuyor |
 | v1.0.0 fixture ön kontrolü | `--current-version 1.0.0 --require-current-release`: kaynak, paket ve scanner/schema vakaları C/LLVM'de **3/3 geçti**; stable tag yayımlanmadı |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `16cc2ac` — [run 45241520747](https://github.com/jaminakoai/axiom/actions/runs/45241520747), **7/7 başarılı**; her Python sürümünde 1669 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45241520759](https://github.com/jaminakoai/axiom/actions/runs/45241520759) **3/3 başarılı** |
-| Son tam yerel test paketi | Önceki tam yerel koşu **1686 geçti, 1 başarısız**; README kapsamını değiştiren düzenlemeden kalan G5 belge beklentisi düzeltildi ve G5/docs/spec grubu **42 geçti**. En güncel kod commit'i tam GitHub CI matrisinde doğrulandı. |
-| Son hedefli test paketi | Tarihî scanner rapor şeması pinleme ve G5/docs/spec doğrulaması **57 geçti**; `make fmt-check` ve `git diff --check` temiz. |
+| Son tam yerel test paketi | RC1 öncül ağacında **1696 geçti, 0 başarısız, 0 atlandı** (1373,68 sn). Stable `1.0.0` sürüm eşitlemesi sonrası final adayın GitHub CI'si çalışıyor. |
+| Final v1.0.0 adayı hedefli test paketi | Sürüm/API envanteri, self-hosted bootstrap, docs/spec ve fixture doğrulaması **69 geçti**; fixture kapısı 3/3; `make fmt-check`, API inventory check, YAML parse ve `git diff --check` temiz. |
 
 ---
 
@@ -435,7 +435,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   kullanıcı deneyimi kanıtı gibi göstermeme kuralını `VERSIONING.md` ile eşleştir.
 - [x] AST tabanlı kaynak envanteri oluşturuldu: 446 stdlib fonksiyon imzası,
   37 struct, 360 builtin imzası; `tools/generate_api_inventory.py --check`
-  güncelliğini doğrular. [RC API snapshot](docs/api/v1.0.0-rc.1.json) davranış
+  güncelliğini doğrular. [v1.0.0 API snapshot](docs/api/v1.0.0.json) davranış
   veya kararlılık garantisi değildir; ilk envanter [0.5.0-alpha snapshot](docs/api/v0.5.0-alpha.json) içinde saklıdır.
 - [x] Gelecekteki release fixture'ları için [manifest şeması](docs/api/compat-fixture-manifest.schema.json),
   [fixture yönergesi](tests/fixtures/api_compatibility/README.md), doğrulayıcı ve
@@ -1463,6 +1463,6 @@ belgenin başındaki **Aktif Master Roadmap** bölümündedir.
 **G0, G1, G2, iç teknik G3 ve G4 kapandı.** Native platform smoke doğrulaması
 da tamamlandı; son kaydedilmiş tam CI `16cc2ac` 7/7 başarılı, son doküman
 commit'i `16cc2ac` için platform smoke 3/3 başarılıdır. G5 teknik hazırlığı
-tamamlandı; `1.0.0-rc1` adayı ayrı worktree'de fixture ve sürüm belgeleriyle
-hazırlanıyor. Kararlı yayın kararı maintainer'a aittir. Yeni YARA sözdizimi
+tamamlandı; yayımlanmamış `v1.0.0` final adayı kendi fixture ve CI kapısından
+geçiyor. Kararlı yayın kararı maintainer'a aittir. Yeni YARA sözdizimi
 differential kanıt ve açık kapsam sınırlarıyla eklenir.

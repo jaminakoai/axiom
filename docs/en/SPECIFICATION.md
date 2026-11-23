@@ -2,7 +2,7 @@
 
 > 🌍 **Turkish:** [SPECIFICATION.md](../../SPECIFICATION.md)
 
-**Status:** v0.5 language profile; alpha and outside the v1.0 stable allowlist. The distribution version is the `v1.0.0-rc1` candidate.
+**Status:** v0.5 language profile; alpha and outside the v1.0 stable allowlist. The distribution version is the unpublished `v1.0.0` release candidate.
 **This document:** Defines the observable behavior of the language. The implementation is obligated to conform to this specification; if there is a conflict, **the implementation is at fault, not the specification** — either the implementation is fixed or this document is updated with justification.
 
 > **Alpha warning:** Backward compatibility is **not guaranteed**. Syntax and semantics may change; changes are recorded in `CHANGELOG.md`.

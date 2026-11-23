@@ -37,7 +37,7 @@ axiom --version
 Örnek çıktı:
 
 ```text
-Axiom (λx) v1.0.0-rc1
+Axiom (λx) v1.0.0
 ```
 
 `axpm` paket yöneticisi ve `axiom-lsp` dil sunucusu da aynı `bin/` dizininde bulunur.
@@ -769,7 +769,7 @@ axiom repl
 Örnek oturum:
 
 ```text
-Axiom (λx) v1.0.0-rc1 - İnteraktif REPL
+Axiom (λx) v1.0.0 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -935,7 +935,7 @@ Aşağıdaki mesajlar sürüme göre küçük farklılıklar gösterebilir; anah
 
 ## 14. Bilinen sınırlamalar
 
-Bu rehber v0.5 dil profilini `v1.0.0-rc1` sürüm adayı içinde gösterir. Yalnızca çevrimdışı DFIR triyajı için `axiom-scan` kararlı allowlist adayıdır; dil, compiler CLI, `axpm`, manifest/lock ve stdlib için kararlılık sözü yoktur. RC sürümü kararlı yayın değildir.
+Bu rehber v0.5 dil profilini yayımlanmamış `v1.0.0` release candidate içinde gösterir. Yalnızca çevrimdışı DFIR triyajı için `axiom-scan` kararlı allowlist adayıdır; dil, compiler CLI, `axpm`, manifest/lock ve stdlib için kararlılık sözü yoktur.
 
 ### Bellek ve string yaşam döngüsü
 
@@ -987,4 +987,4 @@ Dili keşfetmenin en hızlı yolu `examples/` dizinindeki programları çalışt
 
 ---
 
-> **Not:** Bu rehber v0.5 dil profilini `v1.0.0-rc1` sürüm adayıyla birlikte sunar. Dil sözdizimi ve compiler araçları kararlı API değildir. Güncel ürün sınırları için `README.md`, dil davranışı için `SPECIFICATION.md`, açık işler için `TODO.md` ve çalışan örnekler için `examples/` dizinini kullanın.
+> **Not:** Bu rehber v0.5 dil profilini yayımlanmamış `v1.0.0` release candidate ile birlikte sunar. Dil sözdizimi ve compiler araçları kararlı API değildir. Güncel ürün sınırları için `README.md`, dil davranışı için `SPECIFICATION.md`, açık işler için `TODO.md` ve çalışan örnekler için `examples/` dizinini kullanın.

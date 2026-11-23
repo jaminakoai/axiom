@@ -197,7 +197,7 @@ class AxiomLanguageServer:
                 },
                 "serverInfo": {
                     "name": "axiom-lsp",
-                    "version": "v1.0.0-rc1"
+                    "version": "v1.0.0"
                 }
             }
             if msg_id is not None:

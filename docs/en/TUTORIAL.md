@@ -37,7 +37,7 @@ axiom --version
 Example output:
 
 ```text
-Axiom (λx) v1.0.0-rc1
+Axiom (λx) v1.0.0
 ```
 
 The `axpm` package manager and the `axiom-lsp` language server are also located in the same `bin/` directory.
@@ -769,7 +769,7 @@ axiom repl
 Example session:
 
 ```text
-Axiom (λx) v1.0.0-rc1 - İnteraktif REPL
+Axiom (λx) v1.0.0 - İnteraktif REPL
 Yardım için 'help', çıkış için 'exit' veya 'quit' yazın.
 
 axiom> let x = 40
@@ -935,7 +935,7 @@ The following messages may show minor differences depending on the version; the 
 
 ## 14. Known limitations
 
-This guide covers the v0.5 language profile as shipped in the `v1.0.0-rc1` candidate. Only `axiom-scan` for offline DFIR triage is proposed for the stable allowlist; the language, compiler CLI, `axpm`, manifest/lock, and standard library carry no stability promise. An RC is not a stable release.
+This guide covers the v0.5 language profile as shipped in the unpublished `v1.0.0` release candidate. Only `axiom-scan` for offline DFIR triage is proposed for the stable allowlist; the language, compiler CLI, `axpm`, manifest/lock, and standard library carry no stability promise.
 
 ### Memory and string lifetime
 
@@ -987,4 +987,4 @@ The fastest way to explore the language is to run the programs in the `examples/
 
 ---
 
-> **Note:** This guide covers the v0.5 language profile distributed with the `v1.0.0-rc1` candidate. Language syntax and compiler tools are not stable APIs. Use `README.md` for current product scope, `SPECIFICATION.md` for language behavior, `TODO.md` for open work, and `examples/` for runnable programs.
+> **Note:** This guide covers the v0.5 language profile distributed with the unpublished `v1.0.0` release candidate. Language syntax and compiler tools are not stable APIs. Use `README.md` for current product scope, `SPECIFICATION.md` for language behavior, `TODO.md` for open work, and `examples/` for runnable programs.
