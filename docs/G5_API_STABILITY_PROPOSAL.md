@@ -30,6 +30,42 @@ close those gates.
 | ABI ve üretilen çıktı / ABI and generated output | `SPECIFICATION.md` §15, C/LLVM backends | C ABI/FFI ancak hedef triple, çağrı kuralı, sahiplik ve bellek yerleşimi bütünüyle envanterlenirse kararlı olabilir; üretilen C/LLVM IR iç detaydır / ABI can stabilize only per fully specified target/calling convention/ownership/layout; emitted IR is internal |
 | Deneysel hedefler / Experimental targets | [`VERSIONING.md`](VERSIONING.md), README platform tablosu | Linux ARM64/AArch64/WASM deneysel etiketleriyle kararlılık sözünün dışında / Experimental targets remain outside the stability promise |
 
+### v0.5 CLI seçenekleri anlık envanteri / CLI option snapshot
+
+Bu seçenekler kurulu `axiom <komut> --help` ve `axpm <komut> --help`
+çıktılarıyla karşılaştırıldı. Herhangi bir `v1.0` kararlılık sözü için bunlar
+ve çıkış kodları CI sözleşme testlerine bağlanmalı.
+
+The options below were compared with installed `axiom <command> --help` and
+`axpm <command> --help`. Bind these forms and exit codes to CI contract tests
+before making a `v1.0` stability promise.
+
+| Komut / Command | v0.5 seçenekleri / Options |
+|---|---|
+| `axiom` | `-h/--help`, `-v/--version` |
+| `run` | `file`, `-g/--debug`, `--asan`, `--ubsan`, `--features`, `extra_args...` |
+| `build` | `file`, `-o/--output`, `-O/--opt`, `-g/--debug`, `--target`, `--sysroot`, `--backend {c,llvm}`, `--asan`, `--ubsan`, `--features` |
+| `check` | `file`, `--no-prove`, `--smt`, `--all`, `--features` |
+| `prove` | `file`, `--smt`, `--features` |
+| `emit-c`, `emit-smt` | `file`, `-o/--output`, `--features` |
+| `emit-llvm` | `file`, `-o/--output`, `-g/--debug`, `--features` |
+| `repl` | `--features` |
+| `test` | `--asan`, `pytest_args...` |
+| `init` | `project_name` |
+| `doc` | `paths...`, `-o/--output`, `--json`, `--title` |
+| `fmt` | `file`, `--check` |
+| `pkg` | `axpm` argument passthrough |
+| `lsp` | no command-specific options |
+| `axpm init` | `[path]`, `--name`, `--lib` |
+| `axpm add` | dependency, `--path`, `--git`, `--rev`, `--version` |
+| `axpm install`, `verify`, `tree` | no command-specific options |
+| `axpm remove` | `dependency`, `--purge` |
+| `axpm search`, `update` | optional `query` / `dependency` |
+| `axpm pack` | required `--signing-key`, optional `--output` |
+| `axpm registry assemble` | required `--from`, `--output`, `--public-key`; optional `--index-signing-key`, `--index-sequence`, `--index-expires` |
+| `axpm build` | `--release`, `-g/--debug`, `--target`, `--sysroot`, `-o/--output`, `--features` |
+| `axpm run`, `test` | optional extra args; `run` has `-g/--debug`, both accept `--features` |
+
 Bu, kaynaklara bağlı ilk somut yüzey haritasıdır; henüz tüm fonksiyon imzaları,
 CLI bayrakları veya test eşlemesi değildir. 53 `std/**/*.ax` dosyasında
 `pub`/`export` bildirimi yok ve semboller global isim alanını kullanıyor; bu

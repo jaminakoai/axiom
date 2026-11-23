@@ -1,6 +1,7 @@
 """Keep active G5 versioning and user-validation claims aligned."""
 
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -75,6 +76,38 @@ def test_readme_stdlib_counts_match_the_source_tree():
 
     assert "53 stdlib kaynak dosyası / 446 fonksiyon bildirimi" in _normalized("README.md")
     assert "53 standard-library source files / 446 function declarations" in _normalized("README.en.md")
+
+
+def test_documented_cli_commands_and_flags_cover_installed_help():
+    policy = _normalized("docs/G5_API_STABILITY_PROPOSAL.md")
+    commands = [
+        ["bin/axiom", "--help"],
+        *[["bin/axiom", command, "--help"] for command in (
+            "run", "build", "check", "prove", "emit-c", "emit-smt", "emit-llvm",
+            "repl", "test", "init", "doc", "fmt", "pkg", "lsp",
+        )],
+        *[["bin/axpm", command, "--help"] for command in (
+            "init", "add", "install", "verify", "tree", "remove", "search",
+            "pack", "registry", "update", "build", "run", "test",
+        )],
+        ["bin/axpm", "registry", "assemble", "--help"],
+    ]
+    documented_options = set(re.findall(r"(?<!\w)--?[A-Za-z][A-Za-z0-9-]*", policy))
+
+    for argv in commands:
+        result = subprocess.run(argv, capture_output=True, text=True, cwd=ROOT, check=False)
+        assert result.returncode == 0, f"help failed: {' '.join(argv)}\n{result.stderr}"
+        help_text = result.stdout + result.stderr
+        help_options = set()
+        for line in help_text.splitlines():
+            # argparse option rows have a 2+ space separator before descriptions.
+            column = line.strip().split("  ", 1)[0]
+            for token in column.split():
+                token = token.rstrip(",")
+                if token.startswith("-") and re.fullmatch(r"--?[A-Za-z][A-Za-z0-9-]*", token):
+                    help_options.add(token)
+        for option in help_options:
+            assert option in documented_options, f"undocumented option {option}: {' '.join(argv)}"
 
 
 def test_scan_docs_match_schema_and_byte_buffer_behavior():
