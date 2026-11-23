@@ -250,6 +250,37 @@ def test_length_aware_yara_buffer_api_has_backend_parity(backend, tmp_path):
     assert "YARA_BUFFER_API_PARITY_OK" in result.stdout
 
 
+def test_read_file_bytes_presizes_regular_file_without_reallocation(tmp_path):
+    target_path = tmp_path / "presized-target.bin"
+    target = b"A" * (2 * 1024 * 1024 - 1) + b"\x00Z"
+    target_path.write_bytes(target)
+    source = f'''
+    #include "axiom/runtime.h"
+    #include <stdio.h>
+
+    #define CHECK(expr) do {{ if (!(expr)) {{ \\
+        fprintf(stderr, "failed at line %d: %s\\n", __LINE__, #expr); return 1; \\
+    }} }} while (0)
+
+    int main(void) {{
+        ax_int handle = axiom_buf_read_file({json.dumps(str(target_path))});
+        CHECK(handle > 0);
+        AxiomByteBuffer* buffer = (AxiomByteBuffer*)(uintptr_t)handle;
+        CHECK(buffer->len == {len(target)});
+        CHECK(buffer->cap == buffer->len);
+        CHECK(buffer->data[0] == 'A');
+        CHECK(buffer->data[buffer->len - 2] == 0);
+        CHECK(buffer->data[buffer->len - 1] == 'Z');
+        axiom_buf_free(handle);
+        puts("REGULAR_FILE_BUFFER_PREALLOC_OK");
+        return 0;
+    }}
+    '''
+    returncode, stdout, stderr = _compile_and_run(source)
+    assert returncode == 0, stderr
+    assert "REGULAR_FILE_BUFFER_PREALLOC_OK" in stdout
+
+
 def test_occurrence_runtime_matches_yara_454_instance_semantics():
     try:
         import yara

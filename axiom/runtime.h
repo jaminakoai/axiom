@@ -5068,7 +5068,36 @@ AXIOM_RUNTIME_FN ax_int axiom_buf_read_file(const char* path) {
     FILE* file = fopen(path, "rb");
     if (!file) return 0;
 
-    ax_int handle = axiom_buf_create(4096);
+    // For regular files, stat the already-open descriptor and allocate once.
+    // Besides reducing reallocations, this avoids the old-capacity + new-
+    // capacity RSS spike when a large buffer grows. Non-seekable inputs keep
+    // the streaming growth path below. If the file changes size after fstat,
+    // the read loop still handles EOF or growth without truncating data.
+    uint64_t known_file_size = 0;
+    int has_known_file_size = 0;
+#if defined(AXIOM_OS_WINDOWS)
+    struct _stat64 file_info;
+    if (_fstat64(_fileno(file), &file_info) == 0 &&
+        (file_info.st_mode & _S_IFMT) == _S_IFREG && file_info.st_size >= 0) {
+        known_file_size = (uint64_t)file_info.st_size;
+        has_known_file_size = 1;
+    }
+#else
+    struct stat file_info;
+    if (fstat(fileno(file), &file_info) == 0 && S_ISREG(file_info.st_mode) &&
+        file_info.st_size >= 0) {
+        known_file_size = (uint64_t)file_info.st_size;
+        has_known_file_size = 1;
+    }
+#endif
+    if (has_known_file_size &&
+        (known_file_size > (uint64_t)INT64_MAX || known_file_size > (uint64_t)SIZE_MAX)) {
+        fclose(file);
+        return 0;
+    }
+    ax_int initial_capacity = has_known_file_size && known_file_size > 16
+        ? (ax_int)known_file_size : 4096;
+    ax_int handle = axiom_buf_create(initial_capacity);
     if (handle <= 0) {
         fclose(file);
         return 0;
@@ -5077,6 +5106,14 @@ AXIOM_RUNTIME_FN ax_int axiom_buf_read_file(const char* path) {
     int failed = 0;
     while (!failed) {
         if (buffer->len == buffer->cap) {
+            // Probe EOF before growing an exactly-sized regular-file buffer.
+            // If the input grew after stat (or is a stream), preserve the byte
+            // and resume the normal capacity-doubling path.
+            int extra_byte = fgetc(file);
+            if (extra_byte == EOF) {
+                if (ferror(file)) failed = 1;
+                break;
+            }
             if (buffer->cap == 0 || buffer->cap > SIZE_MAX / 2) {
                 failed = 1;
                 break;
@@ -5089,6 +5126,8 @@ AXIOM_RUNTIME_FN ax_int axiom_buf_read_file(const char* path) {
             }
             buffer->data = grown;
             buffer->cap = new_cap;
+            buffer->data[buffer->len++] = (uint8_t)extra_byte;
+            continue;
         }
         size_t available = buffer->cap - buffer->len;
         size_t read_count = fread(buffer->data + buffer->len, 1, available, file);

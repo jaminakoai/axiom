@@ -12,15 +12,15 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `4c593e5`: Python 3.10–3.13'in her birinde **1660 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
-| Son CI denemesi | `4c593e5` [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
-| Son başarılı tam CI | `4c593e5` [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
-| Son platform smoke | `4c593e5`, Linux/Windows/macOS native smoke [run 45191927925](https://github.com/jaminakoai/axiom/actions/runs/45191927925), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `f927410`: Python 3.10–3.13'in her birinde **1660 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
+| Son CI denemesi | `f927410` [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
+| Son başarılı tam CI | `f927410` [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı** |
+| Son platform smoke | `f927410`, Linux/Windows/macOS native smoke [run 45195035974](https://github.com/jaminakoai/axiom/actions/runs/45195035974), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `4c593e5` — [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı**; her Python sürümünde 1660 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45191927925](https://github.com/jaminakoai/axiom/actions/runs/45191927925) **3/3 başarılı** |
+| Son kaydedilmiş başarılı CI | `f927410` — [run 45195035802](https://github.com/jaminakoai/axiom/actions/runs/45195035802), **7/7 başarılı**; her Python sürümünde 1660 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45195035974](https://github.com/jaminakoai/axiom/actions/runs/45195035974) **3/3 başarılı** |
 | Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
-| Son hedefli test paketi | G5 API allowlist/fixture/manifest/inventory/versioning, `Result`/`Option`, TR/EN docs/specification: **42 geçti**; scanner + YARA modifier/condition/C-LLVM/differential paketi önceki hedefli koşuda **326 geçti**. Güncel tam CI her Python'da 1660 testin tamamını geçti. |
+| Son hedefli test paketi | Scanner + YARA modifier/condition/C-LLVM/differential/regression paketi **219 geçti**; regular-file preallocation için 2 MiB + embedded-NUL içerik ve kapasite runtime testi dahil. G5 allowlist/versioning ve TR/EN docs/spec paketi **42 geçti**; önceki geniş scanner paketi **326 geçti**. |
 
 ---
 
@@ -37,10 +37,11 @@ roadmap geçerlidir. Başka TODO dosyası açılmaz.
   işletim sistemli smoke testi tamamlandı. Genel G4 platform smoke da daha önce
   Linux, Windows ve macOS'ta geçti.
 - Dil-gap incelemesi mevcut syntax/std kütüphanesinin offline scanner dikey
-  dilimini kurmaya yeterli olduğunu buldu; `wide` YARA modifier'ı bu turda
-  eklendi ve YARA 4.5.4'e karşı doğrulandı. Genel syntax genişlemesi yerine
-  sıradaki kanıtlı ürün ihtiyacı büyük dosyalarda bellek ölçeği ve tam scanner
-  platform doğrulamasıdır; kapsamı kararlı allowlist kararıyla seçilecek.
+  dilimini kurmaya yeterli olduğunu buldu; `wide` YARA modifier'ı eklendi ve
+  YARA 4.5.4'e karşı doğrulandı. Regular dosya buffer'ı artık baştan
+  boyutlandırılarak realloc sırasındaki tepe bellek azaltıldı; hedefin tamamı
+  yine bellekte tutulur. mmap/streaming kararı ölçüm ister; tam scanner
+  platform kapsamı şimdilik Linux x86_64 ile sınırlı.
 - G3 teknik kabul kapısı maintainer'ın isteğiyle bağımsız kullanıcı denemesi
   yerine iç teknik denetimle kapatıldı. Denetim kapsamı ve kanıtı:
   [G3 iç denetim raporu](docs/reports/2026-11-17-g3-internal-audit.md).
@@ -471,6 +472,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   NUL-interleave, `ascii wide`, `nocase`/`fullword`, overlap sayımı ve byte
   offset/length; YARA 4.5.4 differential ve C/LLVM testleri geçti. Keyfî
   Unicode UTF-16 ve regex modifier'ları bu desteğin dışında tutuldu.
+- [x] Regular dosya `read_file_bytes` kapasitesini açık descriptor boyutundan
+  baştan ayır; büyüme sırasındaki eski+yeni tahsis RSS sıçramasını önle. 2 MiB
+  binary/NUL fixture'ında içerik, uzunluk ve kapasite doğrudan runtime testinde;
+  scanner ve YARA regresyonları C/LLVM'de geçti. Hedefin tamamı bellekte kalır.
 - [x] Seçilmiş scanner sembol/gramer/komut/şema alanlarını davranış,
   hata/sentinel, sahiplik/lifetime, C/LLVM ve platform/thread sözleşmesi ile
   enforcement testlerine tek tek eşle. Envanterin geri kalanı bu kapsamın
