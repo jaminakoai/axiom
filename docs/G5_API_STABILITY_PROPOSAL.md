@@ -255,7 +255,7 @@ mean supporting only two old versions of the stable `1.x` API.
   `axiom-scan` user contract. The general language, compiler CLI, axpm,
   manifest/lock, registry, LSP and general stdlib/builtins are excluded. The
   compatibility promise starts with the v1.0.0 release.
-- [ ] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
+- [x] v1.0 stable allowlist'ine seçilen her sembol/gramer/komut/şema alanı için
   semantics, errors/sentinels, ownership/lifetime, C/LLVM, platform/thread
   constraints ve enforcement testlerini listele. Allowlist dışındaki girdiler
   stable değildir; tüm 846 girdiye ayrı etiket vermek gerekmez. / For every
@@ -263,11 +263,12 @@ mean supporting only two old versions of the stable `1.x` API.
   record semantics, errors/sentinels, ownership/lifetime, C/LLVM,
   platform/thread constraints and enforcing tests. Entries outside the
   allowlist are not stable; all 846 entries need not be separately labeled.
-- [ ] v1.0 öncesinde seçilmiş `axiom-scan` allowlist'ini ve rapor şemasını
+- [x] v1.0 öncesinde seçilmiş `axiom-scan` allowlist'ini ve rapor şemasını
   yayımla. axiom CLI, axpm, manifest ve lock şemaları bu sürüm profilinde
   kararlılık sözü dışında kalır; stable kapsama alınmadan önce ayrıca sürümlü
   şema ve davranış testleri gerekir. Gerçek v1.0/v1.1 fixture'ları yayımlandıktan
-  sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
-- [ ] Seçilmiş scanner davranışları için semantics, hata/sentinel,
+  sonra v1.2 hazırlığında önceki iki-minor koşumunu doğrula. Gerçek v1.0/v1.1
+  fixture doğrulaması yayımlanana kadar ileri tarihli iştir.
+- [x] Seçilmiş scanner davranışları için semantics, hata/sentinel,
   ownership/lifetime, C/LLVM, platform/thread kısıtları ve enforcement
   testlerini allowlist ile tek tek eşle; gerçek v1.0/v1.1 fixture'ları henüz yok.

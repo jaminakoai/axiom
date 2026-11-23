@@ -12,15 +12,15 @@
 | Sürüm | `v0.5.0-alpha` |
 | Son güncelleme | 2026-11-23 |
 | Aşama | **G5 — API kararlılık politikası belirlendi; gerçek iş akışı ve v1.0 hazırlığı açık** |
-| Son tamamlanmış tam test paketi | GitHub Actions `e453c79`: Python 3.10–3.13, ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45181620685](https://github.com/jaminakoai/axiom/actions/runs/45181620685), **7/7 başarılı** |
-| Son CI denemesi | `e453c79` [run 45181620685](https://github.com/jaminakoai/axiom/actions/runs/45181620685), **7/7 başarılı** |
-| Son başarılı tam CI | `e453c79` [run 45181620685](https://github.com/jaminakoai/axiom/actions/runs/45181620685), **7/7 başarılı** |
-| Son platform smoke | `e453c79`, Linux/Windows/macOS native smoke [run 45181620673](https://github.com/jaminakoai/axiom/actions/runs/45181620673), **3/3 başarılı** |
+| Son tamamlanmış tam test paketi | GitHub Actions `4c593e5`: Python 3.10–3.13'in her birinde **1660 geçti, 27 ortam testi atlandı**; ASan/UBSan, LLVM/DWARF ve biçimlendirme dahil [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
+| Son CI denemesi | `4c593e5` [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
+| Son başarılı tam CI | `4c593e5` [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı** |
+| Son platform smoke | `4c593e5`, Linux/Windows/macOS native smoke [run 45191927925](https://github.com/jaminakoai/axiom/actions/runs/45191927925), **3/3 başarılı** |
 | CI skip açıklaması | 27 skip Linux CI'da MinGW (16) ve Wine (11) bulunmamasından. Yerel `tests/test_portability.py`: ikisi de kurulu ortamda **34 geçti, 0 skip** (100,70 sn). |
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
-| Son kaydedilmiş başarılı CI | `e453c79` — [run 45181620685](https://github.com/jaminakoai/axiom/actions/runs/45181620685), **7/7 başarılı**; Python 3.10–3.13, ASan/UBSan, LLVM/DWARF ve biçimlendirme |
-| Son tam yerel test paketi | Güncel tam koşu: **1686 geçti, 1 başarısız**; tek hata README kapsamı güncellemesinden kalan eski test beklentisiydi. Beklenti düzeltildikten sonra etkilenen G5/docs/spec paketi **42 geçti**; yeni commit CI tam paketi yeniden doğrulayacak. |
-| Son hedefli test paketi | G5 API allowlist/fixture/manifest/inventory/versioning, `Result`/`Option`, TR/EN docs/specification, scanner + YARA modifier/condition/C-LLVM/differential doğrulaması: önce **326 geçti**, bu tur G5/docs/spec subset **42 geçti**. PCAP, JSON Schema, YARA `wide`/`ascii wide`/`nocase`/`fullword`, occurrence selectors, C/LLVM ve yara-python 4.5.4 oracle kanıtları dahil. |
+| Son kaydedilmiş başarılı CI | `4c593e5` — [run 45191927736](https://github.com/jaminakoai/axiom/actions/runs/45191927736), **7/7 başarılı**; her Python sürümünde 1660 geçti/27 ortam skip'i, dokümantasyon blokları 55 geçti; platform smoke [run 45191927925](https://github.com/jaminakoai/axiom/actions/runs/45191927925) **3/3 başarılı** |
+| Son tam yerel test paketi | **1686 geçti, 1 başarısız**: README kapsamını değiştiren düzenlemeden kalan eski bir G5 belge beklentisi. Beklenti düzeltildikten sonra G5/docs/spec paketi **42 geçti**; aynı kaynak commit'inin GitHub tam CI'si tüm matrislerde başarılı oldu. |
+| Son hedefli test paketi | G5 API allowlist/fixture/manifest/inventory/versioning, `Result`/`Option`, TR/EN docs/specification: **42 geçti**; scanner + YARA modifier/condition/C-LLVM/differential paketi önceki hedefli koşuda **326 geçti**. Güncel tam CI her Python'da 1660 testin tamamını geçti. |
 
 ---
 
@@ -471,7 +471,7 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   NUL-interleave, `ascii wide`, `nocase`/`fullword`, overlap sayımı ve byte
   offset/length; YARA 4.5.4 differential ve C/LLVM testleri geçti. Keyfî
   Unicode UTF-16 ve regex modifier'ları bu desteğin dışında tutuldu.
-- [ ] Seçilmiş scanner sembol/gramer/komut/şema alanlarını davranış,
+- [x] Seçilmiş scanner sembol/gramer/komut/şema alanlarını davranış,
   hata/sentinel, sahiplik/lifetime, C/LLVM ve platform/thread sözleşmesi ile
   enforcement testlerine tek tek eşle. Envanterin geri kalanı bu kapsamın
   dışında kararlı değildir; 846 girdiye ayrı etiket gerekmez.
@@ -479,9 +479,10 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   [JSON Schema](docs/api/axiom-scan-report.schema.json) yayımla ve gerçek
   C/LLVM report örneklerini JSON Schema validator ile test et; public
   dokümanlarda TR/EN schema bağlantısını ver.
-- [ ] v1.0 öncesinde kararlı API allowlist'ini ve scanner CLI/report
-  sözleşmesini yayımla; axpm, manifest ve lock şemaları bu profilde kararlılık
-  sözü dışıdır. Gerçek v1.0 ve v1.1 fixture'ları henüz yok; yayımlandıktan sonra
+- [x] Makinece okunabilir kararlı API allowlist'ini ve scanner CLI/report
+  sözleşmesini yayımla: [`docs/api/v1.0-stable-allowlist.json`](docs/api/v1.0-stable-allowlist.json).
+  axpm, manifest ve lock şemaları bu profilde kararlılık sözü dışıdır.
+- [ ] Gerçek v1.0 ve v1.1 fixture'ları henüz yok; yayımlandıktan sonra
   v1.2 hazırlığında önceki iki-minor koşumunu doğrula.
 - [ ] Seçilmiş scanner davranışlarını sözleşme matrisi ve enforcement testleriyle
   tek tek kapat; gerçek kullanımda bellek ölçeği ve platform desteği ihtiyacını
