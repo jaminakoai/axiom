@@ -20,7 +20,7 @@
 | Son G1 hedefli doğrulama | YARA/scanner/differential/stress/AST limits/C-LLVM parity: **490 geçti, 0 skip** (224,36 sn) |
 | Son kaydedilmiş başarılı CI | `ce4f04e` — [run 45166221945](https://github.com/jaminakoai/axiom/actions/runs/45166221945), **7/7 başarılı**; Python 3.10–3.13'in her birinde 1628 geçti / 27 ortam skip'i |
 | Son tam yerel test paketi | G5 politika/inventory düzenlemelerinden önceki tam koşu: **1626 geçti, 0 başarısız, 0 skip** (`python -m pytest -q --tb=short`, 1349,31 sn) |
-| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **239 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 67,59 sn; schema+yükleyici manifest paritesi, PCAP boş kayıt, sıfır tabanlı indeks, linktype/kayıt boyutu sınırı ve yapısal hata raporu dahil). |
+| Son hedefli test paketi | G5 candidate allowlist referansları, uyumluluk fixture harness'i ve manifest JSON Schema, envanter/versioning, `Result`/`Option` iki-backend interoperability, TR/EN docs, şartname, scanner ve JSON Schema contract doğrulaması: **249 geçti, 0 başarısız** (`tests/test_api_stability_candidate.py`, `tests/test_compatibility_fixtures.py` ve `tests/test_axiom_scan.py` dahil, 68,06 sn; manifest schema/yükleyici paritesi, metadata sayı/kaçış sınırları, PCAP fail-on-match C/LLVM paritesi, kayıtlar arası eşleşmeme, boş kayıt, sıfır tabanlı indeks, linktype/kayıt boyutu ve şemalı hata raporları dahil). |
 
 ---
 
@@ -443,13 +443,14 @@ oluşturdu. Yeni sözdizimi eklemeden önce bu temsili gözden geçir.
   [`docs/G5_API_CONTRACT_AUDIT.md`](docs/G5_API_CONTRACT_AUDIT.md).
 - [x] Scanner-first dikey dilim için source/test kanıtlarına bağlı, açıkça
   bağlayıcı olmayan [v1.0 candidate allowlist](docs/api/v1.0-stability-candidate.json)
-  hazırla ve referanslarını CI testinde doğrula. Classic PCAP kapsamı endian,
-  zaman magic'i (fraction doğrulanmaz/raporlanmaz), opak kayıt baytları/linktype'ın yok sayılması, 65.535 baytlık
-  kayıt sınırı, sıfır uzunluklu kayıt sayımı, sıfır tabanlı eşleşme indeksi,
-  bozuk/kesik kayıt reddi, PCAPNG reddi ve stream reassembly yapılmamasıyla
-  açıkça sınırlandırıldı. Aday sözleşme referansları ve test kanıtları hedefli
-  paketle yeniden doğrulanıyor; bozuk PCAP vakaları yapılandırılmış hata
-  raporunu JSON Schema'ya karşı da doğruluyor.
+  hazırla ve referanslarını CI testinde doğrula. YARA metadata sayı/kaçış
+  sınırları enforcement testlerine bağlandı. Classic PCAP kapsamı endian,
+  zaman magic'i (fraction doğrulanmaz/raporlanmaz), opak kayıt baytları,
+  linktype'ın yok sayılması, 65.535 baytlık kayıt sınırı, sıfır uzunluklu kayıt
+  sayımı, sıfır tabanlı eşleşme indeksi, kayıtlar arası eşleşmeme, bozuk/kesik
+  kayıt reddi, PCAPNG reddi ve stream reassembly yapılmamasıyla açıkça
+  sınırlandırıldı. C/LLVM PCAP `--fail-on-match` çıkış ve rapor paritesi test
+  edildi; bozuk PCAP hataları JSON Schema'ya göre doğrulanıyor.
 - [ ] v1.0 kararlı allowlist'i için seçilen her sembol/gramer/komut/şema alanını
   davranış, hata/sentinel, sahiplik/lifetime, C/LLVM ve ilgili platform/thread
   sözleşmesiyle; enforcement testlerine bağlı şekilde incele. Allowlist dışında

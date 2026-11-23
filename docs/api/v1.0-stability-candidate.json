@@ -62,7 +62,16 @@
           "fullword_boundary": "A match is rejected when adjacent to ASCII alphanumeric bytes.",
           "unsupported_modifier": "wide"
         },
-        "metadata": "String, boolean, and integer values are reported with their JSON types. A metadata string containing a \\xNN escape is rejected.",
+        "metadata": {
+          "json_types": ["string", "boolean", "integer"],
+          "integer_literals": {
+            "optional_sign": "leading -",
+            "decimal_max_digits": 18,
+            "hex_prefixes": ["0x", "0X"],
+            "hex_max_digits": 15
+          },
+          "string_hex_byte_escape": "\\xNN is rejected"
+        },
         "hex_patterns": {
           "atoms": ["byte literals", "byte wildcard ??", "high- or low-nibble wildcards (A? or ?A)"],
           "fixed_jump": {
@@ -140,9 +149,14 @@
           "tests/test_axiom_scan.py::test_error_paths",
           "tests/test_axiom_scan.py::test_fail_on_match_is_opt_in",
           "tests/test_axiom_scan.py::test_fail_on_match_llvm_parity",
+          "tests/test_axiom_scan.py::test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm",
+          "tests/test_axiom_scan.py::test_metadata_x_escape_is_rejected",
+          "tests/test_axiom_scan.py::test_metadata_integer_digit_limits_and_signed_values",
+          "tests/test_axiom_scan.py::test_metadata_integer_values_over_digit_limits_fail_closed",
           "tests/test_axiom_scan.py::test_llvm_scanner_matches_c",
           "tests/test_axiom_scan.py::test_filesize_and_scanned_bytes_use_full_file_length_with_nul",
           "tests/test_axiom_scan.py::test_scan_pcap_counts_empty_packet_and_continues",
+          "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records",
           "tests/test_axiom_scan.py::test_scan_pcap_empty_capture_reports_zero_packets",
           "tests/test_axiom_scan.py::test_scan_pcap_malformed_or_truncated_records_fail_closed",
           "tests/test_axiom_scan.py::test_scan_pcap_rejects_record_over_65535_bytes_even_with_large_snaplen",

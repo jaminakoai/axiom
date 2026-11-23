@@ -79,3 +79,15 @@ def test_scanner_candidate_records_documented_rule_and_pcap_limits():
         "maximum_captured_record_bytes",
     ]
     assert "as opaque bytes" in surface["commands"]["pcap"]
+    assert surface["yara_subset"]["metadata"]["integer_literals"] == {
+        "optional_sign": "leading -",
+        "decimal_max_digits": 18,
+        "hex_prefixes": ["0x", "0X"],
+        "hex_max_digits": 15,
+    }
+    assert surface["yara_subset"]["metadata"]["string_hex_byte_escape"] == "\\xNN is rejected"
+    assert (
+        "tests/test_axiom_scan.py::test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm"
+        in surface["evidence"]["tests"]
+    )
+    assert "tests/test_axiom_scan.py::test_pcap_match_does_not_span_records" in surface["evidence"]["tests"]

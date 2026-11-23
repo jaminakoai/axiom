@@ -361,6 +361,74 @@ def test_rule_meta_and_tags_are_returned_as_typed_json(scanner, scanner_llvm, tm
     }
 
 
+def test_metadata_x_escape_is_rejected(scanner, tmp_path):
+    rules = tmp_path / "metadata-x-escape.yar"
+    rules.write_text(
+        r'''rule InvalidMeta {
+ meta:
+  author = "\x41"
+ strings:
+  $a = "needle"
+ condition:
+  $a
+}
+''',
+        encoding="utf-8",
+    )
+
+    result = _run(scanner, "rules", str(rules))
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
+
+
+@pytest.mark.parametrize(
+    ("value", "expected"),
+    [
+        ("9" * 18, int("9" * 18)),
+        ("-" + "9" * 18, -int("9" * 18)),
+        ("0x" + "F" * 15, int("F" * 15, 16)),
+        ("0X" + "F" * 15, int("F" * 15, 16)),
+        ("-0x" + "F" * 15, -int("F" * 15, 16)),
+    ],
+)
+def test_metadata_integer_digit_limits_and_signed_values(scanner, tmp_path, value, expected):
+    rules = tmp_path / "metadata-integer.yar"
+    rules.write_text(
+        'rule IntegerMeta {\n meta:\n  number = ' + value
+        + '\n strings:\n  $a = "needle"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    target = tmp_path / "metadata-target.bin"
+    target.write_bytes(b"needle")
+
+    result = _run(scanner, "scan", str(target), "--rules", str(rules))
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["matches"][0]["meta"]["number"] == expected
+
+
+@pytest.mark.parametrize("value", ["9" * 19, "0x" + "F" * 16])
+def test_metadata_integer_values_over_digit_limits_fail_closed(scanner, tmp_path, value):
+    rules = tmp_path / "metadata-overflow.yar"
+    rules.write_text(
+        'rule IntegerMeta {\n meta:\n  number = ' + value
+        + '\n strings:\n  $a = "needle"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+
+    result = _run(scanner, "rules", str(rules))
+
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
+
+
 @pytest.mark.parametrize("meta_lines", [
     '  flag = maybe\n',
     '  author = "unterminated\n',
@@ -961,6 +1029,35 @@ def test_scan_pcap_counts_empty_packet_and_continues(scanner, tmp_path):
     assert report["packets"][0]["rules"] == ["PacketNeedle"]
 
 
+def test_pcap_match_does_not_span_records(scanner, scanner_llvm, tmp_path):
+    rules = tmp_path / "split-signature.yar"
+    rules.write_text(
+        'rule SplitSignature {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    pcap = tmp_path / "split-signature.pcap"
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    first = b"prefix NEE"
+    second = b"DLE suffix"
+    pcap.write_bytes(
+        header
+        + struct.pack("<IIII", 1700000000, 0, len(first), len(first)) + first
+        + struct.pack("<IIII", 1700000001, 0, len(second), len(second)) + second
+    )
+
+    reports = []
+    for executable in (scanner, scanner_llvm):
+        result = _run(executable, "pcap", str(pcap), "--rules", str(rules))
+        assert result.returncode == 0, result.stdout + result.stderr
+        report = json.loads(result.stdout)
+        _assert_report_matches_schema(report)
+        assert report["packet_count"] == 2
+        assert report["match_count"] == 0
+        assert report["packets"] == []
+        reports.append(report)
+    assert reports[0] == reports[1]
+
+
 def test_scan_pcap_empty_capture_reports_zero_packets(scanner, tmp_path):
     rules = tmp_path / "rules.yar"
     rules.write_text(
@@ -1127,9 +1224,62 @@ def test_scan_rejects_pcapng(scanner, tmp_path):
 
     result = _run(scanner, "pcap", str(pcapng), "--rules", str(rules))
 
-    assert result.returncode != 0, result.stdout + result.stderr
-    assert '"ok":true' not in result.stdout
-    assert "pcapng desteklenmiyor" in (result.stdout + result.stderr).lower()
+    assert result.returncode == 1, result.stdout + result.stderr
+    report = json.loads(result.stdout)
+    _assert_report_matches_schema(report)
+    assert report["ok"] is False
+    assert "pcapng desteklenmiyor" in report["error"].lower()
+
+
+def test_pcap_fail_on_match_is_opt_in_and_matches_c_llvm(scanner, scanner_llvm, tmp_path):
+    rules = tmp_path / "rules.yar"
+    rules.write_text(
+        'rule PacketNeedle {\n strings:\n  $a = "NEEDLE"\n condition:\n  $a\n}\n',
+        encoding="utf-8",
+    )
+    header = struct.pack("<IHHiIII", 0xA1B2C3D4, 2, 4, 0, 0, 65535, 1)
+    matched_payload = b"captured NEEDLE bytes"
+    matching_pcap = tmp_path / "matching.pcap"
+    matching_pcap.write_bytes(
+        header
+        + struct.pack(
+            "<IIII", 1700000000, 0, len(matched_payload), len(matched_payload)
+        )
+        + matched_payload
+    )
+    clean_payload = b"no finding"
+    clean_pcap = tmp_path / "clean.pcap"
+    clean_pcap.write_bytes(
+        header
+        + struct.pack("<IIII", 1700000000, 0, len(clean_payload), len(clean_payload))
+        + clean_payload
+    )
+
+    reports_by_backend = []
+    for executable in (scanner, scanner_llvm):
+        plain = _run(executable, "pcap", str(matching_pcap), "--rules", str(rules))
+        gated = _run(
+            executable, "pcap", str(matching_pcap), "--rules", str(rules),
+            "--fail-on-match",
+        )
+        clean = _run(
+            executable, "pcap", str(clean_pcap), "--rules", str(rules),
+            "--fail-on-match",
+        )
+
+        assert plain.returncode == 0, plain.stdout + plain.stderr
+        assert gated.returncode == 10, gated.stdout + gated.stderr
+        assert clean.returncode == 0, clean.stdout + clean.stderr
+        plain_report = json.loads(plain.stdout)
+        gated_report = json.loads(gated.stdout)
+        clean_report = json.loads(clean.stdout)
+        for report in (plain_report, gated_report, clean_report):
+            _assert_report_matches_schema(report)
+        assert plain_report["match_count"] == gated_report["match_count"] == 1
+        assert clean_report["match_count"] == 0
+        reports_by_backend.append((plain_report, gated_report, clean_report))
+
+    assert reports_by_backend[0] == reports_by_backend[1]
 
 
 def test_scan_pcap_binary_payload_matches_after_nul(scanner, tmp_path):
